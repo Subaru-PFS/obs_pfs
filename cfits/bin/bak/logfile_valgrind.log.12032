@@ -1,0 +1,1284 @@
+==12032== Memcheck, a memory error detector.
+==12032== Copyright (C) 2002-2005, and GNU GPL'd, by Julian Seward et al.
+==12032== Using LibVEX rev 1471, a library for dynamic binary translation.
+==12032== Copyright (C) 2004-2005, and GNU GPL'd, by OpenWorks LLP.
+==12032== Using valgrind-3.1.0-Debian, a dynamic binary instrumentation framework.
+==12032== Copyright (C) 2000-2005, and GNU GPL'd, by Julian Seward et al.
+==12032== 
+==12032== My PID = 12032, parent PID = 6458.  Prog and args are:
+==12032==    ./cfits
+==12032== 
+--12032-- 
+--12032-- Command line
+--12032--    ./cfits
+--12032-- Startup, with flags:
+--12032--    --suppressions=/usr/lib/valgrind/debian-libc6-dbg.supp
+--12032--    --tool=memcheck
+--12032--    --leak-check=yes
+--12032--    --log-file=logfile_valgrind.log
+--12032--    -v
+--12032-- Contents of /proc/version:
+--12032--   Linux version 2.6.15-28-386 (buildd@terranova) (gcc version 4.0.3 (Ubuntu 4.0.3-1ubuntu5)) #1 PREEMPT Thu Feb 1 15:51:56 UTC 2007
+--12032-- Arch and subarch: X86, x86-sse2
+--12032-- Valgrind library directory: /usr/lib/valgrind
+--12032-- Reading syms from /lib/ld-2.3.6.so (0x4000000)
+--12032-- Reading debug info from /lib/ld-2.3.6.so...
+--12032-- ... CRC mismatch (computed F305999E wanted 041122DD)
+--12032-- Reading debug info from /usr/lib/debug/lib/ld-2.3.6.so...
+--12032--    object doesn't have a symbol table
+--12032-- Reading syms from /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits (0x8048000)
+--12032-- Reading syms from /usr/lib/valgrind/x86-linux/memcheck (0xA000000)
+--12032--    object doesn't have a dynamic symbol table
+--12032-- Reading suppressions file: /usr/lib/valgrind/debian-libc6-dbg.supp
+--12032-- Reading suppressions file: /usr/lib/valgrind/default.supp
+--12032-- Reading syms from /usr/lib/valgrind/x86-linux/vgpreload_core.so (0x4019000)
+--12032-- Reading syms from /usr/lib/valgrind/x86-linux/vgpreload_memcheck.so (0x401B000)
+--12032-- Reading syms from /usr/lib/libcfitsio.so.2.510 (0x4020000)
+--12032--    object doesn't have a symbol table
+--12032-- Reading syms from /usr/lib/libstdc++.so.6.0.7 (0x418E000)
+--12032-- Reading debug info from /usr/lib/libstdc++.so.6.0.7...
+--12032-- ... CRC mismatch (computed 152FE28C wanted 2578561C)
+--12032--    object doesn't have a symbol table
+--12032-- Reading syms from /usr/lib/debug/libm-2.3.6.so (0x4263000)
+--12032-- Reading syms from /lib/libgcc_s.so.1 (0x42AB000)
+--12032--    object doesn't have a symbol table
+--12032-- Reading syms from /usr/lib/debug/libc-2.3.6.so (0x42B5000)
+--12032-- REDIR: 0x431C5B0 (rindex) redirected to 0x401DD72 (rindex)
+--12032-- REDIR: 0x431D100 (memset) redirected to 0x401E209 (memset)
+--12032-- REDIR: 0x431D64C (memcpy) redirected to 0x401E2CD (memcpy)
+--12032-- REDIR: 0x4237E00 (operator new(unsigned)) redirected to 0x401C770 (operator new(unsigned))
+--12032-- REDIR: 0x431895E (malloc) redirected to 0x401C3A0 (malloc)
+--12032-- REDIR: 0x4237F20 (operator new[](unsigned)) redirected to 0x401CBE8 (operator new[](unsigned))
+--12032-- REDIR: 0x431BCC8 (strcmp) redirected to 0x401DFA9 (strcmp)
+--12032-- REDIR: 0x431BD6C (strcpy) redirected to 0x401E4F7 (strcpy)
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x4215ADC: std::string::string(char const*, std::allocator<char> const&) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x804B038: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+--12032-- REDIR: 0x4236890 (operator delete(void*)) redirected to 0x401D1EA (operator delete(void*))
+==12032== 
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x8110FE6: CString::CString(CString const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804B55D: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x8111A64: CString::CharPosInCharArrFrom(char const*, char, int) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8111B13: CString::LastCharPosInCharArr(char const*, char) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8111F9B: CString::LastCharPos(char) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8111FF5: CString::LastCharPosInString(std::string, char) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x811206B: CString::CString(std::string) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804B747: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x8111A71: CString::CharPosInCharArrFrom(char const*, char, int) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8111B13: CString::LastCharPosInCharArr(char const*, char) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8111F9B: CString::LastCharPos(char) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8111FF5: CString::LastCharPosInString(std::string, char) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x811206B: CString::CString(std::string) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804B747: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x81120F9: CString::CString(std::string) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804B747: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x8110FE6: CString::CString(CString const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x81128E3: CString::GetString() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804B86F: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x4215ADC: std::string::string(char const*, std::allocator<char> const&) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x8112918: CString::GetString() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804B86F: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x4215ADC: std::string::string(char const*, std::allocator<char> const&) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x81127BB: CString::PCharToString(char const*) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8112965: CString::GetString() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804B86F: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x8110FE6: CString::CString(CString const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x81128E3: CString::GetString() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804B8F4: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x4215ADC: std::string::string(char const*, std::allocator<char> const&) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x8112918: CString::GetString() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804B8F4: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x4215ADC: std::string::string(char const*, std::allocator<char> const&) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x81127BB: CString::PCharToString(char const*) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8112965: CString::GetString() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804B8F4: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+--12032-- REDIR: 0x42368E0 (operator delete[](void*)) redirected to 0x401D508 (operator delete[](void*))
+--12032-- REDIR: 0x4316D48 (free) redirected to 0x401CF51 (free)
+==12032== 
+==12032== Mismatched free() / delete / delete []
+==12032==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==12032==    by 0x808665E: CFits::~CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804F562: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==  Address 0x43D94E0 is 0 bytes inside a block of size 4 alloc'd
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x8096CF5: CFits::CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804F456: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== Mismatched free() / delete / delete []
+==12032==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==12032==    by 0x808665E: CFits::~CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804F642: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==  Address 0x43DD498 is 0 bytes inside a block of size 4 alloc'd
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x8096CF5: CFits::CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804F4A6: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+--12032-- REDIR: 0x431CEA0 (memchr) redirected to 0x401E043 (memchr)
+==12032== 
+==12032== Mismatched free() / delete / delete []
+==12032==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==12032==    by 0x808665E: CFits::~CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804F7BE: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==  Address 0x43E5408 is 0 bytes inside a block of size 4 alloc'd
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x8096CF5: CFits::CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804F57C: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+--12032-- REDIR: 0x431C4F8 (strncpy) redirected to 0x401E845 (strncpy)
+--12032-- REDIR: 0x4318624 (calloc) redirected to 0x401D71C (calloc)
+--12032-- REDIR: 0x431BB60 (index) redirected to 0x401DE3D (index)
+--12032-- REDIR: 0x431B9B0 (strcat) redirected to 0x401E42F (strcat)
+==12032== 
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x8110FE6: CString::CString(CString const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80852D4: CFits::GetFileName() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804F938: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== Mismatched free() / delete / delete []
+==12032==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==12032==    by 0x808665E: CFits::~CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804F9E2: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==  Address 0x43E1450 is 0 bytes inside a block of size 4 alloc'd
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x8096CF5: CFits::CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804F4F0: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x8110FE6: CString::CString(CString const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80852D4: CFits::GetFileName() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8093387: CFits::CFits(CFits const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FA03: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x8110FE6: CString::CString(CString const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80852D4: CFits::GetFileName() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8091C47: CFits::Copy(CAny const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8093DF5: CFits::CFits(CFits const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FA03: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x8110FE6: CString::CString(CString const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8085272: CFits::GetDatabaseFileName() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8091C70: CFits::Copy(CAny const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8093DF5: CFits::CFits(CFits const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FA03: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+--12032-- REDIR: 0x431902F (realloc) redirected to 0x401D7D1 (realloc)
+==12032== 
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x8110FE6: CString::CString(CString const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80852D4: CFits::GetFileName() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8098A1A: CFits::EqualValue(CAny const&) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FAF9: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x8110FE6: CString::CString(CString const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8085272: CFits::GetDatabaseFileName() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8098A58: CFits::EqualValue(CAny const&) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FAF9: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== Mismatched free() / delete / delete []
+==12032==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==12032==    by 0x808665E: CFits::~CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FD6F: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==  Address 0x43ED268 is 0 bytes inside a block of size 4 alloc'd
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x8095556: CFits::CFits(CString const&, int, int) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804F850: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== Mismatched free() / delete / delete []
+==12032==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==12032==    by 0x808665E: CFits::~CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FD8D: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==  Address 0x43E91A0 is 0 bytes inside a block of size 4 alloc'd
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x8095556: CFits::CFits(CString const&, int, int) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804F671: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== Mismatched free() / delete / delete []
+==12032==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==12032==    by 0x808665E: CFits::~CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FDAB: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==  Address 0x43F2F78 is 0 bytes inside a block of size 4 alloc'd
+==12032==    at 0x401D89D: realloc (vg_replace_malloc.c:306)
+==12032==    by 0x809031B: CFits::Set_NApertures(int) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8091CE8: CFits::Copy(CAny const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8093DF5: CFits::CFits(CFits const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FA03: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== Mismatched free() / delete / delete []
+==12032==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==12032==    by 0x808665E: CFits::~CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FFD4: TestCFitsClassInvAndCopyAndEVal() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DBD: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==  Address 0x44012C0 is 0 bytes inside a block of size 4 alloc'd
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x8096CF5: CFits::CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FE9E: TestCFitsClassInvAndCopyAndEVal() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DBD: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== Mismatched free() / delete / delete []
+==12032==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==12032==    by 0x808665E: CFits::~CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x805015A: TestCFitsClassInvAndCopyAndEVal() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DBD: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==  Address 0x4405278 is 0 bytes inside a block of size 4 alloc'd
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x8096CF5: CFits::CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FEFA: TestCFitsClassInvAndCopyAndEVal() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DBD: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== Mismatched free() / delete / delete []
+==12032==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==12032==    by 0x808665E: CFits::~CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x805028E: TestCFitsClassInvAndCopyAndEVal() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DBD: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==  Address 0x4409230 is 0 bytes inside a block of size 4 alloc'd
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x8096CF5: CFits::CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FF56: TestCFitsClassInvAndCopyAndEVal() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DBD: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+--12032-- REDIR: 0x431C3E4 (strncmp) redirected to 0x401DF2D (strncmp)
+==12032== 
+==12032== Mismatched free() / delete / delete []
+==12032==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==12032==    by 0x808665E: CFits::~CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8050DD1: TestCFitsClassInvAndCopyAndEVal() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DBD: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==  Address 0x440D3B8 is 0 bytes inside a block of size 4 alloc'd
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x8095556: CFits::CFits(CString const&, int, int) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8050009: TestCFitsClassInvAndCopyAndEVal() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DBD: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== Mismatched free() / delete / delete []
+==12032==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==12032==    by 0x808665E: CFits::~CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8050DEF: TestCFitsClassInvAndCopyAndEVal() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DBD: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==  Address 0x4412C30 is 0 bytes inside a block of size 4 alloc'd
+==12032==    at 0x401D89D: realloc (vg_replace_malloc.c:306)
+==12032==    by 0x809031B: CFits::Set_NApertures(int) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8091CE8: CFits::Copy(CAny const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8050462: TestCFitsClassInvAndCopyAndEVal() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DBD: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== Mismatched free() / delete / delete []
+==12032==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==12032==    by 0x808665E: CFits::~CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8050E0D: TestCFitsClassInvAndCopyAndEVal() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DBD: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==  Address 0x4416D60 is 0 bytes inside a block of size 4 alloc'd
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x8096CF5: CFits::CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80502AE: TestCFitsClassInvAndCopyAndEVal() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DBD: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== Mismatched free() / delete / delete []
+==12032==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==12032==    by 0x808665E: CFits::~CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806036F: TestCFitsMedian() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DC8: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==  Address 0x444ACD8 is 0 bytes inside a block of size 4 alloc'd
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x8096CF5: CFits::CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x805FD5D: TestCFitsMedian() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DC8: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== Process terminating with default action of signal 2 (SIGINT)
+==12032==    at 0x43604E6: write (in /usr/lib/debug/libc-2.3.6.so)
+==12032==    by 0x4311DC5: new_do_write (fileops.c:514)
+==12032==    by 0x4311ECF: _IO_do_write@@GLIBC_2.1 (fileops.c:486)
+==12032==    by 0x43127CC: _IO_file_overflow@@GLIBC_2.1 (fileops.c:873)
+==12032==    by 0x4313C26: __overflow (genops.c:237)
+==12032==    by 0x430F94B: putc (putc.c:33)
+==12032==    by 0x4209291: (within /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x420C93F: std::ostream::put(char) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x420CA3E: std::basic_ostream<char, std::char_traits<char> >& std::endl<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x420A1FA: std::ostream::operator<<(std::ostream& (*)(std::ostream&)) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x8064A94: std::ostream& blitz::operator<< <double>(std::ostream&, blitz::Array<double, 1> const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8060DB7: TestCFitsMedian() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== ERROR SUMMARY: 444 errors from 31 contexts (suppressed: 19 from 1)
+==12032== 
+==12032== 1 errors in context 1 of 31:
+==12032== Mismatched free() / delete / delete []
+==12032==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==12032==    by 0x808665E: CFits::~CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806036F: TestCFitsMedian() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DC8: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==  Address 0x444ACD8 is 0 bytes inside a block of size 4 alloc'd
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x8096CF5: CFits::CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x805FD5D: TestCFitsMedian() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DC8: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 1 errors in context 2 of 31:
+==12032== Mismatched free() / delete / delete []
+==12032==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==12032==    by 0x808665E: CFits::~CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8050E0D: TestCFitsClassInvAndCopyAndEVal() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DBD: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==  Address 0x4416D60 is 0 bytes inside a block of size 4 alloc'd
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x8096CF5: CFits::CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80502AE: TestCFitsClassInvAndCopyAndEVal() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DBD: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 1 errors in context 3 of 31:
+==12032== Mismatched free() / delete / delete []
+==12032==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==12032==    by 0x808665E: CFits::~CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8050DEF: TestCFitsClassInvAndCopyAndEVal() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DBD: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==  Address 0x4412C30 is 0 bytes inside a block of size 4 alloc'd
+==12032==    at 0x401D89D: realloc (vg_replace_malloc.c:306)
+==12032==    by 0x809031B: CFits::Set_NApertures(int) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8091CE8: CFits::Copy(CAny const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8050462: TestCFitsClassInvAndCopyAndEVal() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DBD: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 1 errors in context 4 of 31:
+==12032== Mismatched free() / delete / delete []
+==12032==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==12032==    by 0x808665E: CFits::~CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8050DD1: TestCFitsClassInvAndCopyAndEVal() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DBD: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==  Address 0x440D3B8 is 0 bytes inside a block of size 4 alloc'd
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x8095556: CFits::CFits(CString const&, int, int) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8050009: TestCFitsClassInvAndCopyAndEVal() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DBD: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 1 errors in context 5 of 31:
+==12032== Mismatched free() / delete / delete []
+==12032==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==12032==    by 0x808665E: CFits::~CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x805028E: TestCFitsClassInvAndCopyAndEVal() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DBD: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==  Address 0x4409230 is 0 bytes inside a block of size 4 alloc'd
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x8096CF5: CFits::CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FF56: TestCFitsClassInvAndCopyAndEVal() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DBD: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 1 errors in context 6 of 31:
+==12032== Mismatched free() / delete / delete []
+==12032==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==12032==    by 0x808665E: CFits::~CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x805015A: TestCFitsClassInvAndCopyAndEVal() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DBD: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==  Address 0x4405278 is 0 bytes inside a block of size 4 alloc'd
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x8096CF5: CFits::CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FEFA: TestCFitsClassInvAndCopyAndEVal() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DBD: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 1 errors in context 7 of 31:
+==12032== Mismatched free() / delete / delete []
+==12032==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==12032==    by 0x808665E: CFits::~CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FFD4: TestCFitsClassInvAndCopyAndEVal() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DBD: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==  Address 0x44012C0 is 0 bytes inside a block of size 4 alloc'd
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x8096CF5: CFits::CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FE9E: TestCFitsClassInvAndCopyAndEVal() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DBD: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 1 errors in context 8 of 31:
+==12032== Mismatched free() / delete / delete []
+==12032==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==12032==    by 0x808665E: CFits::~CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FDAB: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==  Address 0x43F2F78 is 0 bytes inside a block of size 4 alloc'd
+==12032==    at 0x401D89D: realloc (vg_replace_malloc.c:306)
+==12032==    by 0x809031B: CFits::Set_NApertures(int) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8091CE8: CFits::Copy(CAny const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8093DF5: CFits::CFits(CFits const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FA03: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 1 errors in context 9 of 31:
+==12032== Mismatched free() / delete / delete []
+==12032==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==12032==    by 0x808665E: CFits::~CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FD8D: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==  Address 0x43E91A0 is 0 bytes inside a block of size 4 alloc'd
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x8095556: CFits::CFits(CString const&, int, int) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804F671: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 1 errors in context 10 of 31:
+==12032== Mismatched free() / delete / delete []
+==12032==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==12032==    by 0x808665E: CFits::~CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FD6F: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==  Address 0x43ED268 is 0 bytes inside a block of size 4 alloc'd
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x8095556: CFits::CFits(CString const&, int, int) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804F850: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 1 errors in context 11 of 31:
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x8110FE6: CString::CString(CString const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80852D4: CFits::GetFileName() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8093387: CFits::CFits(CFits const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FA03: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 1 errors in context 12 of 31:
+==12032== Mismatched free() / delete / delete []
+==12032==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==12032==    by 0x808665E: CFits::~CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804F9E2: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==  Address 0x43E1450 is 0 bytes inside a block of size 4 alloc'd
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x8096CF5: CFits::CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804F4F0: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 1 errors in context 13 of 31:
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x8110FE6: CString::CString(CString const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80852D4: CFits::GetFileName() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804F938: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 1 errors in context 14 of 31:
+==12032== Mismatched free() / delete / delete []
+==12032==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==12032==    by 0x808665E: CFits::~CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804F7BE: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==  Address 0x43E5408 is 0 bytes inside a block of size 4 alloc'd
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x8096CF5: CFits::CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804F57C: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 1 errors in context 15 of 31:
+==12032== Mismatched free() / delete / delete []
+==12032==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==12032==    by 0x808665E: CFits::~CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804F642: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==  Address 0x43DD498 is 0 bytes inside a block of size 4 alloc'd
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x8096CF5: CFits::CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804F4A6: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 1 errors in context 16 of 31:
+==12032== Mismatched free() / delete / delete []
+==12032==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==12032==    by 0x808665E: CFits::~CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804F562: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==  Address 0x43D94E0 is 0 bytes inside a block of size 4 alloc'd
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x8096CF5: CFits::CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804F456: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 1 errors in context 17 of 31:
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x4215ADC: std::string::string(char const*, std::allocator<char> const&) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x81127BB: CString::PCharToString(char const*) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8112965: CString::GetString() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804B8F4: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 1 errors in context 18 of 31:
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x4215ADC: std::string::string(char const*, std::allocator<char> const&) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x8112918: CString::GetString() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804B8F4: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 1 errors in context 19 of 31:
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x8110FE6: CString::CString(CString const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x81128E3: CString::GetString() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804B8F4: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 1 errors in context 20 of 31:
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x4215ADC: std::string::string(char const*, std::allocator<char> const&) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x81127BB: CString::PCharToString(char const*) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8112965: CString::GetString() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804B86F: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 1 errors in context 21 of 31:
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x4215ADC: std::string::string(char const*, std::allocator<char> const&) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x8112918: CString::GetString() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804B86F: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 1 errors in context 22 of 31:
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x8110FE6: CString::CString(CString const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x81128E3: CString::GetString() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804B86F: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 1 errors in context 23 of 31:
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x81120F9: CString::CString(std::string) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804B747: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 1 errors in context 24 of 31:
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x8110FE6: CString::CString(CString const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804B55D: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 1 errors in context 25 of 31:
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x4215ADC: std::string::string(char const*, std::allocator<char> const&) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x804B038: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 2 errors in context 26 of 31:
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x8110FE6: CString::CString(CString const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8085272: CFits::GetDatabaseFileName() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8091C70: CFits::Copy(CAny const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8093DF5: CFits::CFits(CFits const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FA03: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 2 errors in context 27 of 31:
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x8110FE6: CString::CString(CString const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80852D4: CFits::GetFileName() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8091C47: CFits::Copy(CAny const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8093DF5: CFits::CFits(CFits const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FA03: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 4 errors in context 28 of 31:
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x8110FE6: CString::CString(CString const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8085272: CFits::GetDatabaseFileName() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8098A58: CFits::EqualValue(CAny const&) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FAF9: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 4 errors in context 29 of 31:
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x8110FE6: CString::CString(CString const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80852D4: CFits::GetFileName() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8098A1A: CFits::EqualValue(CAny const&) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FAF9: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 170 errors in context 30 of 31:
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x8111A71: CString::CharPosInCharArrFrom(char const*, char, int) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8111B13: CString::LastCharPosInCharArr(char const*, char) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8111F9B: CString::LastCharPos(char) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8111FF5: CString::LastCharPosInString(std::string, char) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x811206B: CString::CString(std::string) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804B747: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 237 errors in context 31 of 31:
+==12032== Conditional jump or move depends on uninitialised value(s)
+==12032==    at 0x8111A64: CString::CharPosInCharArrFrom(char const*, char, int) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8111B13: CString::LastCharPosInCharArr(char const*, char) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8111F9B: CString::LastCharPos(char) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8111FF5: CString::LastCharPosInString(std::string, char) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x811206B: CString::CString(std::string) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804B747: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+--12032-- 
+--12032-- supp:   19 Debian libc6 2.3.6 stripped dynamic linker
+==12032== 
+==12032== IN SUMMARY: 444 errors from 31 contexts (suppressed: 19 from 1)
+==12032== 
+==12032== malloc/free: in use at exit: 137,157 bytes in 907 blocks.
+==12032== malloc/free: 1,951 allocs, 1,044 frees, 482,331 bytes allocated.
+==12032== 
+==12032== searching for pointers to 907 not-freed blocks.
+==12032== checked 626,132 bytes.
+==12032== 
+==12032== 
+==12032== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 24 of 122
+==12032==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==12032==    by 0x8062E62: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 255 bytes in 1 blocks are definitely lost in loss record 25 of 122
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x804B020: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 26 of 122
+==12032==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==12032==    by 0x804B289: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 27 of 122
+==12032==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==12032==    by 0x804B3CD: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 28 of 122
+==12032==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==12032==    by 0x804B548: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 29 of 122
+==12032==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==12032==    by 0x8111FD1: CString::LastCharPosInString(std::string, char) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x811206B: CString::CString(std::string) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804B747: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 255 bytes in 1 blocks are definitely lost in loss record 30 of 122
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x81120E7: CString::CString(std::string) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804B747: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 255 bytes in 1 blocks are definitely lost in loss record 31 of 122
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x81120CA: CString::CString(std::string) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804B747: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 574 (24 direct, 550 indirect) bytes in 2 blocks are definitely lost in loss record 32 of 122
+==12032==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==12032==    by 0x81128CE: CString::GetString() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804B86F: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 255 bytes in 1 blocks are definitely lost in loss record 33 of 122
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x804BAF2: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 34 of 122
+==12032==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==12032==    by 0x804BB26: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 35 of 122
+==12032==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==12032==    by 0x804F3EC: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 36 of 122
+==12032==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==12032==    by 0x804F7D7: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 510 bytes in 2 blocks are definitely lost in loss record 38 of 122
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x81127A6: CString::PCharToString(char const*) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8112965: CString::GetString() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804B86F: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 510 bytes in 2 blocks are definitely lost in loss record 39 of 122
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x8112903: CString::GetString() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804B86F: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 594 bytes in 30 blocks are possibly lost in loss record 40 of 122
+==12032==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==12032==    by 0x4215489: std::string::_Rep::_S_create(unsigned, unsigned, std::allocator<char> const&) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x4215C01: std::string::_M_mutate(unsigned, unsigned, unsigned) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x4215D73: std::string::_M_replace_safe(unsigned, unsigned, char const*, unsigned) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x4215E04: std::string::assign(char const*, unsigned) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x4215F61: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==12032==    by 0x8110DA1: CString::CString(char const*) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80631E2: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 765 bytes in 3 blocks are definitely lost in loss record 41 of 122
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x81115B8: CString::StringToPChar(std::string const&) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8111FC3: CString::LastCharPosInString(std::string, char) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x811206B: CString::CString(std::string) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804B747: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 2,296 (96 direct, 2,200 indirect) bytes in 8 blocks are definitely lost in loss record 45 of 122
+==12032==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==12032==    by 0x80852BC: CFits::GetFileName() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804F938: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 720 (288 direct, 432 indirect) bytes in 9 blocks are definitely lost in loss record 46 of 122
+==12032==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==12032==    by 0x8088DCC: CFits::Get_Orders() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8093659: CFits::CFits(CFits const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FA03: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 1,722 (72 direct, 1,650 indirect) bytes in 6 blocks are definitely lost in loss record 48 of 122
+==12032==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==12032==    by 0x808525A: CFits::GetDatabaseFileName() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8091C70: CFits::Copy(CAny const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8093DF5: CFits::CFits(CFits const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FA03: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 672 (256 direct, 416 indirect) bytes in 8 blocks are definitely lost in loss record 49 of 122
+==12032==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==12032==    by 0x8089084: CFits::Get_Low() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8091E02: CFits::Copy(CAny const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8093DF5: CFits::CFits(CFits const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FA03: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 672 (256 direct, 416 indirect) bytes in 8 blocks are definitely lost in loss record 50 of 122
+==12032==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==12032==    by 0x80890E2: CFits::Get_High() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8091E2E: CFits::Copy(CAny const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8093DF5: CFits::CFits(CFits const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FA03: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 672 (256 direct, 416 indirect) bytes in 8 blocks are definitely lost in loss record 51 of 122
+==12032==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==12032==    by 0x8088FC8: CFits::Get_XMin() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8091E5A: CFits::Copy(CAny const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8093DF5: CFits::CFits(CFits const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FA03: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 672 (256 direct, 416 indirect) bytes in 8 blocks are definitely lost in loss record 52 of 122
+==12032==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==12032==    by 0x8089026: CFits::Get_XMax() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8091E86: CFits::Copy(CAny const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8093DF5: CFits::CFits(CFits const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FA03: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 928 (384 direct, 544 indirect) bytes in 8 blocks are definitely lost in loss record 53 of 122
+==12032==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==12032==    by 0x808EE4C: CFits::Get_Coeffs() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8091EDE: CFits::Copy(CAny const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8093DF5: CFits::CFits(CFits const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FA03: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 640 (256 direct, 384 indirect) bytes in 8 blocks are definitely lost in loss record 54 of 122
+==12032==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==12032==    by 0x8088D6E: CFits::Get_NCoeffs() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8091F0A: CFits::Copy(CAny const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8093DF5: CFits::CFits(CFits const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FA03: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 1,936 (384 direct, 1,552 indirect) bytes in 8 blocks are definitely lost in loss record 55 of 122
+==12032==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==12032==    by 0x808EDEE: CFits::Get_XCenters() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8091F36: CFits::Copy(CAny const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8093DF5: CFits::CFits(CFits const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FA03: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 924 (352 direct, 572 indirect) bytes in 11 blocks are definitely lost in loss record 56 of 122
+==12032==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==12032==    by 0x8088F6A: CFits::Get_XCenter() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8091F62: CFits::Copy(CAny const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8093DF5: CFits::CFits(CFits const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FA03: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 924 (352 direct, 572 indirect) bytes in 11 blocks are definitely lost in loss record 57 of 122
+==12032==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==12032==    by 0x8088F0C: CFits::Get_YCenter() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8091F8E: CFits::Copy(CAny const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8093DF5: CFits::CFits(CFits const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FA03: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 2,910 (40 direct, 2,870 indirect) bytes in 10 blocks are definitely lost in loss record 59 of 122
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x8084D80: CFits::Get_Functions() const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8092031: CFits::Copy(CAny const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8093DF5: CFits::CFits(CFits const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804FA03: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 61 of 122
+==12032==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==12032==    by 0x804FE26: TestCFitsClassInvAndCopyAndEVal() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DBD: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 4,335 bytes in 17 blocks are definitely lost in loss record 63 of 122
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x8110FD4: CString::CString(CString const&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804B55D: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 10,700 (48 direct, 10,652 indirect) bytes in 1 blocks are definitely lost in loss record 67 of 122
+==12032==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==12032==    by 0x8094C8D: CFits::CFits(CString const&, int, int) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8050009: TestCFitsClassInvAndCopyAndEVal() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DBD: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 10,700 (48 direct, 10,652 indirect) bytes in 1 blocks are definitely lost in loss record 68 of 122
+==12032==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==12032==    by 0x809642C: CFits::CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x805017A: TestCFitsClassInvAndCopyAndEVal() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DBD: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 69 of 122
+==12032==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==12032==    by 0x80509D0: TestCFitsClassInvAndCopyAndEVal() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DBD: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 574 (24 direct, 550 indirect) bytes in 2 blocks are definitely lost in loss record 111 of 122
+==12032==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==12032==    by 0x808CF1C: CFits::Median(blitz::Array<double, 1> const&) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8060866: TestCFitsMedian() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DC8: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 574 (24 direct, 550 indirect) bytes in 2 blocks are definitely lost in loss record 112 of 122
+==12032==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==12032==    by 0x808C7C0: CFits::Median(blitz::Array<double, 1> const&, CString const&) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x808CF51: CFits::Median(blitz::Array<double, 1> const&) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8060953: TestCFitsMedian() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DC8: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 156 (32 direct, 124 indirect) bytes in 1 blocks are definitely lost in loss record 114 of 122
+==12032==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==12032==    by 0x808C9C7: CFits::MedianVec(blitz::Array<double, 1> const&, int, CString const&) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x808CECF: CFits::MedianVec(blitz::Array<double, 1> const&, int) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8060B9A: TestCFitsMedian() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DC8: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 3,236 (736 direct, 2,500 indirect) bytes in 23 blocks are definitely lost in loss record 116 of 122
+==12032==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==12032==    by 0x808C68B: CFits::Select(blitz::Array<double, 1> const&, int) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8060733: TestCFitsMedian() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DC8: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 3,236 (736 direct, 2,500 indirect) bytes in 23 blocks are definitely lost in loss record 117 of 122
+==12032==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==12032==    by 0x808B913: CFits::BubbleSort(blitz::Array<double, 1> const&) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x808C6D6: CFits::Select(blitz::Array<double, 1> const&, int) const (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8060733: TestCFitsMedian() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DC8: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 13,005 bytes in 51 blocks are definitely lost in loss record 119 of 122
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x8110B61: CString::CString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804B09C: TestCStringConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804D34C: TestCString() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062EB5: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x806353C: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== 
+==12032== 14,790 bytes in 58 blocks are definitely lost in loss record 120 of 122
+==12032==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==12032==    by 0x8110D40: CString::CString(char const*) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8096238: CFits::CFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x804F456: TestCFitsConstructors() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x8062DB2: TestCFits() (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80630C6: Run(CString&) (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032==    by 0x80635AE: main (in /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits)
+==12032== 
+==12032== LEAK SUMMARY:
+==12032==    definitely lost: 39,975 bytes in 313 blocks.
+==12032==    indirectly lost: 43,268 bytes in 362 blocks.
+==12032==      possibly lost: 594 bytes in 30 blocks.
+==12032==    still reachable: 53,320 bytes in 202 blocks.
+==12032==         suppressed: 0 bytes in 0 blocks.
+==12032== Reachable blocks (those to which a pointer was found) are not shown.
+==12032== To see them, rerun with: --show-reachable=yes
+--12032--  memcheck: sanity checks: 33 cheap, 2 expensive
+--12032--  memcheck: auxmaps: 0 auxmap entries (0k, 0M) in use
+--12032--  memcheck: auxmaps: 0 searches, 0 comparisons
+--12032--  memcheck: secondaries: 24 issued (1536k, 1M)
+--12032--  memcheck: secondaries: 62 accessible and distinguished (3968k, 3M)
+--12032--     tt/tc: 27,096 tt lookups requiring 30,802 probes
+--12032--     tt/tc: 27,096 fast-cache updates, 2 flushes
+--12032-- translate: new        8,887 (221,611 -> 3,643,530; ratio 164:10) [0 scs]
+--12032-- translate: dumped     0 (0 -> ??)
+--12032-- translate: discarded  0 (0 -> ??)
+--12032-- scheduler: 1,689,253 jumps (bb entries).
+--12032-- scheduler: 33/23,671 major/minor sched events.
+--12032--    sanity: 34 cheap, 2 expensive checks.
+--12032--    exectx: 30,011 lists, 2,792 contexts (avg 0 per list)
+--12032--    exectx: 3,456 searches, 794 full compares (229 per 1000)
+--12032--    exectx: 10,569 cmp2, 1,138 cmp4, 0 cmpAll

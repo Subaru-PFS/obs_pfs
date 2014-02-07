@@ -1,0 +1,8 @@
+rm ../bin/transposearray
+g++ -s -O2 -fpermissive -lm -lgsl -lgslcblas -lmgl -I/usr/local/include -lm -lcfitsio -static-libgcc -L. -o ../bin/transposearray ../../cfits/src/CAny.cpp ../../cfits/src/CString.cpp MTransposeArray.cpp ../../cfits/src/kriging/geostat.cpp ../../cfits/src/kriging/matrix_ex.cpp ../../cfits/src/kriging/model_sph.cpp ../../cfits/src/kriging/model_stable.cpp ../../cfits/src/kriging/variogram.cpp ../../cmpfit-1.2/mpfit.c ../../cmpfit-1.2/MyFit.cpp
+chmod a+x ../bin/transposearray
+rm ~/bin/transposearray
+cp -p ../bin/transposearray ~/bin/
+rm ~/stella/bin/transposearray
+ln -s ~/bin/transposearray ~/stella/bin/transposearray
+

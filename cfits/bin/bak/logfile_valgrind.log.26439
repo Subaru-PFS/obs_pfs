@@ -1,0 +1,2621 @@
+==26439== Memcheck, a memory error detector.
+==26439== Copyright (C) 2002-2005, and GNU GPL'd, by Julian Seward et al.
+==26439== Using LibVEX rev 1471, a library for dynamic binary translation.
+==26439== Copyright (C) 2004-2005, and GNU GPL'd, by OpenWorks LLP.
+==26439== Using valgrind-3.1.0-Debian, a dynamic binary instrumentation framework.
+==26439== Copyright (C) 2000-2005, and GNU GPL'd, by Julian Seward et al.
+==26439== 
+==26439== My PID = 26439, parent PID = 26434.  Prog and args are:
+==26439==    ./cfits
+==26439== 
+--26439-- 
+--26439-- Command line
+--26439--    ./cfits
+--26439-- Startup, with flags:
+--26439--    --suppressions=/usr/lib/valgrind/debian-libc6-dbg.supp
+--26439--    --tool=memcheck
+--26439--    --leak-check=yes
+--26439--    --log-file=logfile_valgrind.log
+--26439--    -v
+--26439-- Contents of /proc/version:
+--26439--   Linux version 2.6.15-28-386 (buildd@terranova) (gcc version 4.0.3 (Ubuntu 4.0.3-1ubuntu5)) #1 PREEMPT Thu Feb 1 15:51:56 UTC 2007
+--26439-- Arch and subarch: X86, x86-sse2
+--26439-- Valgrind library directory: /usr/lib/valgrind
+--26439-- Reading syms from /lib/ld-2.3.6.so (0x4000000)
+--26439-- Reading debug info from /lib/ld-2.3.6.so...
+--26439-- ... CRC mismatch (computed F305999E wanted 041122DD)
+--26439-- Reading debug info from /usr/lib/debug/lib/ld-2.3.6.so...
+--26439--    object doesn't have a symbol table
+--26439-- Reading syms from /home/azuri/entwicklung/c/fitsutil/cfits/bin/cfits (0x8048000)
+--26439-- Reading syms from /usr/lib/valgrind/x86-linux/memcheck (0xA000000)
+--26439--    object doesn't have a dynamic symbol table
+--26439-- Reading suppressions file: /usr/lib/valgrind/debian-libc6-dbg.supp
+--26439-- Reading suppressions file: /usr/lib/valgrind/default.supp
+--26439-- Reading syms from /usr/lib/valgrind/x86-linux/vgpreload_core.so (0x4019000)
+--26439-- Reading syms from /usr/lib/valgrind/x86-linux/vgpreload_memcheck.so (0x401B000)
+--26439-- Reading syms from /usr/lib/libcfitsio.so.2.510 (0x4020000)
+--26439--    object doesn't have a symbol table
+--26439-- Reading syms from /usr/lib/libstdc++.so.6.0.7 (0x418E000)
+--26439-- Reading debug info from /usr/lib/libstdc++.so.6.0.7...
+--26439-- ... CRC mismatch (computed 152FE28C wanted 2578561C)
+--26439--    object doesn't have a symbol table
+--26439-- Reading syms from /usr/lib/debug/libm-2.3.6.so (0x4263000)
+--26439-- Reading syms from /lib/libgcc_s.so.1 (0x42AB000)
+--26439--    object doesn't have a symbol table
+--26439-- Reading syms from /usr/lib/debug/libc-2.3.6.so (0x42B5000)
+--26439-- REDIR: 0x431C5B0 (rindex) redirected to 0x401DD72 (rindex)
+--26439-- REDIR: 0x431D100 (memset) redirected to 0x401E209 (memset)
+--26439-- REDIR: 0x431D64C (memcpy) redirected to 0x401E2CD (memcpy)
+--26439-- REDIR: 0x4237E00 (operator new(unsigned)) redirected to 0x401C770 (operator new(unsigned))
+--26439-- REDIR: 0x431895E (malloc) redirected to 0x401C3A0 (malloc)
+--26439-- REDIR: 0x4237F20 (operator new[](unsigned)) redirected to 0x401CBE8 (operator new[](unsigned))
+--26439-- REDIR: 0x431BCC8 (strcmp) redirected to 0x401DFA9 (strcmp)
+--26439-- REDIR: 0x431BD6C (strcpy) redirected to 0x401E4F7 (strcpy)
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215ADC: std::string::string(char const*, std::allocator<char> const&) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x804B038: TestCStringConstructors() (MTestApp.cpp:47)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+--26439-- REDIR: 0x4236890 (operator delete(void*)) redirected to 0x401D1EA (operator delete(void*))
+==26439== 
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811371A: CString::CString(CString const&) (CString.cpp:198)
+==26439==    by 0x804B55D: TestCStringConstructors() (MTestApp.cpp:98)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x8114198: CString::CharPosInCharArrFrom(char const*, char, int) const (CString.cpp:653)
+==26439==    by 0x8114247: CString::LastCharPosInCharArr(char const*, char) const (CString.cpp:694)
+==26439==    by 0x81146CF: CString::LastCharPos(char) const (CString.cpp:854)
+==26439==    by 0x8114729: CString::LastCharPosInString(std::string, char) const (CString.cpp:843)
+==26439==    by 0x811479F: CString::CString(std::string) (CString.cpp:111)
+==26439==    by 0x804B747: TestCStringConstructors() (MTestApp.cpp:127)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x81141A5: CString::CharPosInCharArrFrom(char const*, char, int) const (CString.cpp:660)
+==26439==    by 0x8114247: CString::LastCharPosInCharArr(char const*, char) const (CString.cpp:694)
+==26439==    by 0x81146CF: CString::LastCharPos(char) const (CString.cpp:854)
+==26439==    by 0x8114729: CString::LastCharPosInString(std::string, char) const (CString.cpp:843)
+==26439==    by 0x811479F: CString::CString(std::string) (CString.cpp:111)
+==26439==    by 0x804B747: TestCStringConstructors() (MTestApp.cpp:127)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811482D: CString::CString(std::string) (CString.cpp:126)
+==26439==    by 0x804B747: TestCStringConstructors() (MTestApp.cpp:127)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811371A: CString::CString(CString const&) (CString.cpp:198)
+==26439==    by 0x8115017: CString::GetString() const (CString.cpp:482)
+==26439==    by 0x804B86F: TestCStringConstructors() (MTestApp.cpp:142)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215ADC: std::string::string(char const*, std::allocator<char> const&) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811504C: CString::GetString() const (CString.cpp:483)
+==26439==    by 0x804B86F: TestCStringConstructors() (MTestApp.cpp:142)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215ADC: std::string::string(char const*, std::allocator<char> const&) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x8114EEF: CString::PCharToString(char const*) const (CString.cpp:937)
+==26439==    by 0x8115099: CString::GetString() const (CString.cpp:484)
+==26439==    by 0x804B86F: TestCStringConstructors() (MTestApp.cpp:142)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811371A: CString::CString(CString const&) (CString.cpp:198)
+==26439==    by 0x8115017: CString::GetString() const (CString.cpp:482)
+==26439==    by 0x804B8F4: TestCStringConstructors() (MTestApp.cpp:147)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215ADC: std::string::string(char const*, std::allocator<char> const&) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811504C: CString::GetString() const (CString.cpp:483)
+==26439==    by 0x804B8F4: TestCStringConstructors() (MTestApp.cpp:147)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215ADC: std::string::string(char const*, std::allocator<char> const&) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x8114EEF: CString::PCharToString(char const*) const (CString.cpp:937)
+==26439==    by 0x8115099: CString::GetString() const (CString.cpp:484)
+==26439==    by 0x804B8F4: TestCStringConstructors() (MTestApp.cpp:147)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+--26439-- REDIR: 0x42368E0 (operator delete[](void*)) redirected to 0x401D508 (operator delete[](void*))
+--26439-- REDIR: 0x4316D48 (free) redirected to 0x401CF51 (free)
+==26439== 
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x804F562: TestCFitsConstructors() (MTestApp.cpp:844)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x43D94E0 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8096D43: CFits::CFits() (CFits.cpp:110)
+==26439==    by 0x804F456: TestCFitsConstructors() (MTestApp.cpp:830)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x804F642: TestCFitsConstructors() (MTestApp.cpp:856)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x43DD498 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8096D43: CFits::CFits() (CFits.cpp:110)
+==26439==    by 0x804F4A6: TestCFitsConstructors() (MTestApp.cpp:831)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+--26439-- REDIR: 0x431CEA0 (memchr) redirected to 0x401E043 (memchr)
+==26439== 
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x804F7BE: TestCFitsConstructors() (MTestApp.cpp:879)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x43E5408 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8096D43: CFits::CFits() (CFits.cpp:110)
+==26439==    by 0x804F57C: TestCFitsConstructors() (MTestApp.cpp:845)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+--26439-- REDIR: 0x431C4F8 (strncpy) redirected to 0x401E845 (strncpy)
+--26439-- REDIR: 0x4318624 (calloc) redirected to 0x401D71C (calloc)
+--26439-- REDIR: 0x431BB60 (index) redirected to 0x401DE3D (index)
+--26439-- REDIR: 0x431B9B0 (strcat) redirected to 0x401E42F (strcat)
+==26439== 
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811371A: CString::CString(CString const&) (CString.cpp:198)
+==26439==    by 0x8084CE6: CFits::GetFileName() const (CFits.cpp:1779)
+==26439==    by 0x804F938: TestCFitsConstructors() (MTestApp.cpp:897)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x804F9E2: TestCFitsConstructors() (MTestApp.cpp:907)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x43E1450 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8096D43: CFits::CFits() (CFits.cpp:110)
+==26439==    by 0x804F4F0: TestCFitsConstructors() (MTestApp.cpp:832)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811371A: CString::CString(CString const&) (CString.cpp:198)
+==26439==    by 0x8084CE6: CFits::GetFileName() const (CFits.cpp:1779)
+==26439==    by 0x80933D5: CFits::CFits(CFits const&) (CFits.cpp:258)
+==26439==    by 0x804FA03: TestCFitsConstructors() (MTestApp.cpp:908)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811371A: CString::CString(CString const&) (CString.cpp:198)
+==26439==    by 0x8084CE6: CFits::GetFileName() const (CFits.cpp:1779)
+==26439==    by 0x8092307: CFits::Copy(CAny const&) (CFits.cpp:1148)
+==26439==    by 0x8093E43: CFits::CFits(CFits const&) (CFits.cpp:352)
+==26439==    by 0x804FA03: TestCFitsConstructors() (MTestApp.cpp:908)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811371A: CString::CString(CString const&) (CString.cpp:198)
+==26439==    by 0x8084C8A: CFits::GetDatabaseFileName() const (CFits.cpp:1786)
+==26439==    by 0x8092330: CFits::Copy(CAny const&) (CFits.cpp:1151)
+==26439==    by 0x8093E43: CFits::CFits(CFits const&) (CFits.cpp:352)
+==26439==    by 0x804FA03: TestCFitsConstructors() (MTestApp.cpp:908)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+--26439-- REDIR: 0x431902F (realloc) redirected to 0x401D7D1 (realloc)
+==26439== 
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811371A: CString::CString(CString const&) (CString.cpp:198)
+==26439==    by 0x8084CE6: CFits::GetFileName() const (CFits.cpp:1779)
+==26439==    by 0x80989CA: CFits::EqualValue(CAny const&) const (CFits.cpp:702)
+==26439==    by 0x804FAF9: TestCFitsConstructors() (MTestApp.cpp:923)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811371A: CString::CString(CString const&) (CString.cpp:198)
+==26439==    by 0x8084C8A: CFits::GetDatabaseFileName() const (CFits.cpp:1786)
+==26439==    by 0x8098A08: CFits::EqualValue(CAny const&) const (CFits.cpp:712)
+==26439==    by 0x804FAF9: TestCFitsConstructors() (MTestApp.cpp:923)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x804FD6F: TestCFitsConstructors() (MTestApp.cpp:957)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x43ED268 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x80955A4: CFits::CFits(CString const&, int, int) (CFits.cpp:230)
+==26439==    by 0x804F850: TestCFitsConstructors() (MTestApp.cpp:881)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x804FD8D: TestCFitsConstructors() (MTestApp.cpp:959)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x43E91A0 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x80955A4: CFits::CFits(CString const&, int, int) (CFits.cpp:230)
+==26439==    by 0x804F671: TestCFitsConstructors() (MTestApp.cpp:857)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x804FDAB: TestCFitsConstructors() (MTestApp.cpp:961)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x43F2F78 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401D89D: realloc (vg_replace_malloc.c:306)
+==26439==    by 0x809097D: CFits::Set_NApertures(int) (CFits.cpp:1480)
+==26439==    by 0x80923A8: CFits::Copy(CAny const&) (CFits.cpp:1155)
+==26439==    by 0x8093E43: CFits::CFits(CFits const&) (CFits.cpp:352)
+==26439==    by 0x804FA03: TestCFitsConstructors() (MTestApp.cpp:908)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x804FFD4: TestCFitsClassInvAndCopyAndEVal() (MTestApp.cpp:991)
+==26439==    by 0x80627D9: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x44010F0 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8096D43: CFits::CFits() (CFits.cpp:110)
+==26439==    by 0x804FE9E: TestCFitsClassInvAndCopyAndEVal() (MTestApp.cpp:977)
+==26439==    by 0x80627D9: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x805015A: TestCFitsClassInvAndCopyAndEVal() (MTestApp.cpp:1015)
+==26439==    by 0x80627D9: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x44050A8 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8096D43: CFits::CFits() (CFits.cpp:110)
+==26439==    by 0x804FEFA: TestCFitsClassInvAndCopyAndEVal() (MTestApp.cpp:978)
+==26439==    by 0x80627D9: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x805028E: TestCFitsClassInvAndCopyAndEVal() (MTestApp.cpp:1035)
+==26439==    by 0x80627D9: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x4409060 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8096D43: CFits::CFits() (CFits.cpp:110)
+==26439==    by 0x804FF56: TestCFitsClassInvAndCopyAndEVal() (MTestApp.cpp:979)
+==26439==    by 0x80627D9: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+--26439-- REDIR: 0x431C3E4 (strncmp) redirected to 0x401DF2D (strncmp)
+==26439== 
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x8050DD1: TestCFitsClassInvAndCopyAndEVal() (MTestApp.cpp:1216)
+==26439==    by 0x80627D9: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x440D1E8 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x80955A4: CFits::CFits(CString const&, int, int) (CFits.cpp:230)
+==26439==    by 0x8050009: TestCFitsClassInvAndCopyAndEVal() (MTestApp.cpp:992)
+==26439==    by 0x80627D9: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x8050DEF: TestCFitsClassInvAndCopyAndEVal() (MTestApp.cpp:1218)
+==26439==    by 0x80627D9: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x4412A60 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401D89D: realloc (vg_replace_malloc.c:306)
+==26439==    by 0x809097D: CFits::Set_NApertures(int) (CFits.cpp:1480)
+==26439==    by 0x80923A8: CFits::Copy(CAny const&) (CFits.cpp:1155)
+==26439==    by 0x8050462: TestCFitsClassInvAndCopyAndEVal() (MTestApp.cpp:1067)
+==26439==    by 0x80627D9: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x8050E0D: TestCFitsClassInvAndCopyAndEVal() (MTestApp.cpp:1220)
+==26439==    by 0x80627D9: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x4416B90 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8096D43: CFits::CFits() (CFits.cpp:110)
+==26439==    by 0x80502AE: TestCFitsClassInvAndCopyAndEVal() (MTestApp.cpp:1036)
+==26439==    by 0x80627D9: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x805FD8B: TestCFitsMedian() (MTestApp.cpp:1265)
+==26439==    by 0x80627E4: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x444A768 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8096D43: CFits::CFits() (CFits.cpp:110)
+==26439==    by 0x805F779: TestCFitsMedian() (MTestApp.cpp:1237)
+==26439==    by 0x80627E4: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x806262F: TestCFitsMedian() (MTestApp.cpp:1465)
+==26439==    by 0x80627E4: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x4456F90 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x80955A4: CFits::CFits(CString const&, int, int) (CFits.cpp:230)
+==26439==    by 0x805FDC0: TestCFitsMedian() (MTestApp.cpp:1266)
+==26439==    by 0x80627E4: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x806264D: TestCFitsMedian() (MTestApp.cpp:1467)
+==26439==    by 0x80627E4: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x444E720 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8096D43: CFits::CFits() (CFits.cpp:110)
+==26439==    by 0x805F7D5: TestCFitsMedian() (MTestApp.cpp:1238)
+==26439==    by 0x80627E4: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x806266B: TestCFitsMedian() (MTestApp.cpp:1469)
+==26439==    by 0x80627E4: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x44526D8 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8096D43: CFits::CFits() (CFits.cpp:110)
+==26439==    by 0x805F831: TestCFitsMedian() (MTestApp.cpp:1239)
+==26439==    by 0x80627E4: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x805BA84: TestCFitsReformMultInvert() (MTestApp.cpp:1518)
+==26439==    by 0x80627EF: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x4465DA0 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8096D43: CFits::CFits() (CFits.cpp:110)
+==26439==    by 0x805B124: TestCFitsReformMultInvert() (MTestApp.cpp:1486)
+==26439==    by 0x80627EF: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x805F51D: TestCFitsReformMultInvert() (MTestApp.cpp:1953)
+==26439==    by 0x80627EF: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x446A408 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x80955A4: CFits::CFits(CString const&, int, int) (CFits.cpp:230)
+==26439==    by 0x805BAC2: TestCFitsReformMultInvert() (MTestApp.cpp:1519)
+==26439==    by 0x80627EF: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x809D37A: CFits::InterPol(blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&) const (CFits.cpp:9025)
+==26439==    by 0x80520F7: TestCFitsInterPolUniqCeil() (MTestApp.cpp:2002)
+==26439==    by 0x80627FA: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x4472540 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x809D28C: CFits::InterPol(blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&) const (CFits.cpp:9020)
+==26439==    by 0x80520F7: TestCFitsInterPolUniqCeil() (MTestApp.cpp:2002)
+==26439==    by 0x80627FA: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Invalid read of size 8
+==26439==    at 0x805223C: TestCFitsInterPolUniqCeil() (MTestApp.cpp:2025)
+==26439==    by 0x80627FA: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x4472360 is 8 bytes after a block of size 144 alloc'd
+==26439==    at 0x401CC6B: operator new[](unsigned) (vg_replace_malloc.c:197)
+==26439==    by 0x806DB95: blitz::MemoryBlock<double>::allocate(unsigned) (memblock.cc:44)
+==26439==    by 0x806DBD9: blitz::MemoryBlock<double>::MemoryBlock(unsigned) (memblock.h:75)
+==26439==    by 0x806DC2E: blitz::MemoryBlockReference<double>::newBlock(unsigned) (memblock.h:340)
+==26439==    by 0x806DD3B: blitz::Array<double, 1>::setupStorage(int) (methods.cc:258)
+==26439==    by 0x806DFCD: blitz::Array<double, 1>::Array(int, blitz::GeneralArrayStorage<1>) (array-impl.h:166)
+==26439==    by 0x80519C6: TestCFitsInterPolUniqCeil() (MTestApp.cpp:1979)
+==26439==    by 0x80627FA: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Invalid read of size 8
+==26439==    at 0x8052265: TestCFitsInterPolUniqCeil() (MTestApp.cpp:2025)
+==26439==    by 0x80627FA: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x4472358 is 0 bytes after a block of size 144 alloc'd
+==26439==    at 0x401CC6B: operator new[](unsigned) (vg_replace_malloc.c:197)
+==26439==    by 0x806DB95: blitz::MemoryBlock<double>::allocate(unsigned) (memblock.cc:44)
+==26439==    by 0x806DBD9: blitz::MemoryBlock<double>::MemoryBlock(unsigned) (memblock.h:75)
+==26439==    by 0x806DC2E: blitz::MemoryBlockReference<double>::newBlock(unsigned) (memblock.h:340)
+==26439==    by 0x806DD3B: blitz::Array<double, 1>::setupStorage(int) (methods.cc:258)
+==26439==    by 0x806DFCD: blitz::Array<double, 1>::Array(int, blitz::GeneralArrayStorage<1>) (array-impl.h:166)
+==26439==    by 0x80519C6: TestCFitsInterPolUniqCeil() (MTestApp.cpp:1979)
+==26439==    by 0x80627FA: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x42F3FE3: __printf_fp (printf_fp.c:362)
+==26439==    by 0x42F1866: vfprintf (vfprintf.c:1534)
+==26439==    by 0x430FE4C: vsnprintf (vsnprintf.c:120)
+==26439==    by 0x42F8759: snprintf (snprintf.c:35)
+==26439==    by 0x4208E87: (within /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x4201DBD: std::ostreambuf_iterator<char, std::char_traits<char> > std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::_M_insert_float<double>(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, char, double) const (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x4202325: std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::do_put(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, double) const (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x420C1B9: std::ostream::operator<<(double) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x8052316: TestCFitsInterPolUniqCeil() (MTestApp.cpp:2025)
+==26439==    by 0x80627FA: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x42EE5CD: __mpn_extract_double (dbl2mpn.c:61)
+==26439==    by 0x42F44A0: __printf_fp (printf_fp.c:392)
+==26439==    by 0x42F1866: vfprintf (vfprintf.c:1534)
+==26439==    by 0x430FE4C: vsnprintf (vsnprintf.c:120)
+==26439==    by 0x42F8759: snprintf (snprintf.c:35)
+==26439==    by 0x4208E87: (within /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x4201DBD: std::ostreambuf_iterator<char, std::char_traits<char> > std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::_M_insert_float<double>(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, char, double) const (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x4202325: std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::do_put(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, double) const (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x420C1B9: std::ostream::operator<<(double) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x8052316: TestCFitsInterPolUniqCeil() (MTestApp.cpp:2025)
+==26439==    by 0x80627FA: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439== 
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x42F48B5: __printf_fp (printf_fp.c:914)
+==26439==    by 0x42F1866: vfprintf (vfprintf.c:1534)
+==26439==    by 0x430FE4C: vsnprintf (vsnprintf.c:120)
+==26439==    by 0x42F8759: snprintf (snprintf.c:35)
+==26439==    by 0x4208E87: (within /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x4201DBD: std::ostreambuf_iterator<char, std::char_traits<char> > std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::_M_insert_float<double>(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, char, double) const (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x4202325: std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::do_put(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, double) const (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x420C1B9: std::ostream::operator<<(double) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x8052316: TestCFitsInterPolUniqCeil() (MTestApp.cpp:2025)
+==26439==    by 0x80627FA: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x42F4926: __printf_fp (printf_fp.c:926)
+==26439==    by 0x42F1866: vfprintf (vfprintf.c:1534)
+==26439==    by 0x430FE4C: vsnprintf (vsnprintf.c:120)
+==26439==    by 0x42F8759: snprintf (snprintf.c:35)
+==26439==    by 0x4208E87: (within /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x4201DBD: std::ostreambuf_iterator<char, std::char_traits<char> > std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::_M_insert_float<double>(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, char, double) const (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x4202325: std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::do_put(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, double) const (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x420C1B9: std::ostream::operator<<(double) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x8052316: TestCFitsInterPolUniqCeil() (MTestApp.cpp:2025)
+==26439==    by 0x80627FA: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x42F4A1B: __printf_fp (printf_fp.c:1031)
+==26439==    by 0x42F1866: vfprintf (vfprintf.c:1534)
+==26439==    by 0x430FE4C: vsnprintf (vsnprintf.c:120)
+==26439==    by 0x42F8759: snprintf (snprintf.c:35)
+==26439==    by 0x4208E87: (within /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x4201DBD: std::ostreambuf_iterator<char, std::char_traits<char> > std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::_M_insert_float<double>(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, char, double) const (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x4202325: std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::do_put(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, double) const (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x420C1B9: std::ostream::operator<<(double) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x8052316: TestCFitsInterPolUniqCeil() (MTestApp.cpp:2025)
+==26439==    by 0x80627FA: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x42F4A39: __printf_fp (printf_fp.c:1031)
+==26439==    by 0x42F1866: vfprintf (vfprintf.c:1534)
+==26439==    by 0x430FE4C: vsnprintf (vsnprintf.c:120)
+==26439==    by 0x42F8759: snprintf (snprintf.c:35)
+==26439==    by 0x4208E87: (within /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x4201DBD: std::ostreambuf_iterator<char, std::char_traits<char> > std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::_M_insert_float<double>(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, char, double) const (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x4202325: std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::do_put(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, double) const (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x420C1B9: std::ostream::operator<<(double) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x8052316: TestCFitsInterPolUniqCeil() (MTestApp.cpp:2025)
+==26439==    by 0x80627FA: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+--26439-- REDIR: 0x431C348 (strncat) redirected to 0x401E744 (strncat)
+==26439== 
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8091FF6: CFits::ReadApertureDefinition(int) (CFits.cpp:10679)
+==26439==    by 0x8092200: CFits::ReadDatabaseEntry() (CFits.cpp:2561)
+==26439==    by 0x8055188: TestCFitsPiskunov() (MTestApp.cpp:2342)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x43F1730 is 0 bytes inside a block of size 16 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8090C54: CFits::ReadApertureDefinition(int) (CFits.cpp:10394)
+==26439==    by 0x8092200: CFits::ReadDatabaseEntry() (CFits.cpp:2561)
+==26439==    by 0x8055188: TestCFitsPiskunov() (MTestApp.cpp:2342)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811371A: CString::CString(CString const&) (CString.cpp:198)
+==26439==    by 0x8084CE6: CFits::GetFileName() const (CFits.cpp:1779)
+==26439==    by 0x8055336: TestCFitsPiskunov() (MTestApp.cpp:2355)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811371A: CString::CString(CString const&) (CString.cpp:198)
+==26439==    by 0x8084CE6: CFits::GetFileName() const (CFits.cpp:1779)
+==26439==    by 0x8055527: TestCFitsPiskunov() (MTestApp.cpp:2369)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x808C9C9: CFits::CalcTraceFunction(int) (CFits.cpp:2344)
+==26439==    by 0x808D058: CFits::CalcTraceFunctions() (CFits.cpp:2408)
+==26439==    by 0x8055A78: TestCFitsPiskunov() (MTestApp.cpp:2402)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0xE694C48 is 0 bytes inside a block of size 16 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x808C554: CFits::CalcTraceFunction(int) (CFits.cpp:2311)
+==26439==    by 0x808D058: CFits::CalcTraceFunctions() (CFits.cpp:2408)
+==26439==    by 0x8055A78: TestCFitsPiskunov() (MTestApp.cpp:2402)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811371A: CString::CString(CString const&) (CString.cpp:198)
+==26439==    by 0x8084CE6: CFits::GetFileName() const (CFits.cpp:1779)
+==26439==    by 0x8055DE0: TestCFitsPiskunov() (MTestApp.cpp:2428)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811371A: CString::CString(CString const&) (CString.cpp:198)
+==26439==    by 0x8084CE6: CFits::GetFileName() const (CFits.cpp:1779)
+==26439==    by 0x8056143: TestCFitsPiskunov() (MTestApp.cpp:2459)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811371A: CString::CString(CString const&) (CString.cpp:198)
+==26439==    by 0x8084CE6: CFits::GetFileName() const (CFits.cpp:1779)
+==26439==    by 0x805651E: TestCFitsPiskunov() (MTestApp.cpp:2488)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Invalid read of size 8
+==26439==    at 0x80883B0: CFits::WriteArrayToFile(blitz::Array<double, 2> const&, CString const&) const (CFits.cpp:10789)
+==26439==    by 0x80568B6: TestCFitsPiskunov() (MTestApp.cpp:2519)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x14742078 is 0 bytes after a block of size 33,439,824 alloc'd
+==26439==    at 0x401CC6B: operator new[](unsigned) (vg_replace_malloc.c:197)
+==26439==    by 0x806DB95: blitz::MemoryBlock<double>::allocate(unsigned) (memblock.cc:44)
+==26439==    by 0x806DBD9: blitz::MemoryBlock<double>::MemoryBlock(unsigned) (memblock.h:75)
+==26439==    by 0x806DC2E: blitz::MemoryBlockReference<double>::newBlock(unsigned) (memblock.h:340)
+==26439==    by 0x8073CCF: blitz::Array<double, 2>::setupStorage(int) (methods.cc:258)
+==26439==    by 0x80CA96E: blitz::Array<double, 2>::Array(blitz::TinyVector<int, 2> const&, blitz::TinyVector<int, 2> const&, blitz::GeneralArrayStorage<2> const&) (methods.cc:72)
+==26439==    by 0x80EF210: blitz::Array<double, 2>::resizeAndPreserve(int, int) (resize.cc:607)
+==26439==    by 0x808E625: CFits::ApplyDimension() (CFits.cpp:1082)
+==26439==    by 0x8092479: CFits::Copy(CAny const&) (CFits.cpp:1183)
+==26439==    by 0x8093E43: CFits::CFits(CFits const&) (CFits.cpp:352)
+==26439==    by 0x8055CF2: TestCFitsPiskunov() (MTestApp.cpp:2418)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439== 
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811371A: CString::CString(CString const&) (CString.cpp:198)
+==26439==    by 0x8084CE6: CFits::GetFileName() const (CFits.cpp:1779)
+==26439==    by 0x8056A36: TestCFitsPiskunov() (MTestApp.cpp:2538)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Invalid write of size 1
+==26439==    at 0x81140F9: CString::SubString(int, int) const (CString.cpp:630)
+==26439==    by 0x809D3F6: CFits::SlitFunc(blitz::Array<double, 2>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, int, CString const**, void**) (CFits.cpp:6099)
+==26439==    by 0x80571BF: TestCFitsPiskunov() (MTestApp.cpp:2602)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x6FABDFE is 0 bytes after a block of size 46 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x811409A: CString::SubString(int, int) const (CString.cpp:620)
+==26439==    by 0x809D3F6: CFits::SlitFunc(blitz::Array<double, 2>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, int, CString const**, void**) (CFits.cpp:6099)
+==26439==    by 0x80571BF: TestCFitsPiskunov() (MTestApp.cpp:2602)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== Invalid read of size 1
+==26439==    at 0x81134AA: CString::CString(char const*) (CString.cpp:57)
+==26439==    by 0x811411C: CString::SubString(int, int) const (CString.cpp:631)
+==26439==    by 0x809D3F6: CFits::SlitFunc(blitz::Array<double, 2>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, int, CString const**, void**) (CFits.cpp:6099)
+==26439==    by 0x80571BF: TestCFitsPiskunov() (MTestApp.cpp:2602)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x6FABDFE is 0 bytes after a block of size 46 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x811409A: CString::SubString(int, int) const (CString.cpp:620)
+==26439==    by 0x809D3F6: CFits::SlitFunc(blitz::Array<double, 2>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, int, CString const**, void**) (CFits.cpp:6099)
+==26439==    by 0x80571BF: TestCFitsPiskunov() (MTestApp.cpp:2602)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== ERROR SUMMARY: 584 errors from 56 contexts (suppressed: 19 from 1)
+==26439== 
+==26439== 1 errors in context 1 of 56:
+==26439== Invalid read of size 1
+==26439==    at 0x81134AA: CString::CString(char const*) (CString.cpp:57)
+==26439==    by 0x811411C: CString::SubString(int, int) const (CString.cpp:631)
+==26439==    by 0x809D3F6: CFits::SlitFunc(blitz::Array<double, 2>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, int, CString const**, void**) (CFits.cpp:6099)
+==26439==    by 0x80571BF: TestCFitsPiskunov() (MTestApp.cpp:2602)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x6FABDFE is 0 bytes after a block of size 46 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x811409A: CString::SubString(int, int) const (CString.cpp:620)
+==26439==    by 0x809D3F6: CFits::SlitFunc(blitz::Array<double, 2>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, int, CString const**, void**) (CFits.cpp:6099)
+==26439==    by 0x80571BF: TestCFitsPiskunov() (MTestApp.cpp:2602)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 1 errors in context 2 of 56:
+==26439== Invalid write of size 1
+==26439==    at 0x81140F9: CString::SubString(int, int) const (CString.cpp:630)
+==26439==    by 0x809D3F6: CFits::SlitFunc(blitz::Array<double, 2>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, int, CString const**, void**) (CFits.cpp:6099)
+==26439==    by 0x80571BF: TestCFitsPiskunov() (MTestApp.cpp:2602)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x6FABDFE is 0 bytes after a block of size 46 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x811409A: CString::SubString(int, int) const (CString.cpp:620)
+==26439==    by 0x809D3F6: CFits::SlitFunc(blitz::Array<double, 2>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, int, CString const**, void**) (CFits.cpp:6099)
+==26439==    by 0x80571BF: TestCFitsPiskunov() (MTestApp.cpp:2602)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 1 errors in context 3 of 56:
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811371A: CString::CString(CString const&) (CString.cpp:198)
+==26439==    by 0x8084CE6: CFits::GetFileName() const (CFits.cpp:1779)
+==26439==    by 0x8056A36: TestCFitsPiskunov() (MTestApp.cpp:2538)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 1 errors in context 4 of 56:
+==26439== Invalid read of size 8
+==26439==    at 0x80883B0: CFits::WriteArrayToFile(blitz::Array<double, 2> const&, CString const&) const (CFits.cpp:10789)
+==26439==    by 0x80568B6: TestCFitsPiskunov() (MTestApp.cpp:2519)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x14742078 is 0 bytes after a block of size 33,439,824 alloc'd
+==26439==    at 0x401CC6B: operator new[](unsigned) (vg_replace_malloc.c:197)
+==26439==    by 0x806DB95: blitz::MemoryBlock<double>::allocate(unsigned) (memblock.cc:44)
+==26439==    by 0x806DBD9: blitz::MemoryBlock<double>::MemoryBlock(unsigned) (memblock.h:75)
+==26439==    by 0x806DC2E: blitz::MemoryBlockReference<double>::newBlock(unsigned) (memblock.h:340)
+==26439==    by 0x8073CCF: blitz::Array<double, 2>::setupStorage(int) (methods.cc:258)
+==26439==    by 0x80CA96E: blitz::Array<double, 2>::Array(blitz::TinyVector<int, 2> const&, blitz::TinyVector<int, 2> const&, blitz::GeneralArrayStorage<2> const&) (methods.cc:72)
+==26439==    by 0x80EF210: blitz::Array<double, 2>::resizeAndPreserve(int, int) (resize.cc:607)
+==26439==    by 0x808E625: CFits::ApplyDimension() (CFits.cpp:1082)
+==26439==    by 0x8092479: CFits::Copy(CAny const&) (CFits.cpp:1183)
+==26439==    by 0x8093E43: CFits::CFits(CFits const&) (CFits.cpp:352)
+==26439==    by 0x8055CF2: TestCFitsPiskunov() (MTestApp.cpp:2418)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439== 
+==26439== 1 errors in context 5 of 56:
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811371A: CString::CString(CString const&) (CString.cpp:198)
+==26439==    by 0x8084CE6: CFits::GetFileName() const (CFits.cpp:1779)
+==26439==    by 0x805651E: TestCFitsPiskunov() (MTestApp.cpp:2488)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 1 errors in context 6 of 56:
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811371A: CString::CString(CString const&) (CString.cpp:198)
+==26439==    by 0x8084CE6: CFits::GetFileName() const (CFits.cpp:1779)
+==26439==    by 0x8056143: TestCFitsPiskunov() (MTestApp.cpp:2459)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 1 errors in context 7 of 56:
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811371A: CString::CString(CString const&) (CString.cpp:198)
+==26439==    by 0x8084CE6: CFits::GetFileName() const (CFits.cpp:1779)
+==26439==    by 0x8055DE0: TestCFitsPiskunov() (MTestApp.cpp:2428)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 1 errors in context 8 of 56:
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811371A: CString::CString(CString const&) (CString.cpp:198)
+==26439==    by 0x8084CE6: CFits::GetFileName() const (CFits.cpp:1779)
+==26439==    by 0x8055527: TestCFitsPiskunov() (MTestApp.cpp:2369)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 1 errors in context 9 of 56:
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811371A: CString::CString(CString const&) (CString.cpp:198)
+==26439==    by 0x8084CE6: CFits::GetFileName() const (CFits.cpp:1779)
+==26439==    by 0x8055336: TestCFitsPiskunov() (MTestApp.cpp:2355)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 1 errors in context 10 of 56:
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8091FF6: CFits::ReadApertureDefinition(int) (CFits.cpp:10679)
+==26439==    by 0x8092200: CFits::ReadDatabaseEntry() (CFits.cpp:2561)
+==26439==    by 0x8055188: TestCFitsPiskunov() (MTestApp.cpp:2342)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x43F1730 is 0 bytes inside a block of size 16 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8090C54: CFits::ReadApertureDefinition(int) (CFits.cpp:10394)
+==26439==    by 0x8092200: CFits::ReadDatabaseEntry() (CFits.cpp:2561)
+==26439==    by 0x8055188: TestCFitsPiskunov() (MTestApp.cpp:2342)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 1 errors in context 11 of 56:
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x42F4A1B: __printf_fp (printf_fp.c:1031)
+==26439==    by 0x42F1866: vfprintf (vfprintf.c:1534)
+==26439==    by 0x430FE4C: vsnprintf (vsnprintf.c:120)
+==26439==    by 0x42F8759: snprintf (snprintf.c:35)
+==26439==    by 0x4208E87: (within /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x4201DBD: std::ostreambuf_iterator<char, std::char_traits<char> > std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::_M_insert_float<double>(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, char, double) const (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x4202325: std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::do_put(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, double) const (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x420C1B9: std::ostream::operator<<(double) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x8052316: TestCFitsInterPolUniqCeil() (MTestApp.cpp:2025)
+==26439==    by 0x80627FA: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 1 errors in context 12 of 56:
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x42F4926: __printf_fp (printf_fp.c:926)
+==26439==    by 0x42F1866: vfprintf (vfprintf.c:1534)
+==26439==    by 0x430FE4C: vsnprintf (vsnprintf.c:120)
+==26439==    by 0x42F8759: snprintf (snprintf.c:35)
+==26439==    by 0x4208E87: (within /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x4201DBD: std::ostreambuf_iterator<char, std::char_traits<char> > std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::_M_insert_float<double>(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, char, double) const (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x4202325: std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::do_put(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, double) const (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x420C1B9: std::ostream::operator<<(double) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x8052316: TestCFitsInterPolUniqCeil() (MTestApp.cpp:2025)
+==26439==    by 0x80627FA: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 1 errors in context 13 of 56:
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x42EE5CD: __mpn_extract_double (dbl2mpn.c:61)
+==26439==    by 0x42F44A0: __printf_fp (printf_fp.c:392)
+==26439==    by 0x42F1866: vfprintf (vfprintf.c:1534)
+==26439==    by 0x430FE4C: vsnprintf (vsnprintf.c:120)
+==26439==    by 0x42F8759: snprintf (snprintf.c:35)
+==26439==    by 0x4208E87: (within /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x4201DBD: std::ostreambuf_iterator<char, std::char_traits<char> > std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::_M_insert_float<double>(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, char, double) const (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x4202325: std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::do_put(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, double) const (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x420C1B9: std::ostream::operator<<(double) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x8052316: TestCFitsInterPolUniqCeil() (MTestApp.cpp:2025)
+==26439==    by 0x80627FA: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439== 
+==26439== 1 errors in context 14 of 56:
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x42F3FE3: __printf_fp (printf_fp.c:362)
+==26439==    by 0x42F1866: vfprintf (vfprintf.c:1534)
+==26439==    by 0x430FE4C: vsnprintf (vsnprintf.c:120)
+==26439==    by 0x42F8759: snprintf (snprintf.c:35)
+==26439==    by 0x4208E87: (within /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x4201DBD: std::ostreambuf_iterator<char, std::char_traits<char> > std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::_M_insert_float<double>(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, char, double) const (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x4202325: std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::do_put(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, double) const (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x420C1B9: std::ostream::operator<<(double) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x8052316: TestCFitsInterPolUniqCeil() (MTestApp.cpp:2025)
+==26439==    by 0x80627FA: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 1 errors in context 15 of 56:
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x809D37A: CFits::InterPol(blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&) const (CFits.cpp:9025)
+==26439==    by 0x80520F7: TestCFitsInterPolUniqCeil() (MTestApp.cpp:2002)
+==26439==    by 0x80627FA: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x4472540 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x809D28C: CFits::InterPol(blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&) const (CFits.cpp:9020)
+==26439==    by 0x80520F7: TestCFitsInterPolUniqCeil() (MTestApp.cpp:2002)
+==26439==    by 0x80627FA: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 1 errors in context 16 of 56:
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x805F51D: TestCFitsReformMultInvert() (MTestApp.cpp:1953)
+==26439==    by 0x80627EF: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x446A408 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x80955A4: CFits::CFits(CString const&, int, int) (CFits.cpp:230)
+==26439==    by 0x805BAC2: TestCFitsReformMultInvert() (MTestApp.cpp:1519)
+==26439==    by 0x80627EF: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 1 errors in context 17 of 56:
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x805BA84: TestCFitsReformMultInvert() (MTestApp.cpp:1518)
+==26439==    by 0x80627EF: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x4465DA0 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8096D43: CFits::CFits() (CFits.cpp:110)
+==26439==    by 0x805B124: TestCFitsReformMultInvert() (MTestApp.cpp:1486)
+==26439==    by 0x80627EF: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 1 errors in context 18 of 56:
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x806266B: TestCFitsMedian() (MTestApp.cpp:1469)
+==26439==    by 0x80627E4: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x44526D8 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8096D43: CFits::CFits() (CFits.cpp:110)
+==26439==    by 0x805F831: TestCFitsMedian() (MTestApp.cpp:1239)
+==26439==    by 0x80627E4: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 1 errors in context 19 of 56:
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x806264D: TestCFitsMedian() (MTestApp.cpp:1467)
+==26439==    by 0x80627E4: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x444E720 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8096D43: CFits::CFits() (CFits.cpp:110)
+==26439==    by 0x805F7D5: TestCFitsMedian() (MTestApp.cpp:1238)
+==26439==    by 0x80627E4: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 1 errors in context 20 of 56:
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x806262F: TestCFitsMedian() (MTestApp.cpp:1465)
+==26439==    by 0x80627E4: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x4456F90 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x80955A4: CFits::CFits(CString const&, int, int) (CFits.cpp:230)
+==26439==    by 0x805FDC0: TestCFitsMedian() (MTestApp.cpp:1266)
+==26439==    by 0x80627E4: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 1 errors in context 21 of 56:
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x805FD8B: TestCFitsMedian() (MTestApp.cpp:1265)
+==26439==    by 0x80627E4: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x444A768 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8096D43: CFits::CFits() (CFits.cpp:110)
+==26439==    by 0x805F779: TestCFitsMedian() (MTestApp.cpp:1237)
+==26439==    by 0x80627E4: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 1 errors in context 22 of 56:
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x8050E0D: TestCFitsClassInvAndCopyAndEVal() (MTestApp.cpp:1220)
+==26439==    by 0x80627D9: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x4416B90 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8096D43: CFits::CFits() (CFits.cpp:110)
+==26439==    by 0x80502AE: TestCFitsClassInvAndCopyAndEVal() (MTestApp.cpp:1036)
+==26439==    by 0x80627D9: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 1 errors in context 23 of 56:
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x8050DEF: TestCFitsClassInvAndCopyAndEVal() (MTestApp.cpp:1218)
+==26439==    by 0x80627D9: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x4412A60 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401D89D: realloc (vg_replace_malloc.c:306)
+==26439==    by 0x809097D: CFits::Set_NApertures(int) (CFits.cpp:1480)
+==26439==    by 0x80923A8: CFits::Copy(CAny const&) (CFits.cpp:1155)
+==26439==    by 0x8050462: TestCFitsClassInvAndCopyAndEVal() (MTestApp.cpp:1067)
+==26439==    by 0x80627D9: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 1 errors in context 24 of 56:
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x8050DD1: TestCFitsClassInvAndCopyAndEVal() (MTestApp.cpp:1216)
+==26439==    by 0x80627D9: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x440D1E8 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x80955A4: CFits::CFits(CString const&, int, int) (CFits.cpp:230)
+==26439==    by 0x8050009: TestCFitsClassInvAndCopyAndEVal() (MTestApp.cpp:992)
+==26439==    by 0x80627D9: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 1 errors in context 25 of 56:
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x805028E: TestCFitsClassInvAndCopyAndEVal() (MTestApp.cpp:1035)
+==26439==    by 0x80627D9: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x4409060 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8096D43: CFits::CFits() (CFits.cpp:110)
+==26439==    by 0x804FF56: TestCFitsClassInvAndCopyAndEVal() (MTestApp.cpp:979)
+==26439==    by 0x80627D9: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 1 errors in context 26 of 56:
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x805015A: TestCFitsClassInvAndCopyAndEVal() (MTestApp.cpp:1015)
+==26439==    by 0x80627D9: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x44050A8 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8096D43: CFits::CFits() (CFits.cpp:110)
+==26439==    by 0x804FEFA: TestCFitsClassInvAndCopyAndEVal() (MTestApp.cpp:978)
+==26439==    by 0x80627D9: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 1 errors in context 27 of 56:
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x804FFD4: TestCFitsClassInvAndCopyAndEVal() (MTestApp.cpp:991)
+==26439==    by 0x80627D9: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x44010F0 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8096D43: CFits::CFits() (CFits.cpp:110)
+==26439==    by 0x804FE9E: TestCFitsClassInvAndCopyAndEVal() (MTestApp.cpp:977)
+==26439==    by 0x80627D9: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 1 errors in context 28 of 56:
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x804FDAB: TestCFitsConstructors() (MTestApp.cpp:961)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x43F2F78 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401D89D: realloc (vg_replace_malloc.c:306)
+==26439==    by 0x809097D: CFits::Set_NApertures(int) (CFits.cpp:1480)
+==26439==    by 0x80923A8: CFits::Copy(CAny const&) (CFits.cpp:1155)
+==26439==    by 0x8093E43: CFits::CFits(CFits const&) (CFits.cpp:352)
+==26439==    by 0x804FA03: TestCFitsConstructors() (MTestApp.cpp:908)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 1 errors in context 29 of 56:
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x804FD8D: TestCFitsConstructors() (MTestApp.cpp:959)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x43E91A0 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x80955A4: CFits::CFits(CString const&, int, int) (CFits.cpp:230)
+==26439==    by 0x804F671: TestCFitsConstructors() (MTestApp.cpp:857)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 1 errors in context 30 of 56:
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x804FD6F: TestCFitsConstructors() (MTestApp.cpp:957)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x43ED268 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x80955A4: CFits::CFits(CString const&, int, int) (CFits.cpp:230)
+==26439==    by 0x804F850: TestCFitsConstructors() (MTestApp.cpp:881)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 1 errors in context 31 of 56:
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x804F9E2: TestCFitsConstructors() (MTestApp.cpp:907)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x43E1450 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8096D43: CFits::CFits() (CFits.cpp:110)
+==26439==    by 0x804F4F0: TestCFitsConstructors() (MTestApp.cpp:832)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 1 errors in context 32 of 56:
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811371A: CString::CString(CString const&) (CString.cpp:198)
+==26439==    by 0x8084CE6: CFits::GetFileName() const (CFits.cpp:1779)
+==26439==    by 0x804F938: TestCFitsConstructors() (MTestApp.cpp:897)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 1 errors in context 33 of 56:
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x804F7BE: TestCFitsConstructors() (MTestApp.cpp:879)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x43E5408 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8096D43: CFits::CFits() (CFits.cpp:110)
+==26439==    by 0x804F57C: TestCFitsConstructors() (MTestApp.cpp:845)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 1 errors in context 34 of 56:
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x804F642: TestCFitsConstructors() (MTestApp.cpp:856)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x43DD498 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8096D43: CFits::CFits() (CFits.cpp:110)
+==26439==    by 0x804F4A6: TestCFitsConstructors() (MTestApp.cpp:831)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 1 errors in context 35 of 56:
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x8086112: CFits::~CFits() (CFits.cpp:389)
+==26439==    by 0x804F562: TestCFitsConstructors() (MTestApp.cpp:844)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x43D94E0 is 0 bytes inside a block of size 4 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8096D43: CFits::CFits() (CFits.cpp:110)
+==26439==    by 0x804F456: TestCFitsConstructors() (MTestApp.cpp:830)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 1 errors in context 36 of 56:
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215ADC: std::string::string(char const*, std::allocator<char> const&) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x8114EEF: CString::PCharToString(char const*) const (CString.cpp:937)
+==26439==    by 0x8115099: CString::GetString() const (CString.cpp:484)
+==26439==    by 0x804B8F4: TestCStringConstructors() (MTestApp.cpp:147)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== 1 errors in context 37 of 56:
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215ADC: std::string::string(char const*, std::allocator<char> const&) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811504C: CString::GetString() const (CString.cpp:483)
+==26439==    by 0x804B8F4: TestCStringConstructors() (MTestApp.cpp:147)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== 1 errors in context 38 of 56:
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811371A: CString::CString(CString const&) (CString.cpp:198)
+==26439==    by 0x8115017: CString::GetString() const (CString.cpp:482)
+==26439==    by 0x804B8F4: TestCStringConstructors() (MTestApp.cpp:147)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== 1 errors in context 39 of 56:
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215ADC: std::string::string(char const*, std::allocator<char> const&) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x8114EEF: CString::PCharToString(char const*) const (CString.cpp:937)
+==26439==    by 0x8115099: CString::GetString() const (CString.cpp:484)
+==26439==    by 0x804B86F: TestCStringConstructors() (MTestApp.cpp:142)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== 1 errors in context 40 of 56:
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215ADC: std::string::string(char const*, std::allocator<char> const&) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811504C: CString::GetString() const (CString.cpp:483)
+==26439==    by 0x804B86F: TestCStringConstructors() (MTestApp.cpp:142)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== 1 errors in context 41 of 56:
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811371A: CString::CString(CString const&) (CString.cpp:198)
+==26439==    by 0x8115017: CString::GetString() const (CString.cpp:482)
+==26439==    by 0x804B86F: TestCStringConstructors() (MTestApp.cpp:142)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== 1 errors in context 42 of 56:
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811482D: CString::CString(std::string) (CString.cpp:126)
+==26439==    by 0x804B747: TestCStringConstructors() (MTestApp.cpp:127)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== 1 errors in context 43 of 56:
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811371A: CString::CString(CString const&) (CString.cpp:198)
+==26439==    by 0x804B55D: TestCStringConstructors() (MTestApp.cpp:98)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== 1 errors in context 44 of 56:
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215ADC: std::string::string(char const*, std::allocator<char> const&) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x804B038: TestCStringConstructors() (MTestApp.cpp:47)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== 2 errors in context 45 of 56:
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811371A: CString::CString(CString const&) (CString.cpp:198)
+==26439==    by 0x8084CE6: CFits::GetFileName() const (CFits.cpp:1779)
+==26439==    by 0x80933D5: CFits::CFits(CFits const&) (CFits.cpp:258)
+==26439==    by 0x804FA03: TestCFitsConstructors() (MTestApp.cpp:908)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 4 errors in context 46 of 56:
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811371A: CString::CString(CString const&) (CString.cpp:198)
+==26439==    by 0x8084C8A: CFits::GetDatabaseFileName() const (CFits.cpp:1786)
+==26439==    by 0x8092330: CFits::Copy(CAny const&) (CFits.cpp:1151)
+==26439==    by 0x8093E43: CFits::CFits(CFits const&) (CFits.cpp:352)
+==26439==    by 0x804FA03: TestCFitsConstructors() (MTestApp.cpp:908)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 4 errors in context 47 of 56:
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x42F4A39: __printf_fp (printf_fp.c:1031)
+==26439==    by 0x42F1866: vfprintf (vfprintf.c:1534)
+==26439==    by 0x430FE4C: vsnprintf (vsnprintf.c:120)
+==26439==    by 0x42F8759: snprintf (snprintf.c:35)
+==26439==    by 0x4208E87: (within /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x4201DBD: std::ostreambuf_iterator<char, std::char_traits<char> > std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::_M_insert_float<double>(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, char, double) const (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x4202325: std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::do_put(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, double) const (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x420C1B9: std::ostream::operator<<(double) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x8052316: TestCFitsInterPolUniqCeil() (MTestApp.cpp:2025)
+==26439==    by 0x80627FA: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 5 errors in context 48 of 56:
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811371A: CString::CString(CString const&) (CString.cpp:198)
+==26439==    by 0x8084C8A: CFits::GetDatabaseFileName() const (CFits.cpp:1786)
+==26439==    by 0x8098A08: CFits::EqualValue(CAny const&) const (CFits.cpp:712)
+==26439==    by 0x804FAF9: TestCFitsConstructors() (MTestApp.cpp:923)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 5 errors in context 49 of 56:
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811371A: CString::CString(CString const&) (CString.cpp:198)
+==26439==    by 0x8084CE6: CFits::GetFileName() const (CFits.cpp:1779)
+==26439==    by 0x80989CA: CFits::EqualValue(CAny const&) const (CFits.cpp:702)
+==26439==    by 0x804FAF9: TestCFitsConstructors() (MTestApp.cpp:923)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 5 errors in context 50 of 56:
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x4215F48: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x811371A: CString::CString(CString const&) (CString.cpp:198)
+==26439==    by 0x8084CE6: CFits::GetFileName() const (CFits.cpp:1779)
+==26439==    by 0x8092307: CFits::Copy(CAny const&) (CFits.cpp:1148)
+==26439==    by 0x8093E43: CFits::CFits(CFits const&) (CFits.cpp:352)
+==26439==    by 0x804FA03: TestCFitsConstructors() (MTestApp.cpp:908)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 5 errors in context 51 of 56:
+==26439== Invalid read of size 8
+==26439==    at 0x8052265: TestCFitsInterPolUniqCeil() (MTestApp.cpp:2025)
+==26439==    by 0x80627FA: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x4472358 is 0 bytes after a block of size 144 alloc'd
+==26439==    at 0x401CC6B: operator new[](unsigned) (vg_replace_malloc.c:197)
+==26439==    by 0x806DB95: blitz::MemoryBlock<double>::allocate(unsigned) (memblock.cc:44)
+==26439==    by 0x806DBD9: blitz::MemoryBlock<double>::MemoryBlock(unsigned) (memblock.h:75)
+==26439==    by 0x806DC2E: blitz::MemoryBlockReference<double>::newBlock(unsigned) (memblock.h:340)
+==26439==    by 0x806DD3B: blitz::Array<double, 1>::setupStorage(int) (methods.cc:258)
+==26439==    by 0x806DFCD: blitz::Array<double, 1>::Array(int, blitz::GeneralArrayStorage<1>) (array-impl.h:166)
+==26439==    by 0x80519C6: TestCFitsInterPolUniqCeil() (MTestApp.cpp:1979)
+==26439==    by 0x80627FA: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 5 errors in context 52 of 56:
+==26439== Invalid read of size 8
+==26439==    at 0x805223C: TestCFitsInterPolUniqCeil() (MTestApp.cpp:2025)
+==26439==    by 0x80627FA: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0x4472360 is 8 bytes after a block of size 144 alloc'd
+==26439==    at 0x401CC6B: operator new[](unsigned) (vg_replace_malloc.c:197)
+==26439==    by 0x806DB95: blitz::MemoryBlock<double>::allocate(unsigned) (memblock.cc:44)
+==26439==    by 0x806DBD9: blitz::MemoryBlock<double>::MemoryBlock(unsigned) (memblock.h:75)
+==26439==    by 0x806DC2E: blitz::MemoryBlockReference<double>::newBlock(unsigned) (memblock.h:340)
+==26439==    by 0x806DD3B: blitz::Array<double, 1>::setupStorage(int) (methods.cc:258)
+==26439==    by 0x806DFCD: blitz::Array<double, 1>::Array(int, blitz::GeneralArrayStorage<1>) (array-impl.h:166)
+==26439==    by 0x80519C6: TestCFitsInterPolUniqCeil() (MTestApp.cpp:1979)
+==26439==    by 0x80627FA: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 5 errors in context 53 of 56:
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x42F48B5: __printf_fp (printf_fp.c:914)
+==26439==    by 0x42F1866: vfprintf (vfprintf.c:1534)
+==26439==    by 0x430FE4C: vsnprintf (vsnprintf.c:120)
+==26439==    by 0x42F8759: snprintf (snprintf.c:35)
+==26439==    by 0x4208E87: (within /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x4201DBD: std::ostreambuf_iterator<char, std::char_traits<char> > std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::_M_insert_float<double>(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, char, double) const (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x4202325: std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::do_put(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, double) const (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x420C1B9: std::ostream::operator<<(double) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x8052316: TestCFitsInterPolUniqCeil() (MTestApp.cpp:2025)
+==26439==    by 0x80627FA: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 97 errors in context 54 of 56:
+==26439== Mismatched free() / delete / delete []
+==26439==    at 0x401D268: operator delete(void*) (vg_replace_malloc.c:246)
+==26439==    by 0x808C9C9: CFits::CalcTraceFunction(int) (CFits.cpp:2344)
+==26439==    by 0x808D058: CFits::CalcTraceFunctions() (CFits.cpp:2408)
+==26439==    by 0x8055A78: TestCFitsPiskunov() (MTestApp.cpp:2402)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439==  Address 0xE694C48 is 0 bytes inside a block of size 16 alloc'd
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x808C554: CFits::CalcTraceFunction(int) (CFits.cpp:2311)
+==26439==    by 0x808D058: CFits::CalcTraceFunctions() (CFits.cpp:2408)
+==26439==    by 0x8055A78: TestCFitsPiskunov() (MTestApp.cpp:2402)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 166 errors in context 55 of 56:
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x81141A5: CString::CharPosInCharArrFrom(char const*, char, int) const (CString.cpp:660)
+==26439==    by 0x8114247: CString::LastCharPosInCharArr(char const*, char) const (CString.cpp:694)
+==26439==    by 0x81146CF: CString::LastCharPos(char) const (CString.cpp:854)
+==26439==    by 0x8114729: CString::LastCharPosInString(std::string, char) const (CString.cpp:843)
+==26439==    by 0x811479F: CString::CString(std::string) (CString.cpp:111)
+==26439==    by 0x804B747: TestCStringConstructors() (MTestApp.cpp:127)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== 237 errors in context 56 of 56:
+==26439== Conditional jump or move depends on uninitialised value(s)
+==26439==    at 0x8114198: CString::CharPosInCharArrFrom(char const*, char, int) const (CString.cpp:653)
+==26439==    by 0x8114247: CString::LastCharPosInCharArr(char const*, char) const (CString.cpp:694)
+==26439==    by 0x81146CF: CString::LastCharPos(char) const (CString.cpp:854)
+==26439==    by 0x8114729: CString::LastCharPosInString(std::string, char) const (CString.cpp:843)
+==26439==    by 0x811479F: CString::CString(std::string) (CString.cpp:111)
+==26439==    by 0x804B747: TestCStringConstructors() (MTestApp.cpp:127)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+--26439-- 
+--26439-- supp:   19 Debian libc6 2.3.6 stripped dynamic linker
+==26439== 
+==26439== IN SUMMARY: 584 errors from 56 contexts (suppressed: 19 from 1)
+==26439== 
+==26439== malloc/free: in use at exit: 248,956,161 bytes in 196,780 blocks.
+==26439== malloc/free: 293,527 allocs, 96,747 frees, 437,637,789 bytes allocated.
+==26439== 
+==26439== searching for pointers to 196,780 not-freed blocks.
+==26439== checked 215,859,384 bytes.
+==26439== 
+==26439== 
+==26439== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 3 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x8062BF4: main (MTestApp.cpp:3245)
+==26439== 
+==26439== 
+==26439== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 4 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x8062C1C: main (MTestApp.cpp:3246)
+==26439== 
+==26439== 
+==26439== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 6 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x8062CCA: main (MTestApp.cpp:3498)
+==26439== 
+==26439== 
+==26439== 255 bytes in 1 blocks are definitely lost in loss record 7 of 181
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8062D39: main (MTestApp.cpp:3526)
+==26439== 
+==26439== 
+==26439== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 8 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x8062D73: main (MTestApp.cpp:3528)
+==26439== 
+==26439== 
+==26439== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 9 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x8062DFB: main (MTestApp.cpp:3528)
+==26439== 
+==26439== 
+==26439== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 10 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x8062E63: main (MTestApp.cpp:3528)
+==26439== 
+==26439== 
+==26439== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 11 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x8062EE9: main (MTestApp.cpp:3545)
+==26439== 
+==26439== 
+==26439== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 12 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x8062F43: main (MTestApp.cpp:3547)
+==26439== 
+==26439== 
+==26439== 574 (24 direct, 550 indirect) bytes in 2 blocks are definitely lost in loss record 13 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x806288A: Run(CString&) (MTestApp.cpp:3198)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== 
+==26439== 255 bytes in 1 blocks are definitely lost in loss record 14 of 181
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x804B020: TestCStringConstructors() (MTestApp.cpp:47)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== 
+==26439== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 15 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x804B289: TestCStringConstructors() (MTestApp.cpp:55)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== 
+==26439== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 16 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x804B3CD: TestCStringConstructors() (MTestApp.cpp:76)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== 
+==26439== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 17 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x804B548: TestCStringConstructors() (MTestApp.cpp:98)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== 
+==26439== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 18 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x8114705: CString::LastCharPosInString(std::string, char) const (CString.cpp:843)
+==26439==    by 0x811479F: CString::CString(std::string) (CString.cpp:111)
+==26439==    by 0x804B747: TestCStringConstructors() (MTestApp.cpp:127)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== 
+==26439== 255 bytes in 1 blocks are definitely lost in loss record 19 of 181
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x811481B: CString::CString(std::string) (CString.cpp:126)
+==26439==    by 0x804B747: TestCStringConstructors() (MTestApp.cpp:127)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== 
+==26439== 255 bytes in 1 blocks are definitely lost in loss record 20 of 181
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x81147FE: CString::CString(std::string) (CString.cpp:121)
+==26439==    by 0x804B747: TestCStringConstructors() (MTestApp.cpp:127)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== 
+==26439== 574 (24 direct, 550 indirect) bytes in 2 blocks are definitely lost in loss record 21 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x8115002: CString::GetString() const (CString.cpp:482)
+==26439==    by 0x804B86F: TestCStringConstructors() (MTestApp.cpp:142)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== 
+==26439== 510 bytes in 2 blocks are definitely lost in loss record 22 of 181
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8114EDA: CString::PCharToString(char const*) const (CString.cpp:937)
+==26439==    by 0x8115099: CString::GetString() const (CString.cpp:484)
+==26439==    by 0x804B86F: TestCStringConstructors() (MTestApp.cpp:142)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== 
+==26439== 510 bytes in 2 blocks are definitely lost in loss record 23 of 181
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8115037: CString::GetString() const (CString.cpp:483)
+==26439==    by 0x804B86F: TestCStringConstructors() (MTestApp.cpp:142)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== 
+==26439== 765 bytes in 3 blocks are definitely lost in loss record 24 of 181
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8113CEC: CString::StringToPChar(std::string const&) const (CString.cpp:902)
+==26439==    by 0x81146F7: CString::LastCharPosInString(std::string, char) const (CString.cpp:843)
+==26439==    by 0x811479F: CString::CString(std::string) (CString.cpp:111)
+==26439==    by 0x804B747: TestCStringConstructors() (MTestApp.cpp:127)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== 
+==26439== 5,166 (216 direct, 4,950 indirect) bytes in 18 blocks are definitely lost in loss record 27 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x8084CCE: CFits::GetFileName() const (CFits.cpp:1779)
+==26439==    by 0x8092307: CFits::Copy(CAny const&) (CFits.cpp:1148)
+==26439==    by 0x805526C: TestCFitsPiskunov() (MTestApp.cpp:2351)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 255 bytes in 1 blocks are definitely lost in loss record 28 of 181
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x804BAF2: TestCStringConstructors() (MTestApp.cpp:165)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== 
+==26439== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 29 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x804BB26: TestCStringConstructors() (MTestApp.cpp:169)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== 
+==26439== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 30 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x8062F94: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 31 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x8062998: Run(CString&) (MTestApp.cpp:3208)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 32 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x8062A99: Run(CString&) (MTestApp.cpp:3218)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 33 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x804F3EC: TestCFitsConstructors() (MTestApp.cpp:829)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 240 bytes in 5 blocks are possibly lost in loss record 34 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x808F762: CFits::Reform(blitz::Array<double, 1>&, int, int) const (CFits.cpp:8579)
+==26439==    by 0x80A386E: CFits::SlitFunc(blitz::Array<double, 2>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, int, CString const**, void**) (CFits.cpp:7408)
+==26439==    by 0x80571BF: TestCFitsPiskunov() (MTestApp.cpp:2602)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 35 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x804F7D7: TestCFitsConstructors() (MTestApp.cpp:880)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 255 bytes in 1 blocks are possibly lost in loss record 36 of 181
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8113708: CString::CString(CString const&) (CString.cpp:198)
+==26439==    by 0x8084CE6: CFits::GetFileName() const (CFits.cpp:1779)
+==26439==    by 0x80933D5: CFits::CFits(CFits const&) (CFits.cpp:258)
+==26439==    by 0x804FA03: TestCFitsConstructors() (MTestApp.cpp:908)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 7,395 bytes in 29 blocks are definitely lost in loss record 40 of 181
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8113708: CString::CString(CString const&) (CString.cpp:198)
+==26439==    by 0x804B55D: TestCStringConstructors() (MTestApp.cpp:98)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== 
+==26439== 12,054 (504 direct, 11,550 indirect) bytes in 42 blocks are definitely lost in loss record 44 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x8113EB6: CString::TrimChar(char, int) (CString.cpp:525)
+==26439==    by 0x8114071: CString::Trim(int) (CString.cpp:604)
+==26439==    by 0x8085754: CFits::KeyWord_Set(CString const**, int, CString const&) const (CFits.cpp:8129)
+==26439==    by 0x80A4783: CFits::SlitFunc(blitz::Array<double, 2>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, int, CString const**, void**) (CFits.cpp:7583)
+==26439==    by 0x80571BF: TestCFitsPiskunov() (MTestApp.cpp:2602)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 3,040 (448 direct, 2,592 indirect) bytes in 14 blocks are definitely lost in loss record 45 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x808B59C: CFits::Get_Orders() const (CFits.cpp:1884)
+==26439==    by 0x80936A7: CFits::CFits(CFits const&) (CFits.cpp:296)
+==26439==    by 0x804FA03: TestCFitsConstructors() (MTestApp.cpp:908)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 2,583 (108 direct, 2,475 indirect) bytes in 9 blocks are definitely lost in loss record 46 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x8084C72: CFits::GetDatabaseFileName() const (CFits.cpp:1786)
+==26439==    by 0x8092330: CFits::Copy(CAny const&) (CFits.cpp:1151)
+==26439==    by 0x8093E43: CFits::CFits(CFits const&) (CFits.cpp:352)
+==26439==    by 0x804FA03: TestCFitsConstructors() (MTestApp.cpp:908)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 47 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x804FE26: TestCFitsClassInvAndCopyAndEVal() (MTestApp.cpp:976)
+==26439==    by 0x80627D9: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 4,080 (384 direct, 3,696 indirect) bytes in 12 blocks are definitely lost in loss record 48 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x808AC12: CFits::Get_Low() const (CFits.cpp:1829)
+==26439==    by 0x80924C2: CFits::Copy(CAny const&) (CFits.cpp:1192)
+==26439==    by 0x8093E43: CFits::CFits(CFits const&) (CFits.cpp:352)
+==26439==    by 0x804FA03: TestCFitsConstructors() (MTestApp.cpp:908)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 4,080 (384 direct, 3,696 indirect) bytes in 12 blocks are definitely lost in loss record 49 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x808AC70: CFits::Get_High() const (CFits.cpp:1822)
+==26439==    by 0x80924EE: CFits::Copy(CAny const&) (CFits.cpp:1201)
+==26439==    by 0x8093E43: CFits::CFits(CFits const&) (CFits.cpp:352)
+==26439==    by 0x804FA03: TestCFitsConstructors() (MTestApp.cpp:908)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 3,304 (384 direct, 2,920 indirect) bytes in 12 blocks are definitely lost in loss record 50 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x808AB56: CFits::Get_XMin() const (CFits.cpp:1843)
+==26439==    by 0x809251A: CFits::Copy(CAny const&) (CFits.cpp:1210)
+==26439==    by 0x8093E43: CFits::CFits(CFits const&) (CFits.cpp:352)
+==26439==    by 0x804FA03: TestCFitsConstructors() (MTestApp.cpp:908)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 4,080 (384 direct, 3,696 indirect) bytes in 12 blocks are definitely lost in loss record 51 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x808ABB4: CFits::Get_XMax() const (CFits.cpp:1836)
+==26439==    by 0x8092546: CFits::Copy(CAny const&) (CFits.cpp:1219)
+==26439==    by 0x8093E43: CFits::CFits(CFits const&) (CFits.cpp:352)
+==26439==    by 0x804FA03: TestCFitsConstructors() (MTestApp.cpp:908)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 21,420 bytes in 84 blocks are definitely lost in loss record 52 of 181
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8113295: CString::CString() (CString.cpp:17)
+==26439==    by 0x804B09C: TestCStringConstructors() (MTestApp.cpp:48)
+==26439==    by 0x804D34C: TestCString() (MTestApp.cpp:414)
+==26439==    by 0x80628DD: Run(CString&) (MTestApp.cpp:3200)
+==26439==    by 0x8062F64: main (MTestApp.cpp:3547)
+==26439== 
+==26439== 
+==26439== 23,300 (720 direct, 22,580 indirect) bytes in 15 blocks are definitely lost in loss record 53 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x808F532: CFits::Get_Coeffs() const (CFits.cpp:1850)
+==26439==    by 0x809259E: CFits::Copy(CAny const&) (CFits.cpp:1238)
+==26439==    by 0x8093E43: CFits::CFits(CFits const&) (CFits.cpp:352)
+==26439==    by 0x804FA03: TestCFitsConstructors() (MTestApp.cpp:908)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 2,496 (384 direct, 2,112 indirect) bytes in 12 blocks are definitely lost in loss record 54 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x808B53E: CFits::Get_NCoeffs() const (CFits.cpp:1891)
+==26439==    by 0x80925CA: CFits::Copy(CAny const&) (CFits.cpp:1247)
+==26439==    by 0x8093E43: CFits::CFits(CFits const&) (CFits.cpp:352)
+==26439==    by 0x804FA03: TestCFitsConstructors() (MTestApp.cpp:908)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 2,396 (624 direct, 1,772 indirect) bytes in 13 blocks are definitely lost in loss record 55 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x808F4D4: CFits::Get_XCenters() const (CFits.cpp:1859)
+==26439==    by 0x80925F6: CFits::Copy(CAny const&) (CFits.cpp:1256)
+==26439==    by 0x8093E43: CFits::CFits(CFits const&) (CFits.cpp:352)
+==26439==    by 0x804FA03: TestCFitsConstructors() (MTestApp.cpp:908)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 4,080 (384 direct, 3,696 indirect) bytes in 12 blocks are definitely lost in loss record 56 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x808AAF8: CFits::Get_XCenter() const (CFits.cpp:1868)
+==26439==    by 0x8092622: CFits::Copy(CAny const&) (CFits.cpp:1265)
+==26439==    by 0x8093E43: CFits::CFits(CFits const&) (CFits.cpp:352)
+==26439==    by 0x804FA03: TestCFitsConstructors() (MTestApp.cpp:908)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 4,080 (384 direct, 3,696 indirect) bytes in 12 blocks are definitely lost in loss record 57 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x808AA9A: CFits::Get_YCenter() const (CFits.cpp:1877)
+==26439==    by 0x809264E: CFits::Copy(CAny const&) (CFits.cpp:1274)
+==26439==    by 0x8093E43: CFits::CFits(CFits const&) (CFits.cpp:352)
+==26439==    by 0x804FA03: TestCFitsConstructors() (MTestApp.cpp:908)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 582 (8 direct, 574 indirect) bytes in 1 blocks are definitely lost in loss record 58 of 181
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8055ED3: TestCFitsPiskunov() (MTestApp.cpp:2432)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 12 bytes in 1 blocks are possibly lost in loss record 63 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x809327E: CFits::CFits(CFits const&) (CFits.cpp:247)
+==26439==    by 0x8055CF2: TestCFitsPiskunov() (MTestApp.cpp:2418)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 68 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x80509D0: TestCFitsClassInvAndCopyAndEVal() (MTestApp.cpp:1160)
+==26439==    by 0x80627D9: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 69 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x805F701: TestCFitsMedian() (MTestApp.cpp:1236)
+==26439==    by 0x80627E4: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 164 (32 direct, 132 indirect) bytes in 1 blocks are definitely lost in loss record 70 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x805F86E: TestCFitsMedian() (MTestApp.cpp:1242)
+==26439==    by 0x80627E4: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 164 (32 direct, 132 indirect) bytes in 1 blocks are definitely lost in loss record 71 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x805F919: TestCFitsMedian() (MTestApp.cpp:1244)
+==26439==    by 0x80627E4: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 156 (32 direct, 124 indirect) bytes in 1 blocks are definitely lost in loss record 72 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x805F9E6: TestCFitsMedian() (MTestApp.cpp:1246)
+==26439==    by 0x80627E4: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 156 (32 direct, 124 indirect) bytes in 1 blocks are definitely lost in loss record 73 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x805FAB3: TestCFitsMedian() (MTestApp.cpp:1248)
+==26439==    by 0x80627E4: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 156 (32 direct, 124 indirect) bytes in 1 blocks are definitely lost in loss record 74 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x805FB80: TestCFitsMedian() (MTestApp.cpp:1250)
+==26439==    by 0x80627E4: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 156 (32 direct, 124 indirect) bytes in 1 blocks are definitely lost in loss record 75 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x805FC4D: TestCFitsMedian() (MTestApp.cpp:1252)
+==26439==    by 0x80627E4: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 76 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x8060456: TestCFitsMedian() (MTestApp.cpp:1353)
+==26439==    by 0x80627E4: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 156 (32 direct, 124 indirect) bytes in 1 blocks are definitely lost in loss record 77 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x808D50A: CFits::MedianVec(blitz::Array<double, 1> const&, int, CString const&) const (CFits.cpp:8247)
+==26439==    by 0x808DABD: CFits::MedianVec(blitz::Array<double, 1> const&, int) const (CFits.cpp:8315)
+==26439==    by 0x80605B6: TestCFitsMedian() (MTestApp.cpp:1367)
+==26439==    by 0x80627E4: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 78 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x806072C: TestCFitsMedian() (MTestApp.cpp:1382)
+==26439==    by 0x80627E4: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 3,764 (160 direct, 3,604 indirect) bytes in 5 blocks are definitely lost in loss record 79 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x808D618: CFits::MedianVec(blitz::Array<double, 1> const&, int, CString const&) const (CFits.cpp:8265)
+==26439==    by 0x806076C: TestCFitsMedian() (MTestApp.cpp:1382)
+==26439==    by 0x80627E4: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 80 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x8060AEA: TestCFitsMedian() (MTestApp.cpp:1398)
+==26439==    by 0x80627E4: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 32 bytes in 1 blocks are possibly lost in loss record 81 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x808D0FB: CFits::BubbleSort(blitz::Array<double, 1> const&) const (CFits.cpp:10802)
+==26439==    by 0x808D27B: CFits::Select(blitz::Array<double, 1> const&, int) const (CFits.cpp:8325)
+==26439==    by 0x808D37B: CFits::Median(blitz::Array<double, 1> const&, CString const&) const (CFits.cpp:8208)
+==26439==    by 0x808D7E3: CFits::MedianVec(blitz::Array<double, 1> const&, int, CString const&) const (CFits.cpp:8288)
+==26439==    by 0x808DABD: CFits::MedianVec(blitz::Array<double, 1> const&, int) const (CFits.cpp:8315)
+==26439==    by 0x806177F: TestCFitsMedian() (MTestApp.cpp:1423)
+==26439==    by 0x80627E4: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 82 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x805B0A9: TestCFitsReformMultInvert() (MTestApp.cpp:1485)
+==26439==    by 0x80627EF: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 108 (32 direct, 76 indirect) bytes in 1 blocks are definitely lost in loss record 83 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x805B172: TestCFitsReformMultInvert() (MTestApp.cpp:1490)
+==26439==    by 0x80627EF: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 116 (32 direct, 84 indirect) bytes in 1 blocks are definitely lost in loss record 84 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x805B21D: TestCFitsReformMultInvert() (MTestApp.cpp:1492)
+==26439==    by 0x80627EF: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 252 (48 direct, 204 indirect) bytes in 1 blocks are definitely lost in loss record 85 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x805B31D: TestCFitsReformMultInvert() (MTestApp.cpp:1494)
+==26439==    by 0x80627EF: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 252 (48 direct, 204 indirect) bytes in 1 blocks are definitely lost in loss record 86 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x805B456: TestCFitsReformMultInvert() (MTestApp.cpp:1496)
+==26439==    by 0x80627EF: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 292 (48 direct, 244 indirect) bytes in 1 blocks are definitely lost in loss record 87 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x805B58F: TestCFitsReformMultInvert() (MTestApp.cpp:1498)
+==26439==    by 0x80627EF: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 292 (48 direct, 244 indirect) bytes in 1 blocks are definitely lost in loss record 88 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x805B6C8: TestCFitsReformMultInvert() (MTestApp.cpp:1500)
+==26439==    by 0x80627EF: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 292 (48 direct, 244 indirect) bytes in 1 blocks are definitely lost in loss record 89 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x805B801: TestCFitsReformMultInvert() (MTestApp.cpp:1502)
+==26439==    by 0x80627EF: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 116 (32 direct, 84 indirect) bytes in 1 blocks are definitely lost in loss record 90 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x805B93A: TestCFitsReformMultInvert() (MTestApp.cpp:1504)
+==26439==    by 0x80627EF: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 268 (64 direct, 204 indirect) bytes in 2 blocks are definitely lost in loss record 92 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x80896E5: CFits::ValueLocate(blitz::Array<double, 1>&, blitz::Array<double, 1>&) const (CFits.cpp:9746)
+==26439==    by 0x805E02E: TestCFitsReformMultInvert() (MTestApp.cpp:1777)
+==26439==    by 0x80627EF: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 93 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x805182F: TestCFitsInterPolUniqCeil() (MTestApp.cpp:1972)
+==26439==    by 0x80627FA: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 12,494 (120 direct, 12,374 indirect) bytes in 1 blocks are definitely lost in loss record 108 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x8051863: TestCFitsInterPolUniqCeil() (MTestApp.cpp:1973)
+==26439==    by 0x80627FA: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 112 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x809A6CC: CFits::HInterPol(blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<int, 1>&, blitz::Array<double, 1>&, CString const**, int) const (CFits.cpp:8860)
+==26439==    by 0x809D176: CFits::InterPol(blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, CString const**, int) const (CFits.cpp:9187)
+==26439==    by 0x809D2E8: CFits::InterPol(blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&) const (CFits.cpp:9022)
+==26439==    by 0x80520F7: TestCFitsInterPolUniqCeil() (MTestApp.cpp:2002)
+==26439==    by 0x80627FA: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 32 bytes in 1 blocks are definitely lost in loss record 113 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x809D2F6: CFits::InterPol(blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&) const (CFits.cpp:9022)
+==26439==    by 0x80520F7: TestCFitsInterPolUniqCeil() (MTestApp.cpp:2002)
+==26439==    by 0x80627FA: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 32 bytes in 1 blocks are definitely lost in loss record 114 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x809D188: CFits::InterPol(blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, CString const**, int) const (CFits.cpp:9187)
+==26439==    by 0x809D2E8: CFits::InterPol(blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&) const (CFits.cpp:9022)
+==26439==    by 0x80520F7: TestCFitsInterPolUniqCeil() (MTestApp.cpp:2002)
+==26439==    by 0x80627FA: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 220 (32 direct, 188 indirect) bytes in 1 blocks are definitely lost in loss record 115 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x809B9D8: CFits::HInterPol(blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<int, 1>&, blitz::Array<double, 1>&, CString const**, int) const (CFits.cpp:9007)
+==26439==    by 0x809D176: CFits::InterPol(blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, CString const**, int) const (CFits.cpp:9187)
+==26439==    by 0x809D2E8: CFits::InterPol(blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&) const (CFits.cpp:9022)
+==26439==    by 0x80520F7: TestCFitsInterPolUniqCeil() (MTestApp.cpp:2002)
+==26439==    by 0x80627FA: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 236 (32 direct, 204 indirect) bytes in 1 blocks are definitely lost in loss record 116 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x8088B91: CFits::FixD(blitz::Array<int, 1> const&) const (CFits.cpp:9912)
+==26439==    by 0x8054378: TestCFitsInterPolUniqCeil() (MTestApp.cpp:2203)
+==26439==    by 0x80627FA: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 156 (32 direct, 124 indirect) bytes in 1 blocks are definitely lost in loss record 117 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x808DBE5: CFits::SortIndices(blitz::Array<double, 1> const&) const (CFits.cpp:10160)
+==26439==    by 0x805438A: TestCFitsInterPolUniqCeil() (MTestApp.cpp:2203)
+==26439==    by 0x80627FA: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 118 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x8054B31: TestCFitsPiskunov() (MTestApp.cpp:2281)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 32 (12 direct, 20 indirect) bytes in 1 blocks are definitely lost in loss record 119 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x8054B62: TestCFitsPiskunov() (MTestApp.cpp:2282)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 2,550 bytes in 10 blocks are possibly lost in loss record 121 of 181
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8113474: CString::CString(char const*) (CString.cpp:51)
+==26439==    by 0x8054BB1: TestCFitsPiskunov() (MTestApp.cpp:2282)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 27,120 bytes in 1,356 blocks are possibly lost in loss record 122 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x4215489: std::string::_Rep::_S_create(unsigned, unsigned, std::allocator<char> const&) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x4215C01: std::string::_M_mutate(unsigned, unsigned, unsigned) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x4215D73: std::string::_M_replace_safe(unsigned, unsigned, char const*, unsigned) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x4215E04: std::string::assign(char const*, unsigned) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x4215F61: std::string::operator=(char const*) (in /usr/lib/libstdc++.so.6.0.7)
+==26439==    by 0x81132BC: CString::CString() (CString.cpp:22)
+==26439==    by 0x80847D0: CFits::Get_Functions() const (CFits.cpp:1901)
+==26439==    by 0x80926F1: CFits::Copy(CAny const&) (CFits.cpp:1289)
+==26439==    by 0x805526C: TestCFitsPiskunov() (MTestApp.cpp:2351)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439== 
+==26439== 
+==26439== 53,232 (13,472 direct, 39,760 indirect) bytes in 421 blocks are definitely lost in loss record 123 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x808D0FB: CFits::BubbleSort(blitz::Array<double, 1> const&) const (CFits.cpp:10802)
+==26439==    by 0x808D27B: CFits::Select(blitz::Array<double, 1> const&, int) const (CFits.cpp:8325)
+==26439==    by 0x806014F: TestCFitsMedian() (MTestApp.cpp:1308)
+==26439==    by 0x80627E4: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 45,654 (120 direct, 45,534 indirect) bytes in 1 blocks are definitely lost in loss record 126 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x8054BC6: TestCFitsPiskunov() (MTestApp.cpp:2283)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 46,186 (120 direct, 46,066 indirect) bytes in 1 blocks are definitely lost in loss record 127 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x8054C22: TestCFitsPiskunov() (MTestApp.cpp:2284)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 128 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x8055FF5: TestCFitsPiskunov() (MTestApp.cpp:2441)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 116 (32 direct, 84 indirect) bytes in 1 blocks are definitely lost in loss record 129 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x808882A: CFits::GetSubArr(blitz::Array<double, 1> const&, blitz::Array<int, 1> const&) const (CFits.cpp:10081)
+==26439==    by 0x805644E: TestCFitsPiskunov() (MTestApp.cpp:2475)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 287 (12 direct, 275 indirect) bytes in 1 blocks are definitely lost in loss record 130 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x805692E: TestCFitsPiskunov() (MTestApp.cpp:2529)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 40 bytes in 1 blocks are definitely lost in loss record 139 of 181
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8056F2E: TestCFitsPiskunov() (MTestApp.cpp:2573)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 46 bytes in 1 blocks are definitely lost in loss record 140 of 181
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x811409A: CString::SubString(int, int) const (CString.cpp:620)
+==26439==    by 0x809D3F6: CFits::SlitFunc(blitz::Array<double, 2>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, int, CString const**, void**) (CFits.cpp:6099)
+==26439==    by 0x80571BF: TestCFitsPiskunov() (MTestApp.cpp:2602)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 80 bytes in 5 blocks are definitely lost in loss record 141 of 181
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x80A3071: CFits::SlitFunc(blitz::Array<double, 2>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, int, CString const**, void**) (CFits.cpp:7251)
+==26439==    by 0x80571BF: TestCFitsPiskunov() (MTestApp.cpp:2602)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 100 (48 direct, 52 indirect) bytes in 1 blocks are definitely lost in loss record 143 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x809EC51: CFits::SlitFunc(blitz::Array<double, 2>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, int, CString const**, void**) (CFits.cpp:6232)
+==26439==    by 0x80571BF: TestCFitsPiskunov() (MTestApp.cpp:2602)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 288 bytes in 6 blocks are possibly lost in loss record 144 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x808F9B7: CFits::MatrixATimesB(blitz::Array<double, 2>&, blitz::Array<double, 2>&) const (CFits.cpp:8453)
+==26439==    by 0x808FF3C: CFits::MatrixTimesVecArr(blitz::Array<double, 2>&, blitz::Array<double, 1>&) const (CFits.cpp:8502)
+==26439==    by 0x80A3AB5: CFits::SlitFunc(blitz::Array<double, 2>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, int, CString const**, void**) (CFits.cpp:7427)
+==26439==    by 0x80571BF: TestCFitsPiskunov() (MTestApp.cpp:2602)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 300 bytes in 25 blocks are possibly lost in loss record 145 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x80847C2: CFits::Get_Functions() const (CFits.cpp:1901)
+==26439==    by 0x8099BB2: CFits::EqualValue(CAny const&) const (CFits.cpp:1038)
+==26439==    by 0x8055D14: TestCFitsPiskunov() (MTestApp.cpp:2419)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 616 bytes in 14 blocks are possibly lost in loss record 146 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x806DC19: blitz::MemoryBlockReference<double>::newBlock(unsigned) (memblock.h:340)
+==26439==    by 0x8073CCF: blitz::Array<double, 2>::setupStorage(int) (methods.cc:258)
+==26439==    by 0x8073E54: blitz::Array<double, 2>::Array(int, int, blitz::GeneralArrayStorage<2>) (array-impl.h:180)
+==26439==    by 0x808F9DA: CFits::MatrixATimesB(blitz::Array<double, 2>&, blitz::Array<double, 2>&) const (CFits.cpp:8453)
+==26439==    by 0x808FF3C: CFits::MatrixTimesVecArr(blitz::Array<double, 2>&, blitz::Array<double, 1>&) const (CFits.cpp:8502)
+==26439==    by 0x80A3AB5: CFits::SlitFunc(blitz::Array<double, 2>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, int, CString const**, void**) (CFits.cpp:7427)
+==26439==    by 0x80571BF: TestCFitsPiskunov() (MTestApp.cpp:2602)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 2,484 (32 direct, 2,452 indirect) bytes in 1 blocks are definitely lost in loss record 148 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x808B491: CFits::Replicate(double, int) const (CFits.cpp:8440)
+==26439==    by 0x809FC7A: CFits::SlitFunc(blitz::Array<double, 2>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, int, CString const**, void**) (CFits.cpp:6541)
+==26439==    by 0x80571BF: TestCFitsPiskunov() (MTestApp.cpp:2602)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 96 bytes in 3 blocks are possibly lost in loss record 151 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x808B2ED: CFits::Reform(blitz::Array<double, 2>&) const (CFits.cpp:8605)
+==26439==    by 0x808FFAE: CFits::MatrixTimesVecArr(blitz::Array<double, 2>&, blitz::Array<double, 1>&) const (CFits.cpp:8507)
+==26439==    by 0x80A3AB5: CFits::SlitFunc(blitz::Array<double, 2>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, int, CString const**, void**) (CFits.cpp:7427)
+==26439==    by 0x80571BF: TestCFitsPiskunov() (MTestApp.cpp:2602)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 144 bytes in 3 blocks are possibly lost in loss record 152 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x808F83F: CFits::VecArrACrossB(blitz::Array<double, 1>&, blitz::Array<double, 1>&) const (CFits.cpp:8541)
+==26439==    by 0x80A120E: CFits::SlitFunc(blitz::Array<double, 2>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, int, CString const**, void**) (CFits.cpp:6871)
+==26439==    by 0x80571BF: TestCFitsPiskunov() (MTestApp.cpp:2602)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 5,044 bytes in 13 blocks are possibly lost in loss record 153 of 181
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8084798: CFits::Get_Functions() const (CFits.cpp:1898)
+==26439==    by 0x8099B68: CFits::EqualValue(CAny const&) const (CFits.cpp:1030)
+==26439==    by 0x8055D14: TestCFitsPiskunov() (MTestApp.cpp:2419)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 8,472 (280 direct, 8,192 indirect) bytes in 1 blocks are definitely lost in loss record 154 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x805731C: TestCFitsPiskunov() (MTestApp.cpp:2616)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 1,188 (40 direct, 1,148 indirect) bytes in 1 blocks are definitely lost in loss record 155 of 181
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8056F14: TestCFitsPiskunov() (MTestApp.cpp:2571)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 80 (32 direct, 48 indirect) bytes in 1 blocks are definitely lost in loss record 156 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x809D492: CFits::SlitFunc(blitz::Array<double, 2>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, int, CString const**, void**) (CFits.cpp:6111)
+==26439==    by 0x80571BF: TestCFitsPiskunov() (MTestApp.cpp:2602)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 45,633 (120 direct, 45,513 indirect) bytes in 1 blocks are definitely lost in loss record 162 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x8055CD7: TestCFitsPiskunov() (MTestApp.cpp:2418)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 1,184,511 (58,336 direct, 1,126,175 indirect) bytes in 1,823 blocks are definitely lost in loss record 167 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x808B2ED: CFits::Reform(blitz::Array<double, 2>&) const (CFits.cpp:8605)
+==26439==    by 0x808FFAE: CFits::MatrixTimesVecArr(blitz::Array<double, 2>&, blitz::Array<double, 1>&) const (CFits.cpp:8507)
+==26439==    by 0x80A3AB5: CFits::SlitFunc(blitz::Array<double, 2>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, int, CString const**, void**) (CFits.cpp:7427)
+==26439==    by 0x80571BF: TestCFitsPiskunov() (MTestApp.cpp:2602)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 196,095 bytes in 769 blocks are definitely lost in loss record 168 of 181
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8113474: CString::CString(char const*) (CString.cpp:51)
+==26439==    by 0x8096286: CFits::CFits() (CFits.cpp:13)
+==26439==    by 0x804F456: TestCFitsConstructors() (MTestApp.cpp:830)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 1,520,934 (72,192 direct, 1,448,742 indirect) bytes in 1,504 blocks are definitely lost in loss record 169 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x808F83F: CFits::VecArrACrossB(blitz::Array<double, 1>&, blitz::Array<double, 1>&) const (CFits.cpp:8541)
+==26439==    by 0x80A120E: CFits::SlitFunc(blitz::Array<double, 2>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, int, CString const**, void**) (CFits.cpp:6871)
+==26439==    by 0x80571BF: TestCFitsPiskunov() (MTestApp.cpp:2602)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 1,390,993 (87,504 direct, 1,303,489 indirect) bytes in 1,823 blocks are definitely lost in loss record 170 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x808F9B7: CFits::MatrixATimesB(blitz::Array<double, 2>&, blitz::Array<double, 2>&) const (CFits.cpp:8453)
+==26439==    by 0x808FF3C: CFits::MatrixTimesVecArr(blitz::Array<double, 2>&, blitz::Array<double, 1>&) const (CFits.cpp:8502)
+==26439==    by 0x80A3AB5: CFits::SlitFunc(blitz::Array<double, 2>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, int, CString const**, void**) (CFits.cpp:7427)
+==26439==    by 0x80571BF: TestCFitsPiskunov() (MTestApp.cpp:2602)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 5,918,908 (86,544 direct, 5,832,364 indirect) bytes in 1,803 blocks are definitely lost in loss record 171 of 181
+==26439==    at 0x401C7F3: operator new(unsigned) (vg_replace_malloc.c:164)
+==26439==    by 0x808F762: CFits::Reform(blitz::Array<double, 1>&, int, int) const (CFits.cpp:8579)
+==26439==    by 0x80A386E: CFits::SlitFunc(blitz::Array<double, 2>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, int, CString const**, void**) (CFits.cpp:7408)
+==26439==    by 0x80571BF: TestCFitsPiskunov() (MTestApp.cpp:2602)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 179,010 bytes in 702 blocks are possibly lost in loss record 172 of 181
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8113295: CString::CString() (CString.cpp:17)
+==26439==    by 0x80909C2: CFits::Set_NApertures(int) (CFits.cpp:1482)
+==26439==    by 0x80923A8: CFits::Copy(CAny const&) (CFits.cpp:1155)
+==26439==    by 0x805526C: TestCFitsPiskunov() (MTestApp.cpp:2351)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 15,687,403 (218,872 direct, 15,468,531 indirect) bytes in 574 blocks are definitely lost in loss record 175 of 181
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x8084798: CFits::Get_Functions() const (CFits.cpp:1898)
+==26439==    by 0x80926F1: CFits::Copy(CAny const&) (CFits.cpp:1289)
+==26439==    by 0x8093E43: CFits::CFits(CFits const&) (CFits.cpp:352)
+==26439==    by 0x804FA03: TestCFitsConstructors() (MTestApp.cpp:908)
+==26439==    by 0x80627CE: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 1,468,800 bytes in 360 blocks are possibly lost in loss record 179 of 181
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x808F712: CFits::Reform(blitz::Array<double, 1>&, int, int) const (CFits.cpp:8572)
+==26439==    by 0x80A386E: CFits::SlitFunc(blitz::Array<double, 2>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, blitz::Array<double, 1>&, int, CString const**, void**) (CFits.cpp:7408)
+==26439==    by 0x80571BF: TestCFitsPiskunov() (MTestApp.cpp:2602)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 5,496,080 bytes in 1,349 blocks are definitely lost in loss record 180 of 181
+==26439==    at 0x401C422: malloc (vg_replace_malloc.c:149)
+==26439==    by 0x808F712: CFits::Reform(blitz::Array<double, 1>&, int, int) const (CFits.cpp:8572)
+==26439==    by 0x805BC85: TestCFitsReformMultInvert() (MTestApp.cpp:1535)
+==26439==    by 0x80627EF: TestCFits() (MTestApp.cpp:3190)
+==26439==    by 0x8062AEE: Run(CString&) (MTestApp.cpp:3219)
+==26439==    by 0x8062FD6: main (MTestApp.cpp:3551)
+==26439== 
+==26439== 
+==26439== 215,137,496 bytes in 496 blocks are possibly lost in loss record 181 of 181
+==26439==    at 0x401CC6B: operator new[](unsigned) (vg_replace_malloc.c:197)
+==26439==    by 0x806DB95: blitz::MemoryBlock<double>::allocate(unsigned) (memblock.cc:44)
+==26439==    by 0x806DBD9: blitz::MemoryBlock<double>::MemoryBlock(unsigned) (memblock.h:75)
+==26439==    by 0x806DC2E: blitz::MemoryBlockReference<double>::newBlock(unsigned) (memblock.h:340)
+==26439==    by 0x806DD3B: blitz::Array<double, 1>::setupStorage(int) (methods.cc:258)
+==26439==    by 0x806E0B2: blitz::Array<double, 1>::Array(blitz::TinyVector<int, 1> const&, blitz::TinyVector<int, 1> const&, blitz::GeneralArrayStorage<1> const&) (methods.cc:72)
+==26439==    by 0x807C75A: blitz::Array<double, 1>::resizeAndPreserve(int) (resize.cc:587)
+==26439==    by 0x809056D: CFits::Set_NApertures(int) (CFits.cpp:1451)
+==26439==    by 0x8091081: CFits::ReadApertureDefinition(int) (CFits.cpp:10465)
+==26439==    by 0x8092200: CFits::ReadDatabaseEntry() (CFits.cpp:2561)
+==26439==    by 0x8055188: TestCFitsPiskunov() (MTestApp.cpp:2342)
+==26439==    by 0x8062805: TestCFits() (MTestApp.cpp:3190)
+==26439== 
+==26439== LEAK SUMMARY:
+==26439==    definitely lost: 6,268,760 bytes in 10,466 blocks.
+==26439==    indirectly lost: 25,466,491 bytes in 180,700 blocks.
+==26439==      possibly lost: 216,822,003 bytes in 2,996 blocks.
+==26439==    still reachable: 398,907 bytes in 2,618 blocks.
+==26439==         suppressed: 0 bytes in 0 blocks.
+==26439== Reachable blocks (those to which a pointer was found) are not shown.
+==26439== To see them, rerun with: --show-reachable=yes
+--26439--  memcheck: sanity checks: 90609 cheap, 3625 expensive
+--26439--  memcheck: auxmaps: 0 auxmap entries (0k, 0M) in use
+--26439--  memcheck: auxmaps: 0 searches, 0 comparisons
+--26439--  memcheck: secondaries: 4096 issued (262144k, 256M)
+--26439--  memcheck: secondaries: 62 accessible and distinguished (3968k, 3M)
+--26439--     tt/tc: 813,715 tt lookups requiring 900,547 probes
+--26439--     tt/tc: 813,715 fast-cache updates, 2 flushes
+--26439-- translate: new        19,024 (552,058 -> 8,911,045; ratio 161:10) [0 scs]
+--26439-- translate: dumped     0 (0 -> ??)
+--26439-- translate: discarded  0 (0 -> ??)
+--26439-- scheduler: 4,530,500,870 jumps (bb entries).
+--26439-- scheduler: 90,609/1,548,611 major/minor sched events.
+--26439--    sanity: 90610 cheap, 3625 expensive checks.
+--26439--    exectx: 30,011 lists, 5,401 contexts (avg 0 per list)
+--26439--    exectx: 390,875 searches, 387,442 full compares (991 per 1000)
+--26439--    exectx: 7,650,413 cmp2, 1,807 cmp4, 0 cmpAll
