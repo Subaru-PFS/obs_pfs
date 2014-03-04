@@ -1,7 +1,9 @@
 added 1st line to make files to remove existing executable
 added @database_fname to mmarkcenters
 fixed bug in CFits.cpp which prevented it from compiling on some machines
-fixed but in mwritefitsarea to text which kept size parameters from previous image
+fixed bug in mwritefitsarea to text which kept size parameters from previous image
+fixed bug in CFits.PolyFit regarding MEASURE_ERRORS_IN
+added Where function to CString
 
 TODO: write program to create make files
 TODO: add mv ../bin/<executable> ../bin/<executable>.bak to make files
