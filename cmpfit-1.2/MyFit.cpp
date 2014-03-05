@@ -337,7 +337,7 @@ int MPFitGaussFuncACB(int m, int n, double *p, double *dy, double **dvec, void *
 
   for (i=0; i<m; i++) {
     xc = x[i]-p[2];
-    dy[i] = (y[i] - (p[1]*exp(-0.5*xc*xc/sig2)/(sqrt(2. * Pi) * p[3])) - p[0])/ey[i];
+    dy[i] = (y[i] - (p[1]*exp(-0.5*xc*xc/sig2)/(sqrt(2. * D_PI) * p[3])) - p[0])/ey[i];
   }
 
   return 0;
@@ -371,7 +371,7 @@ int MPFitGaussFuncANB(int m, int n, double *p, double *dy, double **dvec, void *
 
   for (i=0; i<m; i++) {
     xc = x[i]-p[1];
-    dy[i] = (y[i] - (p[0]*exp(-0.5*xc*xc/sig2)/(sqrt(2. * Pi) * p[2])))/ey[i];
+    dy[i] = (y[i] - (p[0]*exp(-0.5*xc*xc/sig2)/(sqrt(2. * D_PI) * p[2])))/ey[i];
   }
 
   return 0;
@@ -487,7 +487,7 @@ int MPFitTwoGaussFuncACB(int m, int n, double *p, double *dy, double **dvec, voi
   for (i=0; i<m; i++) {
     xc_a = x[i]-p[2];
     xc_b = x[i]-p[5];
-    dy[i] = (y[i] - (p[1]*exp(-0.5*xc_a*xc_a/sig2)/(sqrt(2. * Pi) * p[3])) - (p[4]*exp(-0.5*xc_b*xc_b/sig2)/(sqrt(2. * Pi) * p[3])) - p[0])/ey[i];
+    dy[i] = (y[i] - (p[1]*exp(-0.5*xc_a*xc_a/sig2)/(sqrt(2. * D_PI) * p[3])) - (p[4]*exp(-0.5*xc_b*xc_b/sig2)/(sqrt(2. * D_PI) * p[3])) - p[0])/ey[i];
   }
 
   return 0;
@@ -525,7 +525,7 @@ int MPFitTwoGaussFuncANB(int m, int n, double *p, double *dy, double **dvec, voi
   for (i=0; i<m; i++) {
     xc_a = x[i]-p[1];
     xc_b = x[i]-p[4];
-    dy[i] = (y[i] - (p[0]*exp(-0.5*xc_a*xc_a/sig2)/(sqrt(2. * Pi) * p[2])) - (p[3]*exp(-0.5*xc_b*xc_b/sig2)/(sqrt(2. * Pi) * p[2])))/ey[i];
+    dy[i] = (y[i] - (p[0]*exp(-0.5*xc_a*xc_a/sig2)/(sqrt(2. * D_PI) * p[2])) - (p[3]*exp(-0.5*xc_b*xc_b/sig2)/(sqrt(2. * D_PI) * p[2])))/ey[i];
   }
 
   return 0;
@@ -651,7 +651,7 @@ int MPFitThreeGaussFuncACB(int m, int n, double *p, double *dy, double **dvec, v
     xc_a = x[i]-p[2];
     xc_b = x[i]-p[5];
     xc_c = x[i]-p[7];
-    dy[i] = (y[i] - (p[1]*exp(-0.5*xc_a*xc_a/sig2)/(sqrt(2. * Pi) * p[3])) - (p[4]*exp(-0.5*xc_b*xc_b/sig2)/(sqrt(2. * Pi) * p[3])) - (p[6]*exp(-0.5*xc_c*xc_c/sig2)/(sqrt(2. * Pi) * p[3])) - p[0])/ey[i];
+    dy[i] = (y[i] - (p[1]*exp(-0.5*xc_a*xc_a/sig2)/(sqrt(2. * D_PI) * p[3])) - (p[4]*exp(-0.5*xc_b*xc_b/sig2)/(sqrt(2. * D_PI) * p[3])) - (p[6]*exp(-0.5*xc_c*xc_c/sig2)/(sqrt(2. * D_PI) * p[3])) - p[0])/ey[i];
   }
 
   return 0;
@@ -692,7 +692,7 @@ int MPFitThreeGaussFuncANB(int m, int n, double *p, double *dy, double **dvec, v
     xc_a = x[i]-p[1];
     xc_b = x[i]-p[4];
     xc_c = x[i]-p[6];
-    dy[i] = (y[i] - (p[0]*exp(-0.5*xc_a*xc_a/sig2)/(sqrt(2. * Pi) * p[2])) - (p[3]*exp(-0.5*xc_b*xc_b/sig2)/(sqrt(2. * Pi) * p[2])) - (p[5]*exp(-0.5*xc_c*xc_c/sig2)/(sqrt(2. * Pi) * p[2])))/ey[i];
+    dy[i] = (y[i] - (p[0]*exp(-0.5*xc_a*xc_a/sig2)/(sqrt(2. * D_PI) * p[2])) - (p[3]*exp(-0.5*xc_b*xc_b/sig2)/(sqrt(2. * D_PI) * p[2])) - (p[5]*exp(-0.5*xc_c*xc_c/sig2)/(sqrt(2. * D_PI) * p[2])))/ey[i];
   }
 
   return 0;

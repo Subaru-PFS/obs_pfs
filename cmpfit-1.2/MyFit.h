@@ -54,6 +54,8 @@
 using namespace std;
 using namespace blitz;
 
+#define D_PI 3.14159265359
+
 /* This is the private data structure which contains the data points
    and their uncertainties */
 struct vars_struct {

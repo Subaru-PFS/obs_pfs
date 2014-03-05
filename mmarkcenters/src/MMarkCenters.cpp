@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
   if (argc < 4)
   {
     cout << "MMarkCenters::main: ERROR: Not enough parameters specified!" << endl;
-    cout << "USAGE: markcenters <char[] [@]FitsFileName_In> <char[] DatabaseFileName_In> <char[] [@]FitsFileName_Out>" << endl;
+    cout << "USAGE: markcenters <char[] [@]FitsFileName_In> <char[] [@]DatabaseFileName_In> <char[] [@]FitsFileName_Out>" << endl;
     exit(EXIT_FAILURE);
   }
   char *P_CharArr_In = (char*)argv[1];
@@ -51,6 +51,18 @@ int main(int argc, char *argv[])
       exit(EXIT_FAILURE);
     }
   }
+  Array<CString, 1> CS_A1_DBFileNames_In(CS_A1_FitsFileNames_In.size());
+  CS_A1_DBFileNames_In = CS_DatabaseFileName_In;
+  if (CS_DatabaseFileName_In.IsList()){
+    if (!CS_DatabaseFileName_In.ReadFileLinesToStrArr(CS_DatabaseFileName_In, CS_A1_DBFileNames_In)){
+      cout << "MMarkCenters::main: ERROR: ReadFileLinesToStrArr(" << CS_DatabaseFileName_In << ") returned FALSE" << endl;
+      exit(EXIT_FAILURE);
+    }
+    if (CS_A1_DBFileNames_In.size() != CS_A1_FitsFileNames_In.size()){
+      cout << "MMarkCenters::main: ERROR: CS_A1_DBFileNames_In.size(=" << CS_A1_DBFileNames_In.size() <<") != CS_A1_FitsFileNames_In.size(=" << CS_A1_FitsFileNames_In.size() << ") => Returning FALSE" << endl;
+      exit(EXIT_FAILURE);
+    }
+  }
 
   CFits F_Image;
   for (int i_file=0; i_file < CS_A1_FitsFileNames_In.size(); i_file++){
@@ -72,12 +84,12 @@ int main(int argc, char *argv[])
     cout << "MMarkCenters::main: F_Image: Array read" << endl;
 
     /// Set DatabaseFileName_In
-    if (!F_Image.SetDatabaseFileName(CS_DatabaseFileName_In))
+    if (!F_Image.SetDatabaseFileName(CS_A1_DBFileNames_In(i_file)))
     {
-      cout << "MMarkCenters::main: ERROR: F_Image.SetDatabaseFileName(" << CS_DatabaseFileName_In << ") returned FALSE!" << endl;
+      cout << "MMarkCenters::main: ERROR: F_Image.SetDatabaseFileName(" << CS_A1_DBFileNames_In(i_file) << ") returned FALSE!" << endl;
       exit(EXIT_FAILURE);
     }
-    cout << "MMarkCenters::main: F_Image: DatabaseFileName <" << CS_DatabaseFileName_In << "> set" << endl;
+    cout << "MMarkCenters::main: F_Image: DatabaseFileName <" << CS_A1_DBFileNames_In(i_file) << "> set" << endl;
 
     /// Read DatabaseFileName_In
     if (!F_Image.ReadDatabaseEntry())

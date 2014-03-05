@@ -23,12 +23,12 @@ basis machine: Ubuntu Linux 6.06
     #include <config.h>
   #endif
 
-  #define __WITH_PLOTS__
+//  #define __WITH_PLOTS__
 
   #include <stdio.h>
   #include <iostream>
   #include <cstdlib>
-  #include <c++/4/x86_64-linux-gnu/bits/stdc++.h>
+//  #include <c++/4/bits/stdc++.h>
   #include <blitz/array.h>
   #include <blitz/vector.h>
   #include <blitz/vector-et.h>
@@ -79,6 +79,7 @@ basis machine: Ubuntu Linux 6.06
 //    #define __DEBUG_EXTRACTSPECFROMPROFILE__
 //    #define __DEBUG_FITS_EXTRACTFROMPROFILE__
 //    #define __DEBUG_FITS_FINDANDTRACE__
+//    #define __DEBUG_FITS_FINDNEARESTNEIGHBOUR__
 //    #define __DEBUG_FITS_FIT__
 //    #define __DEBUG_FITS_GAUSSEXTRACT__
 //    #define __DEBUG_FITS_GAUSSFIT__
@@ -1981,6 +1982,25 @@ basis machine: Ubuntu Linux 6.06
 **/
       Array<double, 1>* Poly(const Array<double, 1> &VecArr,
 			     const Array<double, 1> &VecCoeffs) const;
+      double Poly(const double D_X_In,
+                  const Array<double, 1> &D_A1_Coeffs) const;
+                             
+                             
+      /**
+       * Calculates positive roots for a given polynomial
+       * D_A1_PolyCoeffs_In: Coefficients for the polynomial
+       * D_Y_In:             y value to find x
+       * D_XStart_In:        x value to start search
+       * D_XStep_In:         initial step for search (<0: go left, >0: go right)
+       * CS_Function_In:     [Poly,Chebyshev,Legendre]
+       * **/
+      bool PolyRoot(const Array<double, 1> &D_A1_PolyCoeffs_In,
+                    const double &D_Y_In,
+                    const double &D_XStart_In,
+                    const double &D_XStep_In,
+                    const double &D_MaxDist_In,
+                    const CString &CS_Function_In,
+                    double &D_X_Out) const;
 
 /**; NAME:
 ;   POLY_FIT
@@ -2055,16 +2075,13 @@ basis machine: Ubuntu Linux 6.06
 ; SIDE EFFECTS:
     ;   None.
     FUNCTION POLY_FIT, x, y, ndegree, $
-    yfit_old, yband_old, yerror_old, corrm_old, $     ; obsolete arguments
-    CHISQ=chisq, $
-    COVAR=covar: Array<double, 2>: out, $
-    DOUBLE=double, $
-    MEASURE_ERRORS=measure_errors: Array<double, 1>(D_A1_X_In.size()), $
-    SIGMA=sigma: Array<double, 1>(D_A1_X_In.size()), $
-    STATUS=status, $
-    YBAND=yband: double, $
-    YBAND_OLD=yband: double, $
-    YERROR=yerror, $
+    CHISQ=chisq: double: out
+    COVAR=covar: Array<double, 2>(I_Degree+1, I_Degree+1): out
+    MEASURE_ERRORS=measure_errors: Array<double, 1>(D_A1_X_In.size()): in
+    SIGMA=sigma: Array<double, 1>(I_Degree+1): out
+    STATUS=status: int: out
+    YBAND=yband: Array<double, 1>(D_A1_X.size()): in
+    YERROR=yerror: in
     YFIT=yfit: Array<double, 1>(D_A1_X_In.size()): out
     ;**/
     bool PolyFit(const Array<double, 1> &D_A1_X_In,
@@ -2090,11 +2107,27 @@ basis machine: Ubuntu Linux 6.06
                  const Array<CString, 1> &CS_A1_Args,
                  void *ArgV[],
                  Array<double, 1>* P_D_A1_Out) const;
+    bool PolyFit(const Array<double, 1> &D_A1_X_In,
+                 const Array<double, 1> &D_A1_Y_In,
+                 const int I_Degree,
+                 const double D_LReject,
+                 const double D_HReject,
+                 const int I_NIter,
+                 const Array<CString, 1> &CS_A1_Args,
+                 void *ArgV[],
+                 Array<double, 1>* P_D_A1_Out) const;
 
     bool PolyFit(const Array<double, 1> &D_A1_X_In,
                  const Array<double, 1> &D_A1_Y_In,
                  const int I_Degree,
                  const double D_Reject,
+                 Array<double, 1>* P_D_A1_Out) const;
+    bool PolyFit(const Array<double, 1> &D_A1_X_In,
+                 const Array<double, 1> &D_A1_Y_In,
+                 const int I_Degree,
+                 const double D_LReject,
+                 const double D_HReject,
+                 const int I_NIter,
                  Array<double, 1>* P_D_A1_Out) const;
 
 /**
@@ -3458,11 +3491,25 @@ PRO GAUSS_FUNCT,X,A,F,PDER
        **/
       bool WriteCube(Array<double, 3> &D_A3_In, CString &CS_FitsFileName_Out) const;
 
+      /** find nearest neighbour to D_ReferencePoint_In in D_A1_ArrayToLookForNeighbour_In, and returns index of nearest neighbour
+       * */
+      int FindNearestNeighbour(const double &D_ReferencePoint_In,
+                                const Array<double, 1> &D_A1_ArrayToLookForNeighbour_In) const;
+      
       /**
        * find nearest neighbour to D_A1_ReferencePoint_In(x,y) in D_A2_ArrayToLookForNeighbour_In and write coordinates to D_A1_NearestNeighbour_Out
        **/
       bool FindNearestNeighbour(const Array<double, 1> &D_A1_ReferencePoint_In,
                                 const Array<double, 2> &D_A2_ArrayToLookForNeighbour_In,
+                                Array<double, 1> &D_A1_NearestNeighbour_Out,
+                                int &I_Pos_Out) const;
+                                
+      /**
+       * I_A1_Area = [x_min, x_max, y_min, y_max]
+       * **/
+      bool FindNearestNeighbour(const Array<double, 1> &D_A1_ReferencePoint_In,
+                                const Array<double, 2> &D_A2_ArrayToLookForNeighbour_In,
+                                const Array<int, 1> &I_A1_Area,
                                 Array<double, 1> &D_A1_NearestNeighbour_Out,
                                 int &I_Pos) const;
 
@@ -3472,6 +3519,16 @@ PRO GAUSS_FUNCT,X,A,F,PDER
       bool FindNearestNeighbours(const Array<double, 1> &D_A1_ReferencePoint_In,
                                  const Array<double, 2> &D_A2_ArrayToLookForNeighbour_In,
                                  const int I_N,
+                                 Array<double, 2> &D_A2_NearestNeighbours_Out,
+                                 Array<int, 1> &I_A1_Pos) const;
+
+      /**
+       * find I_N nearest neighbours to D_A1_ReferencePoint_In(x,y) in D_A2_ArrayToLookForNeighbour_In and write coordinates to D_A2_NearestNeighbour_Out
+       **/
+      bool FindNearestNeighbours(const Array<double, 1> &D_A1_ReferencePoint_In,
+                                 const Array<double, 2> &D_A2_ArrayToLookForNeighbour_In,
+                                 const int I_N,
+                                 const Array<int, 1> &D_A1_Area_In,
                                  Array<double, 2> &D_A2_NearestNeighbours_Out,
                                  Array<int, 1> &I_A1_Pos) const;
 
@@ -3538,7 +3595,11 @@ PRO GAUSS_FUNCT,X,A,F,PDER
                                            Array<double, 2> &D_A2_Corners_Out) const;
 
       bool Remove_SubArrayFromArray(Array<int, 1> &A1_Array_InOut, const Array<int, 1> &A1_SubArray) const;
-
+      
+      bool Remove_ElementsFromArray(Array<int, 1> &I_A1_Array_InOut, const Array<int, 1> &I_A1_ElementIndicesToRemove_In) const;
+      
+      bool Remove_ElementsFromArray(Array<double, 1> &D_A1_Array_InOut, const Array<int, 1> &I_A1_ElementIndicesToRemove_In) const;
+      
       bool Remove_Ith_ElementFromArray(Array<double, 1> &D_A1_Array_InOut,
                                        int I_Pos_In) const;
 
@@ -3617,10 +3678,23 @@ PRO GAUSS_FUNCT,X,A,F,PDER
                            const int I_Radius_In,
                            Array<int, 1> &I_A1_Apertures_Out) const;
 
+      bool FindApsInCircle(const int I_CenterX_In,
+                           const int I_CenterY_In,
+                           const int I_Radius_In,
+                           const Array<int, 1> &I_A1_Area_In,
+                           Array<int, 1> &I_A1_Apertures_Out) const;
+
       bool FindApsInRing(const int I_CenterX_In,
                          const int I_CenterY_In,
                          const int I_InnerRadius_In,
                          const int I_OuterRadius_In,
+                         Array<int, 1> &I_A1_Apertures_Out) const;
+
+      bool FindApsInRing(const int I_CenterX_In,
+                         const int I_CenterY_In,
+                         const int I_InnerRadius_In,
+                         const int I_OuterRadius_In,
+                         const Array<int, 1> &I_A1_Area,
                          Array<int, 1> &I_A1_Apertures_Out) const;
 
       /**
@@ -3718,7 +3792,28 @@ PRO GAUSS_FUNCT,X,A,F,PDER
                   const int I_Row_In,
                   const Array<double, 1> &D_A1_OSF_In,
                   Array<double, 1> &D_A1_SF_Out) const;
-                         
+
+      /**
+       * Corrects a given input spectrum D_A2_Spec_In(col0: Wavelength, col1: spectrum) observed at 
+       * airmass D_AirMass for the atmospheric extinction given in D_A2_Extinction_In(col0: Wavelength, col1: Extinction)
+       * */
+      bool RemoveAtmosphericExtinction(const Array<double, 2> &D_A2_Spec_In,
+                                       const double &D_AirMass,
+                                       const Array<double, 2> &D_A2_Extinction_In,
+                                       Array<double, 2> &D_A2_Spec_Out) const;
+      
+      /* Calculate Airmass using Hardie Function
+       * D_A1_ZenithDist_Deg_In: input zenith distances in degrees
+       * */
+      bool AirMass_Hardie_Deg(const Array<double, 1> &D_A1_ZenithDist_Deg_In,
+                              Array<double, 1> &D_A1_AirMass_Out) const;
+      
+      /* Calculate Airmass using Hardie Function
+       * D_A1_ZenithDist_Rad_In: input zenith distances in radians
+       * */
+      bool AirMass_Hardie_Rad(const Array<double, 1> &D_A1_ZenithDist_Rad_In,
+                              Array<double, 1> &D_A1_AirMass_Out) const;
+                                       
     #ifdef __WITH_PLOTS__
       bool ArrayToMGLArray(const Array<double, 1> &D_A1_Array_In,
                            mglData *P_D_A1_MGLArray_Out) const;

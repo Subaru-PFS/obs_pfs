@@ -1345,6 +1345,9 @@ bool CString::AToD(double &D_Out) const{
         (this->P_String[i] != '8') &&
         (this->P_String[i] != '9') &&
         (this->P_String[i] != '-') &&
+        (this->P_String[i] != '+') &&
+        (this->P_String[i] != 'e') &&
+        (this->P_String[i] != 'E') &&
         (this->P_String[i] != '.')){
       cout << "CString::AToI: ERROR: this->P_String[i=" << i << "] = <" << P_String[i] << "> is not a number => Returning FALSE" << endl;
       return false;
@@ -1368,11 +1371,12 @@ bool CString::AToD(const Array<CString, 1> &CS_A1_In, Array<double, 1> &D_A1_Out
 /** ********************************************************************/
 
 /// Replaces all occurences CString <CS_ToReplace> in this with <CS_Replace>
-CString* CString::StrReplace(const CString& CS_ToReplace, const CString& CS_Replace){
+/// Returns a copy of itself if CS_ToReplace_In is not found in this
+CString* CString::StrReplace(const CString& CS_ToReplace_In, const CString& CS_Replace_In){
   CString *P_CS_Out;
   CString *P_CS_Temp;
   int LastPos;
-  int Pos = this->StrPos(CS_ToReplace);
+  int Pos = this->StrPos(CS_ToReplace_In);
   if (Pos < 0){
     P_CS_Out = new CString(*this);
     return P_CS_Out;
@@ -1381,20 +1385,47 @@ CString* CString::StrReplace(const CString& CS_ToReplace, const CString& CS_Repl
   LastPos = Pos;
   while (Pos >= 0){
     LastPos = Pos;
-    *P_CS_Out += CS_Replace;
-    Pos = this->StrPosFrom(CS_ToReplace.Get(),Pos+1);
+    *P_CS_Out += CS_Replace_In;
+    Pos = this->StrPosFrom(CS_ToReplace_In.Get(),Pos+1);
     if (Pos > 0){
-      P_CS_Temp = this->SubString(LastPos+CS_ToReplace.GetLength(),Pos-1);
+      P_CS_Temp = this->SubString(LastPos+CS_ToReplace_In.GetLength(),Pos-1);
       *P_CS_Out += *P_CS_Temp;
       delete(P_CS_Temp);
     }
   }
-  P_CS_Temp = this->SubString(LastPos+CS_ToReplace.GetLength());
+  P_CS_Temp = this->SubString(LastPos+CS_ToReplace_In.GetLength());
   *P_CS_Out += *P_CS_Temp;
   delete(P_CS_Temp);
   return P_CS_Out;
 }
 
+/// Replaces all occurences CString <CS_ToReplace> in this with <CS_Replace> and writes result to 
+/// CS_Out
+/// Returns false if CS_ToReplace_In is not found in this
+bool CString::StrReplace(const CString& CS_ToReplace_In, const CString& CS_Replace_In, CString &CS_Out){
+  int LastPos;
+  int Pos = this->StrPos(CS_ToReplace_In);
+  if (Pos < 0)
+    return false;
+  CString *P_CS_Out = this->SubString(0,Pos-1);
+  CString *P_CS_Temp;
+  while (Pos >= 0){
+    LastPos = Pos;
+    *P_CS_Out += CS_Replace_In;
+    Pos = this->StrPosFrom(CS_ToReplace_In.Get(),Pos+1);
+    if (Pos > 0){
+      P_CS_Temp = this->SubString(LastPos+CS_ToReplace_In.GetLength(),Pos-1);
+      *P_CS_Out += *P_CS_Temp;
+      delete(P_CS_Temp);
+    }
+  }
+  P_CS_Temp = this->SubString(LastPos+CS_ToReplace_In.GetLength());
+  *P_CS_Out += *P_CS_Temp;
+  delete(P_CS_Temp);
+  CS_Out.Set(*P_CS_Out);
+  delete(P_CS_Out);
+  return true;
+}
 /** ********************************************************************/
 
 void CString::Show (ostream &os) const
@@ -1496,7 +1527,13 @@ bool CString::StrReplaceInList(const CString &CS_TextFile_In,
     cout << "CString::StrReplaceInList: ERROR: ReadFileLinesToStrArr(" << CS_TextFile_In << ") returned FALSE" << endl;
     return false;
   }
-  this->StrReplaceInList(CS_A1_TextLines_In, CS_ToReplace_In, CS_Replace_In, CS_A1_TextLines_Out);
+  if (!this->StrReplaceInList(CS_A1_TextLines_In, 
+                              CS_ToReplace_In, 
+                              CS_Replace_In, 
+                              CS_A1_TextLines_Out)){
+    cout << "CString:StrReplaceInList: ERROR: StrReplaceInList(CS_A1) returned FALSE" << endl;
+    return false;
+  }
   if (!this->WriteStrListToFile(CS_A1_TextLines_Out, CS_TextFile_Out)){
     cout << "CString::StrReplaceInList: ERROR: WriteStrListToFile(" << CS_TextFile_In << ") returned FALSE" << endl;
     return false;
@@ -1510,28 +1547,34 @@ bool CString::StrReplaceInList(const Array<CString, 1> &CS_A1_In,
                                const CString &CS_ToReplace_In,
                                const CString &CS_Replace_In,
                                Array<CString, 1> &CS_A1_Out) const{
-  CString *P_CS_LineNew;
+  CString CS_LineNew(" ");
   CS_A1_Out.resize(CS_A1_In.size());
   CString CS_Line(" ");
   for (int i_line=0; i_line < CS_A1_In.size(); i_line++){
     CS_Line.Set(CS_A1_In(i_line));
-    P_CS_LineNew = CS_Line.StrReplace(CS_ToReplace_In, CS_Replace_In);
-    CS_A1_Out(i_line).Set(*P_CS_LineNew);
-    delete(P_CS_LineNew);
+    if (!CS_Line.StrReplace(CS_ToReplace_In, CS_Replace_In, CS_LineNew)){
+      cout << "CString::StrReplaceInList: ERROR: StrReplace(" << CS_ToReplace_In << ", " << CS_Replace_In << ") returned FALSE" << endl;
+      return false;
+    }
+    CS_A1_Out(i_line).Set(CS_LineNew);
   }
+  #ifdef __DEBUG_CSTRING_STRREPLACEINLIST__
+    cout << "StrReplaceInList: CS_A1_In = " << CS_A1_In << endl;
+    cout << "StrReplaceInList: CS_A1_Out = " << CS_A1_Out << endl;
+  #endif
   return true;
 }
 
 bool CString::ReadFileToStrArr(const CString &CS_FileName_In,
-                             Array<CString, 2> &CS_A2_Out,
-                             const CString &CS_Delimiter) const{
+                               Array<CString, 2> &CS_A2_Out,
+                               const CString &CS_Delimiter) const{
   if (!this->FileAccess(CS_FileName_In)){
     cout << "CString::ReadFileToStrArr: ERROR: Access(CS_FileName_In) returned FALSE" << endl;
     return false;
   }
   int I_NLines = this->CountLines(CS_FileName_In);
   int I_NCols = this->CountCols(CS_FileName_In, CS_Delimiter);
-  cout << "CString::ReadFileToStrArr: I_NLines = " << I_NLines << ", I_NCols = " << I_NCols << endl;
+  cout << "CString::ReadFileToStrArr: " << CS_FileName_In << ": I_NLines = " << I_NLines << ", I_NCols = " << I_NCols << endl;
   CString templine(" ");
   FILE *ffile;
   long nelements;
@@ -1757,7 +1800,9 @@ bool CString::ReadFileLinesToStrArr(const CString &CS_FileName_In,
 bool CString::FileAccess(const CString &fn) const
 {
   FILE *ffile;
-
+  #ifdef __DEBUG_CSTRING_FILEACCESS__
+    cout << "CString::FileAccess: Checking for file " << fn << endl;
+  #endif
   ffile = fopen(fn.Get(), "r");
   if (ffile == NULL)
   {
@@ -2055,5 +2100,69 @@ bool CString::AddNameAsDir(const Array<CString, 1> &CS_A1_In, Array<CString, 1> 
     CS_A1_Out(i_row).Add(CS_A1_In(i_row));
     delete(P_CS_Temp);
   }
+  return true;
+}
+
+
+/// Checks CS_A1_In and returns an integer array with 1 where CS_A1_In(i).EqualValue(CS_Comp),
+/// otherwise 0
+Array<int, 1>* CString::Where(const Array<CString, 1> &CS_A1_In,
+                              const CString &CS_Comp) const{
+  Array<int, 1> *P_I_A1_Where = new Array<int, 1>(CS_A1_In.size());
+  (*P_I_A1_Where) = 0;
+  for (int i_el=0; i_el<CS_A1_In.size(); i_el++){
+    if (CS_A1_In(i_el).EqualValue(CS_Comp)){
+      (*P_I_A1_Where)(i_el) = 1;
+    }
+  }
+  return P_I_A1_Where;
+}
+
+
+/** Removes element at position I_Pos from CS_A1_InOut
+ * */
+bool CString::RemoveElementFromArray(Array<CString, 1> &CS_A1_InOut, int I_Pos) const{
+  if ((I_Pos < 0) || (I_Pos >= CS_A1_InOut.size())){
+    cout << "CString::RemoveElementFromArray: ERROR: I_Pos=" << I_Pos << " < 0 or >= CS_A1_InOut.size()=" << CS_A1_InOut.size() << endl;
+    return false;
+  }
+  Array<CString, 1> CS_A1_Temp(CS_A1_InOut.size()-1);
+  int I_El = 0;
+  for (int i_el=0; i_el<CS_A1_InOut.size(); i_el++){
+    if (i_el != I_Pos){
+      CS_A1_Temp(I_El).Set(CS_A1_InOut(i_el));
+      I_El++;
+    }
+  }
+  CS_A1_InOut.resize(CS_A1_Temp.size());
+  CS_A1_InOut = CS_A1_Temp;
+  return true;
+}
+
+/** Removes elements listed in I_A1_ElementsToRemove_In from CS_A1_InOut
+ * */
+bool CString::RemoveElementsFromArray(Array<CString, 1> &CS_A1_InOut, 
+                                      const Array<int, 1> &I_A1_ElementsToRemove_In) const{
+  if (I_A1_ElementsToRemove_In.size() >= CS_A1_InOut.size()){
+    cout << "CString::RemoveElementFromArray: ERROR: I_A1_ElementsToRemove_In.size()=" << I_A1_ElementsToRemove_In.size() << " >= CS_A1_InOut.size()=" << CS_A1_InOut.size() << endl;
+    return false;
+  }
+  Array<CString, 1> CS_A1_Temp(CS_A1_InOut.size()-I_A1_ElementsToRemove_In.size());
+  int I_El = 0;
+  bool B_Found = false;
+  for (int i_el=0; i_el<CS_A1_InOut.size(); i_el++){
+    B_Found = false;
+    for (int i_elrem=0; i_elrem<I_A1_ElementsToRemove_In.size(); i_elrem++){
+      if (i_el == I_A1_ElementsToRemove_In(i_elrem)){
+        B_Found = true;
+      }
+    }
+    if (!B_Found){
+      CS_A1_Temp(I_El).Set(CS_A1_InOut(i_el));
+      I_El++;
+    }
+  }
+  CS_A1_InOut.resize(CS_A1_Temp.size());
+  CS_A1_InOut = CS_A1_Temp;
   return true;
 }

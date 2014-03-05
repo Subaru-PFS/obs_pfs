@@ -1,4 +1,4 @@
-rm ../bin/mergespecweightconv
+mv ../bin/mergespecweightconv ../bin/mergespecweightconv.bak
 gcc -s -O2 -lm -o ../bin/mergespecweightconv MBasis.c mmergespecweightconv.c
 chmod a+x ../bin/mergespecweightconv
 rm ~/bin/mergespecweightconv

@@ -4361,12 +4361,12 @@ bool CFits::ChebyLegend(Array<double, 1> &D_A1_XCenters_Out,
   bool B_Begin_Found = false;
   Array<double, 1> D_A1_ZArr(3);
 
-#ifdef __DEBUG_FITS_TRACEFUNC__
-  cout << "CFits::ChebyLegend: started: CS_Function_In = " << CS_Function_In << ", D_XCenter_In = " << D_XCenter_In << ", D_YCenter_In = " << D_YCenter_In << ", D_YMin_In = " << D_YMin_In << ", D_YMax_In = " << D_YMax_In << ", D_XLow_In = " << D_XLow_In << ", D_XHigh_In = " << D_XHigh_In << ", I_Order_In = " << I_Order_In << ", Coeffs = " << D_A1_Coeffs_In << endl;
-  cout << "CFits::ChebyLegend: D_A1_XCenters_Out.size() returned " << D_A1_XCenters_Out.size() << endl;
-  (*P_OFS_Log) << "CFits::ChebyLegend: started: CS_Function_In = " << CS_Function_In << ", D_XCenter_In = " << D_XCenter_In << ", D_YMin_In = " << D_YMin_In << ", D_YMax_In = " << D_YMax_In << ", D_XLow_In = " << D_XLow_In << ", D_XHigh_In = " << D_XHigh_In << ", I_Order_In = " << I_Order_In << ", Coeffs = " << D_A1_Coeffs_In << endl;
-  (*P_OFS_Log) << "CFits::ChebyLegend: D_A1_XCenters_Out.size() returned " << D_A1_XCenters_Out.size() << endl;
-#endif
+  #ifdef __DEBUG_FITS_TRACEFUNC__
+    cout << "CFits::ChebyLegend: started: CS_Function_In = " << CS_Function_In << ", D_XCenter_In = " << D_XCenter_In << ", D_YCenter_In = " << D_YCenter_In << ", D_YMin_In = " << D_YMin_In << ", D_YMax_In = " << D_YMax_In << ", D_XLow_In = " << D_XLow_In << ", D_XHigh_In = " << D_XHigh_In << ", I_Order_In = " << I_Order_In << ", Coeffs = " << D_A1_Coeffs_In << endl;
+    cout << "CFits::ChebyLegend: D_A1_XCenters_Out.size() returned " << D_A1_XCenters_Out.size() << endl;
+    (*P_OFS_Log) << "CFits::ChebyLegend: started: CS_Function_In = " << CS_Function_In << ", D_XCenter_In = " << D_XCenter_In << ", D_YMin_In = " << D_YMin_In << ", D_YMax_In = " << D_YMax_In << ", D_XLow_In = " << D_XLow_In << ", D_XHigh_In = " << D_XHigh_In << ", I_Order_In = " << I_Order_In << ", Coeffs = " << D_A1_Coeffs_In << endl;
+    (*P_OFS_Log) << "CFits::ChebyLegend: D_A1_XCenters_Out.size() returned " << D_A1_XCenters_Out.size() << endl;
+  #endif
 
   if (D_A1_XCenters_Out.size() < D_YMax_In - D_YMin_In + 1.)
   {
@@ -4381,10 +4381,10 @@ bool CFits::ChebyLegend(Array<double, 1> &D_A1_XCenters_Out,
   for (m = 0; m < this->NRows; m++)
   {
     D_Normalized = GetNormalized(m, D_YMin_In, D_YMax_In);
-#ifdef __DEBUG_FITS_TRACEFUNC__
-    cout << "CFits::ChebyLegend: m = " << m << ": D_Normalized set to " << D_Normalized << endl;
-    (*P_OFS_Log) << "CFits::ChebyLegend: m = " << m << ": D_Normalized set to " << D_Normalized << endl;
-#endif
+    #ifdef __DEBUG_FITS_TRACEFUNC__
+      cout << "CFits::ChebyLegend: m = " << m << ": D_Normalized set to " << D_Normalized << endl;
+      (*P_OFS_Log) << "CFits::ChebyLegend: m = " << m << ": D_Normalized set to " << D_Normalized << endl;
+    #endif
     D_A1_XCenters_Out(m) = D_XCenter_In;
     for (n = 0; n < I_Order_In; n++)
     {
@@ -4407,67 +4407,58 @@ bool CFits::ChebyLegend(Array<double, 1> &D_A1_XCenters_Out,
         if (CS_Function_In.EqualValue(CS_Chebyshev))
         {
           D_A1_ZArr(2) = (2. * D_Normalized * D_A1_ZArr(1)) - D_A1_ZArr(0);
-#ifdef __DEBUG_FITS_TRACEFUNC__
-          cout << "CFits::ChebyLegend: CS_Function = <" << CS_Function_In.Get() << "> == 'chebyshev' : D_A1_ZArr(2) = " << D_A1_ZArr(2) << endl;
-          (*P_OFS_Log) << "CFits::ChebyLegend: CS_Function = <" << CS_Function_In.Get() << "> == 'chebyshev' : D_A1_ZArr(2) = " << D_A1_ZArr(2) << endl;
-#endif
-
+          #ifdef __DEBUG_FITS_TRACEFUNC__
+            cout << "CFits::ChebyLegend: CS_Function = <" << CS_Function_In.Get() << "> == 'chebyshev' : D_A1_ZArr(2) = " << D_A1_ZArr(2) << endl;
+            (*P_OFS_Log) << "CFits::ChebyLegend: CS_Function = <" << CS_Function_In.Get() << "> == 'chebyshev' : D_A1_ZArr(2) = " << D_A1_ZArr(2) << endl;
+          #endif
         }
         else if (CS_Function_In.EqualValue(CS_Legendre))
         {
           //Y = sum from i=1!!! to order {c_i * x_i}
           D_A1_ZArr(2) = ((((2. * ((double)n + 1.)) - 3.) * D_Normalized * D_A1_ZArr(1)) - (((double)n - 1.) * D_A1_ZArr(0))) / (double)n;
-#ifdef __DEBUG_FITS_TRACEFUNC__
-          cout << "CFits::ChebyLegend: CS_Function = <" << CS_Function_In.Get() << "> == 'legendre' : D_A1_ZArr(2) = " << D_A1_ZArr(2) << endl;
-          (*P_OFS_Log) << "CFits::ChebyLegend: CS_Function = <" << CS_Function_In.Get() << "> == 'legendre' : D_A1_ZArr(2) = " << D_A1_ZArr(2) << endl;
-#endif
-
+          #ifdef __DEBUG_FITS_TRACEFUNC__
+            cout << "CFits::ChebyLegend: CS_Function = <" << CS_Function_In.Get() << "> == 'legendre' : D_A1_ZArr(2) = " << D_A1_ZArr(2) << endl;
+            (*P_OFS_Log) << "CFits::ChebyLegend: CS_Function = <" << CS_Function_In.Get() << "> == 'legendre' : D_A1_ZArr(2) = " << D_A1_ZArr(2) << endl;
+          #endif
         }
         else
         {
-#ifdef __DEBUG_FITS_TRACEFUNC__
-          cout << "CFits::ChebyLegend: Cannot associate CS_Function = <" << CS_Function_In.Get() << "> to '" << CS_Chebyshev.Get() << "' of '" << CS_Legendre.Get() << "'" << endl;
-          (*P_OFS_Log) << "CFits::ChebyLegend: Cannot associate CS_Function = <" << CS_Function_In.Get() << "> to '" << CS_Chebyshev.Get() << "' of '" << CS_Legendre.Get() << "'" << endl;
-#endif
+          #ifdef __DEBUG_FITS_TRACEFUNC__
+            cout << "CFits::ChebyLegend: Cannot associate CS_Function = <" << CS_Function_In.Get() << "> to '" << CS_Chebyshev.Get() << "' of '" << CS_Legendre.Get() << "'" << endl;
+            (*P_OFS_Log) << "CFits::ChebyLegend: Cannot associate CS_Function = <" << CS_Function_In.Get() << "> to '" << CS_Chebyshev.Get() << "' of '" << CS_Legendre.Get() << "'" << endl;
+          #endif
           return false;
         }
       }
       //Y = sum from i=1!!! to order {c_i * x_i}
       D_A1_XCenters_Out(m) += D_A1_Coeffs_In(n) * D_A1_ZArr(2);
-#ifdef __DEBUG_FITS_TRACEFUNC__
-      cout << "CFits::ChebyLegend: D_A1_XCenters_Out(m=" << m << ") set to += D_A1_Coeffs_In(n=" << n << ")=" << D_A1_Coeffs_In(n) << " * D_A1_ZArr(2)=" << D_A1_ZArr(2) << " = " << D_A1_XCenters_Out(m) << endl;
-      (*P_OFS_Log) << "CFits::ChebyLegend: D_A1_XCenters_Out(m=" << m << ") set to += D_A1_Coeffs_In(n=" << n << ")=" << D_A1_Coeffs_In(n) << " * D_A1_ZArr(2)=" << D_A1_ZArr(2) << " =" << D_A1_XCenters_Out(m) << endl;
-#endif
-
+      #ifdef __DEBUG_FITS_TRACEFUNC__
+        cout << "CFits::ChebyLegend: D_A1_XCenters_Out(m=" << m << ") set to += D_A1_Coeffs_In(n=" << n << ")=" << D_A1_Coeffs_In(n) << " * D_A1_ZArr(2)=" << D_A1_ZArr(2) << " = " << D_A1_XCenters_Out(m) << endl;
+        (*P_OFS_Log) << "CFits::ChebyLegend: D_A1_XCenters_Out(m=" << m << ") set to += D_A1_Coeffs_In(n=" << n << ")=" << D_A1_Coeffs_In(n) << " * D_A1_ZArr(2)=" << D_A1_ZArr(2) << " =" << D_A1_XCenters_Out(m) << endl;
+      #endif
     }// end for (n = 0; n < Order; n++)
     #ifdef __DEBUG_FITS_TRACEFUNC__
-    cout << "CFits::ChebyLegend: D_XLow_In = " << D_XLow_In << endl;
-    (*P_OFS_Log) << "CFits::ChebyLegend: D_XLow_In = " << D_XLow_In << endl;
-    cout << "CFits::ChebyLegend: I_NCols_In(=" << I_NCols_In <<") - D_XHigh_In(=" << D_XHigh_In << ") = " << I_NCols_In - D_XHigh_In << endl;
-    (*P_OFS_Log) << "CFits::ChebyLegend: I_NCols_In(=" << I_NCols_In <<") - D_XHigh_In(=" << D_XHigh_In << ") = " << I_NCols_In - D_XHigh_In << endl;
+      cout << "CFits::ChebyLegend: D_XLow_In = " << D_XLow_In << endl;
+      (*P_OFS_Log) << "CFits::ChebyLegend: D_XLow_In = " << D_XLow_In << endl;
+      cout << "CFits::ChebyLegend: I_NCols_In(=" << I_NCols_In <<") - D_XHigh_In(=" << D_XHigh_In << ") = " << I_NCols_In - D_XHigh_In << endl;
+      (*P_OFS_Log) << "CFits::ChebyLegend: I_NCols_In(=" << I_NCols_In <<") - D_XHigh_In(=" << D_XHigh_In << ") = " << I_NCols_In - D_XHigh_In << endl;
     #endif
-    if (D_A1_XCenters_Out(m) < 0. - D_XLow_In || D_A1_XCenters_Out(m) > I_NCols_In - D_XHigh_In)
-    {
-      if (!B_Begin_Found)
-      {
+    if (D_A1_XCenters_Out(m) < 0. - D_XLow_In || D_A1_XCenters_Out(m) > I_NCols_In - D_XHigh_In){
+      if (!B_Begin_Found){
         (*P_D_YMin_Out) = m;
-#ifdef __DEBUG_FITS_TRACEFUNC__
-        cout << "CFits::ChebyLegend: P_D_YMin_Out set to " << *P_D_YMin_Out << endl;
-        (*P_OFS_Log) << "CFits::ChebyLegend: P_D_YMin_Out set to " << *P_D_YMin_Out << endl;
-#endif
-
+        #ifdef __DEBUG_FITS_TRACEFUNC__
+          cout << "CFits::ChebyLegend: P_D_YMin_Out set to " << *P_D_YMin_Out << endl;
+          (*P_OFS_Log) << "CFits::ChebyLegend: P_D_YMin_Out set to " << *P_D_YMin_Out << endl;
+        #endif
       }
-      else
-      {
-        if (!B_XMax_Set)
-        {
+      else{
+        if (!B_XMax_Set){
           (*P_D_YMax_Out) = m;
           B_XMax_Set = true;
-#ifdef __DEBUG_FITS_TRACEFUNC__
-          cout << "CFits::ChebyLegend: B_XMax_Set set to TRUE: P_D_YMax_Out set to " << *P_D_YMax_Out << endl;
-          (*P_OFS_Log) << "CFits::ChebyLegend: B_XMax_Set set to TRUE: P_D_YMax_Out set to " << *P_D_YMax_Out << endl;
-#endif
-
+          #ifdef __DEBUG_FITS_TRACEFUNC__
+            cout << "CFits::ChebyLegend: B_XMax_Set set to TRUE: P_D_YMax_Out set to " << *P_D_YMax_Out << endl;
+            (*P_OFS_Log) << "CFits::ChebyLegend: B_XMax_Set set to TRUE: P_D_YMax_Out set to " << *P_D_YMax_Out << endl;
+          #endif
         }
       }
       //      D_A1_XCenters_Out(m) = 0. - D_XLow_In;
@@ -5720,15 +5711,13 @@ bool CFits::ReadArray()
     delete[] P_ErrMsg;
     return false;
   }
-  cout << "CFits::ReadArray: FitsFileName <" << this->P_CS_FileName->Get() << "> opened" << endl;
-#ifdef __DEBUG_FITS_READARRAY__
-  (*P_OFS_Log) << "CFits::ReadArray: FitsFileName <" << this->P_CS_FileName->Get() << "> opened" << endl;
-#endif
-  cout << "CFits::ReadArray: FitsFileName contains <" << naxis  << "> dimensions" << endl;
-  cout << "CFits::ReadArray: FitsFileName contains <" << naxes[1]  << "> rows!!!!!!! and <" << naxes[0] << "> columns!!!!!!!!! naxes = <" << naxes << ">" << endl;
-#ifdef __DEBUG_FITS_READARRAY__
-  (*P_OFS_Log) << "CFits::ReadArray: FitsFileName contains <" << naxes[1]  << "> rows!!!!!!! and <" << naxes[0] << "> columns!!!!!!!!! naxes = <" << naxes << ">" << endl;
-#endif
+  #ifdef __DEBUG_FITS_READARRAY__
+    cout << "CFits::ReadArray: FitsFileName <" << this->P_CS_FileName->Get() << "> opened" << endl;
+    (*P_OFS_Log) << "CFits::ReadArray: FitsFileName <" << this->P_CS_FileName->Get() << "> opened" << endl;
+    cout << "CFits::ReadArray: FitsFileName contains <" << naxis  << "> dimensions" << endl;
+    cout << "CFits::ReadArray: FitsFileName contains <" << naxes[1]  << "> rows!!!!!!! and <" << naxes[0] << "> columns!!!!!!!!! naxes = <" << naxes << ">" << endl;
+    (*P_OFS_Log) << "CFits::ReadArray: FitsFileName contains <" << naxes[1]  << "> rows!!!!!!! and <" << naxes[0] << "> columns!!!!!!!!! naxes = <" << naxes << ">" << endl;
+  #endif
 
   this->NCols = naxes[0];
   cout << "CFits::ReadArray: this->NCols set to <" << this->NCols << ">" << endl;
@@ -5747,10 +5736,10 @@ bool CFits::ReadArray()
     return false;
   }
 
-  cout << "CFits::ReadArray: this->NCols set to <" << this->NCols << "> and this->NRows set to <" << this->NRows << ">, nelements = " << nelements << endl;
-#ifdef __DEBUG_FITS_READARRAY__
-  (*P_OFS_Log) << "CFits::ReadArray: this->NCols set to <" << this->NCols << "> and this->NRows set to <" << this->NRows << ">, nelements = " << nelements << endl;
-#endif
+  #ifdef __DEBUG_FITS_READARRAY__
+    cout << "CFits::ReadArray: this->NCols set to <" << this->NCols << "> and this->NRows set to <" << this->NRows << ">, nelements = " << nelements << endl;
+    (*P_OFS_Log) << "CFits::ReadArray: this->NCols set to <" << this->NCols << "> and this->NRows set to <" << this->NRows << ">, nelements = " << nelements << endl;
+  #endif
 
   p_Array = (double*)malloc(sizeof(double) * nelements);
   fpixel = 1;
@@ -5772,13 +5761,13 @@ bool CFits::ReadArray()
     delete P_D_A2_PixArray;
   this->P_D_A2_PixArray = new Array<double,2>(p_Array, shape(this->NRows, this->NCols), duplicateData);
   // --- set all negative pixels to 0
-  cout << "CFits::ReadArray: this->NCols = <" << this->NCols << ">, this->NRows = <" << this->NRows << ">, nelements = " << nelements << endl;
   #ifdef __DEBUG_FITS_READARRAY__
+    cout << "CFits::ReadArray: this->NCols = <" << this->NCols << ">, this->NRows = <" << this->NRows << ">, nelements = " << nelements << endl;
     (*P_OFS_Log) << "CFits::ReadArray: this->NCols = <" << this->NCols << ">, this->NRows = <" << this->NRows << ">, nelements = " << nelements << endl;
   #endif
   count = sum(where((*this->P_D_A2_PixArray) < 0., 1, 0));
-  cout << "CFits::ReadArray: " << count << " pixels are lower than 0" << endl;
   #ifdef __DEBUG_FITS_READARRAY__
+    cout << "CFits::ReadArray: " << count << " pixels are lower than 0" << endl;
     (*P_OFS_Log) << "CFits::ReadArray: " << count << " pixels are lower than 0" << endl;
   #endif
 
@@ -5790,7 +5779,9 @@ bool CFits::ReadArray()
   //        printf("Error %d in file %s\n", Status, FitsFileName);
   fits_close_file(this->P_FitsFile, &Status);
 
-  cout << "CFits::ReadArray: FitsFileName <" << this->P_CS_FileName->Get() << "> closed" << endl;
+  #ifdef __DEBUG_FITS_READARRAY__
+    cout << "CFits::ReadArray: FitsFileName <" << this->P_CS_FileName->Get() << "> closed" << endl;
+  #endif
 
   if (Status !=0)
   {
@@ -5836,14 +5827,12 @@ bool CFits::ReadErrArray()
     delete[] P_ErrMsg;
     return false;
   }
-  cout << "CFits::ReadErrArray: FitsErrFileName <" << this->P_CS_ErrFileName->Get() << "> opened" << endl;
-#ifdef __DEBUG_FITS_READARRAY__
-  (*P_OFS_Log) << "CFits::ReadErrArray: FitsErrFileName <" << this->P_CS_ErrFileName->Get() << "> opened" << endl;
-#endif
-  cout << "CFits::ReadErrArray: FitsErrFileName contains <" << naxes[1]  << "> rows!!!!!!! and <" << naxes[0] << "> columns!!!!!!!!! naxes = <" << naxes << ">" << endl;
-#ifdef __DEBUG_FITS_READARRAY__
-  (*P_OFS_Log) << "CFits::ReadErrArray: FitsErrFileName contains <" << naxes[1]  << "> rows!!!!!!! and <" << naxes[0] << "> columns!!!!!!!!! naxes = <" << naxes << ">" << endl;
-#endif
+  #ifdef __DEBUG_FITS_READARRAY__
+    cout << "CFits::ReadErrArray: FitsErrFileName <" << this->P_CS_ErrFileName->Get() << "> opened" << endl;
+    (*P_OFS_Log) << "CFits::ReadErrArray: FitsErrFileName <" << this->P_CS_ErrFileName->Get() << "> opened" << endl;
+    cout << "CFits::ReadErrArray: FitsErrFileName contains <" << naxes[1]  << "> rows!!!!!!! and <" << naxes[0] << "> columns!!!!!!!!! naxes = <" << naxes << ">" << endl;
+    (*P_OFS_Log) << "CFits::ReadErrArray: FitsErrFileName contains <" << naxes[1]  << "> rows!!!!!!! and <" << naxes[0] << "> columns!!!!!!!!! naxes = <" << naxes << ">" << endl;
+  #endif
 
   if (this->NCols != naxes[0]){
     cout << "CFits::ReadErrArray: ERROR: number of cols in FitsErrFileName = <" << naxes[0]  << "> != this->NCols(=" << this->NCols << ") => returning false" << endl;
@@ -5878,10 +5867,10 @@ bool CFits::ReadErrArray()
   // --- set all negative pixels to 0
 
   count = sum(where((*this->P_D_A2_PixArray) < 0., 1, 0));
-  cout << "CFits::ReadErrArray: " << count << " pixels are lower than 0" << endl;
-#ifdef __DEBUG_FITS_READARRAY__
-  (*P_OFS_Log) << "CFits::ReadErrArray: " << count << " pixels are lower than 0" << endl;
-#endif
+  #ifdef __DEBUG_FITS_READARRAY__
+    cout << "CFits::ReadErrArray: " << count << " pixels are lower than 0" << endl;
+    (*P_OFS_Log) << "CFits::ReadErrArray: " << count << " pixels are lower than 0" << endl;
+  #endif
 
   //      fits_write_img(ffile, TFLOAT, fpixel, nelements,
   //                     p_Array, &Status);
@@ -5890,8 +5879,10 @@ bool CFits::ReadErrArray()
   //        printf("Error %d in file %s\n", Status, FitsErrFileName);
   fits_close_file(this->P_FitsFile, &Status);
 
-  cout << "CFits::ReadErrArray: FitsErrFileName <" << this->P_CS_ErrFileName->Get() << "> closed" << endl;
-
+  #ifdef __DEBUG_FITS_READARRAY__
+    cout << "CFits::ReadErrArray: FitsErrFileName <" << this->P_CS_ErrFileName->Get() << "> closed" << endl;
+  #endif
+    
   if (Status !=0)
   {
     cout << "CFits::ReadErrArray: Error " << Status << " closing file " << this->P_CS_ErrFileName->Get() << endl;
@@ -21148,7 +21139,9 @@ Array<int, 1>* CFits::IndGenArr(int len) const
   for (int i=0; i<len; i++){
     (*(P_I_A1_Result))(i) = i;   // [ -3 -2 -1  0  1  2  3 ]
   }
-  cout << "CFits::IndGenArr: len = " << len << ": (*P_I_A1_Result) set to " << *P_I_A1_Result << endl;
+  #ifdef __DEBUG_FITS_INDGENARR__
+    cout << "CFits::IndGenArr: len = " << len << ": (*P_I_A1_Result) set to " << *P_I_A1_Result << endl;
+  #endif
   return (P_I_A1_Result);
 }
 
@@ -24168,46 +24161,57 @@ Array<double, 1>* CFits::Poly(const Array<double, 1> &VecArr,
                               const Array<double, 1> &VecCoeffs) const{
   int ii = 0;
   Array<double, 1>* P_D_A1_Out = new Array<double, 1>(VecArr.size());
-#ifdef __DEBUG_FITS_POLY__
-  cout << "CFits::Poly: VecArr = " << VecArr << endl;
-  cout << "CFits::Poly: VecCoeffs = " << VecCoeffs << endl;
-  cout << "CFits::Poly: *P_D_A1_Out set to " << *P_D_A1_Out << endl;
-#endif
+  #ifdef __DEBUG_FITS_POLY__
+    cout << "CFits::Poly: VecArr = " << VecArr << endl;
+    cout << "CFits::Poly: VecCoeffs = " << VecCoeffs << endl;
+    cout << "CFits::Poly: *P_D_A1_Out set to " << *P_D_A1_Out << endl;
+  #endif
   int I_PolynomialOrder = VecCoeffs.size() - 1;
-#ifdef __DEBUG_FITS_POLY__
-  cout << "CFits::Poly: I_PolynomialOrder set to " << I_PolynomialOrder << endl;
-#endif
+  #ifdef __DEBUG_FITS_POLY__
+    cout << "CFits::Poly: I_PolynomialOrder set to " << I_PolynomialOrder << endl;
+  #endif
   if (I_PolynomialOrder == 0){
     *P_D_A1_Out = 0.*VecArr + VecCoeffs(0);
-#ifdef __DEBUG_FITS_POLY__
-    cout << "CFits::Poly: I_PolynomialOrder == 0: *P_D_A1_Out set to " << *P_D_A1_Out << endl;
-#endif
+    #ifdef __DEBUG_FITS_POLY__
+      cout << "CFits::Poly: I_PolynomialOrder == 0: *P_D_A1_Out set to " << *P_D_A1_Out << endl;
+    #endif
     return P_D_A1_Out;
   }
   *P_D_A1_Out = VecCoeffs(I_PolynomialOrder);
-#ifdef __DEBUG_FITS_POLY__
-  cout << "CFits::Poly: I_PolynomialOrder != 0: *P_D_A1_Out set to " << *P_D_A1_Out << endl;
-#endif
+  #ifdef __DEBUG_FITS_POLY__
+    cout << "CFits::Poly: I_PolynomialOrder != 0: *P_D_A1_Out set to " << *P_D_A1_Out << endl;
+  #endif
   for (ii = I_PolynomialOrder-1; ii >= 0; ii--){
     *P_D_A1_Out = (*P_D_A1_Out) * VecArr + VecCoeffs(ii);
-#ifdef __DEBUG_FITS_POLY__
-    cout << "CFits::Poly: I_PolynomialOrder != 0: for (ii = " << ii << "; ii >= 0; ii--) *P_D_A1_Out set to " << *P_D_A1_Out << endl;
-#endif
+    #ifdef __DEBUG_FITS_POLY__
+      cout << "CFits::Poly: I_PolynomialOrder != 0: for (ii = " << ii << "; ii >= 0; ii--) *P_D_A1_Out set to " << *P_D_A1_Out << endl;
+    #endif
   }
   return P_D_A1_Out;
 }
 
-/**    FUNCTION POLY_FIT, x, y, ndegree, $
-    yfit_old, yband_old, yerror_old, corrm_old, $     ; obsolete arguments
-    CHISQ=chisq, $
-    COVAR=covar, $
-    DOUBLE=double, $
-    MEASURE_ERRORS=measure_errors, $
-    SIGMA=sigma, $
-    STATUS=status, $
-    YBAND=yband, $
-    YERROR=yerror, $
-    YFIT=yfit
+double CFits::Poly(const double D_X_In,
+                   const Array<double, 1> &D_A1_Coeffs) const{
+  Array<double, 1> D_A1_X(1);
+  D_A1_X = D_X_In;
+  Array<double, 1> *P_D_A1_Y = this->Poly(D_A1_X, D_A1_Coeffs);
+  double D_Y = (*P_D_A1_Y)(0);
+  delete(P_D_A1_Y);
+  return D_Y;
+}
+            
+
+/** 
+    CHISQ=double(chisq): out
+    COVAR=covar: out
+    MEASURE_ERRORS=measure_errors: in
+    SIGMA=sigma: out
+    STATUS=status: out
+    YBAND=yband
+    YERROR=yerror
+    YFIT=yfit: out
+    LSIGMA=lsigma: lower sigma rejection threshold
+    USIGMA=usigma:
     ;**/
 bool CFits::PolyFit(const Array<double, 1> &D_A1_X_In,
                     const Array<double, 1> &D_A1_Y_In,
@@ -24244,8 +24248,10 @@ bool CFits::PolyFit(const Array<double, 1> &D_A1_X_In,
   }
 
 ///    sdev = 1d
-  double D_SDev = 1.;
-  double D_SDevSquare;
+  Array<double, 1> D_A1_SDev(D_A1_X_In.size());
+  D_A1_SDev= 1.;
+  Array<double, 1> D_A1_SDevSquare(D_A1_X_In.size());
+  
 
   CString CS_Temp(" ");
 ///    double = (N_ELEMENTS(double) GT 0) ? KEYWORD_SET(double) : $
@@ -24253,22 +24259,26 @@ bool CFits::PolyFit(const Array<double, 1> &D_A1_X_In,
 
 ///    haveMeasureError = (N_ELEMENTS(measure_errors) gt 0)
   bool B_HaveMeasureError = false;
-  double D_MeasureErrors = 1.;
+  Array<double, 1> *P_D_A1_MeasureErrors = new Array<double, 1>(D_A1_X_In.size());
+  *P_D_A1_MeasureErrors = 1.;
   CS_Temp.Set("MEASURE_ERRORS");
   if ((I_Pos = this->KeyWord_Set(*(const_cast<const Array<CString, 1>*>(&CS_A1_Args_In)), CS_Temp)) >= 0)
   {
     B_HaveMeasureError = true;
-    D_MeasureErrors = *(double*)ArgV[I_Pos];
+    delete(P_D_A1_MeasureErrors);
+    P_D_A1_MeasureErrors = (Array<double, 1>*)ArgV[I_Pos];
 ///    if (haveMeasureError) then $
 ///        sdev *= measure_errors
-    D_SDev *= D_MeasureErrors;
     #ifdef __DEBUG_FITS_POLYFIT__
       cout << "CFits::PolyFit: B_HaveMeasureError set to TRUE" << endl;
-      cout << "CFits::PolyFit: D_MeasureErrors set to " << D_MeasureErrors << endl;
-      cout << "CFits::PolyFit: D_SDev set to " << D_SDev << endl;
+      cout << "CFits::PolyFit: *P_D_A1_MeasureErrors set to " << *P_D_A1_MeasureErrors << endl;
     #endif
   }
-
+  D_A1_SDev = (*P_D_A1_MeasureErrors);
+  #ifdef __DEBUG_FITS_POLYFIT__
+    cout << "CFits::PolyFit: D_A1_SDev set to " << D_A1_SDev << endl;
+  #endif
+  
   double D_Reject = 0.;
   bool B_Reject = false;
   CS_Temp.Set("REJECT");
@@ -24283,9 +24293,9 @@ bool CFits::PolyFit(const Array<double, 1> &D_A1_X_In,
   }
 
 ///    sdev2 = sdev^2
-  D_SDevSquare = pow(D_SDev,2);
+  D_A1_SDevSquare = pow(D_A1_SDev,2);
   #ifdef __DEBUG_FITS_POLYFIT__
-    cout << "CFits::PolyFit: D_SDevSquare set to " << D_SDevSquare << endl;
+    cout << "CFits::PolyFit: D_A1_SDevSquare set to " << D_A1_SDevSquare << endl;
   #endif
 ///    haveYband = ARG_PRESENT(yband) || ARG_PRESENT(yband_old)
   bool B_HaveYBand = false;
@@ -24316,15 +24326,15 @@ bool CFits::PolyFit(const Array<double, 1> &D_A1_X_In,
   if ((I_Pos = this->KeyWord_Set(*(const_cast<const Array<CString, 1>*>(&CS_A1_Args_In)), CS_Temp)) >= 0)
   {
     P_D_A1_YFit = (Array<double,1>*)ArgV[I_Pos];
-    #ifdef __DEBUG_FITS_POLYFIT__
-      cout << "CFits::PolyFit: KeyWord_Set(YFIT): *P_D_A1_YFit set to " << (*P_D_A1_YFit) << endl;
-    #endif
     P_D_A1_YFit->resize(D_A1_X_In.size());
+    #ifdef __DEBUG_FITS_POLYFIT__
+      cout << "CFits::PolyFit: KeyWord_Set(YFIT)" << endl;
+    #endif
   }
   else{
     P_D_A1_YFit = new Array<double,1>(D_A1_X_In.size());
     #ifdef __DEBUG_FITS_POLYFIT__
-      cout << "CFits::PolyFit: !KeyWord_Set(YFIT): *P_D_A1_YFit set to " << (*P_D_A1_YFit) << endl;
+      cout << "CFits::PolyFit: !KeyWord_Set(YFIT)" << endl;
     #endif
   }
   (*P_D_A1_YFit) = 0.;
@@ -24378,7 +24388,7 @@ bool CFits::PolyFit(const Array<double, 1> &D_A1_X_In,
 ///    if (haveMeasureError) then $
 ///        wy /= sdev2
   if (B_HaveMeasureError){
-    D_A1_WY /= D_SDevSquare;
+    D_A1_WY = D_A1_WY / D_A1_SDevSquare;
     #ifdef __DEBUG_FITS_POLYFIT__
       cout << "CFits::PolyFit: B_HaveMeasureError: D_A1_WY set to " << D_A1_WY << endl;
     #endif
@@ -24392,7 +24402,7 @@ bool CFits::PolyFit(const Array<double, 1> &D_A1_X_In,
 ///    covar[0,0] = haveMeasureError ?  TOTAL(1d/sdev2) : n
 //  if (B_WithCoVar){
     if (B_HaveMeasureError){
-      (*P_D_A2_Covar)(0,0) = 1./D_SDevSquare;
+      (*P_D_A2_Covar)(0,0) = sum(1./D_A1_SDevSquare);
       #ifdef __DEBUG_FITS_POLYFIT__
         cout << "CFits::PolyFit: B_HaveMeasureError: (*P_D_A2_Covar)(0,0) set to " << (*P_D_A2_Covar)(0,0) << endl;
       #endif
@@ -24428,7 +24438,7 @@ bool CFits::PolyFit(const Array<double, 1> &D_A1_X_In,
     }
 ///        sum =  haveMeasureError ? TOTAL(z/sdev2) : TOTAL(z)
     if (B_HaveMeasureError){
-      D_Sum = sum(D_A1_Z / D_SDevSquare);
+      D_Sum = sum(D_A1_Z / D_A1_SDevSquare);
       #ifdef __DEBUG_FITS_POLYFIT__
         cout << "CFits::PolyFit: for(p(=" << p << ")...): B_HaveMeasureError: D_Sum set to " << D_Sum << endl;
       #endif
@@ -24545,7 +24555,7 @@ bool CFits::PolyFit(const Array<double, 1> &D_A1_X_In,
     #endif
 
 ///        chisq = TOTAL(diff/sdev2)
-    D_ChiSq = sum(D_A1_Diff / D_SDevSquare);
+    D_ChiSq = sum(D_A1_Diff / D_A1_SDevSquare);
     #ifdef __DEBUG_FITS_POLYFIT__
       cout << "CFits::PolyFit: B_HaveMeasureError: D_ChiSq set to " << D_ChiSq << endl;
     #endif
@@ -24656,7 +24666,8 @@ bool CFits::PolyFit(const Array<double, 1> &D_A1_X_In,
   {
     delete(P_D_A2_Covar);
   }
-
+  if (!B_HaveMeasureError)
+    delete(P_D_A1_MeasureErrors);
   return true;
 }
 
@@ -24708,6 +24719,25 @@ bool CFits::PolyFit(const Array<double, 1> &D_A1_X_In,
                     const Array<CString, 1> &CS_A1_Args_In,
                     void *ArgV[],
                     Array<double, 1>* P_D_A1_Out) const{
+  return this->PolyFit(D_A1_X_In,
+                       D_A1_Y_In,
+                       I_Degree_In,
+                       D_Reject_In,
+                       D_Reject_In,
+                       -1,
+                       CS_A1_Args_In,
+                       ArgV,
+                       P_D_A1_Out);
+}
+bool CFits::PolyFit(const Array<double, 1> &D_A1_X_In,
+                    const Array<double, 1> &D_A1_Y_In,
+                    const int I_Degree_In,
+                    const double D_LReject_In,
+                    const double D_UReject_In,
+                    const int I_NIter,
+                    const Array<CString, 1> &CS_A1_Args_In,
+                    void *ArgV[],
+                    Array<double, 1>* P_D_A1_Out) const{
 
   #ifdef __DEBUG_FITS_POLYFIT__
     cout << "CFits::PolyFit: Starting " << endl;
@@ -24722,15 +24752,24 @@ bool CFits::PolyFit(const Array<double, 1> &D_A1_X_In,
   Array<double, 1> D_A1_Y_New(D_A1_Y.size());
   Array<double, 1> D_A1_MeasureErrors(D_A1_X.size());
   Array<double, 1> D_A1_MeasureErrors_New(D_A1_X.size());
-  Array<double, 1> *P_D_A1_MeasureErrors;
+  Array<double, 1> *P_D_A1_MeasureErrors = new Array<double, 1>(D_A1_X_In.size());
   int I_DataValues_New = 0;
   int I_NRejected = 0;
-
+  D_A1_MeasureErrors = sqrt(D_A1_Y_In);
+  (*P_D_A1_MeasureErrors) = D_A1_MeasureErrors;
+  bool B_HaveMeasureErrors = false;
+  
   int I_Pos = -1;
   I_Pos = this->KeyWord_Set(CS_A1_Args_In, CString("MEASURE_ERRORS"));
   if (I_Pos >= 0){
+    delete(P_D_A1_MeasureErrors);
     P_D_A1_MeasureErrors = (Array<double,1>*)ArgV[I_Pos];
     D_A1_MeasureErrors = *P_D_A1_MeasureErrors;
+    B_HaveMeasureErrors = true;
+    if (P_D_A1_MeasureErrors->size() != D_A1_X_In.size()){
+      cout << "CFits::PolyFit: ERROR: P_D_A1_MeasureErrors->size(=" << P_D_A1_MeasureErrors->size() << ") != D_A1_X_In.size(=" << D_A1_X_In.size() << ")" << endl;
+      return false;
+    }
   }
 
   Array<int, 1> *P_I_A1_NotRejected;
@@ -24779,8 +24818,11 @@ bool CFits::PolyFit(const Array<double, 1> &D_A1_X_In,
   Array<double, 1> *P_D_A1_PolyRes;
   int I_NRejected_Old=0;
   Array<int, 1> I_A1_Rejected_Old(D_A1_X_In.size());
-  bool B_Run = false;
-  do{
+  bool B_Run = true;
+  int i_iter = 0;
+//  if (I_NIter > 0)
+//    B_Run = false;
+  while (B_Run){
     I_A1_Rejected_Old.resize(I_A1_Rejected.size());
     I_A1_Rejected_Old = I_A1_Rejected;
     I_A1_Rejected.resize(D_A1_X_In.size());
@@ -24797,16 +24839,20 @@ bool CFits::PolyFit(const Array<double, 1> &D_A1_X_In,
       cout << "CFits::PolyFit: ERROR: PolyFit returned FALSE" << endl;
       return false;
     }
+    #ifdef __DEBUG_FITS_POLYFIT__
+      cout << "CFits::PolyFit: PolyFit(D_A1_X, D_A1_Y, I_Degree_In, CS_A1_Args_In, ArgV, P_D_A1_Out) returned *P_D_A1_Out = " << *P_D_A1_Out << endl;
+    #endif
     Array<double, 1> *P_D_A1_YFit = this->Poly(D_A1_X, *P_D_A1_Out);
     double D_SDev = sqrt(sum(pow2(D_A1_Y - (*P_D_A1_YFit)) / D_A1_Y.size()));
 
+    P_D_A1_PolyRes = this->Poly(D_A1_X_In, *P_D_A1_Out);
     for (int i_pos=0; i_pos < D_A1_Y_In.size(); i_pos++){
-      P_D_A1_PolyRes = this->Poly(D_A1_X_In, *P_D_A1_Out);
-      double D_Dev = pow2(D_A1_Y_In(i_pos) - (*P_D_A1_PolyRes)(i_pos));
-      if (D_Dev < D_Reject_In * D_SDev){
+      double D_Dev = D_A1_Y_In(i_pos) - (*P_D_A1_PolyRes)(i_pos);
+      if (((D_Dev < 0) && (D_Dev > (D_LReject_In * D_SDev))) || ((D_Dev >= 0) && (D_Dev < (D_UReject_In * D_SDev)))){
         D_A1_X_New(I_DataValues_New) = D_A1_X_In(i_pos);
         D_A1_Y_New(I_DataValues_New) = D_A1_Y_In(i_pos);
-        D_A1_MeasureErrors_New(I_DataValues_New) = D_A1_MeasureErrors(i_pos);
+        if (B_HaveMeasureErrors)
+          D_A1_MeasureErrors_New(I_DataValues_New) = (*P_D_A1_MeasureErrors)(i_pos);
         (*P_I_A1_OrigPos)(I_DataValues_New) = D_A1_Y_In(i_pos);
 
         I_DataValues_New++;
@@ -24817,18 +24863,15 @@ bool CFits::PolyFit(const Array<double, 1> &D_A1_X_In,
         I_NReject++;
         I_NRejected++;
       }
-      delete(P_D_A1_PolyRes);
     }
+    delete(P_D_A1_PolyRes);
     D_A1_X.resize(I_DataValues_New);
     D_A1_Y.resize(I_DataValues_New);
-    D_A1_MeasureErrors.resize(I_DataValues_New);
-
     D_A1_X = D_A1_X_New(Range(0,I_DataValues_New-1));
     D_A1_Y = D_A1_Y_New(Range(0,I_DataValues_New-1));
-    D_A1_MeasureErrors = D_A1_MeasureErrors_New(Range(0,I_DataValues_New-1));
-    I_Pos = this->KeyWord_Set(CS_A1_Args_In, CString("MEASURE_ERRORS"));
-    if (I_Pos >= 0){
-      ArgV[I_Pos] = &D_A1_MeasureErrors;
+    if (B_HaveMeasureErrors){
+      D_A1_MeasureErrors.resize(I_DataValues_New);
+      D_A1_MeasureErrors = D_A1_MeasureErrors_New(Range(0,I_DataValues_New-1));
     }
 
     delete(P_D_A1_YFit);
@@ -24842,14 +24885,16 @@ bool CFits::PolyFit(const Array<double, 1> &D_A1_X_In,
           B_Run = true;
       }
     }
-
-  } while (B_Run);
+    i_iter++;
+    if ((I_NIter >= 0) && (i_iter >= I_NIter))
+      B_Run = false;
+  }
   cout << "CFits::PolyFit: I_NRejected = " << I_NRejected << endl;
 
-  I_Pos = this->KeyWord_Set(CS_A1_Args_In, CString("MEASURE_ERRORS"));
-  if (I_Pos >= 0){
-    ArgV[I_Pos] = P_D_A1_MeasureErrors;
-  }
+//  I_Pos = this->KeyWord_Set(CS_A1_Args_In, CString("MEASURE_ERRORS"));
+//  if (I_Pos >= 0){
+//    ArgV[I_Pos] = P_D_A1_MeasureErrors;
+//  }
 
   cout << "CFits::PolyFit: I_DataValues_New = " << I_DataValues_New << endl;
   Array<int, 1> I_A1_NotRejected(I_DataValues_New);
@@ -24892,6 +24937,43 @@ bool CFits::PolyFit(const Array<double, 1> &D_A1_X_In,
   CS_A1_Args = CString(" ");
   void **PP_Args = (void**)malloc(sizeof(void*) * 1);
   if (!PolyFit(D_A1_X_In, D_A1_Y_In, I_Degree_In, D_Reject_In, CS_A1_Args, PP_Args, P_D_A1_Out)){
+    cout << "CFits::PolyFit: ERROR: PolyFit(" << D_A1_X_In << ", " << D_A1_Y_In << ", " << I_Degree_In << "...) returned FALSE" << endl;
+    cout << "CFits::PolyFit: ERROR: PolyFit returned *P_D_A1_Out = " << *P_D_A1_Out << endl;
+    free(PP_Args);
+    return false;
+  }
+  #ifdef __DEBUG_FITS_POLYFIT__
+    cout << "CFits::PolyFit: PolyFit returned *P_D_A1_Out = " << *P_D_A1_Out << endl;
+  #endif
+//  free(*PP_Args);
+  free(PP_Args);
+  return true;
+}
+
+/** **********************************************************************/
+
+bool CFits::PolyFit(const Array<double, 1> &D_A1_X_In,
+                    const Array<double, 1> &D_A1_Y_In,
+                    const int I_Degree_In,
+                    const double D_LReject_In,
+                    const double D_HReject_In,
+                    const int I_NIter,
+                    Array<double, 1>* P_D_A1_Out) const{
+  #ifdef __DEBUG_FITS_POLYFIT__
+    cout << "CFits::PolyFit: Starting " << endl;
+  #endif
+  Array<CString, 1> CS_A1_Args(1);
+  CS_A1_Args = CString(" ");
+  void **PP_Args = (void**)malloc(sizeof(void*) * 1);
+  if (!PolyFit(D_A1_X_In, 
+               D_A1_Y_In, 
+               I_Degree_In, 
+               D_LReject_In, 
+               D_HReject_In, 
+               I_NIter,
+               CS_A1_Args, 
+               PP_Args, 
+               P_D_A1_Out)){
     cout << "CFits::PolyFit: ERROR: PolyFit(" << D_A1_X_In << ", " << D_A1_Y_In << ", " << I_Degree_In << "...) returned FALSE" << endl;
     cout << "CFits::PolyFit: ERROR: PolyFit returned *P_D_A1_Out = " << *P_D_A1_Out << endl;
     free(PP_Args);
@@ -27613,14 +27695,16 @@ bool CFits::CrossCorrelate(const Array<double, 1> &DA1_Static,
 //    returm false;
 //  }
 //  DA1_ChiSquare = DA1_ChiSquare / DA1_NPix;
-//  #ifdef __DEBUG_FITS_CROSSCORRELATE__
+  #ifdef __DEBUG_FITS_CROSSCORRELATE__
     cout << "CFits::CrossCorrelate: DA1_ChiSquare = " << DA1_ChiSquare << endl;
-//  #endif
+  #endif
 
   
   TinyVector<int, 1> TV_MinIndex = minIndex(DA1_ChiSquare);
-  cout << "CFits::CrossCorrelate: TV_MinIndex = " << TV_MinIndex << endl;
-  cout << "CFits::CrossCorrelate: DA1_ChiSquare(TV_MinIndex(0)) = " << DA1_ChiSquare(TV_MinIndex(0)) << endl;
+  #ifdef __DEBUG_CFITS_CROSSCORRELATE__
+    cout << "CFits::CrossCorrelate: TV_MinIndex = " << TV_MinIndex << endl;
+    cout << "CFits::CrossCorrelate: DA1_ChiSquare(TV_MinIndex(0)) = " << DA1_ChiSquare(TV_MinIndex(0)) << endl;
+  #endif
   if ((TV_MinIndex(0) == 0) || (TV_MinIndex(0) == (DA1_ChiSquare.size()-1))){
     D_Out = double(TV_MinIndex(0) - I_NPixMaxLeft);
     D_ChiSquare_Out = DA1_ChiSquare(TV_MinIndex(0));
@@ -27694,17 +27778,19 @@ bool CFits::CrossCorrelate(const Array<double, 1> &DA1_Static,
     cout << "CFits::CrossCorrelate: WARNING: GaussFit returned FALSE" << endl;
     //        return false;
   }
-  cout << "CFits::CrossCorrelate: D_A1_X = " << D_A1_X << endl;
-  cout << "CFits::CrossCorrelate: D_A1_ChiSqu = " << D_A1_ChiSqu << endl;
-  cout << "CFits::CrossCorrelate: D_A1_Guess = " << D_A1_Guess << endl;
-  cout << "CFits::CrossCorrelate: D_A2_Limits = " << D_A2_Limits << endl;
-  cout << "CFits::CrossCorrelate: D_A1_GaussCoeffs = " << D_A1_GaussCoeffs << endl;
+  #ifdef __DEBUG_CFITS_CROSSCORRELATE__
+    cout << "CFits::CrossCorrelate: D_A1_X = " << D_A1_X << endl;
+    cout << "CFits::CrossCorrelate: D_A1_ChiSqu = " << D_A1_ChiSqu << endl;
+    cout << "CFits::CrossCorrelate: D_A1_Guess = " << D_A1_Guess << endl;
+    cout << "CFits::CrossCorrelate: D_A2_Limits = " << D_A2_Limits << endl;
+    cout << "CFits::CrossCorrelate: D_A1_GaussCoeffs = " << D_A1_GaussCoeffs << endl;
+  #endif
   D_Out = D_A1_GaussCoeffs(2) - double(I_NPixMaxLeft);
   D_ChiSquare_Out = D_A1_GaussCoeffs(1) + D_A1_GaussCoeffs(0);
-//  #ifdef __DEBUG_FITS_CROSSCORRELATE__
+  #ifdef __DEBUG_FITS_CROSSCORRELATE__
     cout << "CFits::CrossCorrelate: D_Out = " << D_Out << endl;
     cout << "CFits::CrossCorrelate: D_ChiSquare_Out = " << D_ChiSquare_Out << endl;
-//  #endif
+  #endif
   return true;
 }
 
@@ -27741,14 +27827,14 @@ bool CFits::CrossCorrelateAllApertureColsToColNo(int I_Col, int I_NPixMaxUp, int
   for (int i_ap=0; i_ap < this->I_NApertures; i_ap++){
     I_MinCol = min(floor((*(this->P_D_A2_XCenters))(i_ap,Range::all()) + (*this->P_D_A1_XLow)));
     IA2_Out(i_ap,0) = I_MinCol;
-//#ifdef __DEBUG_FITS_CROSSCORRELATE__
-    cout << "CFits::CrossCorrelateAllApertureColsToColNo: i_ap = " << i_ap << ": I_MinCol = " << I_MinCol << endl;
-//#endif
+    #ifdef __DEBUG_FITS_CROSSCORRELATE__
+      cout << "CFits::CrossCorrelateAllApertureColsToColNo: i_ap = " << i_ap << ": I_MinCol = " << I_MinCol << endl;
+    #endif
     I_MaxCol = max(ceil((*(this->P_D_A2_XCenters))(i_ap,Range::all()) + (*this->P_D_A1_XHigh)));
     IA2_Out(i_ap,1) = I_MaxCol;
-//#ifdef __DEBUG_FITS_CROSSCORRELATE__
-    cout << "CFits::CrossCorrelateAllApertureColsToColNo: i_ap = " << i_ap << ": I_MaxCol = " << I_MaxCol << endl;
-//#endif
+    #ifdef __DEBUG_FITS_CROSSCORRELATE__
+      cout << "CFits::CrossCorrelateAllApertureColsToColNo: i_ap = " << i_ap << ": I_MaxCol = " << I_MaxCol << endl;
+    #endif
     for (int i=I_MinCol; i <= I_MaxCol; i++){
       if (i == I_Col)
         i++;
@@ -27775,18 +27861,24 @@ bool CFits::CalcFeatureOffsets(int I_Col,
                                Array<double, 1> &D_A1_Out,
                                const CString &CS_Mode) const{
   /// Cross-correlate all Aperture columns to column I_Col
-  cout << "CFits::CalcFeatureOffsets: I_Col = " << I_Col << endl;
-  cout << "CFits::CalcFeatureOffsets: I_NPixMaxUp = " << I_NPixMaxUp << endl;
-  cout << "CFits::CalcFeatureOffsets: I_NPixMaxDown = " << I_NPixMaxDown << endl;
-  cout << "CFits::CalcFeatureOffsets: I_Order = " << I_Order << endl;
-  cout << "CFits::CalcFeatureOffsets: CS_Mode = " << CS_Mode << endl;
+  #ifdef __DEBUG_CFITS_CALCFEATUREOFFSETS__
+    cout << "CFits::CalcFeatureOffsets: I_Col = " << I_Col << endl;
+    cout << "CFits::CalcFeatureOffsets: I_NPixMaxUp = " << I_NPixMaxUp << endl;
+    cout << "CFits::CalcFeatureOffsets: I_NPixMaxDown = " << I_NPixMaxDown << endl;
+    cout << "CFits::CalcFeatureOffsets: I_Order = " << I_Order << endl;
+    cout << "CFits::CalcFeatureOffsets: CS_Mode = " << CS_Mode << endl;
+  #endif
   Array<int, 1> I_A1_MeasuredOffsets(1);
-  cout << "CFits::CalcFeatureOffsets: starting CrossCorrelateAllApertureColsToColNo()" << endl;
+  #ifdef __DEBUG_CFITS_CALCFEATUREOFFSETS__
+    cout << "CFits::CalcFeatureOffsets: starting CrossCorrelateAllApertureColsToColNo()" << endl;
+  #endif
   if (!this->CrossCorrelateAllApertureColsToColNo(I_Col, I_NPixMaxUp, I_NPixMaxDown, I_A1_MeasuredOffsets, I_A2_ColsMinMax)){
     cout << "CFits::CalcFeatureOffsets: ERROR: CrossCorrelateAllApertureColsToColNo() returned FALSE" << endl;
     return false;
   }
-  cout << "CFits::CalcFeatureOffsets: CrossCorrelateAllApertureColsToColNo() ready" << endl;
+  #ifdef __DEBUG_CFITS_CALCFEATUREOFFSETS__
+    cout << "CFits::CalcFeatureOffsets: CrossCorrelateAllApertureColsToColNo() ready" << endl;
+  #endif
 
   /// popluate Arrays D_A1_X and D_A1_Y for fitting procedure
   Array<int, 1> I_A1_Where(I_A1_MeasuredOffsets.size());
@@ -27795,7 +27887,9 @@ bool CFits::CalcFeatureOffsets(int I_Col,
   Array<int, 1> I_A1_Ind(this->GetNCols());
 //  Array<int, 1> I_A1_IndThisRun(1);
 //  Array<int, 1> *P_I_A1_XAll = this->IndGenArr(this->GetNCols());
-  cout << "CFits::CalcFeatureOffsets: Starting for(i_ap=0; i_ap < this->Get_NApertures(=" << this->Get_NApertures() << "); i_ap++)" << endl;
+  #ifdef __DEBUG_CFITS_CALCFEATUREOFFSETS__
+    cout << "CFits::CalcFeatureOffsets: Starting for(i_ap=0; i_ap < this->Get_NApertures(=" << this->Get_NApertures() << "); i_ap++)" << endl;
+  #endif
   for (int i_col=0; i_col < this->GetNCols(); i_col++){
     for (int i_ap=0; i_ap < this->Get_NApertures(); i_ap++){
       //I_A1_Where = where(((*P_I_A1_XAll) >= I_A2_ColsMinMax(i_ap,0)) && ((*P_I_A1_XAll) <= I_A2_ColsMinMax(i_ap,1)), 1, 0);
@@ -27816,9 +27910,13 @@ bool CFits::CalcFeatureOffsets(int I_Col,
       }
     }
   }
-  cout << "CFits::CalcFeatureOffsets: I_NInd set to " << I_NInd << endl;
+  #ifdef __DEBUG_CFITS_CALCFEATUREOFFSETS__
+    cout << "CFits::CalcFeatureOffsets: I_NInd set to " << I_NInd << endl;
+  #endif
   I_A1_Ind.resizeAndPreserve(I_NInd);
-  cout << "CFits::CalcFeatureOffsets: I_A1_Ind set to " << I_A1_Ind << endl;
+  #ifdef __DEBUG_CFITS_CALCFEATUREOFFSETS__
+    cout << "CFits::CalcFeatureOffsets: I_A1_Ind set to " << I_A1_Ind << endl;
+  #endif
 
   I_A1_X_Out.resize(I_A1_Ind.size());
   I_A1_X_Out = I_A1_Ind;
@@ -27835,12 +27933,12 @@ bool CFits::CalcFeatureOffsets(int I_Col,
   }
 
   /// write Measured Offsets
-#ifdef __DEBUG_FITS_CALCFEATUREOFFSETS__
-  if (!this->WriteArrayToFile(D_A1_Y, CString("/home/azuri/spectra/WiFes/Red/MeasuredOffsets.dat"), CString("ascii"))){
-    cout << "CFits::CalcFeatureOffsets: ERROR: this->WriteArrayToFile returned FALSE" << endl;
-    return false;
-  }
-#endif
+  #ifdef __DEBUG_FITS_CALCFEATUREOFFSETS__
+    if (!this->WriteArrayToFile(D_A1_Y, CString("/home/azuri/spectra/WiFes/Red/MeasuredOffsets.dat"), CString("ascii"))){
+      cout << "CFits::CalcFeatureOffsets: ERROR: this->WriteArrayToFile returned FALSE" << endl;
+      return false;
+    }
+  #endif
   /// run polynomial fitting procedure to fit measured offsets
 
 
@@ -27858,54 +27956,57 @@ bool CFits::CalcFeatureOffsets(int I_Col,
       cout << "CFits::CalcFeatureOffsets: ERROR: PolyFit returned FALSE" << endl;
       return false;
     }
-  } else if (CS_Mode.EqualValue(CString("Chebyshev"))){
+  } 
+  else if (CS_Mode.EqualValue(CString("Chebyshev"))){
     cout << "CFits::CalcFeatureOffsets: ERROR: Chebyshev polynomial not yet implemented" << endl;
     return false;
     if (!this->PolyFit(D_A1_X, D_A1_Y, I_Order, CS_A1_Args, PP_Args, &D_A1_Coeffs)){
       cout << "CFits::CalcFeatureOffsets: ERROR: PolyFit returned FALSE" << endl;
       return false;
     }
-  } else if (CS_Mode.EqualValue(CString("Legendre"))){
+  } 
+  else if (CS_Mode.EqualValue(CString("Legendre"))){
     cout << "CFits::CalcFeatureOffsets: ERROR: Legendre polynomial not yet implemented" << endl;
     return false;
     if (!this->PolyFit(D_A1_X, D_A1_Y, I_Order, CS_A1_Args, PP_Args, &D_A1_Coeffs)){
       cout << "CFits::CalcFeatureOffsets: ERROR: PolyFit returned FALSE" << endl;
       return false;
     }
-  } else{
+  } 
+  else{
     cout << "CFits::CalcFeatureOffsets: ERROR: Mode not recognised" << endl;
     return false;
   }
 
-#ifdef __DEBUG_FITS_CALCFEATUREOFFSETS__
-  /// write fitted offsets
-  CString CS_FileNameTemp("/home/azuri/spectra/WiFes/Red/FittedOffsets_order");
-  cout << "CFits::CalcFeatureOffsets: CS_FileNameTemp = " << CS_FileNameTemp << endl;
-  CString *P_CS_Order = CS_FileNameTemp.IToA(I_Order);
-  cout << "CFits::CalcFeatureOffsets: *P_CS_Order = " << *P_CS_Order << endl;
-  CS_FileNameTemp += (*P_CS_Order);
-  cout << "CFits::CalcFeatureOffsets: CS_FileNameTemp = " << CS_FileNameTemp << endl;
-  CS_FileNameTemp += CString(".dat");
-  cout << "CFits::CalcFeatureOffsets: CS_FileNameTemp = " << CS_FileNameTemp << endl;
-  if (!this->WriteArrayToFile(D_A1_Out, CS_FileNameTemp, CString("ascii"))){
-    cout << "CFits::CalcFeatureOffsets: ERROR: this->WriteArrayToFile returned FALSE" << endl;
-    return false;
-  }
-  CS_FileNameTemp.Set("/home/azuri/spectra/WiFes/Red/FittedOffsets_x.dat");
-  if (!this->WriteArrayToFile(D_A1_X, CS_FileNameTemp, CString("ascii"))){
-    cout << "CFits::CalcFeatureOffsets: ERROR: this->WriteArrayToFile returned FALSE" << endl;
-    return false;
-  }
-  cout << "CFits::CalcFeatureOffsets:  WriteArrayToFile finished" << endl;
-  delete(P_CS_Order);
-#endif
+  #ifdef __DEBUG_FITS_CALCFEATUREOFFSETS__
+    /// write fitted offsets
+    CString CS_FileNameTemp("/home/azuri/spectra/WiFes/Red/FittedOffsets_order");
+    cout << "CFits::CalcFeatureOffsets: CS_FileNameTemp = " << CS_FileNameTemp << endl;
+    CString *P_CS_Order = CS_FileNameTemp.IToA(I_Order);
+    cout << "CFits::CalcFeatureOffsets: *P_CS_Order = " << *P_CS_Order << endl;
+    CS_FileNameTemp += (*P_CS_Order);
+    cout << "CFits::CalcFeatureOffsets: CS_FileNameTemp = " << CS_FileNameTemp << endl;
+    CS_FileNameTemp += CString(".dat");
+    cout << "CFits::CalcFeatureOffsets: CS_FileNameTemp = " << CS_FileNameTemp << endl;
+    if (!this->WriteArrayToFile(D_A1_Out, CS_FileNameTemp, CString("ascii"))){
+      cout << "CFits::CalcFeatureOffsets: ERROR: this->WriteArrayToFile returned FALSE" << endl;
+      return false;
+    }
+    CS_FileNameTemp.Set("/home/azuri/spectra/WiFes/Red/FittedOffsets_x.dat");
+    if (!this->WriteArrayToFile(D_A1_X, CS_FileNameTemp, CString("ascii"))){
+      cout << "CFits::CalcFeatureOffsets: ERROR: this->WriteArrayToFile returned FALSE" << endl;
+      return false;
+    }
+    cout << "CFits::CalcFeatureOffsets:  WriteArrayToFile finished" << endl;
+    delete(P_CS_Order);
+  #endif
 
   /// check result
   Array<double, 1> D_A1_Diff(D_A1_Y.size());
   D_A1_Diff = D_A1_Y - D_A1_Out;
-#ifdef __DEBUG_FITS_CALCFEATUREOFFSETS__
-  cout << "CFits::CalcFeatureOffsets: D_A1_Diff = " << D_A1_Diff << endl;
-#endif
+  #ifdef __DEBUG_FITS_CALCFEATUREOFFSETS__
+    cout << "CFits::CalcFeatureOffsets: D_A1_Diff = " << D_A1_Diff << endl;
+  #endif
   return true;
 }
 
@@ -41813,6 +41914,7 @@ bool CFits::Identify(const Array<double, 1> &D_A1_Spec_In,
       mglData MGLData_FittedWLen;// = new mglData(2);
       MGLData_FittedWLen.Link(P_D_A1_WLen_Gauss->data(), P_D_A1_WLen_Gauss->size(), 0, 0);
 
+      gr.SetSize(1900,1200);
       gr.SetRanges(min(*P_D_A1_Ind),max(*P_D_A1_Ind),min(*P_D_A1_WLen_Out),max(*P_D_A1_WLen_Out)+(max(*P_D_A1_WLen_Out) - min(*P_D_A1_WLen_Out)) / 4.5);
       gr.Axis();
       gr.Label('y',"Wavelength",0);
@@ -41991,18 +42093,64 @@ bool CFits::WriteCube(Array<double, 3> &D_A3_In, CString &CS_FitsFileName_Out) c
   return true;
 }
 
+/** find nearest neighbour to D_ReferencePoint_In in D_A1_ArrayToLookForNeighbour_In, and write position of nearest 
+ * neighbour to I_Pos_Out
+ * */
+int CFits::FindNearestNeighbour(const double &D_ReferencePoint_In,
+                                 const Array<double, 1> &D_A1_ArrayToLookForNeighbour_In) const{
+  Array<double, 1> D_A1_Diff(D_A1_ArrayToLookForNeighbour_In.size());
+  D_A1_Diff = D_A1_ArrayToLookForNeighbour_In - D_ReferencePoint_In;
+  TinyVector<int, 1> TV_Index = minIndex(D_A1_Diff);
+  return TV_Index(0);
+}
+                          
 /**
  * find nearest neighbour to D_A1_ReferencePoint_In(x,y) in D_A2_ArrayToLookForNeighbour_In and write coordinates to D_A1_NearestNeighbour_Out
  **/
 bool CFits::FindNearestNeighbour(const Array<double, 1> &D_A1_ReferencePoint_In,
                                  const Array<double, 2> &D_A2_ArrayToLookForNeighbour_In, Array<double, 1> &D_A1_NearestNeighbour_Out,
                                  int &I_Pos) const{
-  Array<double, 2> D_A2_Temp(D_A2_ArrayToLookForNeighbour_In.rows(), D_A2_ArrayToLookForNeighbour_In.cols());
-  D_A2_Temp(Range::all(),0) = D_A2_ArrayToLookForNeighbour_In(Range::all(),0) - D_A1_ReferencePoint_In(0);
-  D_A2_Temp(Range::all(),1) = D_A2_ArrayToLookForNeighbour_In(Range::all(),1) - D_A1_ReferencePoint_In(1);
+  Array<int, 1> I_A1_Area(4);
+  I_A1_Area(0) = 0;
+  I_A1_Area(1) = this->NCols;
+  I_A1_Area(2) = 0;
+  I_A1_Area(3) = this->NRows;
+  return this->FindNearestNeighbour(D_A1_ReferencePoint_In,
+                                    D_A2_ArrayToLookForNeighbour_In,
+                                    I_A1_Area,
+                                    D_A1_NearestNeighbour_Out,
+                                    I_Pos);
+}
+
+bool CFits::FindNearestNeighbour(const Array<double, 1> &D_A1_ReferencePoint_In,
+                                 const Array<double, 2> &D_A2_ArrayToLookForNeighbour_In,
+                                 const Array<int, 1> &I_A1_Area,
+                                 Array<double, 1> &D_A1_NearestNeighbour_Out,
+                                 int &I_Pos) const{
+//  cout << "CFits::FindNearestNeighbour: D_A1_Dist = " << D_A1_Dist << endl;
+  Array<int, 1> I_A1_IndicesInArea_Where(D_A2_ArrayToLookForNeighbour_In.rows());
+  I_A1_IndicesInArea_Where = where(D_A2_ArrayToLookForNeighbour_In(Range::all(), 0) >= I_A1_Area(0) && D_A2_ArrayToLookForNeighbour_In(Range::all(), 0) <= I_A1_Area(1) && D_A2_ArrayToLookForNeighbour_In(Range::all(), 1) >= I_A1_Area(2) && D_A2_ArrayToLookForNeighbour_In(Range::all(), 1) <= I_A1_Area(3), 1, 0);
+  #ifdef __DEBUG_FITS_FINDNEARESTNEIGHBOUR__
+    cout << "CFits::FindNearestNeighbour: D_A1_ReferencePoint_In = " << D_A1_ReferencePoint_In << endl;
+    cout << "CFits::FindNearestNeighbour: D_A2_ArrayToLookForNeighbour_In = " << D_A2_ArrayToLookForNeighbour_In << endl;
+    cout << "CFits::FindNearestNeighbour: I_A1_Area = " << I_A1_Area << endl;
+    cout << "CFits::FindNearestNeighbour: I_A1_IndicesInArea_Where = " << I_A1_IndicesInArea_Where << endl;
+  #endif
+  int I_NIndicesInArea = 0;
+  Array<int, 1> *P_I_A1_IndicesInArea = this->GetIndex(I_A1_IndicesInArea_Where, I_NIndicesInArea);
+  Array<double, 2> D_A2_ArrayToLookForNeighbour_InArea(I_NIndicesInArea, D_A2_ArrayToLookForNeighbour_In.cols());
+  for (int i_ind=0; i_ind< I_NIndicesInArea; i_ind++){
+    if (((*P_I_A1_IndicesInArea)(i_ind) < 0) || ((*P_I_A1_IndicesInArea)(i_ind) >= D_A2_ArrayToLookForNeighbour_In.rows())){
+      cout << "CFits::FindNearestNeighbour: ERROR: ((*P_I_A1_IndicesInArea)(i_ind=" << i_ind << ")=" << (*P_I_A1_IndicesInArea)(i_ind) << " < 0) || ((*P_I_A1_IndicesInArea)(i_ind) >= D_A2_ArrayToLookForNeighbour_In.rows()=" << D_A2_ArrayToLookForNeighbour_In.rows() << ")" << endl;
+      return false;
+    }
+    D_A2_ArrayToLookForNeighbour_InArea(i_ind, Range::all()) = D_A2_ArrayToLookForNeighbour_In((*P_I_A1_IndicesInArea)(i_ind), Range::all());
+  }
+  Array<double, 2> D_A2_Temp(D_A2_ArrayToLookForNeighbour_InArea.rows(), D_A2_ArrayToLookForNeighbour_InArea.cols());
+  D_A2_Temp(Range::all(),0) = D_A2_ArrayToLookForNeighbour_InArea(Range::all(),0) - D_A1_ReferencePoint_In(0);
+  D_A2_Temp(Range::all(),1) = D_A2_ArrayToLookForNeighbour_InArea(Range::all(),1) - D_A1_ReferencePoint_In(1);
   Array<double, 1> D_A1_Dist(D_A2_Temp.rows());
   D_A1_Dist = sqrt(sqr(D_A2_Temp(Range::all(),0)) + sqr(D_A2_Temp(Range::all(),1)));
-//  cout << "CFits::FindNearestNeighbour: D_A1_Dist = " << D_A1_Dist << endl;
   Array<int, 1> I_A1_Where(D_A1_Dist.rows());
   I_A1_Where = where(fabs(D_A1_Dist - min(D_A1_Dist)) < 0.00001, 1, 0);
   Array<int, 1> I_A1_WherePos(sum(I_A1_Where));
@@ -42011,15 +42159,21 @@ bool CFits::FindNearestNeighbour(const Array<double, 1> &D_A1_ReferencePoint_In,
     cout << "CFits::FindNearestNeighbour: ERROR: GetIndex(I_A1_Where) returned FALSE" << endl;
     return false;
   }
-  cout << "CFits::FindNearestNeighbour: I_NInd = " << I_NInd << ": I_A1_WherePos = " << I_A1_WherePos << endl;
+  #ifdef __DEBUG_FITS_FINDNEARESTNEIGHBOUR__
+    cout << "CFits::FindNearestNeighbour: I_NInd = " << I_NInd << ": I_A1_WherePos = " << I_A1_WherePos << endl;
+  #endif
   D_A1_NearestNeighbour_Out.resize(2);
-  D_A1_NearestNeighbour_Out(0) = D_A2_ArrayToLookForNeighbour_In(I_A1_WherePos(0),0);
-  D_A1_NearestNeighbour_Out(1) = D_A2_ArrayToLookForNeighbour_In(I_A1_WherePos(0),1);
-  cout << "CFits::FindNearestNeighbour: D_A1_NearestNeighbour_Out = " << D_A1_NearestNeighbour_Out << endl;
-
-  I_Pos = I_A1_WherePos(0);
-  cout << "CFits::FindNearestNeighbour: I_Pos = " << I_Pos << endl;
-
+  D_A1_NearestNeighbour_Out(0) = D_A2_ArrayToLookForNeighbour_In((*P_I_A1_IndicesInArea)(I_A1_WherePos(0)),0);
+  D_A1_NearestNeighbour_Out(1) = D_A2_ArrayToLookForNeighbour_In((*P_I_A1_IndicesInArea)(I_A1_WherePos(0)),1);
+  #ifdef __DEBUG_FITS_FINDNEARESTNEIGHBOUR__
+    cout << "CFits::FindNearestNeighbour: D_A1_NearestNeighbour_Out = " << D_A1_NearestNeighbour_Out << endl;
+  #endif
+  I_Pos = (*P_I_A1_IndicesInArea)(I_A1_WherePos(0));
+  #ifdef __DEBUG_FITS_FINDNEARESTNEIGHBOUR__
+    cout << "CFits::FindNearestNeighbour: I_Pos = " << I_Pos << endl;
+  #endif
+ 
+  delete(P_I_A1_IndicesInArea);
   return true;
 }
 
@@ -42031,6 +42185,29 @@ bool CFits::FindNearestNeighbours(const Array<double, 1> &D_A1_ReferencePoint_In
                                   const int I_N,
                                   Array<double, 2> &D_A2_NearestNeighbours_Out,
                                   Array<int, 1> &I_A1_Pos) const{
+  Array<int, 1> I_A1_Area(4);
+  I_A1_Area(0) = 0;
+  I_A1_Area(1) = this->NCols-1;
+  I_A1_Area(2) = 0;
+  I_A1_Area(3) = this->NRows-1;
+  return this->FindNearestNeighbours(D_A1_ReferencePoint_In,
+                                     D_A2_ArrayToLookForNeighbour_In,
+                                     I_N,
+                                     I_A1_Area,
+                                     D_A2_NearestNeighbours_Out,
+                                     I_A1_Pos);
+}
+
+/**
+ * find I_N nearest neighbours to D_A1_ReferencePoint_In(x,y) in D_A2_ArrayToLookForNeighbour_In and write coordinates to D_A2_NearestNeighbour_Out
+ **/
+bool CFits::FindNearestNeighbours(const Array<double, 1> &D_A1_ReferencePoint_In,
+                                  const Array<double, 2> &D_A2_ArrayToLookForNeighbour_In,
+                                  const int I_N,
+                                  const Array<int, 1> &D_A1_Area_In,
+                                  Array<double, 2> &D_A2_NearestNeighbours_Out,
+                                  Array<int, 1> &I_A1_Pos) const{
+                           
 //  cout << "CFits::FindNearestNeighbours: D_A2_ArrayToLookForNeighbour_In = " << D_A2_ArrayToLookForNeighbour_In << endl;
   D_A2_NearestNeighbours_Out.resize(I_N,2);
   I_A1_Pos.resize(I_N);
@@ -42043,6 +42220,10 @@ bool CFits::FindNearestNeighbours(const Array<double, 1> &D_A1_ReferencePoint_In
   Array<int, 1> I_A1_Ind(D_A2_ArrayToLookForNeighbour_In.rows());
   Array<int, 1> *P_I_A1_Ind;
   for (int i=0; i<I_N; i++){
+    #ifdef __DEBUG_FITS_FINDNEARESTNEIGHBOUR__
+      cout << "CFits::FindNearestNeighbour: i=" << i << ": D_A1_ReferencePoint_In = " << D_A1_ReferencePoint_In << endl;
+      cout << "CFits::FindNearestNeighbour: i=" << i << ": D_A2_ArrayToLookForNeighbour_Temp = " << D_A2_ArrayToLookForNeighbour_Temp << endl;
+    #endif
     if (!this->FindNearestNeighbour(D_A1_ReferencePoint_In,
                                     D_A2_ArrayToLookForNeighbour_Temp,
                                     D_A1_NearestNeighbour_Out,
@@ -42050,17 +42231,27 @@ bool CFits::FindNearestNeighbours(const Array<double, 1> &D_A1_ReferencePoint_In
       cout << "CFits::FindNearestNeighbours: ERROR: " << i << "th nearest neighbour not found" << endl;
       return false;
     }
-//    I_A1_Ind.resize(D_A2_ArrayToLookForNeighbour_In.rows());
+    #ifdef __DEBUG_FITS_FINDNEARESTNEIGHBOUR__
+      cout << "CFits::FindNearestNeighbours: i=" << i << ": I_Pos = " << I_Pos << endl;
+      cout << "CFits::FindNearestNeighbours: i=" << i << ": D_A1_NearestNeighbour_Out = " << D_A1_NearestNeighbour_Out << endl;
+    #endif
+    //    I_A1_Ind.resize(D_A2_ArrayToLookForNeighbour_In.rows());
     I_A1_Ind = where((fabs(D_A2_ArrayToLookForNeighbour_In(Range::all(), 0) - D_A1_NearestNeighbour_Out(0)) < 1.) && (fabs(D_A2_ArrayToLookForNeighbour_In(Range::all(), 1) - D_A1_NearestNeighbour_Out(1)) < 1.), 1, 0);
     P_I_A1_Ind = this->GetIndex(I_A1_Ind, I_NInd);
 //    cout << "CFits::FindNearestNeighbours: i=" << i << ": *P_I_A1_Ind = " << *P_I_A1_Ind << ", I_NInd = " << I_NInd << endl;
     I_A1_Pos(i) = (*P_I_A1_Ind)(0);
-//    cout << "CFits::FindNearestNeighbours: i=" << i << ": I_A1_Pos(i) = " << I_A1_Pos(i) << endl;
+    #ifdef __DEBUG_FITS_FINDNEARESTNEIGHBOUR__
+      cout << "CFits::FindNearestNeighbours: i=" << i << ": I_A1_Pos(i) = " << I_A1_Pos(i) << endl;
+    #endif
     delete(P_I_A1_Ind);
     D_A2_NearestNeighbours_Out(i,Range::all()) = D_A1_NearestNeighbour_Out;
 
     ///remove element at position I_Pos from D_A2_ArrayToLookForNeighbour_Temp
-    D_A2_Temp.resize(D_A2_ArrayToLookForNeighbour_Temp.rows()-1, 2);
+    if (!this->Remove_Ith_RowFromArray(D_A2_ArrayToLookForNeighbour_Temp, I_Pos)){
+      cout << "CFits::FindNearestNeighbours: ERROR: Remove_Ith_RowFromArray(D_A2_ArrayToLookForNeighbour_Temp=" << D_A2_ArrayToLookForNeighbour_Temp << ", I_Pos=" << I_Pos << ") returned FALSE" << endl;
+      return false;
+    }
+/*    D_A2_Temp.resize(D_A2_ArrayToLookForNeighbour_Temp.rows()-1, 2);
     if (I_Pos > 0){
       D_A2_Temp(Range(0,I_Pos-1),Range::all()) = D_A2_ArrayToLookForNeighbour_Temp(Range(0,I_Pos-1),Range::all());
     }
@@ -42068,7 +42259,7 @@ bool CFits::FindNearestNeighbours(const Array<double, 1> &D_A1_ReferencePoint_In
       D_A2_Temp(Range(I_Pos,D_A2_Temp.rows()-1),Range::all()) = D_A2_ArrayToLookForNeighbour_Temp(Range(I_Pos+1,D_A2_ArrayToLookForNeighbour_Temp.rows()-1),Range::all());
     }
     D_A2_ArrayToLookForNeighbour_Temp.resize(D_A2_Temp.rows(), D_A2_Temp.cols());
-    D_A2_ArrayToLookForNeighbour_Temp = D_A2_Temp;
+    D_A2_ArrayToLookForNeighbour_Temp = D_A2_Temp;*/
   }
   return true;
 }
@@ -42306,14 +42497,20 @@ bool CFits::IntegralUnderCurve(const Array<double, 1> &D_A1_XIn,
     cout << "CFits::IntegralUnderCurve: I_IndXIn = " << I_IndXIn << endl;
   #endif
   D_A1_XTemp(0) = D_A1_XInt(0);
-  while ((D_A1_XIn(I_IndXIn) < D_A1_XInt(1)) && (I_IndXIn < D_A1_XIn.size())){
+  if ((I_IndXIn < 0) || (I_IndXIn >= D_A1_XIn.size())){
+    cout << "CFits::IntegralUnderCurve: ERROR: (I_IndXIn=" << I_IndXIn << " < 0) || (I_IndXIn >= D_A1_XIn.size()=" << D_A1_XIn.size() << ")" << endl;
+    return false;
+  }
+  while (D_A1_XIn(I_IndXIn) < D_A1_XInt(1)){
     #ifdef __DEBUG_FITS_INTEGRAL__
       cout << "CFits::IntegralUnderCurve: D_A1_XIn(I_IndXIn=" << I_IndXIn << ") = " << D_A1_XIn(I_IndXIn) << " < D_A1_XInt(1) = " << D_A1_XInt(1) << endl;
     #endif
     D_A1_XTemp(I_IndX) = D_A1_XIn(I_IndXIn);
     I_IndX++;
     I_IndXIn++;
-    
+    if (I_IndXIn >= D_A1_XIn.size()){
+      break;
+    }
   }
   #ifdef __DEBUG_FITS_INTEGRAL__
     cout << "CFits::IntegralUnderCurve: D_A1_XTemp set to " << D_A1_XTemp << endl;
@@ -42844,6 +43041,56 @@ bool CFits::Remove_SubArrayFromArray(Array<int, 1> &A1_Array_InOut, const Array<
   }
   A1_Array_InOut.resize(I_NElements);
   A1_Array_InOut = A1_Array_Out(Range(0, I_NElements-1));
+  return true;
+}
+
+bool CFits::Remove_ElementsFromArray(Array<int, 1> &I_A1_InOut, const Array<int, 1> &I_A1_ElementIndicesToRemove_In) const{
+  if (I_A1_ElementIndicesToRemove_In.size() >= I_A1_InOut.size()){
+    cout << "CString::RemoveElementFromArray: ERROR: I_A1_ElementsToRemove_In.size()=" << I_A1_ElementIndicesToRemove_In.size() << " >= I_A1_InOut.size()=" << I_A1_InOut.size() << endl;
+    return false;
+  }
+  Array<int, 1> I_A1_Temp(I_A1_InOut.size()-I_A1_ElementIndicesToRemove_In.size());
+  int I_El = 0;
+  bool B_Found = false;
+  for (int i_el=0; i_el<I_A1_InOut.size(); i_el++){
+    B_Found = false;
+    for (int i_elrem=0; i_elrem<I_A1_ElementIndicesToRemove_In.size(); i_elrem++){
+      if (i_el == I_A1_ElementIndicesToRemove_In(i_elrem)){
+        B_Found = true;
+      }
+    }
+    if (!B_Found){
+      I_A1_Temp(I_El) = I_A1_InOut(i_el);
+      I_El++;
+    }
+  }
+  I_A1_InOut.resize(I_A1_Temp.size());
+  I_A1_InOut = I_A1_Temp;
+  return true;
+}
+
+bool CFits::Remove_ElementsFromArray(Array<double, 1> &D_A1_InOut, const Array<int, 1> &I_A1_ElementIndicesToRemove_In) const{
+  if (I_A1_ElementIndicesToRemove_In.size() >= D_A1_InOut.size()){
+    cout << "CString::RemoveElementFromArray: ERROR: I_A1_ElementsToRemove_In.size()=" << I_A1_ElementIndicesToRemove_In.size() << " >= D_A1_InOut.size()=" << D_A1_InOut.size() << endl;
+    return false;
+  }
+  Array<double, 1> D_A1_Temp(D_A1_InOut.size()-I_A1_ElementIndicesToRemove_In.size());
+  int I_El = 0;
+  bool B_Found = false;
+  for (int i_el=0; i_el<D_A1_InOut.size(); i_el++){
+    B_Found = false;
+    for (int i_elrem=0; i_elrem<I_A1_ElementIndicesToRemove_In.size(); i_elrem++){
+      if (i_el == I_A1_ElementIndicesToRemove_In(i_elrem)){
+        B_Found = true;
+      }
+    }
+    if (!B_Found){
+      D_A1_Temp(I_El) = D_A1_InOut(i_el);
+      I_El++;
+    }
+  }
+  D_A1_InOut.resize(D_A1_Temp.size());
+  D_A1_InOut = D_A1_Temp;
   return true;
 }
 
@@ -44098,7 +44345,11 @@ bool CFits::WriteApertures(const CString &CS_FitsFileName_Out_Root,
 //  return false;
 //  int I_ArrPos = 0;
   for (int i_ap = 0; i_ap < I_A1_Apertures.size(); i_ap++){
+    D_A1_Ap = 0.;
     D_A1_Ap = ((const_cast<CFits*>(this))->GetPixArray())(I_A1_Apertures(i_ap),Range::all());
+    #ifdef __DEBUG_FITS_WRITEAPS__
+      cout << "CFits::WriteApertures: i_ap = " << i_ap << ": I_A1_Apertures(i_ap) = " << I_A1_Apertures(i_ap) << ": D_A1_Ap = " << D_A1_Ap << endl;
+    #endif
     if (max(D_A1_Ap) > 0.0000000000000000001){
       I_FirstSignal = int((*(this->P_D_A1_YCenter))(I_A1_Apertures(i_ap)) + (*(this->P_D_A1_YLow))(I_A1_Apertures(i_ap)));
       ///I_FirstSignal = F_EcImage.FirstIndexWithValueGE(D_A1_Ap, 0.00000001);
@@ -44202,7 +44453,9 @@ bool CFits::WriteApCenters(const CString &CS_FitsFileName_In,
                            const Array<int, 1> &I_A1_Apertures) const{
   CFits F_Image;
   /// Set DatabaseFileName_In
-  cout << "MWriteApCenters::main: Starting F_Image.SetFileName(" << CS_FitsFileName_In << ")" << endl;
+  #ifdef __DEBUG_FITS_WRITEAPCENTERS__
+    cout << "MWriteApCenters::main: Starting F_Image.SetFileName(" << CS_FitsFileName_In << ")" << endl;
+  #endif
   if (!F_Image.SetFileName(CS_FitsFileName_In))
   {
     cout << "MWriteApCenters::main: ERROR: F_Image.SetFileName(" << CS_FitsFileName_In << ") returned FALSE!" << endl;
@@ -44214,7 +44467,9 @@ bool CFits::WriteApCenters(const CString &CS_FitsFileName_In,
     return false;
   }
 
-  cout << "MWriteApCenters::main: Starting F_Image.SetDatabaseFileName(" << CS_DatabaseFileName_In << ")" << endl;
+  #ifdef __DEBUG_FITS_WRITEAPCENTERS__
+    cout << "MWriteApCenters::main: Starting F_Image.SetDatabaseFileName(" << CS_DatabaseFileName_In << ")" << endl;
+  #endif
   if (!F_Image.SetDatabaseFileName(CS_DatabaseFileName_In))
   {
     cout << "MWriteApCenters::main: ERROR: F_Image.SetDatabaseFileName(" << CS_DatabaseFileName_In << ") returned FALSE!" << endl;
@@ -44222,7 +44477,9 @@ bool CFits::WriteApCenters(const CString &CS_FitsFileName_In,
   }
 
   /// Read DatabaseFileName_In
-  cout << "MWriteApCenters::main: Starting F_Image.ReadDatabaseEntry()" << endl;
+  #ifdef __DEBUG_FITS_WRITEAPCENTERS__
+    cout << "MWriteApCenters::main: Starting F_Image.ReadDatabaseEntry()" << endl;
+  #endif
   if (!F_Image.ReadDatabaseEntry())
   {
     cout << "MWriteApCenters::main: ERROR: F_Image.ReadDatabaseEntry() returned FALSE!" << endl;
@@ -44291,21 +44548,29 @@ bool CFits::DispCorList(const Array<CString, 1>& CS_A1_TextFiles_Coeffs_In,
       cout << "CFits::DispCorList: i=" << i << ": ERROR: aperture number not found in filename " << CS_A1_TextFiles_Coeffs_In(i) << endl;
       return false;
     }
-    cout << "CFits::DispCorList: i=" << i << ": I_StrStart = " << I_StrStart << endl;
+    #ifdef __DEBUG_FITS_DISPCOR__
+      cout << "CFits::DispCorList: i=" << i << ": I_StrStart = " << I_StrStart << endl;
+    #endif
 
     I_StrEnd = (CS_A1_TextFiles_Coeffs_In(i)).StrPosFrom(CS_UnderScore.GetPChar(),I_StrStart)-1;
     if (I_StrEnd < 4){
       cout << "CFits::DispCorList: i=" << i << ": ERROR: aperture number not found in filename " << CS_A1_TextFiles_Coeffs_In(i) << endl;
       return false;
     }
-    cout << "CFits::DispCorList: i=" << i << ": I_StrEnd = " << I_StrEnd << endl;
+    #ifdef __DEBUG_FITS_DISPCOR__
+      cout << "CFits::DispCorList: i=" << i << ": I_StrEnd = " << I_StrEnd << endl;
+    #endif
 
     P_CS_ApNum = (CS_A1_TextFiles_Coeffs_In(i)).SubString(I_StrStart, I_StrEnd);
     I_A1_ApNums_Coeffs(i) = atoi(P_CS_ApNum->GetPChar());
     delete(P_CS_ApNum);
-    cout << "CFits::DispCorList: i=" << i << ": I_A1_ApNums_Coeffs(i) set to " << I_A1_ApNums_Coeffs(i) << endl;
+    #ifdef __DEBUG_FITS_DISPCOR__
+      cout << "CFits::DispCorList: i=" << i << ": I_A1_ApNums_Coeffs(i) set to " << I_A1_ApNums_Coeffs(i) << endl;
+    #endif
   }
-  cout << "CFits::DispCorList: I_A1_ApNums_Coeffs set to " << I_A1_ApNums_Coeffs << endl;
+  #ifdef __DEBUG_FITS_DISPCOR__
+    cout << "CFits::DispCorList: I_A1_ApNums_Coeffs set to " << I_A1_ApNums_Coeffs << endl;
+  #endif
 
   Array<CString, 1> CS_A1_Coeffs(2);
   int I_CoeffFileNo, I_NInd;
@@ -44375,13 +44640,19 @@ bool CFits::DispCorList(const Array<CString, 1>& CS_A1_TextFiles_Coeffs_In,
 //          D_A2_SpecCalib_Out.resize(P_D_A1_WLen->size(),2);
 //          D_A2_SpecCalib_Out(Range::all(),0) = *P_D_A1_WLen;
 //          D_A2_SpecCalib_Out(Range::all(),1) = D_A1_Spec;
-          if (!this->DispCor(D_A1_Spec, D_A1_PolyFitCoeffs_In, D_PixShift_In, D_A2_SpecCalib_Out)){
+          #ifdef __DEBUG_FITS_DISPCOR__
+            cout << "CFits::DispCorList: I_A1_Apertures(i_ap) = " << I_A1_Apertures(i_ap) << ": D_A1_Spec = " << D_A1_Spec << endl;
+          #endif
+          if (!this->DispCor(D_A1_Spec, 
+                             D_A1_PolyFitCoeffs_In, 
+                             D_PixShift_In, 
+                             D_A2_SpecCalib_Out)){
             cout << "CFits::DispCorList: ERROR: DispCor returned FALSE" << endl;
             return false;
           }
           #ifdef __DEBUG_FITS_DISPCOR__
             cout << "CFits::DispCorList: I_A1_Apertures(i_ap) = " << I_A1_Apertures(i_ap) << ": D_A2_SpecCalib_Out = " << D_A2_SpecCalib_Out << endl;
-            cout << "CFits::DispCorList: Writing " << CS_A1_TextFiles_EcD_Out(i_ap) << endl;
+            cout << "CFits::DispCorList: Writing CS_A1_TextFiles_EcD_Out(i_ap=" << i_ap << ") = <" << CS_A1_TextFiles_EcD_Out(i_ap) << ">" << endl;
           #endif
           if (!this->WriteArrayToFile(D_A2_SpecCalib_Out, CS_A1_TextFiles_EcD_Out(i_ap), CString("ascii"))){
             cout << "CFits::DispCorList: I_A1_Apertures(i_ap) = " << I_A1_Apertures(i_ap) << ": Error: Could not write " << CS_A1_TextFiles_EcD_Out(i_ap) << endl;
@@ -44656,6 +44927,24 @@ bool CFits::FindApsInCircle(const int I_CenterX_In,
                             const int I_CenterY_In,
                             const int I_Radius_In,
                             Array<int, 1> &I_A1_Apertures_Out) const{
+  Array<int, 1> I_A1_Area(4);
+  I_A1_Area(0) = 0;
+  I_A1_Area(1) = this->NCols-1;
+  I_A1_Area(2) = 0;
+  I_A1_Area(3) = this->NRows-1;
+  return FindApsInCircle(I_CenterX_In,
+                         I_CenterY_In,
+                         I_Radius_In,
+                         I_A1_Area,
+                         I_A1_Apertures_Out);
+}
+
+
+bool CFits::FindApsInCircle(const int I_CenterX_In,
+                            const int I_CenterY_In,
+                            const int I_Radius_In,
+                            const Array<int, 1> &I_A1_Area_In,
+                            Array<int, 1> &I_A1_Apertures_Out) const{
   if (!this->TraceFunctionsCalculated){
     cout << "CFits::FindApsInCircle: ERROR: Trace functions not calculated yet" << endl;
     return false;
@@ -44666,26 +44955,47 @@ bool CFits::FindApsInCircle(const int I_CenterX_In,
   for (int i_ap=0; i_ap<P_D_A1_YCenter->size(); i_ap++)
     D_A1_XCenter(i_ap) = (*P_D_A2_XCenters)(i_ap,(int)(D_A1_YCenter(i_ap)));
 
-  Array<double, 1> D_A1_Radius(P_D_A1_YCenter->size());
-  D_A1_Radius = sqrt(pow2(D_A1_XCenter - double(I_CenterX_In)) + pow2((*P_D_A1_YCenter) - double(I_CenterY_In)));
+  Array<int, 1> I_A1_IndicesInArea(D_A1_XCenter.size());
+  I_A1_IndicesInArea = where((D_A1_XCenter >= I_A1_Area_In(0)) && (D_A1_XCenter <= I_A1_Area_In(1)) && (D_A1_YCenter >= I_A1_Area_In(2)) && (D_A1_YCenter <= I_A1_Area_In(3)), 1, 0);
+  int I_NIndicesInArea = 0;
+  Array<int, 1> *P_I_A1_IndicesInArea = this->GetIndex(I_A1_IndicesInArea, I_NIndicesInArea);
+  Array<double, 1> D_A1_XCentersInArea(I_NIndicesInArea);
+  if (!this->GetSubArrCopy(D_A1_XCenter, *P_I_A1_IndicesInArea, D_A1_XCentersInArea)){
+    cout << "CFits::FindApsInCircle: ERROR: GetSubArrCopy(D_A1_XCenter, " << *P_I_A1_IndicesInArea << ") returned FALSE" << endl;
+    return false;
+  }
+  Array<double, 1> D_A1_YCentersInArea(I_NIndicesInArea);
+  if (!this->GetSubArrCopy(D_A1_YCenter, *P_I_A1_IndicesInArea, D_A1_YCentersInArea)){
+    cout << "CFits::FindApsInCircle: ERROR: GetSubArrCopy(D_A1_YCenter, " << *P_I_A1_IndicesInArea << ") returned FALSE" << endl;
+    return false;
+  }
+  
+  Array<double, 1> D_A1_Radius(D_A1_YCentersInArea.size());
+  D_A1_Radius = sqrt(pow2(D_A1_XCentersInArea - double(I_CenterX_In)) + pow2(D_A1_YCentersInArea - double(I_CenterY_In)));
 
   int I_NInd;
   Array<int, 1> I_A1_Where(D_A1_Radius.size());
   I_A1_Where = where(D_A1_Radius < double(I_Radius_In), 1, 0);
   Array<int, 1> *P_I_A1_Index = this->GetIndex(I_A1_Where, I_NInd);
   if (I_NInd < 0){
-    cout << "MFindApsInCirc::main: ERROR: I_NInd = " << I_NInd << endl;
+    cout << "CFits::FindApsInCircle: ERROR: I_NInd = " << I_NInd << endl;
     return false;
   }
-  cout << "MFindApsInCirc::main: P_I_A1_Index = " << *P_I_A1_Index << endl;
+  #ifdef __DEBUG_CFITS_FINDAPSINCIRCLE__
+    cout << "CFits::FindApsInCircle: P_I_A1_Index = " << *P_I_A1_Index << endl;
+  #endif
   I_A1_Apertures_Out.resize(I_NInd);
-  I_A1_Apertures_Out = (*P_I_A1_Index);
+  if (!this->GetSubArrCopy((*P_I_A1_IndicesInArea), (*P_I_A1_Index), I_A1_Apertures_Out)){
+    cout << "CFits::FindApsInCircle: ERROR: GetSubArrCopy(P_I_A1_IndicesInArea(=" << *P_I_A1_IndicesInArea << "), P_I_A1_Index(=" << *P_I_A1_Index << "), I_A1_Apertures_Out) returned FALSE" << endl;
+    return false;
+  }
 
 //  if (!this->WriteArrayToFile(*P_I_A1_Index, CS_FileListName_Out, CString("ascii"))){
 //    cout << "MFindApsInCirc::main: ERROR: WriteArrayToFile(P_I_A1_Index, " << CS_FileListName_Out << ") returned FALSE" << endl;
 //    exit(EXIT_FAILURE);
 //  }
   delete(P_I_A1_Index);
+  delete(P_I_A1_IndicesInArea);
   return true;
 }
 
@@ -44693,6 +45003,26 @@ bool CFits::FindApsInRing(const int I_CenterX_In,
                           const int I_CenterY_In,
                           const int I_InnerRadius_In,
                           const int I_OuterRadius_In,
+                          Array<int, 1> &I_A1_Apertures_Out) const{
+  Array<int, 1> I_A1_Area(4);
+  I_A1_Area(0) = 0;
+  I_A1_Area(1) = this->NCols-1;
+  I_A1_Area(2) = 0;
+  I_A1_Area(3) = this->NRows-1;
+  return this->FindApsInRing(I_CenterX_In,
+                             I_CenterY_In,
+                             I_InnerRadius_In,
+                             I_OuterRadius_In,
+                             I_A1_Area,
+                             I_A1_Apertures_Out);
+}
+
+
+bool CFits::FindApsInRing(const int I_CenterX_In,
+                          const int I_CenterY_In,
+                          const int I_InnerRadius_In,
+                          const int I_OuterRadius_In,
+                          const Array<int, 1> &I_A1_Area_In,
                           Array<int, 1> &I_A1_Apertures_Out) const{
   if (!this->TraceFunctionsCalculated){
     cout << "CFits::FindApsInRing: ERROR: Trace functions not calculated yet" << endl;
@@ -44703,9 +45033,24 @@ bool CFits::FindApsInRing(const int I_CenterX_In,
   Array<double, 1> D_A1_XCenter(P_D_A1_YHigh->size());
   for (int i_ap=0; i_ap<P_D_A1_YCenter->size(); i_ap++)
   D_A1_XCenter(i_ap) = (*P_D_A2_XCenters)(i_ap,(int)(D_A1_YCenter(i_ap)));
-
-  Array<double, 1> D_A1_Radius(this->P_D_A1_YCenter->size());
-  D_A1_Radius = sqrt(pow2(D_A1_XCenter - double(I_CenterX_In)) + pow2((*(this->P_D_A1_YCenter)) - double(I_CenterY_In)));
+  
+  Array<int, 1> I_A1_IndicesInArea(D_A1_XCenter.size());
+  I_A1_IndicesInArea = where((D_A1_XCenter >= I_A1_Area_In(0)) && (D_A1_XCenter <= I_A1_Area_In(1)) && (D_A1_YCenter >= I_A1_Area_In(2)) && (D_A1_YCenter <= I_A1_Area_In(3)), 1, 0);
+  int I_NIndicesInArea = 0;
+  Array<int, 1> *P_I_A1_IndicesInArea = this->GetIndex(I_A1_IndicesInArea, I_NIndicesInArea);
+  Array<double, 1> D_A1_XCentersInArea(I_NIndicesInArea);
+  if (!this->GetSubArrCopy(D_A1_XCenter, *P_I_A1_IndicesInArea, D_A1_XCentersInArea)){
+    cout << "CFits::FindApsInCircle: ERROR: GetSubArrCopy(D_A1_XCenter, " << *P_I_A1_IndicesInArea << ") returned FALSE" << endl;
+    return false;
+  }
+  Array<double, 1> D_A1_YCentersInArea(I_NIndicesInArea);
+  if (!this->GetSubArrCopy(D_A1_YCenter, *P_I_A1_IndicesInArea, D_A1_YCentersInArea)){
+    cout << "CFits::FindApsInCircle: ERROR: GetSubArrCopy(D_A1_YCenter, " << *P_I_A1_IndicesInArea << ") returned FALSE" << endl;
+    return false;
+  }
+  
+  Array<double, 1> D_A1_Radius(D_A1_YCentersInArea.size());
+  D_A1_Radius = sqrt(pow2(D_A1_XCentersInArea - double(I_CenterX_In)) + pow2(D_A1_YCentersInArea - double(I_CenterY_In)));
 
   int I_NInd;
   Array<int, 1> I_A1_Where(D_A1_Radius.size());
@@ -44715,15 +45060,20 @@ bool CFits::FindApsInRing(const int I_CenterX_In,
     cout << "CFits::FindApsInRing::main: ERROR: I_NInd = " << I_NInd << endl;
     return false;
   }
-  cout << "CFits::FindApsInRing::main: P_I_A1_Index = " << *P_I_A1_Index << endl;
-
+  #ifdef __DEBUG_CFITS_FINDAPSINRING__
+    cout << "CFits::FindApsInRing::main: P_I_A1_Index = " << *P_I_A1_Index << endl;
+  #endif
   I_A1_Apertures_Out.resize(P_I_A1_Index->size());
-  I_A1_Apertures_Out = (*P_I_A1_Index);
+  if (!this->GetSubArrCopy(*P_I_A1_IndicesInArea, *P_I_A1_Index, I_A1_Apertures_Out)){
+    cout << "CFits::FindApsInRing::main: ERROR: GetSubArrCopy(P_I_A1_IndicesInArea(=" << *P_I_A1_IndicesInArea << "), P_I_A1_Index(=" << *P_I_A1_Index << "), I_A1_Apretures_Out) returned FALSE" << endl;
+    return false;
+  }
 //  if (!F_Image.WriteArrayToFile(*P_I_A1_Index, CS_FileListName_Out, CString("ascii"))){
 //    cout << "MFindApsInRing::main: ERROR: WriteArrayToFile(P_I_A1_Index, " << CS_FileListName_Out << ") returned FALSE" << endl;
 //    exit(EXIT_FAILURE);
 //  }
   delete(P_I_A1_Index);
+  delete(P_I_A1_IndicesInArea);
   return true;
 }
 
@@ -44770,10 +45120,11 @@ bool CFits::PhotonsToFlux(const Array<double, 2> &D_A2_WLen_NPhotons,
     cout << "CFits::PhotonsToFlux: ERROR: D_A2_WLen_NPhotons does not have 2 columns or rows => Returning FALSE" << endl;
     return false;
   }
-  cout << "CFits::PhotonsToFlux: D_A2_WLen_NPhotons = " << D_A2_WLen_NPhotons << endl;
-  cout << "CFits::PhotonsToFlux: D_ExpTime = " << D_ExpTime << endl;
-  cout << "CFits::PhotonsToFlux: D_ATel = " << D_ATel << endl;
-
+  #ifdef __DEBUG_FITS_PHOTONSTOFLUX__
+    cout << "CFits::PhotonsToFlux: D_A2_WLen_NPhotons = " << D_A2_WLen_NPhotons << endl;
+    cout << "CFits::PhotonsToFlux: D_ExpTime = " << D_ExpTime << endl;
+    cout << "CFits::PhotonsToFlux: D_ATel = " << D_ATel << endl;
+  #endif
   int I_Len = 0;
   Array<double, 1> D_A1_WLen(1);
   Array<double, 1> D_A1_NPhotons(1);
@@ -44799,34 +45150,42 @@ bool CFits::PhotonsToFlux(const Array<double, 2> &D_A2_WLen_NPhotons,
   D_A1_DWLen(0) = D_A1_WLen(1) - D_A1_WLen(0);
   D_A1_DWLen(D_A1_DWLen.size()-1) = D_A1_WLen(D_A1_WLen.size() - 1) - D_A1_WLen(D_A1_WLen.size() - 2);
   for (int i_pix=1; i_pix<D_A1_WLen.size()-1; i_pix++){
-    cout << "CFits::PhotonsToFlux: i_pix = " << i_pix << ": D_A1_WLen(i_pix-1) = " << D_A1_WLen(i_pix-1) << ", D_A1_WLen(i_pix) = " << D_A1_WLen(i_pix) << ", D_A1_WLen(i_pix+1) = " << D_A1_WLen(i_pix+1) << endl;
+    #ifdef __DEBUG_FITS_PHOTONSTOFLUX__
+      cout << "CFits::PhotonsToFlux: i_pix = " << i_pix << ": D_A1_WLen(i_pix-1) = " << D_A1_WLen(i_pix-1) << ", D_A1_WLen(i_pix) = " << D_A1_WLen(i_pix) << ", D_A1_WLen(i_pix+1) = " << D_A1_WLen(i_pix+1) << endl;
+    #endif
     D_A1_DWLen(i_pix) = ((D_A1_WLen(i_pix) - D_A1_WLen(i_pix-1))/2.) + ((D_A1_WLen(i_pix+1) - D_A1_WLen(i_pix))/2.);
-    cout << "CFits::PhotonsToFlux: D_A1_DWLen(i_pix) = " << D_A1_DWLen(i_pix) << endl;
+    #ifdef __DEBUG_FITS_PHOTONSTOFLUX__
+      cout << "CFits::PhotonsToFlux: D_A1_DWLen(i_pix) = " << D_A1_DWLen(i_pix) << endl;
+    #endif
   }
-  cout << "CFits::PhotonsToFlux: D_A1_WLen = " << D_A1_WLen << endl;
-  cout << "CFits::PhotonsToFlux: D_A1_DWLen = " << D_A1_DWLen << endl;
-
+  #ifdef __DEBUG_FITS_PHOTONSTOFLUX__
+    cout << "CFits::PhotonsToFlux: D_A1_WLen = " << D_A1_WLen << endl;
+    cout << "CFits::PhotonsToFlux: D_A1_DWLen = " << D_A1_DWLen << endl;
+  #endif
   if (fabs(D_ExpTime) < 0.0000001){
     cout << "CFits::PhotonsToFlux: ERROR: D_ExpTime == 0 => Returning FALSE" << endl;
     return false;
   }
   Array<double, 1> D_A1_PhotonsPerSecPerDWLen(D_A1_WLen.size());
   D_A1_PhotonsPerSecPerDWLen = D_A1_NPhotons / (D_ExpTime * D_A1_DWLen); /// # / s / Ang
-  cout << "CFits::PhotonsToFlux: D_A1_PhotonsPerSecPerDWLen = " << D_A1_PhotonsPerSecPerDWLen << endl;
-
+  #ifdef __DEBUG_FITS_PHOTONSTOFLUX__
+    cout << "CFits::PhotonsToFlux: D_A1_PhotonsPerSecPerDWLen = " << D_A1_PhotonsPerSecPerDWLen << endl;
+  #endif
   Array<double, 1> D_A1_EnergyPerPhoton(D_A1_WLen.size());
   D_A1_EnergyPerPhoton = D_H_C;                              /// erg Ang
   D_A1_EnergyPerPhoton = D_A1_EnergyPerPhoton / D_A1_WLen;   /// erg
-  cout << "CFits::PhotonsToFlux: D_A1_EnergyPerPhoton = " << D_A1_EnergyPerPhoton << endl;
-
+  #ifdef __DEBUG_FITS_PHOTONSTOFLUX__
+    cout << "CFits::PhotonsToFlux: D_A1_EnergyPerPhoton = " << D_A1_EnergyPerPhoton << endl;
+  #endif
   Array<double, 1> D_A1_Energy(D_A1_WLen.size());
   if (fabs(D_ATel) < 0.0000001){
     cout << "CFits::PhotonsToFlux: ERROR: D_ATel == 0 => Returning FALSE" << endl;
     return false;
   }
   D_A1_Energy = D_A1_PhotonsPerSecPerDWLen * D_A1_EnergyPerPhoton / D_ATel; /// erg / s / Ang / cm^2
-  cout << "CFits::PhotonsToFlux: D_A1_Energy = " << D_A1_Energy << endl;
-
+  #ifdef __DEBUG_FITS_PHOTONSTOFLUX__
+    cout << "CFits::PhotonsToFlux: D_A1_Energy = " << D_A1_Energy << endl;
+  #endif
   if (D_A2_WLen_NPhotons.cols() == 2){
     D_A2_WLen_Erg_Out.resize(D_A1_WLen.size(), 2);
     D_A2_WLen_Erg_Out(Range::all(), 0) = D_A1_WLen;
@@ -44837,7 +45196,9 @@ bool CFits::PhotonsToFlux(const Array<double, 2> &D_A2_WLen_NPhotons,
     D_A2_WLen_Erg_Out(0, Range::all()) = D_A1_WLen;
     D_A2_WLen_Erg_Out(1, Range::all()) = D_A1_Energy;
   }
-  cout << "CFits::PhotonsToFlux: D_A2_WLen_Erg_Out = " << D_A2_WLen_Erg_Out << endl;
+  #ifdef __DEBUG_FITS_PHOTONSTOFLUX__
+    cout << "CFits::PhotonsToFlux: D_A2_WLen_Erg_Out = " << D_A2_WLen_Erg_Out << endl;
+  #endif
   return true;
 }
 
@@ -45107,6 +45468,18 @@ bool CFits::MPFitGaussExtract(const Array<double, 2> &D_A2_ArrayToExtract_In,
                               const Array<double, 1> &D_A1_SDevLimits_In,
                               const Array<double, 1> &D_A1_MeanLimits_In,
                               const bool B_WithBackground_In){
+  (*(this->P_D_A2_Errors_Ec)) = 0.;
+  (*(this->P_D_A2_Errors_EcFit)) = 0.;
+  (*(this->P_D_A2_LastExtracted)) = 0.;
+  (*(this->P_D_A2_Sky)) = 0.;
+  (*(this->P_D_A2_SkyError)) = 0.;
+  (*(this->P_D_A2_SkyFit)) = 0.;
+  (*(this->P_D_A2_SkyFitError)) = 0.;
+  (*(this->P_D_A2_RecArray)) = 0.;
+  (*(this->P_D_A2_RecFitArray)) = 0.;
+  (*(this->P_D_A2_RecSkyArray)) = 0.;
+  (*(this->P_D_A2_RecSkyFitArray)) = 0.;
+  
   int I_NParams = 3;
   int I_NPix = 0;
   int I_XLow = 0;
@@ -45144,6 +45517,7 @@ bool CFits::MPFitGaussExtract(const Array<double, 2> &D_A2_ArrayToExtract_In,
   D_A1_ECoeffs = 0.;
   Array<double, 1> *P_D_A1_Ind;
   Array<double, 1> D_A1_XInt(2);
+  Array<double, 1> D_A1_YGauss(1);
   for (int i_ap=0; i_ap<this->I_NApertures; i_ap++){
     for (int i_row = (*(this->P_D_A1_YCenter))(i_ap) + (*(this->P_D_A1_YLow))(i_ap); i_row <= (*(this->P_D_A1_YCenter))(i_ap) + (*(this->P_D_A1_YHigh))(i_ap); i_row++){
       I_XLow = int((*(this->P_D_A2_XCenters))(i_ap, i_row) + (*(this->P_D_A1_XLow))(i_ap));
@@ -45226,6 +45600,55 @@ bool CFits::MPFitGaussExtract(const Array<double, 2> &D_A2_ArrayToExtract_In,
 //        (D_A1_Coeffs(D_A1_Coeffs.size()-2) < (0.2 * D_A1_Guess(D_A1_Guess.size()-2))))
 //        D_A1_Coeffs(D_A1_Coeffs.size()-1) = 0.;
       (*(this->P_D_A2_LastExtracted))(i_ap, i_row) = D_A1_Coeffs(I_Ind);
+      (*(this->P_D_A2_Errors_Ec))(i_ap, i_row) = D_A1_ECoeffs(I_Ind);
+      (*(this->P_D_A2_Errors_EcFit))(i_ap, i_row) = D_A1_ECoeffs(I_Ind);
+      if (B_WithBackground_In){
+        (*(this->P_D_A2_Sky))(i_ap, i_row) = D_A1_Coeffs(0);
+        (*(this->P_D_A2_SkyFit))(i_ap, i_row) = D_A1_Coeffs(0);
+        (*(this->P_D_A2_SkyError))(i_ap, i_row) = D_A1_ECoeffs(0);
+        (*(this->P_D_A2_SkyFitError))(i_ap, i_row) = D_A1_ECoeffs(0);
+        #ifdef __DEBUG_FITS_GAUSSEXTRACT__
+          cout << "CFits::MPFitGaussExtract: (*(this->P_D_A2_SkyFit))(" << i_ap << ", " << i_row << ") set to " << (*(this->P_D_A2_SkyFit))(i_ap, i_row) << endl;
+        #endif
+        (*(this->P_D_A2_RecSkyArray))(i_row, Range(int((*(this->P_D_A2_XCenters))(i_ap, i_row) + (*(this->P_D_A1_XLow))(i_ap)),
+                                                   int((*(this->P_D_A2_XCenters))(i_ap, i_row) + (*(this->P_D_A1_XHigh))(i_ap)))) = D_A1_Coeffs(0);
+        #ifdef __DEBUG_FITS_GAUSSEXTRACT__
+          cout << "CFits::MPFitGaussExtract: (*(this->P_D_A2_RecSkyArray))(" << i_row << ", Range(" << int((*(this->P_D_A2_XCenters))(i_ap, i_row) + (*(this->P_D_A1_XLow))(i_ap)) << ", " << int((*(this->P_D_A2_XCenters))(i_ap, i_row) + (*(this->P_D_A1_XHigh))(i_ap)) << ")) set to " << (*(this->P_D_A2_RecSkyArray))(i_row, Range(int((*(this->P_D_A2_XCenters))(i_ap, i_row) + (*(this->P_D_A1_XLow))(i_ap)),int((*(this->P_D_A2_XCenters))(i_ap, i_row) + (*(this->P_D_A1_XHigh))(i_ap)))) << endl;
+        #endif
+      }
+      Array<double, 1> *P_D_A1_XGauss = this->DIndGenArr(int((*(this->P_D_A1_XHigh))(i_ap) - (*(this->P_D_A1_XLow))(i_ap)) + 1);
+      *P_D_A1_XGauss = *P_D_A1_XGauss + (*(this->P_D_A2_XCenters))(i_ap, i_row) + (*(this->P_D_A1_XLow))(i_ap);
+      for (int i_xpix=0; i_xpix<P_D_A1_XGauss->size(); i_xpix++)
+        (*P_D_A1_XGauss)(i_xpix) = double(int((*P_D_A1_XGauss)(i_xpix)));
+      D_A1_YGauss.resize(P_D_A1_XGauss->size());
+      #ifdef __DEBUG_FITS_GAUSSEXTRACT__
+        cout << "CFits::MPFitGaussExtract: i_ap = " << i_ap << ": i_row = " << i_row << ": D_A1_XGauss set to " << *P_D_A1_XGauss << endl;
+        cout << "CFits::MPFitGaussExtract: i_ap = " << i_ap << ": i_row = " << i_row << ": D_A1_Coeffs set to " << D_A1_Coeffs << endl;
+      #endif
+      Array<double, 1> D_A1_CoeffsGaussTemp(D_A1_Coeffs.size());
+      D_A1_CoeffsGaussTemp = D_A1_Coeffs;
+      D_A1_CoeffsGaussTemp(I_Ind) = 1.;
+      if (!this->GaussArea(*P_D_A1_XGauss,
+                           D_A1_CoeffsGaussTemp(Range(I_Ind, I_Ind+2)),
+                           D_A1_YGauss)){
+        cout << "CFits::MPFitGaussExtract: ERROR: GaussArea(" << *P_D_A1_XGauss << ", " << D_A1_Coeffs << ", D_A1_YGauss) returned FALSE" << endl;
+        return false;
+      }
+      #ifdef __DEBUG_FITS_GAUSSEXTRACT__
+        cout << "CFits::MPFitGaussExtract: i_ap = " << i_ap << ": i_row = " << i_row << ": D_A1_YGauss set to " << D_A1_YGauss << endl;
+      #endif
+//        return false;
+      (*(this->P_D_A2_ProfArray))(i_row, Range(int((*(this->P_D_A2_XCenters))(i_ap, i_row) + (*(this->P_D_A1_XLow))(i_ap)),
+                                               int((*(this->P_D_A2_XCenters))(i_ap, i_row) + (*(this->P_D_A1_XHigh))(i_ap))))
+      = (*(this->P_D_A2_ProfArray))(i_row, Range(int((*(this->P_D_A2_XCenters))(i_ap, i_row) + (*(this->P_D_A1_XLow))(i_ap)),
+                                                 int((*(this->P_D_A2_XCenters))(i_ap, i_row) + (*(this->P_D_A1_XHigh))(i_ap))))
+        + (D_A1_YGauss);
+      (*(this->P_D_A2_RecFitArray))(i_row, Range(int((*(this->P_D_A2_XCenters))(i_ap, i_row) + (*(this->P_D_A1_XLow))(i_ap)),
+                                                 int((*(this->P_D_A2_XCenters))(i_ap, i_row) + (*(this->P_D_A1_XHigh))(i_ap))))
+      = (*(this->P_D_A2_RecFitArray))(i_row, Range(int((*(this->P_D_A2_XCenters))(i_ap, i_row) + (*(this->P_D_A1_XLow))(i_ap)),
+                                                   int((*(this->P_D_A2_XCenters))(i_ap, i_row) + (*(this->P_D_A1_XHigh))(i_ap))))
+        + (D_A1_YGauss * D_A1_Coeffs(I_Ind));
+      delete(P_D_A1_XGauss);
 //      return false;
     }
   }
@@ -45263,7 +45686,19 @@ bool CFits::MPFitTwoGaussExtract(const Array<double, 2> &D_A2_ArrayToExtract_In,
   int I_YMin = 0;
   int I_YMax = D_A2_ArrayToExtract_In.rows()-1;
   Array<int, 1> *P_I_A1_AperturesToExtract = this->IndGenArr(this->I_NApertures);
-
+  
+  (*(this->P_D_A2_Errors_Ec)) = 0.;
+  (*(this->P_D_A2_Errors_EcFit)) = 0.;
+  (*(this->P_D_A2_LastExtracted)) = 0.;
+  (*(this->P_D_A2_Sky)) = 0.;
+  (*(this->P_D_A2_SkyError)) = 0.;
+  (*(this->P_D_A2_SkyFit)) = 0.;
+  (*(this->P_D_A2_SkyFitError)) = 0.;
+  (*(this->P_D_A2_RecArray)) = 0.;
+  (*(this->P_D_A2_RecFitArray)) = 0.;
+  (*(this->P_D_A2_RecSkyArray)) = 0.;
+  (*(this->P_D_A2_RecSkyFitArray)) = 0.;
+  
   ///Area to extract
   I_Pos = this->KeyWord_Set(CS_A1_Args_In, CString("AREA"));
   if (I_Pos >= 0)
@@ -45301,6 +45736,8 @@ bool CFits::MPFitTwoGaussExtract(const Array<double, 2> &D_A2_ArrayToExtract_In,
     I_NParamsTwo = 6;
     I_Ind = 1;
   }
+  Array<double, 1> D_A1_CoeffsGauss(I_NParamsOne);
+  Array<double, 1> D_A1_ECoeffsGauss(I_NParamsOne);
   Array<double, 1> D_A1_X(1);
   Array<double, 1> D_A1_Y(1);
   Array<double, 1> D_A1_YTemp(1);
@@ -45351,6 +45788,8 @@ bool CFits::MPFitTwoGaussExtract(const Array<double, 2> &D_A2_ArrayToExtract_In,
   D_A1_ECoeffsOne = 0.;
   D_A1_ECoeffsTwo = 0.;
   Array<double, 1> *P_D_A1_Ind;
+  Array<double, 1> *P_D_A1_XGauss;
+  Array<double, 1> D_A1_YGauss(1);
   Array<double, 1> D_A1_XInt(2);
   int I_ApNumWithCrossTalk = -1;
   int I_NApsWithCrossTalk = 0;
@@ -45554,11 +45993,12 @@ bool CFits::MPFitTwoGaussExtract(const Array<double, 2> &D_A2_ArrayToExtract_In,
           #ifdef __DEBUG_FITS_GAUSSEXTRACT__
             cout << "CFits::MPFitTwoGaussExtract: i_ap=" << i_ap << ": i_row=" << i_row << ": D_A1_CoeffsTwo = " << D_A1_CoeffsTwo << endl;
           #endif
-//      if (((D_A1_Coeffs(D_A1_Coeffs.size()-3) - D_A1_Guess(D_A1_Guess.size()-3)) > D_A1_Guess(D_A1_Guess.size()-2)) ||
+          D_A1_CoeffsGauss = D_A1_CoeffsTwo(Range(0, I_NParamsOne-1));
+          D_A1_ECoeffsGauss = D_A1_ECoeffsTwo(Range(0, I_NParamsOne-1));
+          //      if (((D_A1_Coeffs(D_A1_Coeffs.size()-3) - D_A1_Guess(D_A1_Guess.size()-3)) > D_A1_Guess(D_A1_Guess.size()-2)) ||
 //        (D_A1_Coeffs(D_A1_Coeffs.size()-2) > (2. * D_A1_Guess(D_A1_Guess.size()-2))) ||
 //        (D_A1_Coeffs(D_A1_Coeffs.size()-2) < (0.2 * D_A1_Guess(D_A1_Guess.size()-2))))
 //        D_A1_Coeffs(D_A1_Coeffs.size()-1) = 0.;
-          (*(this->P_D_A2_LastExtracted))(i_ap, i_row) = D_A1_CoeffsTwo(I_Ind);
 //      return false;
         }
         else{
@@ -45622,13 +46062,64 @@ bool CFits::MPFitTwoGaussExtract(const Array<double, 2> &D_A2_ArrayToExtract_In,
           #ifdef __DEBUG_FITS_GAUSSEXTRACT__
             cout << "CFits::MPFitTwoGaussExtract: i_ap=" << i_ap << ": i_row=" << i_row << ": D_A1_CoeffsOne = " << D_A1_CoeffsOne << endl;
           #endif
-//      if (((D_A1_Coeffs(D_A1_Coeffs.size()-3) - D_A1_Guess(D_A1_Guess.size()-3)) > D_A1_Guess(D_A1_Guess.size()-2)) ||
+          D_A1_CoeffsGauss = D_A1_CoeffsOne;
+          D_A1_ECoeffsGauss = D_A1_ECoeffsOne;
+          //      if (((D_A1_Coeffs(D_A1_Coeffs.size()-3) - D_A1_Guess(D_A1_Guess.size()-3)) > D_A1_Guess(D_A1_Guess.size()-2)) ||
 //        (D_A1_Coeffs(D_A1_Coeffs.size()-2) > (2. * D_A1_Guess(D_A1_Guess.size()-2))) ||
 //        (D_A1_Coeffs(D_A1_Coeffs.size()-2) < (0.2 * D_A1_Guess(D_A1_Guess.size()-2))))
 //        D_A1_Coeffs(D_A1_Coeffs.size()-1) = 0.;
-          (*(this->P_D_A2_LastExtracted))(i_ap, i_row) = D_A1_CoeffsOne(I_Ind);
-//      return false;
+          //      return false;
         }
+        (*(this->P_D_A2_LastExtracted))(i_ap, i_row) = D_A1_CoeffsGauss(I_Ind);
+        (*(this->P_D_A2_Errors_Ec))(i_ap, i_row) = D_A1_ECoeffsGauss(I_Ind);
+        (*(this->P_D_A2_Errors_EcFit))(i_ap, i_row) = D_A1_ECoeffsGauss(I_Ind);
+        if (B_WithBackground_In){
+          (*(this->P_D_A2_Sky))(i_ap, i_row) = D_A1_CoeffsGauss(0);
+          (*(this->P_D_A2_SkyFit))(i_ap, i_row) = D_A1_CoeffsGauss(0);
+          (*(this->P_D_A2_SkyError))(i_ap, i_row) = D_A1_ECoeffsGauss(0);
+          (*(this->P_D_A2_SkyFitError))(i_ap, i_row) = D_A1_ECoeffsGauss(0);
+          #ifdef __DEBUG_FITS_GAUSSEXTRACT__
+            cout << "CFits::MPFitGaussExtract: (*(this->P_D_A2_SkyFit))(" << i_ap << ", " << i_row << ") set to " << (*(this->P_D_A2_SkyFit))(i_ap, i_row) << endl;
+          #endif
+          (*(this->P_D_A2_RecSkyArray))(i_row, Range(int((*(this->P_D_A2_XCenters))(i_ap, i_row) + (*(this->P_D_A1_XLow))(i_ap)),
+                                                     int((*(this->P_D_A2_XCenters))(i_ap, i_row) + (*(this->P_D_A1_XHigh))(i_ap)))) = D_A1_CoeffsGauss(0);
+          #ifdef __DEBUG_FITS_GAUSSEXTRACT__
+            cout << "CFits::MPFitGaussExtract: (*(this->P_D_A2_RecSkyArray))(" << i_row << ", Range(" << int((*(this->P_D_A2_XCenters))(i_ap, i_row) + (*(this->P_D_A1_XLow))(i_ap)) << ", " << int((*(this->P_D_A2_XCenters))(i_ap, i_row) + (*(this->P_D_A1_XHigh))(i_ap)) << ")) set to " << (*(this->P_D_A2_RecSkyArray))(i_row, Range(int((*(this->P_D_A2_XCenters))(i_ap, i_row) + (*(this->P_D_A1_XLow))(i_ap)),int((*(this->P_D_A2_XCenters))(i_ap, i_row) + (*(this->P_D_A1_XHigh))(i_ap)))) << endl;
+          #endif
+        }
+        P_D_A1_XGauss = this->DIndGenArr(int((*(this->P_D_A1_XHigh))(i_ap) - (*(this->P_D_A1_XLow))(i_ap)) + 1);
+        *P_D_A1_XGauss = *P_D_A1_XGauss + (*(this->P_D_A2_XCenters))(i_ap, i_row) + (*(this->P_D_A1_XLow))(i_ap);
+        for (int i_xpix=0; i_xpix<P_D_A1_XGauss->size(); i_xpix++)
+          (*P_D_A1_XGauss)(i_xpix) = double(int((*P_D_A1_XGauss)(i_xpix)));
+        D_A1_YGauss.resize(P_D_A1_XGauss->size());
+        #ifdef __DEBUG_FITS_GAUSSEXTRACT__
+          cout << "CFits::MPFitGaussExtract: i_ap = " << i_ap << ": i_row = " << i_row << ": D_A1_XGauss set to " << *P_D_A1_XGauss << endl;
+          cout << "CFits::MPFitGaussExtract: i_ap = " << i_ap << ": i_row = " << i_row << ": D_A1_CoeffsGauss set to " << D_A1_CoeffsGauss << endl;
+        #endif
+        Array<double, 1> D_A1_CoeffsGaussTemp(D_A1_CoeffsGauss.size());
+        D_A1_CoeffsGaussTemp = D_A1_CoeffsGauss;
+        D_A1_CoeffsGaussTemp(I_Ind) = 1.;
+        if (!this->GaussArea(*P_D_A1_XGauss,
+                             D_A1_CoeffsGaussTemp(Range(I_Ind, I_Ind+2)),
+                             D_A1_YGauss)){
+          cout << "CFits::MPFitGaussExtract: ERROR: GaussArea(" << *P_D_A1_XGauss << ", " << D_A1_CoeffsGauss << ", D_A1_YGauss) returned FALSE" << endl;
+          return false;
+        }
+        #ifdef __DEBUG_FITS_GAUSSEXTRACT__
+          cout << "CFits::MPFitGaussExtract: i_ap = " << i_ap << ": i_row = " << i_row << ": D_A1_YGauss set to " << D_A1_YGauss << endl;
+        #endif
+//        return false;
+        (*(this->P_D_A2_ProfArray))(i_row, Range(int((*(this->P_D_A2_XCenters))(i_ap, i_row) + (*(this->P_D_A1_XLow))(i_ap)),
+                                                 int((*(this->P_D_A2_XCenters))(i_ap, i_row) + (*(this->P_D_A1_XHigh))(i_ap))))
+        = (*(this->P_D_A2_ProfArray))(i_row, Range(int((*(this->P_D_A2_XCenters))(i_ap, i_row) + (*(this->P_D_A1_XLow))(i_ap)),
+                                                   int((*(this->P_D_A2_XCenters))(i_ap, i_row) + (*(this->P_D_A1_XHigh))(i_ap))))
+          + (D_A1_YGauss);
+        (*(this->P_D_A2_RecFitArray))(i_row, Range(int((*(this->P_D_A2_XCenters))(i_ap, i_row) + (*(this->P_D_A1_XLow))(i_ap)),
+                                                   int((*(this->P_D_A2_XCenters))(i_ap, i_row) + (*(this->P_D_A1_XHigh))(i_ap))))
+        = (*(this->P_D_A2_RecFitArray))(i_row, Range(int((*(this->P_D_A2_XCenters))(i_ap, i_row) + (*(this->P_D_A1_XLow))(i_ap)),
+                                                     int((*(this->P_D_A2_XCenters))(i_ap, i_row) + (*(this->P_D_A1_XHigh))(i_ap))))
+          + (D_A1_YGauss * D_A1_CoeffsGauss(I_Ind));
+        delete(P_D_A1_XGauss);
       }
     }
   }
@@ -45668,9 +46159,15 @@ bool CFits::MPFitThreeGaussExtract(const Array<double, 2> &D_A2_ArrayToExtract_I
   Array<int, 1> *P_I_A1_AperturesToExtract = this->IndGenArr(this->I_NApertures);
   (*(this->P_D_A2_ProfArray)) = 0.;
   (*(this->P_D_A2_RecFitArray)) = 0.;
+  (*(this->P_D_A2_Sky)) = 0.;
   (*(this->P_D_A2_SkyFit)) = 0.;
   (*(this->P_D_A2_RecSkyArray)) = 0.;
-
+  (*(this->P_D_A2_LastExtracted)) = 0.;
+  (*(this->P_D_A2_Errors_Ec)) = 0.;  
+  (*(this->P_D_A2_Errors_EcFit)) = 0.;  
+  (*(this->P_D_A2_SkyError)) = 0.;  
+  (*(this->P_D_A2_SkyFitError)) = 0.;  
+  
   ///Area to extract
   I_Pos = this->KeyWord_Set(CS_A1_Args_In, CString("AREA"));
   if (I_Pos >= 0)
@@ -45798,6 +46295,7 @@ bool CFits::MPFitThreeGaussExtract(const Array<double, 2> &D_A2_ArrayToExtract_I
   Array<double, 1> *P_D_A1_XGauss;
   Array<double, 1> D_A1_YGauss(1);
   Array<double, 1> D_A1_CoeffsGauss(I_Ind+3);
+  Array<double, 1> D_A1_ECoeffsGauss(I_Ind+3);
   Array<double, 1> D_A1_GaussSigma(1);
   Array<double, 1> D_A1_GaussMean(1);
   Array<double, 1> D_A1_MeanFit(1);
@@ -46057,6 +46555,7 @@ bool CFits::MPFitThreeGaussExtract(const Array<double, 2> &D_A2_ArrayToExtract_I
               cout << "CFits::MPFitThreeGaussExtract: i_ap=" << i_ap << ": i_run = " << i_run << ": i_row=" << i_row << ": i_row_rel = " << i_row_rel << ": D_A1_CoeffsTwo = " << D_A1_CoeffsTwo << endl;
             #endif
             D_A1_CoeffsGauss = D_A1_CoeffsTwo(Range(0, I_Ind + 2));
+            D_A1_ECoeffsGauss = D_A1_ECoeffsTwo(Range(0, I_Ind + 2));
             if (i_run == 0){
               #ifdef __DEBUG_FITS_GAUSSEXTRACT__
                 cout << "CFits::MPFitThreeGaussExtract: i_row = " << i_row << ": i_row_rel = " << i_row_rel << endl;
@@ -46211,6 +46710,7 @@ bool CFits::MPFitThreeGaussExtract(const Array<double, 2> &D_A2_ArrayToExtract_I
               cout << "CFits::MPFitThreeGaussExtract: i_ap=" << i_ap << ": i_run = " << i_run << ": i_row=" << i_row << ": i_row_rel = " << i_row_rel << ": D_A1_CoeffsThree = " << D_A1_CoeffsThree << endl;
             #endif
             D_A1_CoeffsGauss = D_A1_CoeffsThree(Range(0, I_Ind + 2));
+            D_A1_ECoeffsGauss = D_A1_ECoeffsThree(Range(0, I_Ind + 2));
             if (i_run == 0){
               #ifdef __DEBUG_FITS_GAUSSEXTRACT__
                 cout << "CFits::MPFitThreeGaussExtract: i_row = " << i_row << ": i_row_rel = " << i_row_rel << endl;
@@ -46265,9 +46765,14 @@ bool CFits::MPFitThreeGaussExtract(const Array<double, 2> &D_A2_ArrayToExtract_I
           }
           D_A2_ParLimitsOne(I_Ind, 1) = 2. * D_A1_GuessOne(I_Ind);
           if (D_A2_ParLimitsOne(I_Ind, 1) < 0.)
-            D_A2_ParLimitsOne(I_Ind, 1) = 2. * max(D_A1_Y) * D_A1_GuessOne(I_Ind+2) * sqrt(2. * D_PI);
+            if (max(D_A1_Y) > 0.){
+              D_A2_ParLimitsOne(I_Ind, 1) = 2. * max(D_A1_Y) * D_A1_GuessOne(I_Ind+2) * sqrt(2. * D_PI);
+            }
+            else{
+              D_A2_ParLimitsOne(I_Ind, 1) = 0.0001;
+            }
           if (D_A2_ParLimitsOne(I_Ind,1) < D_A2_ParLimitsOne(I_Ind,0)){
-            cout << "CFits::MPFitThreeGaussExtract: ERROR: D_A2_ParLimitsOne(" << I_Ind << ",1)=" << D_A2_ParLimitsOne(I_Ind,1) << " < D_A2_ParLimitsOne(" << I_Ind << ",0)=" << D_A2_ParLimitsOne(I_Ind,0) << ", max(D_A1_Y) = " << max(D_A1_Y) << ", D_A1_GuessOne(I_Ind+2=" << I_Ind+2 << "), sqrt(2*Pi)=" << sqrt(2. * D_PI) << endl;
+            cout << "CFits::MPFitThreeGaussExtract: ERROR: D_A2_ParLimitsOne(" << I_Ind << ",1)=" << D_A2_ParLimitsOne(I_Ind,1) << " < D_A2_ParLimitsOne(" << I_Ind << ",0)=" << D_A2_ParLimitsOne(I_Ind,0) << ", max(D_A1_Y) = " << max(D_A1_Y) << ", D_A1_GuessOne(I_Ind=" << I_Ind << "), sqrt(2*Pi)=" << sqrt(2. * D_PI) << endl;
             return false;
           }
           if (i_run == 0){
@@ -46323,6 +46828,7 @@ bool CFits::MPFitThreeGaussExtract(const Array<double, 2> &D_A2_ArrayToExtract_I
             cout << "CFits::MPFitThreeGaussExtract: i_ap=" << i_ap << ": i_run = " << i_run << ": i_row=" << i_row << ": i_row_rel = " << i_row_rel << ": D_A1_CoeffsOne = " << D_A1_CoeffsOne << endl;
           #endif
           D_A1_CoeffsGauss = D_A1_CoeffsOne(Range(0, I_Ind + 2));
+          D_A1_ECoeffsGauss = D_A1_ECoeffsOne(Range(0, I_Ind + 2));
           if (i_run == 0){
             #ifdef __DEBUG_FITS_GAUSSEXTRACT__
               cout << "CFits::MPFitThreeGaussExtract: i_row = " << i_row << ": i_row_rel = " << i_row_rel << endl;
@@ -46381,8 +46887,13 @@ bool CFits::MPFitThreeGaussExtract(const Array<double, 2> &D_A2_ArrayToExtract_I
         }/// end if (i_run == 0){
         else{
           (*(this->P_D_A2_LastExtracted))(i_ap, i_row) = D_A1_CoeffsGauss(I_Ind);
+          (*(this->P_D_A2_Errors_Ec))(i_ap, i_row) = D_A1_ECoeffsGauss(I_Ind);
+          (*(this->P_D_A2_Errors_EcFit))(i_ap, i_row) = D_A1_ECoeffsGauss(I_Ind);
           if (B_WithBackground_In){
+            (*(this->P_D_A2_Sky))(i_ap, i_row) = D_A1_CoeffsGauss(0);
             (*(this->P_D_A2_SkyFit))(i_ap, i_row) = D_A1_CoeffsGauss(0);
+            (*(this->P_D_A2_SkyError))(i_ap, i_row) = D_A1_ECoeffsGauss(0);
+            (*(this->P_D_A2_SkyFitError))(i_ap, i_row) = D_A1_ECoeffsGauss(0);
             #ifdef __DEBUG_FITS_GAUSSEXTRACT__
               cout << "CFits::MPFitThreeGaussExtract: (*(this->P_D_A2_SkyFit))(" << i_ap << ", " << i_row << ") set to " << (*(this->P_D_A2_SkyFit))(i_ap, i_row) << endl;
             #endif
@@ -47191,4 +47702,105 @@ bool CFits::CalcSF(const int I_Aperture_In,
   return true;  
 }
             
-            
+                  
+bool CFits::RemoveAtmosphericExtinction(const Array<double, 2> &D_A2_Spec_In,
+                                        const double &D_AirMass,
+                                        const Array<double, 2> &D_A2_Extinction_In,
+                                        Array<double, 2> &D_A2_Spec_Out) const{
+  Array<double, 1> *P_D_A1_Extinction = new Array<double, 1>(D_A2_Spec_In.rows());
+  if (!this->InterPol(D_A2_Extinction_In(Range::all(), 1), 
+                      D_A2_Extinction_In(Range::all(), 0), 
+                      D_A2_Spec_In(Range::all(), 0), 
+                      P_D_A1_Extinction)){
+    cout << "CFits::RemoveAtmosphericExtinction: ERROR: InterPol(extinction) returned FALSE" << endl;
+    return false;
+  }
+  Array<double, 1> D_A1_ExtFactor(P_D_A1_Extinction->size());
+  D_A1_ExtFactor = pow(10.,(0.4 * (*P_D_A1_Extinction) * D_AirMass));
+  D_A2_Spec_Out.resize(D_A2_Spec_In.rows(), D_A2_Spec_In.cols());
+  D_A2_Spec_Out(Range::all(), 0) = D_A2_Spec_In(Range::all(), 0);
+  D_A2_Spec_Out(Range::all(), 1) = D_A2_Spec_In(Range::all(), 1) * D_A1_ExtFactor;
+  return true;
+}
+
+/* Calculate Airmass using Hardie Function
+ * D_A1_ZenithDist_Deg_In: input zenith distances in degrees
+ * */
+bool CFits::AirMass_Hardie_Deg(const Array<double, 1> &D_A1_ZenithDist_Deg_In,
+                               Array<double, 1> &D_A1_AirMass_Out) const{
+  double D_Rad = 180./D_PI;
+  Array<double, 1> D_A1_ZenithDist_Rad(D_A1_ZenithDist_Deg_In.size());
+  D_A1_ZenithDist_Rad = (90. - D_A1_ZenithDist_Deg_In) / D_Rad;
+  return AirMass_Hardie_Rad(D_A1_ZenithDist_Rad, D_A1_AirMass_Out);
+}
+                               
+/* Calculate Airmass using Hardie Function
+ * D_A1_ZenithDist_Rad_In: input zenith distances in radians
+ * */
+bool CFits::AirMass_Hardie_Rad(const Array<double, 1> &D_A1_ZenithDist_Rad_In,
+                               Array<double, 1> &D_A1_AirMass_Out) const{
+  Array<double, 1> D_A1_SecZ(D_A1_ZenithDist_Rad_In.size());
+  D_A1_SecZ = 1./cos(D_A1_ZenithDist_Rad_In);
+  
+  D_A1_AirMass_Out.resize(D_A1_ZenithDist_Rad_In.size());
+  D_A1_AirMass_Out = D_A1_SecZ - (0.0018167 * (D_A1_SecZ - 1)) - (0.002875 * (D_A1_SecZ - 1) * (D_A1_SecZ - 1)) - (0.0008083 * (D_A1_SecZ - 1) * (D_A1_SecZ - 1) * (D_A1_SecZ - 1));
+  
+  return true;
+}
+                    
+/**
+  * Calculates positive roots for a given polynomial
+  * D_A1_PolyCoeffs_In: Coefficients for the polynomial
+  * D_Y_In:             y value to find x
+  * D_XStart_In:        x value to start search
+  * D_XStep_In:         initial step for search (<0: go left, >0: go right)
+  * CS_Function_In:     [Poly,Chebyshev,Legendre]
+  * **/
+bool CFits::PolyRoot(const Array<double, 1> &D_A1_PolyCoeffs_In,
+                     const double &D_Y_In,
+                     const double &D_XStart_In,
+                     const double &D_XStep_In,
+                     const double &D_MaxDist_In,
+                     const CString &CS_Function_In,
+                     double &D_X_Out) const{
+  bool B_Run = true;
+  double D_X = D_XStart_In;
+  double D_X_Old = D_X;
+  double D_X_New = D_X + D_XStep_In;
+  double D_XStep = D_XStep_In;
+  double D_Y = 0.;
+  double D_Y_Old = 0.;
+  double D_Y_New = 0.;
+  CString CS_Poly("Poly");
+  CString CS_Cheb("Chebyshev");
+  CString CS_Leg("Legendre");
+  do{
+    if (CS_Function_In.EqualValue(CS_Poly)){
+      D_Y_Old = this->Poly(D_X_Old, D_A1_PolyCoeffs_In);
+      D_Y_New = this->Poly(D_X_New, D_A1_PolyCoeffs_In);
+      D_X_Old = D_X_New;
+      if (((D_Y_Old < D_Y_In) && (D_Y_New >= D_Y_In)) || ((D_Y_Old > D_Y_In) && (D_Y_New <= D_Y_In))){
+        D_XStep = 0. - (D_XStep / 2.);
+      }
+      else if (fabs(D_Y_Old - D_Y_In) < fabs(D_Y_New - D_Y_In))
+        D_XStep = 0. - D_XStep;
+      D_X_New = D_X_Old + D_XStep;
+      if (fabs(D_Y_New - D_Y_In) < fabs(D_MaxDist_In))
+        B_Run = false;
+    }
+    else if (CS_Function_In.EqualValue(CS_Cheb)){
+      cout << "CFits::PolyRoot: ERROR: CS_Function_In=" << CS_Function_In << " is not yet implemented" << endl;
+      return false;
+    }
+    else if (CS_Function_In.EqualValue(CS_Leg)){
+      cout << "CFits::PolyRoot: ERROR: CS_Function_In=" << CS_Function_In << " is not yet implemented" << endl;
+      return false;
+    }
+    else{
+      cout << "CFits::PolyRoot: ERROR: CS_Function_In=" << CS_Function_In << " not known" << endl;
+      return false;
+    }
+  } while(B_Run);
+  D_X_Out = D_X_Old;
+  return true;
+}

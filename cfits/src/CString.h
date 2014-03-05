@@ -319,8 +319,14 @@ TODO: Memory leaks in + operators
       long CountCols(const CString &CS_FileName_In, const CString &CS_Delimiter) const;
 
       /// Replaces all occurences CString <CS_ToReplace> in this with <CS_Replace>
+      /// Returns a copy of itself if CS_ToReplace_In is not found in this
       CString* StrReplace(const CString& CS_ToReplace, const CString& CS_Replace);
-
+      
+      /// Replaces all occurences CString <CS_ToReplace> in this with <CS_Replace> and writes result to 
+      /// CS_Out
+      /// Returns false if CS_ToReplace_In is not found in this
+      bool StrReplace(const CString& CS_ToReplace_In, const CString& CS_Replace_In, CString &CS_Out);
+        
       /// Replaces all occurences of CString <CS_ToReplace_In> in textfile <CS_TextFile_In> with
       /// <CS_Replace_In> and writes result to <CS_TextFile_Out>
       bool StrReplaceInList(const CString &CS_TextFile_In,
@@ -347,7 +353,20 @@ TODO: Memory leaks in + operators
       bool FileAccess(const CString &fn) const;
 
       bool IsList() const;
-
+      
+      /// Checks CS_A1_In and returns an integer array with 1 where CS_A1_In(i).EqualValue(CS_Comp),
+      /// otherwise 0
+      Array<int, 1>* Where(const Array<CString, 1> &CS_A1_In,
+                           const CString &CS_Comp) const;
+                           
+      /** Removes element at position I_Pos from CS_A1_InOut
+       * */
+      bool RemoveElementFromArray(Array<CString, 1> &CS_A1_InOut, int I_Pos) const;
+      
+      /** Removes elements listed in I_A1_ElementsToRemove_In from CS_A1_InOut
+       * */
+      bool RemoveElementsFromArray(Array<CString, 1> &CS_A1_InOut, const Array<int, 1> &I_A1_ElementsToRemove_In) const;
+      
       bool WriteStrListToFile(const Array<CString, 1> &CS_A1_In, const CString &CS_FileNameOut_In) const;
       bool WriteStrListToFile(const Array<CString, 2> &CS_A2_In, const CString &CS_Delimiter, const CString &CS_FileNameOut_In) const;
 

@@ -13,7 +13,7 @@ basis machine: Ubuntu Linux 6.06
   #include <string>
   #include <stdio.h>
   #include <cstdlib>
-  #include <c++/4/x86_64-linux-gnu/bits/stdc++.h>
+  #include <c++/4/bits/stdc++.h>
 
 using namespace std;
 

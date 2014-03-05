@@ -1,4 +1,4 @@
-rm ../bin/removedisplinesfromheader
+mv ../bin/removedisplinesfromheader ../bin/removedisplinesfromheader.bak
 gcc -s -O2 -lm -o ../bin/removedisplinesfromheader MBasis.h MBasis.c MRemoveDispLinesFromHeader.h MRemoveDispLinesFromHeader.c
 chmod a+x ../bin/removedisplinesfromheader
 rm ~/bin/removedisplinesfromheader
