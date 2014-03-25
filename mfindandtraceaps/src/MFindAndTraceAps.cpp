@@ -18,29 +18,29 @@ int main(int argc, char *argv[])
   if (argc < 19)
   {
     cout << "MFindAndTraceAps::main: ERROR: Not enough parameters specified!" << endl;
-    cout << "USAGE: findandtraceaps(" << endl;
+    cout << "USAGE: findandtraceaps <char[] FitsFileName_In> <int CentralSize_X_In> <int CentralSize_Y_In> <double SaturationLevel_In> <double SignalThreshold_In> <double ApertureFWHM_In> <int NTermsGaussFit_In> <int PolyFitOrder_In> <int NLost_In> <double XLow_In> <double XMin_In> <double XHigh_In> <double XMax_In> <int MinLength_In> <int MaxLength_In> <int ExtendAps_Up> <int ApertureLength_Down> <char[] DataBaseFileName_Out> [FitsFileName_RefScatter_In=<char[] ReferenceScatteredLightImage_In>] [FitsFileName_MinusScatter_Out=<char[] FitsFileName_MinusScatter_Out>] [FitsFileName_CentersMarked_Out=<char[] FitsFileName_CentersMarked_Out>]" << endl;
     cout << "Parameter 1: char[] FitsFileName_In," << endl;
     cout << "Parameter 2: int CentralSize_X_In to fit reference scattered light (Set to any number if scattered-light subtraction is not desired)," << endl;
     cout << "Parameter 3: int CentralSize_Y_In to fit reference scattered light (Set to any number if scattered-light subtraction is not desired)," << endl;
     cout << "Parameter 4: double SaturationLevel_In," << endl;
-    cout << "Parameter 5: double SignalThreshold_In," << endl;
-    cout << "Parameter 6: double ApertureFWHM_In," << endl;
-    cout << "Parameter 7: int NTermsGaussFit_In," << endl;
-    cout << "Parameter 8: int PolyFitOrder_In," << endl;
-    cout << "Parameter 9: int NLost_In," << endl;
-    cout << "Parameter 10: double XLow_In," << endl;
-    cout << "Parameter 11: double XMin_In," << endl;
-    cout << "Parameter 12: double XHigh_In," << endl;
-    cout << "Parameter 13: double XMax_In," << endl;
-    cout << "Parameter 14: int MinLength_In," << endl;
-    cout << "Parameter 15: int MaxLength_In," << endl;
-    cout << "Parameter 16: int ExtendAps_Up," << endl;
-    cout << "Parameter 17: int ApertureLength_Down," << endl;
-    cout << "Parameter 18: char[] DataBaseFileName_Out[," << endl;
-    cout << "Parameter 19: FitsFileName_RefScatter_In char[] ReferenceScatteredLightImage_In," << endl;
-    cout << "Parameter 20: FitsFileName_MinusScatter_Out=(char[] FitsFileName_MinuxScatter_Out)[," << endl;
-    cout << "Parameter 21: FitsFileName_Out=(char[] FitsFileName_Out)[," << endl;
-    cout << "Parameter 22: FitsFileName_CentersMarked_Out=(char[] FitsFileName_CentersMarked_Out)]]" << endl;
+    cout << "Parameter 5: double SignalThreshold_In - pixel values below this value will be set to zero," << endl;
+    cout << "Parameter 6: double ApertureFWHM_In - FWHM of the assumed Gaussian spatial profile," << endl;
+    cout << "Parameter 7: int NTermsGaussFit_In (3-6) - 3: fit mean, sigma, center; 4: 3+constant background; 5: 4 plus background slope," << endl;
+    cout << "Parameter 8: int PolyFitOrder_In - Polynomial fitting order for the trace functions," << endl;
+    cout << "Parameter 9: int NLost_In - number of consecutive times the profile is lost before breaking up the trace," << endl;
+    cout << "Parameter 10: double XLow_In - IRAF database parameter - object width left of center," << endl;
+    cout << "Parameter 11: double XMin_In - IRAF database parameter - background width left of center," << endl;
+    cout << "Parameter 12: double XHigh_In - IRAF database parameter - object width right of center," << endl;
+    cout << "Parameter 13: double XMax_In - IRAF database parameter - background width right of center," << endl;
+    cout << "Parameter 14: int MinLength_In - minimum length of a trace to count as aperture," << endl;
+    cout << "Parameter 15: int MaxLength_In - maximum length of a trace before breaking up the trace," << endl;
+    cout << "Parameter 16: int ExtendAps_Up - number of pixels to extend a trace upwards," << endl;
+    cout << "Parameter 17: int ApertureLength_Down - aperture length downwards after applying ExtendAps_Up," << endl;
+    cout << "Parameter 18: char[] DataBaseFileName_Out - name of database file (database/ap...)" << endl;
+    cout << "Parameter 19: [FitsFileName_RefScatter_In=(char[] ReferenceScatteredLightImage_In)]" << endl;
+    cout << "Parameter 20: [FitsFileName_MinusScatter_Out=(char[] FitsFileName_MinusScatter_Out)]" << endl;
+    cout << "Parameter 21: [FitsFileName_Out=(char[] FitsFileName_Out) - Quality control file with all found apertures set to zero]" << endl;
+    cout << "Parameter 22: [FitsFileName_CentersMarked_Out=(char[] FitsFileName_CentersMarked_Out) - Quality control file with all traces set to zero]" << endl;
     exit(EXIT_FAILURE);
   }
 
