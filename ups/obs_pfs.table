@@ -1,0 +1,23 @@
+setupRequired(daf_persistence >= 5.0.0.1)
+setupRequired(daf_butlerUtils >= 3.0.3)
+setupRequired(skypix >= 3.0.3)
+setupRequired(pipe_tasks)
+setupRequired(meas_astrom)
+setupRequired(pyfits)
+setupRequired(obs_subaru)
+
+setupOptional(psycopg2)
+setupOptional(meas_extensions_multiShapelet)
+setupOptional(meas_multifit)
+setupOptional(meas_extensions_psfex)
+
+setupOptional(suprime_data)
+
+setupOptional(testdata_subaru)
+
+envPrepend(LD_LIBRARY_PATH, ${PRODUCT_DIR}/lib)
+envPrepend(DYLD_LIBRARY_PATH, ${PRODUCT_DIR}/lib)
+envPrepend(LSST_LIBRARY_PATH, ${PRODUCT_DIR}/lib)
+envPrepend(PYTHONPATH, ${PRODUCT_DIR}/python)
+envPrepend(PATH, ${PRODUCT_DIR}/bin)
+
