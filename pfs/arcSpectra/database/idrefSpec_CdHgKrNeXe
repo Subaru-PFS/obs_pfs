@@ -1,0 +1,17 @@
+# Sun 04:15:07 17-Jan-2016
+begin	identify refSpec_CdHgKrNeXe - Ap 1
+	id	refSpec_CdHgKrNeXe
+	task	identify
+	image	refSpec_CdHgKrNeXe - Ap 1
+	aperture	1
+	aplow	INDEF
+	aphigh	INDEF
+	units	Angstroms
+	features	6
+	         93.99  93.986763    4358.33   4.0 1 1 HgI   1000
+	       2458.42 2458.42261    8495.36   4.0 1 1 NeI    700
+	       2474.22 2474.21533    8508.87   4.0 1 1 KrI    500
+	       2570.58 2570.57568    8591.26   4.0 1 1 NeI    400
+	       2621.36 2621.35815    8634.65   4.0 1 1 NeI    350
+	       2644.64  2644.6377    8654.38   4.0 1 1 NeI    600
+
