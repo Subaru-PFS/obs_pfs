@@ -7,18 +7,18 @@ import os
 # scons steals our environment away, so we have to reinstate it
 env = lsst.sconsUtils.env.Clone()
 environ = dict((name, os.environ[name]) for name in ("PYTHONPATH", "LD_LIBRARY_PATH",
-                                                     "DYLD_LIBRARY_PATH", "PATH"))
+                                                     "DYLD_LIBRARY_PATH", "PATH", "OBS_SUBARU_DIR"))
 env.Append(**environ)
 # scons also hacks sys.path, so we need to set PYTHONPATH very explicitly at the start of each command.
 python = "PYTHONPATH=%s " % environ["PYTHONPATH"]
 
-dep = "#python/lsst/obs/subaru/_subaruLib.so" # Dependency required for running the python scripts
-
+dep = "%s/python/lsst/obs/subaru/_subaruLib.so" % environ["OBS_SUBARU_DIR"] # Dependency required for running the python scripts
+print 'dep = <',dep,'>'
 defectsDatList = glob.glob("defects/*/defects.dat")
 for defectsDat in defectsDatList:
-    command = "%s bin.src/genDefectFits.py HSC %s --force" % (python, os.path.join("hsc", defectsDat))
+    command = "%s bin.src/genDefectFits.py PFS %s --force" % (python, os.path.join("pfs", defectsDat))
     env.AlwaysBuild(env.Command(defectsDat + "-fits", [defectsDat, dep], command))
 
-command = "%s bin.src/genDefectRegistry.py --root hsc/defects" % (python)
+command = "%s %s/bin.src/genDefectRegistry.py --root pfs/defects" % (python, environ["OBS_SUBARU_DIR"])
 registry = env.AlwaysBuild(env.Command("defects/defectRegistry.sqlite3",
                                        [d + "-fits" for d in defectsDatList] + [dep], command))
