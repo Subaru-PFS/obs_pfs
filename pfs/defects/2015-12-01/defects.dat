@@ -5,5 +5,4 @@
 #
 #CCD x0    y0    width height
 # Dead amps
-0    1024  0     512   4176
-9    0     0     1024  4176
+4    0  0     1   1

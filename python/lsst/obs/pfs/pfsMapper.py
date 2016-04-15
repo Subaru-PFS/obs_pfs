@@ -291,6 +291,14 @@ class PfsMapper(CameraMapper):
         detId = int("%(ccd)d" % dataId)
 #        print 'PfsMapper._extractDetectorId = <',detId,'>'
         return detId
+    
+#    def _getCcdKeyVal(self, dataId):
+#        """Return CCD key and value used to look a defect in the defect registry
+
+#        The default implementation simply returns ("ccd", full detector name)
+#        """
+#        return ("ccd", self._extractDetectorId(dataId))
+#        return ("ccd", self._extractDetectorName(dataId))
 
     def _computeCcdExposureId(self, dataId):
         """Compute the 64-bit (long) identifier for a CCD exposure.
