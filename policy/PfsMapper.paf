@@ -922,6 +922,14 @@ datasets: {
         tables:        raw
         tables:        raw_visit
     }
+    reduceArcRefSpecTask_config: {
+        template:      "config/arc.py"
+        python:        "pfs.drp.stella.reduceArcRefSpecTask.ReduceArcRefSpecConfig"
+        persistable:   "Config"
+        storage:       "ConfigStorage"
+        tables:        raw
+        tables:        raw_visit
+    }
     flat_config: {
         template:      "config/flat.py"
         python:        "lsst.pipe.drivers.constructCalibs.FlatConfig"
