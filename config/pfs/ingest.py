@@ -1,4 +1,4 @@
-from lsst.obs.subaru.ingest import PfsParseTask
+from lsst.obs.pfs.ingest import PfsParseTask
 config.parse.retarget(PfsParseTask)
 config.register.columns = {'site': 'text', #J: JHU, L: LAM, X: Subaru offline, I: IPMU, A: ASIAA, S: Summit, P: Princeton, F: simulation (fake)
                            'category': 'text', #A: science, B: NTR, C: Meterology, D: HG
