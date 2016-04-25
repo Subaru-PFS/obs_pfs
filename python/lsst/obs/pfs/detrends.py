@@ -2,7 +2,7 @@ import math
 import numpy as np
 
 from lsst.pex.config import Field, ListField
-from lsst.pipe.drivers import CalibConfig, CalibTask
+from lsst.pipe.drivers.constructCalibs import CalibConfig, CalibTask
 import lsst.afw.image as afwImage
 import lsst.afw.geom as afwGeom
 import lsst.afw.cameraGeom as afwcg
