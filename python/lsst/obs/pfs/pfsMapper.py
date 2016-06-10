@@ -15,8 +15,6 @@ class PfsMapper(CameraMapper):
     packageName = "obs_subaru"
 
     def __init__(self, **kwargs):
-#        import pdb; pdb.set_trace()
-#        print 'PfsMapper.__init__ started'
         policyFile = pexPolicy.DefaultPolicyFile("obs_pfs", "PfsMapper.paf", "policy")
         policy = pexPolicy.Policy(policyFile)
         if not kwargs.get('root', None):
@@ -44,40 +42,7 @@ class PfsMapper(CameraMapper):
                      # processCcd outputs
                      "calexp", 
                      "postISRCCD", 
-                     #"src", 
-                     #"icSrc", 
-                     #"icMatch", 
-                     #"icMatchFull",
-                     #"srcMatch", 
-                     #"srcMatchFull",
-                     # processCcd QA
-                     #"ossThumb", 
-                     #"flattenedThumb", 
-                     #"calexpThumb", 
-                     #"plotMagHist", 
-                     #"plotSeeingRough",
-                     #"plotSeeingRobust", 
-                     #"plotSeeingMap", 
-                     #"plotEllipseMap", 
-                     #"plotEllipticityMap",
-                     #"plotFwhmGrid", 
-                     #"plotEllipseGrid", 
-                     #"plotEllipticityGrid", 
-                     #"plotPsfSrcGrid",
-                     #"plotPsfModelGrid", 
-                     #"fitsFwhmGrid", 
-                     #"fitsEllipticityGrid", 
-                     #"fitsEllPaGrid",
-                     #"fitsPsfSrcGrid", 
-                     #"fitsPsfModelGrid", 
-                     #"tableSeeingMap", 
-                     #"tableSeeingGrid",
-                     # forcedPhot outputs
-                     #"forced_src",
-                     # Warp
-                     #"coaddTempExp",
                      ):
-#            print 'PfsMapper.__init__: name = <',name,'>'
             self.mappings[name].keyDict.update(keys)
 
 
@@ -116,10 +81,6 @@ class PfsMapper(CameraMapper):
         #
         # This shouldn't be the mapper's job at all; see #2797.
 
-        #HscMapper._nbit_tract = 16
-        #HscMapper._nbit_patch  = 5
-        #HscMapper._nbit_filter = 6
-
         PfsMapper._nbit_id = 64# - (PfsMapper._nbit_tract + 2*PfsMapper._nbit_patch + PfsMapper._nbit_filter)
 
         #if len(afwImage.Filter.getNames()) >= 2**PfsMapper._nbit_filter:
@@ -156,50 +117,8 @@ class PfsMapper(CameraMapper):
 
         return exp
 
-#    def std_raw_md(self, md, dataId):
-#        if False:            # no std_raw_md in baseclass
-#            md = super(HscMapper, self).std_raw_md(md, dataId) # not present in baseclass
-#        #
-#        # We need to flip the WCS defined by the metadata in case anyone ever constructs a Wcs from it
-#        #
-#        wcs = afwImage.makeWcs(md)
-#        self._flipChipsLR(None, wcs, dataId, dims=afwGeom.ExtentI(md.get("NAXIS1"), md.get("NAXIS2")))
-#        wcsR = afwImage.Wcs(wcs.getSkyOrigin().getPosition(), wcs.getPixelOrigin(), wcs.getCDMatrix()*0.992)
-#        wcsMd = wcsR.getFitsMetadata()
-#
-#        for k in wcsMd.names():
-#            md.set(k, wcsMd.get(k))
-#
-#        return md
-
     def std_raw(self, item, dataId):
         exp = super(PfsMapper, self).std_raw(item, dataId)
-#        print 'std_raw: item = ',item
-#        header = item.getMetadata()
-#        names = header.names()
-#        print 'std_raw: item: len(names) = ',len(names)
-#        for i in range(len(names)):
-#            print "std_raw: item: header.names[",i,"] = ",names[i]
-#        if header.exists("EXPTIME"):
-#            exptime = header.get("EXPTIME")
-#            print 'pfsMapper::std_raw: item: exptime = ',exptime
-#        else:
-#            print "WARNING: item: keyword EXPTIME not found in header"
-
-#        if (isinstance(item, afwImage.DecoratedImageU) or isinstance(item, afwImage.DecoratedImageI) or
-#            isinstance(item, afwImage.DecoratedImageF) or isinstance(item, afwImage.DecoratedImageD)):
-#            exp = afwImage.makeExposure(afwImage.makeMaskedImage(item.getImage()))
-#        else:
-#            exp = item
-#        self._standardizeExposure(self.exposures['raw'], exp, dataId, trimmed=False)
-
-#        header = exp.getMetadata()
-#        if header.exists("EXPTIME"):
-#            exptime = header.get("EXPTIME")
-#            print 'pfsMapper::std_raw: exp: setting exptime to ',exptime
-#            exp.getCalib().setExptime(exptime)
-#        else:
-#            print "pfsMapper::std_raw: WARNING: exp: keyword EXPTIME not found in header"
 
         md = exp.getMetadata()
         if md.exists("MJD-STR"):
@@ -213,26 +132,6 @@ class PfsMapper(CameraMapper):
 
         return exp
     
-#    def std_postISRCCD(self, item, dataId):
-#        if (isinstance(item, afwImage.DecoratedImageU) or isinstance(item, afwImage.DecoratedImageI) or
-#            isinstance(item, afwImage.DecoratedImageF) or isinstance(item, afwImage.DecoratedImageD)):
-#            exp = afwImage.makeExposure(afwImage.makeMaskedImage(item.getImage()))
-#        else:
-#            exp = item
-#        self._standardizeExposure(self.exposures['postISRCCD'], exp, dataId, trimmed=True, filter=False)
-#
-#        return exp
-        
-#    def std_calexp(self, item, dataId):
-#        if (isinstance(item, afwImage.DecoratedImageU) or isinstance(item, afwImage.DecoratedImageI) or
-#            isinstance(item, afwImage.DecoratedImageF) or isinstance(item, afwImage.DecoratedImageD)):
-#            exp = afwImage.makeExposure(afwImage.makeMaskedImage(item.getImage()))
-#        else:
-#            exp = item
-#        self._standardizeExposure(self.exposures['calexp'], exp, dataId, trimmed=True, filter=False)
-#
-#        return exp
-
     def standardizeCalib(self, dataset, item, dataId):
         """Standardize a calibration image read in by the butler
 
@@ -289,15 +188,14 @@ class PfsMapper(CameraMapper):
     def _extractDetectorId(self, dataId):
 #        print 'PfsMapper._extractDetectorId: dataId = ',dataId
         detId = int("%(ccd)d" % dataId)
-#        print 'PfsMapper._extractDetectorId = <',detId,'>'
         return detId
     
-#    def _getCcdKeyVal(self, dataId):
-#        """Return CCD key and value used to look a defect in the defect registry
+    def _getCcdKeyVal(self, dataId):
+        """Return CCD key and value used to look a defect in the defect registry
 
-#        The default implementation simply returns ("ccd", full detector name)
-#        """
-#        return ("ccd", self._extractDetectorId(dataId))
+        The default implementation simply returns ("ccd", full detector name)
+        """
+        return ("ccd", self._extractDetectorId(dataId))
 #        return ("ccd", self._extractDetectorName(dataId))
 
     def _computeCcdExposureId(self, dataId):
@@ -339,27 +237,6 @@ class PfsMapper(CameraMapper):
             return (oid << PfsMapper._nbit_filter) + afwImage.Filter(dataId['filter']).getId()
         return oid
 
-#    def bypass_deepCoaddId_bits(self, *args, **kwargs):
-#        """The number of bits used up for patch ID bits"""
-#        return 64 - HscMapper._nbit_id
-
-#    def bypass_deepCoaddId(self, datasetType, pythonType, location, dataId):
-#        return self._computeCoaddExposureId(dataId, True)
-
-#    def bypass_deepMergedCoaddId_bits(self, *args, **kwargs):
-#        """The number of bits used up for patch ID bits"""
-#        return 64 - HscMapper._nbit_id
-
-#    def bypass_deepMergedCoaddId(self, datasetType, pythonType, location, dataId):
-#        return self._computeCoaddExposureId(dataId, False)
-
-    # The following allow grabbing a 'psf' from the butler directly, without having to get it from a calexp
-#    def map_psf(self, dataId, write=False):
-#        if write:
-#            raise RuntimeError("Writing a psf directly is no longer permitted: write as part of a calexp")
-#        copyId = dataId.copy()
-#        copyId['bbox'] = afwGeom.Box2I(afwGeom.Point2I(0,0), afwGeom.Extent2I(1,1))
-#        return self.map_calexp_sub(copyId)
     def std_psf(self, calexp, dataId):
         return calexp.getPsf()
 
