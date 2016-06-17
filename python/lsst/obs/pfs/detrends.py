@@ -29,7 +29,7 @@ class PfsFlatCombineTask(CalibTask):
         config.isr.doDark = False
         config.isr.doFlat = False
         config.isr.doFringe = False
-#    
+    
 #    def __init__(self, *args, **kwargs):
 #        super(PfsFlatCombineTask, self).__init__(*args, **kwargs)
 #        
