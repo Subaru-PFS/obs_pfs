@@ -181,9 +181,12 @@ class PfsMapper(CameraMapper):
         detName = "%(filter)s" % dataId
         if detName == 'm':
             detName = 'r'
-        detName = detName + '_' + str("%(spectrograph)s" % dataId)
+#        detName = detName + '_' + str("%(spectrograph)s" % dataId)
+        detId = int("%(ccd)d" % dataId)
 #        print 'PfsMapper._extractDetectorName = <',detName,'>'
-        return detName
+        print 'PfsMapper._extractDetectorName = <',detId,'>'
+#        return detName
+        return detId
 
     def _extractDetectorId(self, dataId):
 #        print 'PfsMapper._extractDetectorId: dataId = ',dataId

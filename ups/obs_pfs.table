@@ -1,17 +1,13 @@
-setupRequired(daf_persistence >= 5.0.0.1)
+setupRequired(afw)
+setupRequired(daf_base)
 setupRequired(daf_butlerUtils >= 3.0.3)
-setupRequired(skypix >= 3.0.3)
-setupRequired(pipe_tasks)
-setupRequired(meas_astrom)
-setupRequired(pyfits)
+setupRequired(numpy)
 setupRequired(obs_subaru)
-
-setupOptional(psycopg2)
-setupOptional(meas_extensions_multiShapelet)
-setupOptional(meas_multifit)
-setupOptional(meas_extensions_psfex)
-
-setupOptional(suprime_data)
+setupRequired(pex_config)
+setupRequired(pex_policy)
+setupRequired(pipe_base)
+setupRequired(pipe_drivers)
+setupRequired(pipe_tasks)
 
 setupOptional(testdata_subaru)
 
