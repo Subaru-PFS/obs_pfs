@@ -205,6 +205,14 @@ datasets: {
         tables:        raw
         tables:        raw_visit
     }
+    createRefSpecTask_config: {
+        template:      "config/flat.py"
+        python:        "pfs.drp.stella.createRefSpec.CreateRefSpecConfig"
+        persistable:   "Config"
+        storage:       "ConfigStorage"
+        tables:        raw
+        tables:        raw_visit
+    }
 
     ossThumb: {
         template:    "thumbs/oss-%(visit)07d-%(filter)s%(spectrograph)1d.png"
