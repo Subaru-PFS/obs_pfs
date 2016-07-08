@@ -128,8 +128,6 @@ class PfsMapper(CameraMapper):
             obsMidpoint = obsStart.nsecs() + long(expTime * 1000000000L / 2)
             calib.setMidTime(dafBase.DateTime(obsMidpoint))
 
-        print "pfsMapper::std_raw: exp.getCalib().getExptime() = ", exp.getCalib().getExptime();
-
         return exp
     
     def standardizeCalib(self, dataset, item, dataId):
@@ -173,23 +171,19 @@ class PfsMapper(CameraMapper):
 
     def _extractAmpId(self, dataId):
         ampId = (self._extractDetectorName(dataId), 0, 0)
-#        print 'PfsMapper._extractAmpId: ampId = ',ampId
         return ampId
 
     def _extractDetectorName(self, dataId):
-#        print 'PfsMapper._extractDetectorName: dataId = ',dataId
         detName = "%(filter)s" % dataId
         if detName == 'm':
             detName = 'r'
 #        detName = detName + '_' + str("%(spectrograph)s" % dataId)
         detId = int("%(ccd)d" % dataId)
-#        print 'PfsMapper._extractDetectorName = <',detName,'>'
         print 'PfsMapper._extractDetectorName = <',detId,'>'
 #        return detName
         return detId
 
     def _extractDetectorId(self, dataId):
-#        print 'PfsMapper._extractDetectorId: dataId = ',dataId
         detId = int("%(ccd)d" % dataId)
         return detId
     
