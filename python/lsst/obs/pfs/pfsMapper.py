@@ -12,16 +12,16 @@ import lsst.pex.policy as pexPolicy
 
 class PfsMapper(CameraMapper):
     """Provides abstract-physical mapping for PFS data"""
-    packageName = "obs_subaru"
+    packageName = "obs_pfs"
 
     def __init__(self, **kwargs):
         policyFile = pexPolicy.DefaultPolicyFile("obs_pfs", "PfsMapper.paf", "policy")
         policy = pexPolicy.Policy(policyFile)
         if not kwargs.get('root', None):
             try:
-                kwargs['root'] = os.path.join(os.environ.get('SUPRIME_DATA_DIR'), 'PFS')
+                kwargs['root'] = os.path.join(os.environ.get('PFS_DATA_DIR'), 'PFS')
             except:
-                raise RuntimeError("Either $SUPRIME_DATA_DIR or root= must be specified")
+                raise RuntimeError("Either $PFS_DATA_DIR or root= must be specified")
         if not kwargs.get('calibRoot', None):
             kwargs['calibRoot'] = os.path.join(kwargs['root'], 'CALIB')
 
@@ -59,9 +59,6 @@ class PfsMapper(CameraMapper):
         afwImageUtils.defineFilter(name='m', lambdaEff=775, alias=['mediumResolutionRed','PFS-M'])
         #
         # self.filters is used elsewhere, and for now we'll set it
-        #
-        # It's a bit hard to initialise self.filters properly until #2113 is resolved,
-        # including the part that makes it possible to get all aliases
         #
         self.filters = {}
         for f in [
@@ -174,14 +171,12 @@ class PfsMapper(CameraMapper):
         return ampId
 
     def _extractDetectorName(self, dataId):
-        detName = "%(filter)s" % dataId
-        if detName == 'm':
-            detName = 'r'
+#        detName = "%(filter)s" % dataId
+#        if detName == 'm':
+#            detName = 'r'
 #        detName = detName + '_' + str("%(spectrograph)s" % dataId)
-        detId = int("%(ccd)d" % dataId)
-        print 'PfsMapper._extractDetectorName = <',detId,'>'
 #        return detName
-        return detId
+        return self._extractDetectorId(dataId)
 
     def _extractDetectorId(self, dataId):
         detId = int("%(ccd)d" % dataId)
