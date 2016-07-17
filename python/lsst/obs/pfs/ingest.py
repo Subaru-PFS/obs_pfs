@@ -27,17 +27,17 @@ class PfsParseTask(ParseTask):
             matches = re.search("PF([JLXIASPF])([ABCDS])-(\d{6})(\d)(\d).fits", filename)
             if not matches:
                 raise RuntimeError("Unable to interpret filename: %s" % filename)
-        site, category, visit, filterInt, spectrograph = matches.groups()
+        site, category, visit, spectrograph, armNum = matches.groups()
         if int(spectrograph) > 4:
             spectrograph = '4'
         ccd = int(spectrograph)-1
         filter = ''
-        if filterInt == '0':
+        if armNum == '0':
             filter = 'b'
-        elif filterInt == '1':
+        elif armNum == '1':
             filter = 'r'
             ccd += 4
-        elif filterInt == '2':
+        elif armNum == '2':
             filter = 'n'
             ccd += 8
         else:
