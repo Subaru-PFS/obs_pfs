@@ -53,10 +53,10 @@ exposures: {
         tables:        "raw"
         tables:        "raw_visit"
     }
-    spArm: {
-        template:      "spArm/%(dateObs)s/v%(visit)07d/pfsArm-%(visit)06d-%(spectrograph)d%(arm)s.fits"
-        python:        "pfs.drp.stella.SpectrumSetF"
-        persistable:   "SpectrumSet"
+    pfsArm: {
+        template:      "pfsArm/%(dateObs)s/v%(visit)07d/pfsArm-%(visit)06d-%(spectrograph)d%(arm)s.fits"
+        python:        "pfs.datamodel.pfsArm.PfsArm"
+        persistable:   "PfsArm"
         storage:       "FitsCatalogStorage"
         tables:        "raw"
         tables:        "raw_visit"
