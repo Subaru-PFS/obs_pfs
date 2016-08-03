@@ -18,6 +18,7 @@ class PfsParseTask(ParseTask):
         @param filename    Name of file to inspect
         @return File properties; list of file properties for each extension
         """
+        #print 'interpreting filename <'+filename+'>'
         minSpectrograph = 1
         maxSpectrograph = 4
         minArmNum = 1
@@ -32,24 +33,25 @@ class PfsParseTask(ParseTask):
             if not matches:
                 raise RuntimeError("Unable to interpret filename: %s" % filename)
         site, category, visit, spectrograph, armNum = matches.groups()
+        print 'site = <'+site+'>, category = <'+category+'>, visit = <'+visit+'>, spectrograph = <'+spectrograph+'>, armNum = <'+armNum+'>'
         if int(spectrograph) < minSpectrograph or int(spectrograph) > maxSpectrograph:
             message = 'spectrograph (=',spectrograph,') out of bounds'
             raise Exception(message)
         ccd = int(spectrograph)-1
         if int(armNum) == minArmNum:
             """do nothing"""
-            print 'armNum = ',armNum,' == minArmNum = ',minArmNum
+            #print 'armNum = ',armNum,' == minArmNum = ',minArmNum
         elif (int(armNum) == minArmNum + 1) or (int(armNum) == minArmNum + 3):
-            print 'armNum = ',armNum,' == minArmNum +1 = ',minArmNum+1,' or armNum = ',armNum,' == minArmNum +1 = ',minArmNum+3
+            #print 'armNum = ',armNum,' == minArmNum +1 = ',minArmNum+1,' or armNum = ',armNum,' == minArmNum +1 = ',minArmNum+3
             ccd += 4
         elif int(armNum) == minArmNum + 2:
-            print 'armNum = ',armNum,' == minArmNum+2 = ',minArmNum+2
+            #print 'armNum = ',armNum,' == minArmNum+2 = ',minArmNum+2
             ccd += 8
         else:
             message = 'arm number (=',armNum,') out of bounds [',minArmNum,'...',maxArmNum,']'
             raise Exception(message)
 
-        print 'ccd = ',ccd
+        #print 'ccd = ',ccd
         filter = arms[ int(armNum) - minArmNum ]
         arm = filter
 
