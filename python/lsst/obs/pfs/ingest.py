@@ -1,16 +1,13 @@
 #ingestImages.py '/Users/azuri/spectra/pfs/PFS/' --mode=link '/Users/azuri/spectra/pfs/raw/2016-01-12/*.fits' --loglevel 'info' -C /Users/azuri/stella-git/obs_pfs/config/pfs/ingest.py
 import re
-import datetime
-
-from lsst.pipe.tasks.ingest import IngestTask, ParseTask, IngestArgumentParser, ParseConfig
+import os
+from lsst.pipe.tasks.ingest import ParseTask, ParseConfig
 import lsst.afw.image as afwImage
 
 class PfsParseConfig(ParseConfig):
     def setDefaults(self):
         ParseConfig.setDefaults(self)
-#        self.translators["date"] = "translate_date"
         self.translators["field"] = "translate_field"
-#        self.defaults["filter"] = "NONE"
 
 class PfsParseTask(ParseTask):
     ConfigClass = PfsParseConfig
@@ -21,33 +18,44 @@ class PfsParseTask(ParseTask):
         @param filename    Name of file to inspect
         @return File properties; list of file properties for each extension
         """
-        #matches = re.search("^PFSA(\d{6})(\d)(\d).fits", filename)
-        matches = re.search("PF([JLXIASPF])([ABCDS])(\d{6})(\d)(\d).fits", filename)
+        #print 'interpreting filename <'+filename+'>'
+        minSpectrograph = 1
+        maxSpectrograph = 4
+        minArmNum = 1
+        maxArmNum = 4
+        maxCCDs = 4
+        arms = ['b', 'r', 'n', 'm']
+        sites = '[JLXIASPF]'
+        categories = '[ABCDS]'
+        matches = re.search("PF("+sites+")("+categories+")(\d{6})(\d)(\d).fits", filename)
         if not matches:
-            matches = re.search("PF([JLXIASPF])([ABCDS])-(\d{6})(\d)(\d).fits", filename)
+            """ Try old format """
+            matches = re.search("PF("+sites+")("+categories+")-(\d{6})(\d)(\d).fits", filename)
             if not matches:
                 raise RuntimeError("Unable to interpret filename: %s" % filename)
-        site, category, visit, filterInt, spectrograph = matches.groups()
-        if int(spectrograph) > 4:
-            spectrograph = '4'
+        site, category, visit, spectrograph, armNum = matches.groups()
+        if int(spectrograph) < minSpectrograph or int(spectrograph) > maxSpectrograph:
+            message = 'spectrograph (=',spectrograph,') out of bounds'
+            raise Exception(message)
         ccd = int(spectrograph)-1
-        filter = ''
-        if filterInt == '0':
-            filter = 'b'
-        elif filterInt == '1':
-            filter = 'r'
-            ccd += 4
-        elif filterInt == '2':
-            filter = 'n'
-            ccd += 8
+        if int(armNum) == minArmNum:
+            """do nothing"""
+        elif (int(armNum) == minArmNum + 1) or (int(armNum) == minArmNum + 3):
+            ccd += maxCCDs
+        elif int(armNum) == minArmNum + 2:
+            ccd += 2*maxCCDs
         else:
-            filter = 'm'
-            ccd += 4
-        arm = filter
+            message = 'arm number (=',armNum,') out of bounds [',minArmNum,'...',maxArmNum,']'
+            raise Exception(message)
 
-        header = afwImage.readMetadata(filename)
-        info = dict(site=site, category=category, visit=int(visit), filter=filter, arm=arm, spectrograph=int(spectrograph), ccd=int(ccd))
-        info = self.getInfoFromMetadata(header, info=info)
+        filter = arms[ int(armNum) - minArmNum ]
+        arm = filter
+        print 'site = <'+site+'>, category = <'+category+'>, visit = <'+visit+'>, spectrograph = <'+spectrograph+'>, armNum = <'+armNum+'>, filter = <'+filter+'>, ccd = ',ccd
+
+        info = dict(site=site, category=category, visit=int(visit, base=10), filter=filter, arm=arm, spectrograph=int(spectrograph), ccd=ccd)
+        if os.path.exists(filename):
+            header = afwImage.readMetadata(filename)
+            info = self.getInfoFromMetadata(header, info=info)
         return info, [info]
 
     def translate_field(self, md):
