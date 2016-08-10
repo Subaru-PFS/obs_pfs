@@ -199,7 +199,8 @@ datasets: {
     }
     flat_config: {
         template:      "config/flat.py"
-        python:        "lsst.pipe.drivers.constructCalibs.FlatConfig"
+        python:        "lsst.obs.pfs.detrends.PfsFlatCombineConfig"
+#        python:        "lsst.pipe.drivers.constructCalibs.FlatConfig"
         persistable:   "Config"
         storage:       "ConfigStorage"
         tables:        raw
