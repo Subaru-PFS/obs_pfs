@@ -25,10 +25,11 @@ class PfsFlatCombineTask(CalibTask):
     @classmethod
     def applyOverrides(cls, config):
         """Overrides to apply for bias construction"""
-        config.isr.doBias = False
-        config.isr.doDark = False
+#        config.isr.doBias = False
+#        config.isr.doDark = False
         config.isr.doFlat = False
         config.isr.doFringe = False
+        config.isr.doLinearize = False
     
 #    def __init__(self, *args, **kwargs):
 #        super(PfsFlatCombineTask, self).__init__(*args, **kwargs)
