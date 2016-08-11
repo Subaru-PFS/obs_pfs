@@ -8,13 +8,8 @@ try:
 except ImportError:
     import sqlite
 import sys
-import math
 import datetime
 import collections
-
-import lsst.daf.base   as dafBase
-import lsst.afw.image  as afwImage
-
 import optparse
 
 try:
