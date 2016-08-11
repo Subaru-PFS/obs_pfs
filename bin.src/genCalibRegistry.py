@@ -101,18 +101,14 @@ for calib in ('bias', 'dark', 'flat', 'fringe', 'traceDef'):
     else:
         checkFits = os.path.join(opts.root, calib.upper(), "20*-*-*", "*", "*",
                              calib.upper() + "-*.fits*")
-    print "checkFits = <",checkFits,">"
 
     for fits in glob.glob(checkFits):
-        print "fits = <"+fits+">"
         if opts.camera.lower() in ("suprime-cam", "suprimecam", "sc"):
             m = re.search(r'\w+/(\d{4})-(\d{2})-(\d{2})/([\w+-]+)/([\w-]+)/\w+-(\d).fits', fits)
         elif opts.camera.lower() in ("hsc", "hscsim"):
             m = re.search(r'\w+/(\d{4})-(\d{2})-(\d{2})/([\w+-]+)/([\w-]+)/\w+-(\d{3}).fits', fits)#"BIAS/%(calibDate)s/NONE/%(calibVersion)s/BIAS-%(ccd)03d.fits"
         elif opts.camera.lower() in ("pfs"):
-            print 'fits = <',fits,'>'
             m = re.search(r'\w+/([\w-]+)/([\w-]+)/pfs\w+-(\d{4})-(\d{2})-(\d{2})-0-(\d)(\w).fits', fits)#pfsBias-007251-2m.fits
-            print 'm = ',m
         if not m:
             if (opts.camera.lower() in ("suprime-cam", "suprimecam", "sc", "pfs") and
                 re.search(r'.*/\w+-0000000(\d).fits', fits)):
@@ -123,10 +119,8 @@ for calib in ('bias', 'dark', 'flat', 'fringe', 'traceDef'):
             continue
 
         print "Registering:", fits
-        print m.groups()
         if opts.camera.lower() in ("pfs"):
             filterName, version, year, month, day, spectrograph, arm = m.groups()
-            print 'year = ',year,', month = ',month,', day = ',day,', filterName = ',filterName,', version = ',version,', spectrograph = ',spectrograph,', arm = ',arm
             ccd = int(spectrograph) - 1
             if arm in ("m"):
                 ccd = ccd + 4
