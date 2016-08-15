@@ -7,7 +7,6 @@ from lsst.daf.butlerUtils import CameraMapper
 import lsst.afw.image.utils as afwImageUtils
 import lsst.afw.image as afwImage
 import lsst.afw.math as afwMath
-import lsst.afw.geom as afwGeom
 import lsst.pex.policy as pexPolicy
 
 class PfsMapper(CameraMapper):
@@ -80,27 +79,6 @@ class PfsMapper(CameraMapper):
 
         PfsMapper._nbit_id = 64# - (PfsMapper._nbit_tract + 2*PfsMapper._nbit_patch + PfsMapper._nbit_filter)
 
-        #if len(afwImage.Filter.getNames()) >= 2**PfsMapper._nbit_filter:
-        #    raise RuntimeError("You have more filters defined than fit into the %d bits allocated" %
-        #                       PfsMapper._nbit_filter)
-
-    def map(self, datasetType, dataId, write=False):
-        """Need to strip 'flags' argument from map
-
-        We want the 'flags' argument passed to the butler to work (it's
-        used to change how the reading/writing is done), but want it
-        removed from the mapper (because it doesn't correspond to a
-        registry column).
-        """
-        copyId = dataId.copy()
-        copyId.pop("flags", None)
-        location = super(PfsMapper, self).map(datasetType, copyId, write=write)
-
-        if 'flags' in dataId:
-            location.getAdditionalData().set('flags', dataId['flags'])
-
-        return location
-
     @staticmethod
     def _flipChipsLR(exp, wcs, dataId, dims=None):
         """Flip the chip left/right or top/bottom. Process either/and the pixels and wcs
@@ -111,19 +89,6 @@ class PfsMapper(CameraMapper):
             exp.setMaskedImage(afwMath.flipImage(exp.getMaskedImage(), flipLR, flipTB))
         if wcs:
             wcs.flipImage(flipLR, flipTB, exp.getDimensions() if dims is None else dims)
-
-        return exp
-
-    def std_raw(self, item, dataId):
-        exp = super(PfsMapper, self).std_raw(item, dataId)
-
-        md = exp.getMetadata()
-        if md.exists("MJD-STR"):
-            calib = exp.getCalib()
-            expTime = calib.getExptime()
-            obsStart = dafBase.DateTime(md.get("MJD-STR"), dafBase.DateTime.MJD, dafBase.DateTime.UTC)
-            obsMidpoint = obsStart.nsecs() + long(expTime * 1000000000L / 2)
-            calib.setMidTime(dafBase.DateTime(obsMidpoint))
 
         return exp
     
@@ -199,38 +164,6 @@ class PfsMapper(CameraMapper):
         visit = pathId['visit']
         ccd = pathId['ccd']
         return visit*200 + ccd
-
-    def bypass_ccdExposureId(self, datasetType, pythonType, location, dataId):
-        return self._computeCcdExposureId(dataId)
-
-    def bypass_ccdExposureId_bits(self, datasetType, pythonType, location, dataId):
-        """How many bits are required for the maximum exposure ID"""
-        return 32 # just a guess, but this leaves plenty of space for sources
-
-    def _computeCoaddExposureId(self, dataId, singleFilter):
-        """Compute the 64-bit (long) identifier for a coadd.
-
-        @param dataId (dict)       Data identifier with tract and patch.
-        @param singleFilter (bool) True means the desired ID is for a single- 
-                                   filter coadd, in which case dataId
-                                   must contain filter.
-        """
-
-        tract = long(dataId['tract'])
-        if tract < 0 or tract >= 2**PfsMapper._nbit_tract:
-            raise RuntimeError('tract not in range [0,%d)' % (2**PfsMapper._nbit_tract))
-        patchX, patchY = map(int, dataId['patch'].split(','))
-        for p in (patchX, patchY):
-
-            if p < 0 or p >= 2**PfsMapper._nbit_patch:
-                raise RuntimeError('patch component not in range [0, %d)' % 2**PfsMapper._nbit_patch)
-        oid = (((tract << PfsMapper._nbit_patch) + patchX) << PfsMapper._nbit_patch) + patchY
-        if singleFilter:
-            return (oid << PfsMapper._nbit_filter) + afwImage.Filter(dataId['filter']).getId()
-        return oid
-
-    def std_psf(self, calexp, dataId):
-        return calexp.getPsf()
 
     @classmethod
     def getCameraName(cls):
