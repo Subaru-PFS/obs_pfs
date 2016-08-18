@@ -18,7 +18,7 @@ class PfsParseTask(ParseTask):
         @param filename    Name of file to inspect
         @return File properties; list of file properties for each extension
         """
-        #print 'interpreting filename <'+filename+'>'
+        self.log.debug('interpreting filename <%s>' % filename)
         minSpectrograph = 1
         maxSpectrograph = 4
         minArmNum = 1
@@ -52,7 +52,7 @@ class PfsParseTask(ParseTask):
 
         filter = arms[ int(armNum) - minArmNum ]
         arm = filter
-        print 'site = <'+site+'>, category = <'+category+'>, visit = <'+visit+'>, spectrograph = <'+spectrograph+'>, armNum = <'+armNum+'>, filter = <'+filter+'>, ccd = ',ccd
+        self.log.debug('site = <%s>, category = <%s>, visit = <%s>, spectrograph = <%s>, armNum = <%s>, filter = <%s>, ccd = %d' % (site, category, visit, spectrograph, armNum, filter, ccd))
 
         info = dict(site=site, category=category, visit=int(visit, base=10), filter=filter, arm=arm, spectrograph=int(spectrograph), ccd=ccd)
         if os.path.exists(filename):
@@ -69,5 +69,5 @@ class PfsParseTask(ParseTask):
         field = md.get("IMAGETYP").strip()
         if field in ("#", ""):
             field = "UNKNOWN"
-        self.log.info('PfsParseTask.translate_field: field = %s' % field)
+        self.log.debug('PfsParseTask.translate_field: field = %s' % field)
         return re.sub(r'\W', '_', field).upper()
