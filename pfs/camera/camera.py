@@ -1,5 +1,4 @@
 import lsst.afw.cameraGeom.cameraConfig
-print 'type(config) = ',type(config)
 assert type(config)==lsst.afw.cameraGeom.cameraConfig.CameraConfig, 'config is of type %s.%s instead of lsst.afw.cameraGeom.cameraConfig.CameraConfig' % (type(config).__module__, type(config).__name__)
 config.plateScale=1.0
 config.transformDict.nativeSys='FocalPlane'
