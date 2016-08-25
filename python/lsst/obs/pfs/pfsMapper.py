@@ -81,14 +81,8 @@ class PfsMapper(CameraMapper):
 
     @staticmethod
     def _flipChipsLR(exp, wcs, dataId, dims=None):
-        """Flip the chip left/right or top/bottom. Process either/and the pixels and wcs
-           Most chips are flipped L/R, but the rotated ones (100..103) are flipped T/B
-        """
-        flipLR, flipTB = (False, True) if dataId['ccd'] in (100, 101, 102, 103) else (True, False)
-        if exp:
-            exp.setMaskedImage(afwMath.flipImage(exp.getMaskedImage(), flipLR, flipTB))
-        if wcs:
-            wcs.flipImage(flipLR, flipTB, exp.getDimensions() if dims is None else dims)
+        flipLR, flipTB = (True, False)
+        exp.setMaskedImage(afwMath.flipImage(exp.getMaskedImage(), flipLR, flipTB))
 
         return exp
     
