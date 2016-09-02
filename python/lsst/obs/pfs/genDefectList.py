@@ -22,7 +22,7 @@ outFile = os.path.join(os.environ.get('OBS_PFS_DIR'),"pfs/defects/2015-12-01/def
 medianFlatsOut = ''#'/Users/azuri/spectra/pfs/medianFlat'# - leave empty if you don't want to write the median Flats
 
 ccd = 5
-display = True
+display = False
 
 visitLow = 6301
 visitHigh = 6758
