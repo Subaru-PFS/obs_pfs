@@ -22,7 +22,7 @@ outFile = os.path.join(os.environ.get('OBS_PFS_DIR'),"pfs/defects/2015-12-01/def
 medianFlatsOut = ''#'/Users/azuri/spectra/pfs/medianFlat'# - leave empty if you don't want to write the median Flats
 
 ccd = 5
-display = False
+display = True
 
 visitLow = 6301
 visitHigh = 6758
@@ -65,11 +65,11 @@ image = butler.get('postISRCCD', dataId).getMaskedImage().getImage().getArray()
 allFlatsLow = np.ndarray(shape=[image.shape[0], image.shape[1], len(flatsLow)], dtype='float32')
 allFlatsHigh = np.ndarray(shape=[image.shape[0], image.shape[1], len(flatsHigh)], dtype='float32')
 for i in np.arange(len(flatsLow)):
-    dataId = dict(visit=flatsLow[i], ccd=5)
+    dataId = dict(visit=flatsLow[i], ccd=ccd)
     image = butler.get('postISRCCD', dataId).getMaskedImage().getImage().getArray()
     allFlatsLow[:,:,i] = image
 for i in np.arange(len(flatsHigh)):
-    dataId = dict(visit=flatsHigh[i], ccd=5)
+    dataId = dict(visit=flatsHigh[i], ccd=ccd)
     image = butler.get('postISRCCD', dataId).getMaskedImage().getImage().getArray()
     allFlatsHigh[:,:,i] = image
     
@@ -121,14 +121,14 @@ if outFile != '':
     text_file.write("#CCD x0    y0    width height\n")
     nBad = 0
     for iRow in np.arange(nPixCut,divFlat.shape[0]-nPixCut):
-        for iCol in np.arange(nPixCut,2045):
+        for iCol in np.arange(nPixCut,gapLow):
             if np.absolute(divFlat[iRow, iCol] - mean) > 5. * stddev:
                 nBad = nBad + 1
                 text_file.write("%d %d %d 1 1\n" % (ccd, iRow, iCol))
                 divFlatMIm.getMask().getArray()[iRow,iCol] = 1
 
     for iRow in np.arange(nPixCut,divFlat.shape[0]-nPixCut):
-        for iCol in np.arange(2053,4096-nPixCut):
+        for iCol in np.arange(gapHigh,nCols-nPixCut):
             if np.absolute(divFlat[iRow, iCol] - mean) > 5. * stddev:
                 nBad = nBad + 1
                 text_file.write("%d %d %d 1 1\n" % (ccd, iRow, iCol))
@@ -139,13 +139,14 @@ if outFile != '':
 
     print nBad,' bad pixels found'
 
-if display:
-    divFlatExp = afwImage.makeExposure(divFlatMIm)
-    medianFlatsLowExp = afwImage.makeExposure(afwImage.makeMaskedImage(afwImage.ImageF(medianFlatsLow)))
-    medianFlatsLowExp.getMaskedImage().getMask().getArray()[:,:] = divFlatExp.getMaskedImage().getMask().getArray()[:,:]
+if afwDisplay:
+    if display:
+        divFlatExp = afwImage.makeExposure(divFlatMIm)
+        medianFlatsLowExp = afwImage.makeExposure(afwImage.makeMaskedImage(afwImage.ImageF(medianFlatsLow)))
+        medianFlatsLowExp.getMaskedImage().getMask().getArray()[:,:] = divFlatExp.getMaskedImage().getMask().getArray()[:,:]
 
-    display0 = afwDisplay.getDisplay()
-    print 'display0 = ',display0
-    display0.mtv(medianFlatsLowExp, title="parent")
-    display0.setMaskTransparency(10)
-    display0.setMaskPlaneColor("CROSSTALK", "orange")
+        display0 = afwDisplay.getDisplay()
+        print 'display0 = ',display0
+        display0.mtv(medianFlatsLowExp, title="parent")
+        display0.setMaskTransparency(10)
+        display0.setMaskPlaneColor("CROSSTALK", "orange")
