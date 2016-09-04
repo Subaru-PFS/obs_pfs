@@ -9,4 +9,4 @@ config.isr.doLinearize=False
 config.isr.qa.doThumbnailFlattened=False
 config.isr.doGuider=False
 config.isr.doWriteVignettePolygon=False
-
+config.isr.doApplyGains=True
