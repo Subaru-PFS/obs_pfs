@@ -17,7 +17,7 @@ if afwDisplay:
 
     afwDisplay.setDefaultMaskTransparency(75)
 
-homeDir = '/Volumes/My Passport/Users/azuri/spectra/pfs'
+homeDir = '/Volumes/My Passport/Users/azuri/spectra/pfs/PFS'
 outFile = os.path.join(os.environ.get('OBS_PFS_DIR'),"pfs/defects/2015-12-01/defects.dat")
 medianFlatsOut = ''#'/Users/azuri/spectra/pfs/medianFlat'# - leave empty if you don't want to write the median Flats
 
@@ -33,7 +33,7 @@ nCols = 4096
 gapLow = 2045
 gapHigh = 2052
 
-butler = dafPersist.Butler(os.path.join(homeDir,"PFS"))
+butler = dafPersist.Butler( homeDir )
 
 biasesVisit = list()
 flatsVisit = list()
