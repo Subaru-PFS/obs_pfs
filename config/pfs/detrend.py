@@ -1,5 +1,5 @@
 config.isr.doBias=True
-config.isr.doDark=True
+config.isr.doDark=False
 config.isr.doFlat=False
 config.isr.doFringe=False
 config.isr.removePcCards=False
