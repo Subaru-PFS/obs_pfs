@@ -249,6 +249,14 @@ datasets: {
         tables:        raw
         tables:        raw_visit
     }
+    constructNormFlatTask_config: {
+        template:      "config/normFlat.py"
+        python:        "lsst.obs.pfs.constructNormFlatTask.ConstructNormFlatConfig"
+        persistable:   "Config"
+        storage:       "ConfigStorage"
+        tables:        raw
+        tables:        raw_visit
+    }
 
     ossThumb: {
         template:    "thumbs/oss-%(visit)07d-%(filter)s%(spectrograph)1d.png"
