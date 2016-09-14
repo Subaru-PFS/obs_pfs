@@ -203,3 +203,22 @@ class ConstructNormFlatTask(CalibTask):
         normFlatOutDec = afwImage.DecoratedImageF(normFlatOut.getMaskedImage().getImage())
 
         self.write(cache.butler, normFlatOutDec, struct.outputId)
+        
+        """Quality assessment"""
+        meanSDev = np.ndarray(shape=(normalizedFlat.shape[0],2), dtype=np.float)
+        print 'sDev.shape = ',sDev.shape
+        for x in range(normalizedFlat.shape[1]):
+            print 'x=',i,': meanSDev[',x,'][:] = ',meanSDev[x][:]
+            ind = drpStella.getIndices(normalizedFlat[:][x])
+            print 'x=',i,': ind = ',ind
+            nInd = ind.shape[0]
+            nPix = normalizedFlat.shape[0] - nInd
+            pixArr = np.ndarray(shape=(nPix), dtype=np.float)
+            index = 0
+            for y in range(normalizedFlat.shape[0]):
+                if y not in ind:
+                    pixArr[index] += normalizedFlat[y][x]
+                    index += 1
+            meanSDev[x][0] = np.mean(pixArr)
+            meanSDev[x][1] = np.std(pixArr)
+            print 'x=',x,': meanSDev[',x,'][:] = ',meanSDev[x][:]
