@@ -249,8 +249,8 @@ datasets: {
         tables:        raw
         tables:        raw_visit
     }
-    constructNormFlatTask_config: {
-        template:      "config/normFlat.py"
+    constructNormFlat_config: {
+        template:      "config/constructNormFlat.py"
         python:        "lsst.obs.pfs.constructNormFlatTask.ConstructNormFlatConfig"
         persistable:   "Config"
         storage:       "ConfigStorage"
