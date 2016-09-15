@@ -9,14 +9,6 @@ try:
 except ImportError:
     afwDisplay = None
 
-if afwDisplay:
-    try:
-        afwDisplay.setDefaultBackend("ds9" if True else "virtualDevice")
-    except RuntimeError as e:
-        print e
-
-    afwDisplay.setDefaultMaskTransparency(75)
-
 import argparse
 parser = argparse.ArgumentParser()
 
@@ -24,7 +16,7 @@ parser.add_argument("-homeDir", help="Path to PFS data directory", default="/Vol
 parser.add_argument("-outFile", help="Output defect list relative to OBS_PFS_DIR", default="pfs/defects/2015-12-01/defects.dat")
 parser.add_argument("-medianFlatsOut", help="Median Flats output root (without '.fits'). Leave empty for not writing", default="/Users/azuri/spectra/pfs/medianFlat")# - leave empty if you don't want to write the median Flats
 parser.add_argument("-ccd", help="CCD number for which to create the defect list", type=int, default=5)
-#parser.add_argument("display", help="Set to display outputs", action="store_true")
+parser.add_argument("-display", help="Set to display outputs", action="store_true")
 parser.add_argument("-visitLow", help="Lowest visit number to search for flats", type=int, default=6301)
 parser.add_argument("-visitHigh", help="Highest visit number to search for flats", type=int, default=6758)
 parser.add_argument("-expTimeLow", help="Exposure time for weaker flats", type=int, default=2)
@@ -36,6 +28,15 @@ parser.add_argument("-gapLow", help="Number of column where gap between physical
 parser.add_argument("-gapHigh", help="Number of column where gap between physical devices ends", type=int, default=2052)
 parser.add_argument("-badCols", help="List of bad columns delimited by ','", type=str, default="1020,1021,1022,1023,1024, 1025, 1026,3068,3069,3070,3071,3072,3073, 3074")
 args = parser.parse_args()
+
+if afwDisplay:
+    if os.environ.get('DISPLAY_DS9_DIR') != "":
+        try:
+            afwDisplay.setDefaultBackend("ds9" if args.display else "virtualDevice")
+        except RuntimeError as e:
+            print e
+
+    afwDisplay.setDefaultMaskTransparency(75)
 
 badCols = [int(item) for item in args.badCols.split(',')]
 butler = dafPersist.Butler( args.homeDir )
@@ -150,7 +151,7 @@ if args.outFile != '':
     print nBad,' bad pixels found'
 
 if afwDisplay:
-    if True:#args.display:
+    if args.display:
         divFlatExp = afwImage.makeExposure(divFlatMIm)
         medianFlatsLowExp = afwImage.makeExposure(afwImage.makeMaskedImage(afwImage.ImageF(medianFlatsLow)))
         medianFlatsLowExp.getMaskedImage().getMask().getArray()[:,:] = divFlatExp.getMaskedImage().getMask().getArray()[:,:]
