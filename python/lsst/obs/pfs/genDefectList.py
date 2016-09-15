@@ -14,7 +14,7 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument("-homeDir", help="Path to PFS data directory", default="/Volumes/My Passport/Users/azuri/spectra/pfs/PFS")
 parser.add_argument("-outFile", help="Output defect list relative to OBS_PFS_DIR", default="pfs/defects/2015-12-01/defects.dat")
-parser.add_argument("-medianFlatsOut", help="Median Flats output root (without '.fits'). Leave empty for not writing", default="/Users/azuri/spectra/pfs/medianFlat")# - leave empty if you don't want to write the median Flats
+parser.add_argument("-medianFlatsOut", help="Median Flats output root (without '.fits'). Leave empty for not writing", default="")# - leave empty if you don't want to write the median Flats
 parser.add_argument("-ccd", help="CCD number for which to create the defect list", type=int, default=5)
 parser.add_argument("-display", help="Set to display outputs", action="store_true")
 parser.add_argument("-visitLow", help="Lowest visit number to search for flats", type=int, default=6301)
