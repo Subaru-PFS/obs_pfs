@@ -1,12 +1,8 @@
 #!/usr/bin/env python
-import os
-import pyfits
 import math
 import lsst.afw.image as afwImage
 import numpy as np
-import lsst.afw.display as afwDisplay
 import pfs.drp.stella as drpStella
-import lsst.daf.persistence as dafPersist
 import pfs.drp.stella.findAndTraceAperturesTask as fataTask
 import pfs.drp.stella.createFlatFiberTraceProfileTask as cfftpTask
 #from lsst.utils import getPackageDir
@@ -205,20 +201,56 @@ class ConstructNormFlatTask(CalibTask):
         self.write(cache.butler, normFlatOutDec, struct.outputId)
         
         """Quality assessment"""
-        meanSDev = np.ndarray(shape=(normalizedFlat.shape[0],2), dtype=np.float)
-        print 'sDev.shape = ',sDev.shape
-        for x in range(normalizedFlat.shape[1]):
-            print 'x=',i,': meanSDev[',x,'][:] = ',meanSDev[x][:]
-            ind = drpStella.getIndices(normalizedFlat[:][x])
-            print 'x=',i,': ind = ',ind
-            nInd = ind.shape[0]
-            nPix = normalizedFlat.shape[0] - nInd
-            pixArr = np.ndarray(shape=(nPix), dtype=np.float)
-            index = 0
-            for y in range(normalizedFlat.shape[0]):
-                if y not in ind:
-                    pixArr[index] += normalizedFlat[y][x]
-                    index += 1
-            meanSDev[x][0] = np.mean(pixArr)
-            meanSDev[x][1] = np.std(pixArr)
-            print 'x=',x,': meanSDev[',x,'][:] = ',meanSDev[x][:]
+        if False:
+            meanSDev = np.ndarray(shape=(normalizedFlat.shape[0],2), dtype=np.float)
+            print 'meanSDev.shape = ',meanSDev.shape
+            for x in range(normalizedFlat.shape[1]):
+                ind = drpStella.getIndices(normalizedFlat[:][x])
+                print 'x=',x,': ind = ',ind
+                nInd = ind.shape[0]
+                nPix = normalizedFlat.shape[0] - nInd
+                print 'x=',x,': nPix = ',nPix
+                pixArr = np.ndarray(shape=(nPix), dtype=np.float)
+                index = 0
+                for y in range(normalizedFlat.shape[0]):
+                    if y not in ind:
+                        print 'y = ',y,' not in ind = ',ind
+                        pixArr[index] = normalizedFlat[y][x]
+                        index += 1
+                meanSDev[x][0] = np.mean(pixArr)
+                meanSDev[x][1] = np.std(pixArr)
+                print 'x=',x,': meanSDev[',x,'][:] = ',meanSDev[x][:]
+
+        
+        allFtsSorted = []
+        allReconstructedFtsSorted = []
+        for iAp in range( allFts[ 0 ].size() ):
+            ftsSorted = drpStella.FiberTraceSetF()
+            reconstructedFtsSorted = drpStella.FiberTraceSetF()
+            for iFts in range( len( allFts ) ):
+                ftsSorted.addFiberTrace( allFts[ iFts ].getFiberTrace( iAp ) )
+                ft = drpStella.FiberTraceF( allFts[ iFts ].getFiberTrace( iAp ) )
+                recIm = ft.getReconstructed2DSpectrum(ft.extractFromProfile())
+                ft.setImage(recIm)
+                reconstructedFtsSorted.addFiberTrace( ft )
+                print 'FiberTrace ',iAp,' from allFts[',iFts,'] added to ftsSorted -> ftsSorted.size() = ',ftsSorted.size()
+            allFtsSorted.append( ftsSorted )
+            allReconstructedFtsSorted.append( reconstructedFtsSorted )
+            print 'ftsSorted added to allFtsSorted => len(allFtsSorted) = ',len( allFtsSorted )
+
+        allSumsFtsSorted = []
+        allSumsReconstructedFtsSorted = []
+        normFlatTraces = []
+        for iFts in range( len( allFtsSorted ) ):
+            sumFtsSorted = drpStella.addFiberTraces( allFtsSorted[ iFts ] )
+            allSumsFtsSorted.append( sumFtsSorted )
+            print 'sumFtsSorted = ',sumFtsSorted.getImage().getArray().shape,': ',sumFtsSorted,' added to allSumsFtsSorted => len(allSumsFtsSorted) = ',len(allSumsFtsSorted)
+            sumReconstructedFtsSorted = drpStella.addFiberTraces( allReconstructedFtsSorted[ iFts ] )
+            allSumsReconstructedFtsSorted.append( sumReconstructedFtsSorted )
+            
+            snr = sumFtsSorted.getImage().getArray() / np.sqrt(sumFtsSorted.getVariance().getArray())
+            normFlat = sumFtsSorted.getImage().getArray() / sumReconstructedFtsSorted.getImage().getArray()
+            normFlat = drpStella.where(snr,'<',100.,1.,normFlat)
+
+            normFlatTraces.append(normFlat)
+            #drpStella.addArrayIntoArray
