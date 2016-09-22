@@ -12,21 +12,21 @@ except ImportError:
 import argparse
 parser = argparse.ArgumentParser()
 
-parser.add_argument("-homeDir", help="Path to PFS data directory", default="/Volumes/My Passport/Users/azuri/spectra/pfs/PFS")
-parser.add_argument("-outFile", help="Output defect list relative to OBS_PFS_DIR", default="pfs/defects/2015-12-01/defects.dat")
-parser.add_argument("-medianFlatsOut", help="Median Flats output root (without '.fits'). Leave empty for not writing", default="")# - leave empty if you don't want to write the median Flats
-parser.add_argument("-ccd", help="CCD number for which to create the defect list", type=int, default=5)
-parser.add_argument("-display", help="Set to display outputs", action="store_true")
-parser.add_argument("-visitLow", help="Lowest visit number to search for flats", type=int, default=6301)
-parser.add_argument("-visitHigh", help="Highest visit number to search for flats", type=int, default=6758)
-parser.add_argument("-expTimeLow", help="Exposure time for weaker flats", type=int, default=2)
-parser.add_argument("-expTimeHigh", help="Exposure time for stronger flats", type=int, default=30)
-parser.add_argument("-nPixCut", help="Number of rows/columns around the edge of images to ignore", type=int, default=40)
-parser.add_argument("-nCols", help="Number of columns in images", type=int, default=4096)
-parser.add_argument("-nRows", help="Number of rows in images", type=int, default=4174)
-parser.add_argument("-gapLow", help="Number of column where gap between physical devices starts", type=int, default=2045)
-parser.add_argument("-gapHigh", help="Number of column where gap between physical devices ends", type=int, default=2052)
-parser.add_argument("-badCols", help="List of bad columns delimited by ','", type=str, default="1020,1021,1022,1023,1024, 1025, 1026,3068,3069,3070,3071,3072,3073, 3074")
+parser.add_argument("--homeDir", help="Path to PFS data directory", default="/Volumes/My Passport/Users/azuri/spectra/pfs/PFS")
+parser.add_argument("--outFile", help="Output defect list relative to OBS_PFS_DIR", default="pfs/defects/2015-12-01/defects.dat")
+parser.add_argument("--medianFlatsOut", help="Median Flats output root (without '.fits'). Leave empty for not writing", default="")# - leave empty if you don't want to write the median Flats
+parser.add_argument("--ccd", help="CCD number for which to create the defect list", type=int, default=5)
+parser.add_argument("--display", help="Set to display outputs", action="store_true")
+parser.add_argument("--visitLow", help="Lowest visit number to search for flats", type=int, default=6301)
+parser.add_argument("--visitHigh", help="Highest visit number to search for flats", type=int, default=6758)
+parser.add_argument("--expTimeLow", help="Exposure time for weaker flats", type=int, default=2)
+parser.add_argument("--expTimeHigh", help="Exposure time for stronger flats", type=int, default=30)
+parser.add_argument("--nPixCut", help="Number of rows/columns around the edge of images to ignore", type=int, default=40)
+parser.add_argument("--nCols", help="Number of columns in images", type=int, default=4096)
+parser.add_argument("--nRows", help="Number of rows in images", type=int, default=4174)
+parser.add_argument("--gapLow", help="Number of column where gap between physical devices starts", type=int, default=2045)
+parser.add_argument("--gapHigh", help="Number of column where gap between physical devices ends", type=int, default=2052)
+parser.add_argument("--badCols", help="List of bad columns delimited by ','", type=str, default="1020,1021,1022,1023,1024, 1025, 1026,3068,3069,3070,3071,3072,3073, 3074")
 args = parser.parse_args()
 
 if afwDisplay:
