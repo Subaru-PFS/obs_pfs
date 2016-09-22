@@ -13,9 +13,16 @@ import lsst.meas.algorithms as measAlg
 import lsst.afw.detection as afwDet
 from lsst.pipe.drivers.utils import getDataRef
 from lsst.ctrl.pool.pool import NODE
-#from lsst.pipe.base import Struct, TaskRunner, ArgumentParser, CmdLineTask
-#import matplotlib.pyplot as plt
+try:
+    import lsst.afw.display as afwDisplay
+except ImportError:
+    afwDisplay = None
 
+if afwDisplay:
+    try:
+        afwDisplay.setDefaultBackend("ds9" if True else "virtualDevice")
+    except RuntimeError as e:
+        print e
 
 class ConstructNormFlatConfig(CalibConfig):
     """Configuration for flat construction"""
@@ -26,6 +33,7 @@ class ConstructNormFlatConfig(CalibConfig):
     repair = ConfigurableField(target=RepairTask, doc="Task to repair artifacts")
     darkTime = Field(dtype=str, default="DARKTIME", doc="Header keyword for time since last CCD wipe, or None",
                      optional=True)
+    display = Field(dtype=bool, default=True, doc="Display outputs?")
 
 #class ConstructNormFlatConfig(Config):
 #    """Configuration for reducing arc images"""
@@ -201,6 +209,62 @@ class ConstructNormFlatTask(CalibTask):
         self.write(cache.butler, normFlatOutDec, struct.outputId)
         
         """Quality assessment"""
+        snrMI = afwImage.makeMaskedImage( afwImage.ImageF( snrArr ) )
+        sumFlatsMI = afwImage.makeMaskedImage( afwImage.ImageF( sumFlats ) )
+        recFlatsMI = afwImage.makeMaskedImage( sumRecIm )
+        
+        ftsZeroOffset = drpStella.FiberTraceSetF()
+        ftsSnr = drpStella.FiberTraceSetF()
+        ftsSumFlats = drpStella.FiberTraceSetF()
+        ftsRecFlats = drpStella.FiberTraceSetF()
+        
+        normArr = np.ndarray(shape=sumFlats.shape, dtype='float32')
+        normArr[:][:] = 0.
+        normIm = afwImage.ImageF(normArr)
+        sumArr = np.ndarray(shape=sumFlats.shape, dtype='float32')
+        sumArr[:][:] = 0.
+        sumIm = afwImage.ImageF(sumArr)
+        snrArr = np.ndarray(shape=sumFlats.shape, dtype='float32')
+        snrArr[:][:] = 0.
+        snrIm = afwImage.ImageF(snrArr)
+        recArr = np.ndarray(shape=sumFlats.shape, dtype='float32')
+        recArr[:][:] = 0.
+        recIm = afwImage.ImageF(recArr)
+        
+        for i in range( len( xOffsets ) ):
+            if xOffsets[ i ] == 0.:
+                for iFt in range( allFts[ i ].size() ):
+                    ftZero = drpStella.FiberTraceF( normFlatOut.getMaskedImage(), allFts[ i ].getFiberTrace( iFt ).getFiberTraceFunction() )
+                    ftsZeroOffset.addFiberTrace( ftZero );
+                    drpStella.addFiberTraceToCcdImage( ftZero, ftZero.getImage(), normIm )
+                    
+                    ftSnr = drpStella.FiberTraceF( snrMI, allFts[ i ].getFiberTrace( iFt ).getFiberTraceFunction() )
+                    ftsSnr.addFiberTrace( ftSnr );
+                    drpStella.addFiberTraceToCcdImage( ftSnr, ftSnr.getImage(), snrIm )
+                    
+                    ftSumFlats = drpStella.FiberTraceF( sumFlatsMI, allFts[ i ].getFiberTrace( iFt ).getFiberTraceFunction() )
+                    ftsSumFlats.addFiberTrace( ftSumFlats );
+                    drpStella.addFiberTraceToCcdImage( ftSumFlats, ftSumFlats.getImage(), sumIm )
+
+                    ftRecFlats = drpStella.FiberTraceF( recFlatsMI, allFts[ i ].getFiberTrace( iFt ).getFiberTraceFunction() )
+                    ftsRecFlats.addFiberTrace( ftRecFlats );
+                    drpStella.addFiberTraceToCcdImage( ftRecFlats, ftRecFlats.getImage(), recIm )
+
+        if ftsZeroOffset.size() != allFts[ 0 ].size():
+            raise RunTimeError("constructNormFlatTask: ERROR: no Flat found with 0 xOffset")
+        print 'ftsZeroOffset.size() = ',ftsZeroOffset.size()
+        
+        if self.config.display:
+            if afwDisplay:
+                afwDisplay.ds9.mtv(sumIm, title="sum", frame=0)
+                afwDisplay.ds9.mtv(recIm, title="reconstructed", frame=1)
+                afwDisplay.ds9.mtv(snrIm, title="SNR", frame=2)
+                afwDisplay.ds9.mtv(normIm, title="normalizedFlat", frame=3)
+        
+#        for ft in ftsZeroOffset:
+#            for x in range( ft.getWidth() ):
+                
+        
         if False:
             meanSDev = np.ndarray(shape=(normalizedFlat.shape[0],2), dtype=np.float)
             print 'meanSDev.shape = ',meanSDev.shape
@@ -221,36 +285,40 @@ class ConstructNormFlatTask(CalibTask):
                 meanSDev[x][1] = np.std(pixArr)
                 print 'x=',x,': meanSDev[',x,'][:] = ',meanSDev[x][:]
 
-        
-        allFtsSorted = []
-        allReconstructedFtsSorted = []
-        for iAp in range( allFts[ 0 ].size() ):
-            ftsSorted = drpStella.FiberTraceSetF()
-            reconstructedFtsSorted = drpStella.FiberTraceSetF()
-            for iFts in range( len( allFts ) ):
-                ftsSorted.addFiberTrace( allFts[ iFts ].getFiberTrace( iAp ) )
-                ft = drpStella.FiberTraceF( allFts[ iFts ].getFiberTrace( iAp ) )
-                recIm = ft.getReconstructed2DSpectrum(ft.extractFromProfile())
-                ft.setImage(recIm)
-                reconstructedFtsSorted.addFiberTrace( ft )
-                print 'FiberTrace ',iAp,' from allFts[',iFts,'] added to ftsSorted -> ftsSorted.size() = ',ftsSorted.size()
-            allFtsSorted.append( ftsSorted )
-            allReconstructedFtsSorted.append( reconstructedFtsSorted )
-            print 'ftsSorted added to allFtsSorted => len(allFtsSorted) = ',len( allFtsSorted )
+        if False:
+            allFtsSorted = []
+            allReconstructedFtsSorted = []
+            for iAp in range( allFts[ 0 ].size() ):
+                ftsSorted = drpStella.FiberTraceSetF()
+                reconstructedFtsSorted = drpStella.FiberTraceSetF()
+                for iFts in range( len( allFts ) ):
+                    ftsSorted.addFiberTrace( allFts[ iFts ].getFiberTrace( iAp ) )
+                    ft = drpStella.FiberTraceF( allFts[ iFts ].getFiberTrace( iAp ) )
+                    recIm = ft.getReconstructed2DSpectrum(ft.extractFromProfile())
+                    ft.setImage(recIm)
+                    reconstructedFtsSorted.addFiberTrace( ft )
+                    print 'FiberTrace ',iAp,' from allFts[',iFts,'] added to ftsSorted -> ftsSorted.size() = ',ftsSorted.size()
+                allFtsSorted.append( ftsSorted )
+                allReconstructedFtsSorted.append( reconstructedFtsSorted )
+                print 'ftsSorted added to allFtsSorted => len(allFtsSorted) = ',len( allFtsSorted )
 
-        allSumsFtsSorted = []
-        allSumsReconstructedFtsSorted = []
-        normFlatTraces = []
-        for iFts in range( len( allFtsSorted ) ):
-            sumFtsSorted = drpStella.addFiberTraces( allFtsSorted[ iFts ] )
-            allSumsFtsSorted.append( sumFtsSorted )
-            print 'sumFtsSorted = ',sumFtsSorted.getImage().getArray().shape,': ',sumFtsSorted,' added to allSumsFtsSorted => len(allSumsFtsSorted) = ',len(allSumsFtsSorted)
-            sumReconstructedFtsSorted = drpStella.addFiberTraces( allReconstructedFtsSorted[ iFts ] )
-            allSumsReconstructedFtsSorted.append( sumReconstructedFtsSorted )
-            
-            snr = sumFtsSorted.getImage().getArray() / np.sqrt(sumFtsSorted.getVariance().getArray())
-            normFlat = sumFtsSorted.getImage().getArray() / sumReconstructedFtsSorted.getImage().getArray()
-            normFlat = drpStella.where(snr,'<',100.,1.,normFlat)
+            allSumsFtsSorted = []
+            allSumsReconstructedFtsSorted = []
+            normFlatTraces = []
+            for iFts in range( len( allFtsSorted ) ):
+                sumFtsSorted = drpStella.addFiberTraces( allFtsSorted[ iFts ] )
+                allSumsFtsSorted.append( sumFtsSorted )
+                print 'sumFtsSorted = ',sumFtsSorted.getImage().getArray().shape,': ',sumFtsSorted,' added to allSumsFtsSorted => len(allSumsFtsSorted) = ',len(allSumsFtsSorted)
+                sumReconstructedFtsSorted = drpStella.addFiberTraces( allReconstructedFtsSorted[ iFts ] )
+                allSumsReconstructedFtsSorted.append( sumReconstructedFtsSorted )
 
-            normFlatTraces.append(normFlat)
-            #drpStella.addArrayIntoArray
+                snr = sumFtsSorted.getImage().getArray() / np.sqrt(sumFtsSorted.getVariance().getArray())
+                normFlat = sumFtsSorted.getImage().getArray() / sumReconstructedFtsSorted.getImage().getArray()
+                normFlat = drpStella.where(snr,'<',100.,1.,normFlat)
+
+                normFlatTraces.append(normFlat)
+#                drpStella.addArrayIntoArray( normFlat,
+#                                 ndarray::Array< size_t, 2, 1 > const& minMax,
+#                                 size_t const& yMin,
+#                                 size_t const& yMax,
+#                                 ndarray::Array< T, 2, J > & bigArr )
