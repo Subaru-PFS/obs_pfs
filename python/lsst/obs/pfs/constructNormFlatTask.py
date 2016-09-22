@@ -34,6 +34,12 @@ class ConstructNormFlatConfig(CalibConfig):
     darkTime = Field(dtype=str, default="DARKTIME", doc="Header keyword for time since last CCD wipe, or None",
                      optional=True)
     display = Field(dtype=bool, default=True, doc="Display outputs?")
+    profileInterpolation = Field(dtype=str, default='SPLINE3', doc="Method for determining the spatial profile, [PISKUNOV, SPLINE3]")
+    ccdReadOutNoise = Field(dtype=float, default=3.19, doc="CCD readout noise")
+    maxIterSF = Field(dtype=int, default=15, doc="profileInterpolation==PISKUNOV: Maximum number of iterations for the determination of the spatial profile")
+    overSample = Field(dtype=int, default=15, doc="Oversampling factor for the determination of the spatial profile")
+    swathWidth = Field(dtype=int, default=250, doc="Size of individual extraction swaths, set to 0 to calculate automatically")
+    wingSmoothFactor = Field(dtype=float, default=0., doc="profileInterpolation==PISKUNOV: Lambda smoothing factor to remove possible oscillation of the wings of the spatial profile")
 
 #class ConstructNormFlatConfig(Config):
 #    """Configuration for reducing arc images"""
@@ -150,14 +156,14 @@ class ConstructNormFlatTask(CalibTask):
         self.log.info('=== xOffsets = '+str(xOffsets)+' ===')
 
         myProfileTask = cfftpTask.CreateFlatFiberTraceProfileTask()
-        myProfileTask.config.profileInterpolation = 'PISKUNOV'
-        myProfileTask.config.ccdReadOutNoise = 3.19
-        myProfileTask.config.maxIterSF = 15
-        myProfileTask.config.overSample = 15
-        myProfileTask.config.swathWidth = 250
-        myProfileTask.config.lambdaSF = 1./float(myProfileTask.config.overSample)
+        myProfileTask.config.profileInterpolation = self.config.profileInterpolation
+        myProfileTask.config.ccdReadOutNoise = self.config.ccdReadOutNoise
+        myProfileTask.config.maxIterSF = self.config.maxIterSF
+        myProfileTask.config.overSample = self.config.overSample
+        myProfileTask.config.swathWidth = self.config.swathWidth
+        myProfileTask.config.lambdaSF = 1./float(self.config.overSample)
         myProfileTask.config.lambdaSP = 0.
-        myProfileTask.config.wingSmoothFactor = 0.
+        myProfileTask.config.wingSmoothFactor = self.config.wingSmoothFactor
 
         for fts in allFts:
             fts = myProfileTask.run(fts)
