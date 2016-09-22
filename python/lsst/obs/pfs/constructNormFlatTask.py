@@ -26,20 +26,123 @@ if afwDisplay:
 
 class ConstructNormFlatConfig(CalibConfig):
     """Configuration for flat construction"""
-    doRepair = Field(dtype=bool, default=True, doc="Repair artifacts?")
-    psfFwhm = Field(dtype=float, default=3.0, doc="Repair PSF FWHM (pixels)")
-    psfSize = Field(dtype=int, default=21, doc="Repair PSF size (pixels)")
-    crGrow = Field(dtype=int, default=2, doc="Grow radius for CR (pixels)")
-    repair = ConfigurableField(target=RepairTask, doc="Task to repair artifacts")
-    darkTime = Field(dtype=str, default="DARKTIME", doc="Header keyword for time since last CCD wipe, or None",
-                     optional=True)
-    display = Field(dtype=bool, default=True, doc="Display outputs?")
-    profileInterpolation = Field(dtype=str, default='SPLINE3', doc="Method for determining the spatial profile, [PISKUNOV, SPLINE3]")
-    ccdReadOutNoise = Field(dtype=float, default=3.19, doc="CCD readout noise")
-    maxIterSF = Field(dtype=int, default=15, doc="profileInterpolation==PISKUNOV: Maximum number of iterations for the determination of the spatial profile")
-    overSample = Field(dtype=int, default=15, doc="Oversampling factor for the determination of the spatial profile")
-    swathWidth = Field(dtype=int, default=250, doc="Size of individual extraction swaths, set to 0 to calculate automatically")
-    wingSmoothFactor = Field(dtype=float, default=0., doc="profileInterpolation==PISKUNOV: Lambda smoothing factor to remove possible oscillation of the wings of the spatial profile")
+    doRepair = Field(
+        dtype=bool, 
+        default=True, 
+        doc="Repair artifacts?")
+    psfFwhm = Field(
+        dtype=float, 
+        default=3.0, 
+        doc="Repair PSF FWHM (pixels)",
+        check = lambda x : x > 0)
+    psfSize = Field(
+        dtype=int, 
+        default=21, 
+        doc="Repair PSF size (pixels)",
+        check = lambda x : x > 0)
+    crGrow = Field(
+        dtype=int, 
+        default=2, 
+        doc="Grow radius for CR (pixels)",
+        check = lambda x : x >= 0)
+    repair = ConfigurableField(
+        target=RepairTask, 
+        doc="Task to repair artifacts")
+    darkTime = Field(
+        dtype=str, 
+        default="DARKTIME", 
+        doc="Header keyword for time since last CCD wipe, or None",
+        optional=True)
+    display = Field(
+        dtype=bool, 
+        default=True, 
+        doc="Display outputs?")
+        
+    """Parameters for the profile determination"""
+    profileInterpolation = Field(
+        dtype=str, 
+        default='SPLINE3', 
+        doc="Method for determining the spatial profile, [PISKUNOV, SPLINE3]")
+    ccdReadOutNoise = Field(
+        dtype=float, 
+        default=3.19, 
+        doc="CCD readout noise",
+        check = lambda x : x > 0)
+    maxIterSF = Field(
+        dtype=int, 
+        default=15, 
+        doc="profileInterpolation==PISKUNOV: Maximum number of iterations for the determination of the spatial profile")
+    overSample = Field(
+        dtype=int, 
+        default=15, 
+        doc="Oversampling factor for the determination of the spatial profile",
+        check = lambda x : x > 0)
+    swathWidth = Field(
+        dtype=int, 
+        default=250, 
+        doc="Size of individual extraction swaths, set to 0 to calculate automatically",
+        check = lambda x : x > 0)
+    wingSmoothFactor = Field(
+        dtype=float, 
+        default=0., 
+        doc="profileInterpolation==PISKUNOV: Lambda smoothing factor to remove possible oscillation of the wings of the spatial profile",
+        check = lambda x : x >= 0)
+        
+    """parameters for tracing the apertures"""
+    interpolation = Field(
+        doc = "Interpolation schemes (CHEBYSHEV, LEGENDRE, CUBIC, LINEAR, POLYNOMIAL[only one implemented atm])",
+        dtype = str,
+        default = "POLYNOMIAL")
+    order = Field(
+        doc = "Polynomial order",
+        dtype = int,
+        default = 5,
+        check = lambda x : x >= 0)
+    xLow = Field(
+        doc = "Lower (left) limit of aperture relative to center position of trace in x (< 0.)",
+        dtype = float,
+        default = -4.,
+        check = lambda x : x < 0.)
+    xHigh = Field(
+        doc = "Upper (right) limit of aperture relative to center position of trace in x",
+        dtype = float,
+        default = 4.,
+        check = lambda x : x > 0.)
+    apertureFWHM = Field(
+        doc = "FWHM of an assumed Gaussian spatial profile for tracing the spectra",
+        dtype = float,
+        default = 2.5,
+        check = lambda x : x > 0.)
+    signalThreshold = Field(
+        doc = "Signal below this threshold is assumed zero for tracing the spectra",
+        dtype = float,
+        default = 120.,
+        check = lambda x : x >= 0.)
+    nTermsGaussFit = Field(
+        doc = "1 to look for maximum only without GaussFit; 3 to fit Gaussian; 4 to fit Gaussian plus constant background, 5 to fit Gaussian plus linear term (sloped backgfound)",
+        dtype = int,
+        default = 3,
+        check = lambda x : x > 0)
+    saturationLevel = Field(
+        doc = "CCD saturation level",
+        dtype = float,
+        default = 65000.,
+        check = lambda x : x > 0.)
+    minLength = Field(
+        doc = "Minimum aperture length to count as found FiberTrace",
+        dtype = int,
+        default = 3000,
+        check = lambda x : x >= 0)
+    maxLength = Field(
+        doc = "Maximum aperture length to count as found FiberTrace",
+        dtype = int,
+        default = 4096,
+        check = lambda x : x >= 0)
+    nLost = Field(
+        doc = "Number of consecutive times the trace is lost before aborting the trace",
+        dtype = int,
+        default = 10,
+        check = lambda x : x >= 0)
 
 #class ConstructNormFlatConfig(Config):
 #    """Configuration for reducing arc images"""
@@ -136,6 +239,17 @@ class ConstructNormFlatTask(CalibTask):
 #        flatVisits = []#29,41,42,44,45,46,47,48,49,51,53]
         
         myFindTask = fataTask.FindAndTraceAperturesTask()
+        myFindTask.config.interpolation = self.config.interpolation
+        myFindTask.config.order = self.config.order
+        myFindTask.config.xLow = self.config.xLow
+        myFindTask.config.xHigh = self.config.xHigh
+        myFindTask.config.apertureFWHM = self.config.apertureFWHM
+        myFindTask.config.signalThreshold = self.config.signalThreshold
+        myFindTask.config.nTermsGaussFit = self.config.nTermsGaussFit
+        myFindTask.config.saturationLevel = self.config.saturationLevel
+        myFindTask.config.minLength = self.config.minLength
+        myFindTask.config.maxLength = self.config.maxLength
+        myFindTask.config.nLost = self.config.nLost
         
         exposure = dataRefList[0].get('postISRCCD')
         
