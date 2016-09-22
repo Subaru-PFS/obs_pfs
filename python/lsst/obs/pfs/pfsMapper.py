@@ -2,7 +2,6 @@
 
 import os
 
-import lsst.daf.base as dafBase
 from lsst.daf.butlerUtils import CameraMapper
 import lsst.afw.image.utils as afwImageUtils
 import lsst.afw.image as afwImage
