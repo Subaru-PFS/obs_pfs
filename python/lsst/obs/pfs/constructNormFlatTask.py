@@ -72,6 +72,11 @@ class ConstructNormFlatConfig(CalibConfig):
         dtype=int, 
         default=15, 
         doc="profileInterpolation==PISKUNOV: Maximum number of iterations for the determination of the spatial profile")
+    maxIterSig = Field(
+        doc = "Maximum number of iterations for masking bad pixels and CCD defects (default: 2)",
+        dtype = int,
+        default = 2,
+        check = lambda x : x >= 0)
     overSample = Field(
         dtype=int, 
         default=15, 
@@ -87,6 +92,16 @@ class ConstructNormFlatConfig(CalibConfig):
         default=0., 
         doc="profileInterpolation==PISKUNOV: Lambda smoothing factor to remove possible oscillation of the wings of the spatial profile",
         check = lambda x : x >= 0)
+    lowerSigma = Field(
+        dtype = float, 
+        doc = "lower sigma rejection threshold if maxIterSig > 0 (default: 3.)", 
+        default = 5.,
+        check = lambda x : x >= 0 )
+    upperSigma = Field(
+        dtype = float,
+        doc = "upper sigma rejection threshold if maxIterSig > 0 (default: 3.)",
+        default = 5.,
+        check = lambda x : x >= 0 )
         
     """parameters for tracing the apertures"""
     interpolation = Field(
@@ -96,7 +111,7 @@ class ConstructNormFlatConfig(CalibConfig):
     order = Field(
         doc = "Polynomial order",
         dtype = int,
-        default = 5,
+        default = 6,
         check = lambda x : x >= 0)
     xLow = Field(
         doc = "Lower (left) limit of aperture relative to center position of trace in x (< 0.)",
@@ -278,6 +293,9 @@ class ConstructNormFlatTask(CalibTask):
         myProfileTask.config.lambdaSF = 1./float(self.config.overSample)
         myProfileTask.config.lambdaSP = 0.
         myProfileTask.config.wingSmoothFactor = self.config.wingSmoothFactor
+        myProfileTask.config.lowerSigma = self.config.lowerSigma
+        myProfileTask.config.upperSigma = self.config.upperSigma
+        myProfileTask.config.maxIterSig = self.config.maxIterSig
 
         for fts in allFts:
             fts = myProfileTask.run(fts)
@@ -353,10 +371,16 @@ class ConstructNormFlatTask(CalibTask):
         
         for i in range( len( xOffsets ) ):
             if xOffsets[ i ] == 0.:
+                meanArrs = []
                 for iFt in range( allFts[ i ].size() ):
                     ftZero = drpStella.FiberTraceF( normFlatOut.getMaskedImage(), allFts[ i ].getFiberTrace( iFt ).getFiberTraceFunction() )
                     ftsZeroOffset.addFiberTrace( ftZero );
                     drpStella.addFiberTraceToCcdImage( ftZero, ftZero.getImage(), normIm )
+                    meanArr = np.mean(ftZero.getImage().getArray(), 0)
+                    stdDevArr = np.std(ftZero.getImage().getArray(), 0)
+                    meanArrs.append( meanArr )
+                    print 'FiberTrace ',iFt,': meanArr = ',meanArr
+                    print 'FiberTrace ',iFt,': stdDevArr = ',stdDevArr
                     
                     ftSnr = drpStella.FiberTraceF( snrMI, allFts[ i ].getFiberTrace( iFt ).getFiberTraceFunction() )
                     ftsSnr.addFiberTrace( ftSnr );
@@ -369,6 +393,8 @@ class ConstructNormFlatTask(CalibTask):
                     ftRecFlats = drpStella.FiberTraceF( recFlatsMI, allFts[ i ].getFiberTrace( iFt ).getFiberTraceFunction() )
                     ftsRecFlats.addFiberTrace( ftRecFlats );
                     drpStella.addFiberTraceToCcdImage( ftRecFlats, ftRecFlats.getImage(), recIm )
+                meanVec = np.mean( meanArrs, 0 )
+                print 'meanVec = ',meanVec
 
         if ftsZeroOffset.size() != allFts[ 0 ].size():
             raise RunTimeError("constructNormFlatTask: ERROR: no Flat found with 0 xOffset")
