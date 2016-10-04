@@ -95,12 +95,12 @@ class ConstructNormFlatConfig(CalibConfig):
     lowerSigma = Field(
         dtype = float, 
         doc = "lower sigma rejection threshold if maxIterSig > 0 (default: 3.)", 
-        default = 5.,
+        default = 3.,
         check = lambda x : x >= 0 )
     upperSigma = Field(
         dtype = float,
         doc = "upper sigma rejection threshold if maxIterSig > 0 (default: 3.)",
-        default = 5.,
+        default = 3.,
         check = lambda x : x >= 0 )
         
     """parameters for tracing the apertures"""
@@ -134,7 +134,7 @@ class ConstructNormFlatConfig(CalibConfig):
         default = 120.,
         check = lambda x : x >= 0.)
     nTermsGaussFit = Field(
-        doc = "1 to look for maximum only without GaussFit; 3 to fit Gaussian; 4 to fit Gaussian plus constant background, 5 to fit Gaussian plus linear term (sloped backgfound)",
+        doc = "1 to look for maximum only without GaussFit; 3 to fit Gaussian; 4 to fit Gaussian plus constant background, 5 to fit Gaussian plus linear term (sloped background)",
         dtype = int,
         default = 3,
         check = lambda x : x > 0)
@@ -158,42 +158,6 @@ class ConstructNormFlatConfig(CalibConfig):
         dtype = int,
         default = 10,
         check = lambda x : x >= 0)
-
-#class ConstructNormFlatConfig(Config):
-#    """Configuration for reducing arc images"""
-#    function = Field( doc = "Function for fitting the dispersion", dtype=str, default="POLYNOMIAL" );
-#    order = Field( doc = "Fitting function order", dtype=int, default = 5 );
-#    searchRadius = Field( doc = "Radius in pixels relative to line list to search for emission line peak", dtype = int, default = 2 );
-#    fwhm = Field( doc = "FWHM of emission lines", dtype=float, default = 2.6 );
-#    nRowsPrescan = Field( doc = "Number of prescan rows in raw CCD image", dtype=int, default = 49 );
-#    wavelengthFile = Field( doc = "reference pixel-wavelength file including path", dtype = str, default=os.path.join(getPackageDir("obs_pfs"), "pfs/RedFiberPixels.fits.gz"));
-#    lineList = Field( doc = "reference line list including path", dtype = str, default=os.path.join(getPackageDir("obs_pfs"), "pfs/lineLists/CdHgKrNeXe_red.fits"));
-
-#class ConstructNormFlatTaskRunner(TaskRunner):
-#    """Get parsed values into the ConstructNormFlatTask.run"""
-#    @staticmethod
-#    def getTargetList(parsedCmd, **kwargs):
-#        print 'ConstructNormFlatTask.getTargetList: kwargs = ',kwargs
-#        return [dict(expRefList=parsedCmd.id.refList, butler=parsedCmd.butler)]#, wLenFile=parsedCmd.wLenFile, lineList=parsedCmd.lineList)]
-#
-#    def __call__(self, args):
-#        task = self.TaskClass(config=self.config, log=self.log)
-#        if self.doRaise:
-#            self.log.info('ConstructNormFlatTask.__call__: args = %s' % args)
-#            result = task.run(**args)
-#        else:
-#            try:
-#                result = task.run(**args)
-#            except Exception, e:
-#                task.log.fatal("Failed: %s" % e)
-##                traceback.print_exc(file=sys.stderr)
-#
-#        if self.doReturnResults:
-#            return Struct(
-#                args = args,
-#                metadata = task.metadata,
-#                result = result,
-#            )
 
 class ConstructNormFlatTask(CalibTask):
     """Task to construct the normalized Flat"""
@@ -250,6 +214,8 @@ class ConstructNormFlatTask(CalibTask):
         self.log.info("Combining %s on %s" % (struct.outputId, NODE))
 
         self.log.info('len(dataRefList) = %d' % len(dataRefList))
+        
+        ignoreAps = [1,2,5,6]
 
 #        flatVisits = []#29,41,42,44,45,46,47,48,49,51,53]
         
@@ -298,6 +264,9 @@ class ConstructNormFlatTask(CalibTask):
         myProfileTask.config.maxIterSig = self.config.maxIterSig
 
         for fts in allFts:
+            """Remove next 2 lines when tested"""
+#            for iFt in range(fts.size()):
+#                fts.getFiberTrace(iFt).getImage().getArray()[:,:] += 10.
             fts = myProfileTask.run(fts)
 
         sumRec = np.ndarray(shape=sumFlats.shape, dtype='float32')
@@ -315,24 +284,28 @@ class ConstructNormFlatTask(CalibTask):
         for fts in allFts:
             recIm.getArray()[:][:] = 0.
             for ft in fts.getTraces():
-                spectrum = ft.extractFromProfile()
-                recFt = ft.getReconstructed2DSpectrum(spectrum)
-                recFtArr = recFt.getArray()
-                imArr = ft.getImage().getArray()
-                recFtArr = drpStella.where(imArr,'<=',0.,0.,recFtArr)
-                drpStella.addFiberTraceToCcdImage(ft, recFt, sumRecIm)
-                drpStella.addFiberTraceToCcdImage(ft, ft.getVariance(), sumVarIm)
+                if ft not in ignoreAps:
+                    spectrum = ft.extractFromProfile()
+                    recFt = ft.getReconstructed2DSpectrum(spectrum)
+                    recFtArr = recFt.getArray()
+                    imArr = ft.getImage().getArray()
+                    recFtArr = drpStella.where(imArr,'<=',0.,0.,recFtArr)
+                    drpStella.addFiberTraceToCcdImage(ft, recFt, sumRecIm)
+                    drpStella.addFiberTraceToCcdImage(ft, ft.getVariance(), sumVarIm)
 
         sumVariances = drpStella.where(sumVariances, '<', 0., 0., sumVariances)
         snrArr = sumFlats / np.sqrt(sumVariances)
 
-        normalizedFlat = sumRecIm.getArray() / sumFlats
+        normalizedFlat = sumFlats / sumRecIm.getArray()
         normalizedFlat = drpStella.where(sumRecIm.getArray(), '<=', 0., 1., normalizedFlat)
-        normalizedFlat = drpStella.where(snrArr, '<', 100., 1., normalizedFlat)
+        #normalizedFlat = drpStella.where(snrArr, '<', 100., 1., normalizedFlat)
         normalizedFlat = drpStella.where(sumFlats, '<=', 0., 1., normalizedFlat)
         normalizedFlat = drpStella.where(sumVariances, '<=', 0., 1., normalizedFlat)
         
         normFlatOut = afwImage.makeExposure(afwImage.makeMaskedImage(afwImage.ImageF(normalizedFlat)))
+        if self.config.display:
+            if afwDisplay:
+                afwDisplay.ds9.mtv(normFlatOut, title="normalized Flat out", frame=1)
 #        normFlatOut.getMaskedImage().getVariance().getArray()[:][:] = snrArr[:][:]
 #        print 'dir(normFlatOut) = ',dir(normFlatOut)
 #        normFlatOut.getMaskedImage().getMask().getArray()[:][:] = dataRefList[0].get('postISRCCD').getMaskedImage().getMask().getArray()[:][:]
@@ -373,39 +346,42 @@ class ConstructNormFlatTask(CalibTask):
             if xOffsets[ i ] == 0.:
                 meanArrs = []
                 for iFt in range( allFts[ i ].size() ):
-                    ftZero = drpStella.FiberTraceF( normFlatOut.getMaskedImage(), allFts[ i ].getFiberTrace( iFt ).getFiberTraceFunction() )
-                    ftsZeroOffset.addFiberTrace( ftZero );
-                    drpStella.addFiberTraceToCcdImage( ftZero, ftZero.getImage(), normIm )
-                    meanArr = np.mean(ftZero.getImage().getArray(), 0)
-                    stdDevArr = np.std(ftZero.getImage().getArray(), 0)
-                    meanArrs.append( meanArr )
-                    print 'FiberTrace ',iFt,': meanArr = ',meanArr
-                    print 'FiberTrace ',iFt,': stdDevArr = ',stdDevArr
-                    
-                    ftSnr = drpStella.FiberTraceF( snrMI, allFts[ i ].getFiberTrace( iFt ).getFiberTraceFunction() )
-                    ftsSnr.addFiberTrace( ftSnr );
-                    drpStella.addFiberTraceToCcdImage( ftSnr, ftSnr.getImage(), snrIm )
-                    
-                    ftSumFlats = drpStella.FiberTraceF( sumFlatsMI, allFts[ i ].getFiberTrace( iFt ).getFiberTraceFunction() )
-                    ftsSumFlats.addFiberTrace( ftSumFlats );
-                    drpStella.addFiberTraceToCcdImage( ftSumFlats, ftSumFlats.getImage(), sumIm )
+                    if iFt not in ignoreAps:
+                        ftZero = drpStella.FiberTraceF( normFlatOut.getMaskedImage(), allFts[ i ].getFiberTrace( iFt ).getFiberTraceFunction() )
+                        ftsZeroOffset.addFiberTrace( ftZero );
+                        drpStella.addFiberTraceToCcdImage( ftZero, ftZero.getImage(), normIm )
+                        meanArr = np.mean(ftZero.getImage().getArray(), 0)
+                        stdDevArr = np.std(ftZero.getImage().getArray(), 0)
+                        meanArrs.append( meanArr )
+                        print 'FiberTrace ',iFt,': meanArr = ',meanArr
+                        print 'FiberTrace ',iFt,': stdDevArr = ',stdDevArr
 
-                    ftRecFlats = drpStella.FiberTraceF( recFlatsMI, allFts[ i ].getFiberTrace( iFt ).getFiberTraceFunction() )
-                    ftsRecFlats.addFiberTrace( ftRecFlats );
-                    drpStella.addFiberTraceToCcdImage( ftRecFlats, ftRecFlats.getImage(), recIm )
+                        ftSnr = drpStella.FiberTraceF( snrMI, allFts[ i ].getFiberTrace( iFt ).getFiberTraceFunction() )
+                        ftsSnr.addFiberTrace( ftSnr );
+                        drpStella.addFiberTraceToCcdImage( ftSnr, ftSnr.getImage(), snrIm )
+
+                        ftSumFlats = drpStella.FiberTraceF( sumFlatsMI, allFts[ i ].getFiberTrace( iFt ).getFiberTraceFunction() )
+                        ftsSumFlats.addFiberTrace( ftSumFlats );
+                        drpStella.addFiberTraceToCcdImage( ftSumFlats, ftSumFlats.getImage(), sumIm )
+
+                        ftRecFlats = drpStella.FiberTraceF( recFlatsMI, allFts[ i ].getFiberTrace( iFt ).getFiberTraceFunction() )
+                        ftsRecFlats.addFiberTrace( ftRecFlats );
+                        drpStella.addFiberTraceToCcdImage( ftRecFlats, ftRecFlats.getImage(), recIm )
                 meanVec = np.mean( meanArrs, 0 )
                 print 'meanVec = ',meanVec
 
-        if ftsZeroOffset.size() != allFts[ 0 ].size():
+        if ftsZeroOffset.size() < 1:
             raise RunTimeError("constructNormFlatTask: ERROR: no Flat found with 0 xOffset")
         print 'ftsZeroOffset.size() = ',ftsZeroOffset.size()
         
         if self.config.display:
             if afwDisplay:
-                afwDisplay.ds9.mtv(sumIm, title="sum", frame=0)
-                afwDisplay.ds9.mtv(recIm, title="reconstructed", frame=1)
-                afwDisplay.ds9.mtv(snrIm, title="SNR", frame=2)
-                afwDisplay.ds9.mtv(normIm, title="normalizedFlat", frame=3)
+                afwDisplay.ds9.mtv(sumIm, title="sum", frame=2)
+                afwDisplay.ds9.mtv(recIm, title="reconstructed", frame=3)
+                sumMinusRec = afwImage.ImageF(sumIm.getArray() - recIm.getArray())
+                afwDisplay.ds9.mtv(sumMinusRec, title="sum - reconstructed", frame=4)
+                afwDisplay.ds9.mtv(snrIm, title="SNR", frame=5)
+                afwDisplay.ds9.mtv(normIm, title="normalizedFlat", frame=6)
         
 #        for ft in ftsZeroOffset:
 #            for x in range( ft.getWidth() ):
