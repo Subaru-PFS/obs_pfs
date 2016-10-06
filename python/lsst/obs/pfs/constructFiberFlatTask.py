@@ -23,7 +23,6 @@ class ConstructFiberFlatConfig(CalibConfig):
     repair = ConfigurableField(target=RepairTask, doc="Task to repair artifacts")
     darkTime = Field(dtype=str, default="DARKTIME", doc="Header keyword for time since last CCD wipe, or None",
                      optional=True)
-    
     profileInterpolation = Field(
         doc = "Method for determining the spatial profile, [PISKUNOV, SPLINE3], default: PISKUNOV",
         dtype = str,
@@ -129,9 +128,9 @@ class ConstructFiberFlatTask(CalibTask):
         self.log.info('len(dataRefList) = %d' % len(dataRefList))
 
 #        flatVisits = []#29,41,42,44,45,46,47,48,49,51,53]
-        
+
         exposure = dataRefList[0].get('postISRCCD')
-        
+
         sumFlats = exposure.getMaskedImage().getImage().getArray()
         sumVariances = exposure.getMaskedImage().getVariance().getArray()
 
@@ -199,13 +198,13 @@ class ConstructFiberFlatTask(CalibTask):
         normalizedFlat = drpStella.where(snrArr, '<', 100., 1., normalizedFlat)
         normalizedFlat = drpStella.where(sumFlats, '<=', 0., 1., normalizedFlat)
         normalizedFlat = drpStella.where(sumVariances, '<=', 0., 1., normalizedFlat)
-        
+
         normFlatOut = afwImage.makeExposure(afwImage.makeMaskedImage(afwImage.ImageF(normalizedFlat)))
 
         self.recordCalibInputs(cache.butler, normFlatOut, struct.ccdIdList, struct.outputId)
 
         self.interpolateNans(normFlatOut)
-        
+
         normFlatOutDec = afwImage.DecoratedImageF(normFlatOut.getMaskedImage().getImage())
 
         self.write(cache.butler, normFlatOutDec, struct.outputId)
