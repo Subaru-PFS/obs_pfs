@@ -145,7 +145,7 @@ class ConstructFiberTraceTask(CalibTask):
     """Task to construct the normalized Flat"""
     ConfigClass = ConstructFiberTraceConfig
     _DefaultName = "constructFiberTrace"
-    calibName = "flat"
+    calibName = "fiberTrace"
 #    filterName = "NONE"  # Sets this filter name in the output
 
     def __init__(self, *args, **kwargs):
@@ -186,7 +186,7 @@ class ConstructFiberTraceTask(CalibTask):
             if exposure.getMetadata().get(self.config.xOffsetHdrKeyWord) == 0.:
                 newExpRefList.append(expRef)
             
-        return CalibTask.run(newExpRefList, butler, calibId)
+        return CalibTask.run(self, newExpRefList, butler, calibId)
     
     
     def combine(self, cache, struct):
@@ -224,7 +224,10 @@ class ConstructFiberTraceTask(CalibTask):
         myFindTask.config.maxLength = self.config.maxLength
         myFindTask.config.nLost = self.config.nLost
         
-        fts = myFindTask.run(calib)
+        print 'calib = ',type(calib),': ',calib
+        calExp = afwImage.makeExposure(afwImage.makeMaskedImage(calib.getImage()))
+        print 'calExp = ',type(calExp),': ',calExp
+        fts = myFindTask.run(calExp)
         
         myProfileTask = cfftpTask.CreateFlatFiberTraceProfileTask()
         myProfileTask.config.profileInterpolation = self.config.profileInterpolation
@@ -237,8 +240,11 @@ class ConstructFiberTraceTask(CalibTask):
         myProfileTask.config.wingSmoothFactor = self.config.wingSmoothFactor
 
         fts = myProfileTask.run(fts)
-
-        pfsFT = PfsFiberTrace(struct.outputId.visit, struct.outputId.spectrograph, struct.outputId.arm)
+        
+        print 'struct.outputId = ',struct.outputId
+        print 'struct.ccdIdList[0] = ',struct.ccdIdList[0]
+        dataId = struct.ccdIdList[0]
+        pfsFT = PfsFiberTrace(dataId['visit'], struct.outputId['spectrograph'], struct.outputId['arm'])
         pfsFT.fwhm = self.config.apertureFWHM
         pfsFT.threshold = self.config.signalThreshold
         pfsFT.nTerms = self.config.nTermsGaussFit
@@ -271,19 +277,21 @@ class ConstructFiberTraceTask(CalibTask):
         pfsFT.coeffs = []
         pfsFT.profiles = []
         
-        nRows = calib.getMaskedImage().getImage().getHeight()
+        nRows = calib.getImage().getHeight()
 
         for iFt in range(fts.size()):
             ft = fts.getFiberTrace(iFt)
             pfsFT.xCenter.append(ft.getFiberTraceFunction().xCenter)
             pfsFT.yCenter.append(ft.getFiberTraceFunction().yCenter)
-            pfsFT.xLow.append(ft.getFiberTraceFunction().xLow)
-            pfsFT.xHigh.append(ft.getFiberTraceFunction().xHigh)
+            pfsFT.yLow.append(ft.getFiberTraceFunction().yLow)
+            pfsFT.yHigh.append(ft.getFiberTraceFunction().yHigh)
             pfsFT.coeffs.append(ft.getFiberTraceFunction().coefficients)
             prof = ft.getProfile()
-            profOut = np.ndarray(shape(nRows,prof.getShape()[1]), dtype=np.float32)
+            print 'prof = ',type(prof),', ',prof
+            profOut = np.ndarray(shape=[nRows,prof.getWidth()], dtype=np.float32)
             profOut[:,:] = 0.
-            profOut[ft.getFiberTraceFunction().yCenter + ft.getFiberTraceFunction().yLow:ft.getFiberTraceFunction().yCenter + ft.getFiberTraceFunction().yHigh+1,:] = prof[:,:]
+            profOut[ft.getFiberTraceFunction().yCenter + ft.getFiberTraceFunction().yLow:ft.getFiberTraceFunction().yCenter + ft.getFiberTraceFunction().yHigh+1,:] = prof.getArray()[:,:]
             pfsFT.profiles.append(profOut)
 
+        import pdb; pdb.set_trace()
         self.write(cache.butler, pfsFT, struct.outputId)
