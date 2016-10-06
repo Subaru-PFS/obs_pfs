@@ -237,6 +237,14 @@ datasets: {
         tables:        raw
         tables:        raw_visit
     }
+    constructFiberTraceTask_config: {
+        template:      "config/fiberTrace.py"
+        python:        "lsst.obs.pfs.constructFiberTraceTask.ConstructFiberTraceConfig"
+        persistable:   "Config"
+        storage:       "ConfigStorage"
+        tables:        raw
+        tables:        raw_visit
+    }
 
     ossThumb: {
         template:    "thumbs/oss-%(visit)07d-%(filter)s%(spectrograph)1d.png"
