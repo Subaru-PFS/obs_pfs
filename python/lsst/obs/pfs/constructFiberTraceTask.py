@@ -270,6 +270,7 @@ class ConstructFiberTraceTask(CalibTask):
         pfsFT.lSigma = fts.getFiberTrace(0).getFiberTraceProfileFittingControl().lowerSigma
         pfsFT.uSigma = fts.getFiberTrace(0).getFiberTraceProfileFittingControl().upperSigma
         
+        pfsFT.fiberId = []
         pfsFT.xCenter = []
         pfsFT.yCenter = []
         pfsFT.yLow = []
@@ -281,6 +282,7 @@ class ConstructFiberTraceTask(CalibTask):
 
         for iFt in range(fts.size()):
             ft = fts.getFiberTrace(iFt)
+            pfsFT.fiberId.append(ft.getITrace()+1)
             pfsFT.xCenter.append(ft.getFiberTraceFunction().xCenter)
             pfsFT.yCenter.append(ft.getFiberTraceFunction().yCenter)
             pfsFT.yLow.append(ft.getFiberTraceFunction().yLow)
@@ -293,5 +295,4 @@ class ConstructFiberTraceTask(CalibTask):
             profOut[ft.getFiberTraceFunction().yCenter + ft.getFiberTraceFunction().yLow:ft.getFiberTraceFunction().yCenter + ft.getFiberTraceFunction().yHigh+1,:] = prof.getArray()[:,:]
             pfsFT.profiles.append(profOut)
 
-        import pdb; pdb.set_trace()
         self.write(cache.butler, pfsFT, struct.outputId)
