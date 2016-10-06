@@ -110,6 +110,21 @@ calibrations: {
         validStartName: validStart
         validEndName: validEnd
     }
+    fiberTrace: {
+        template:    "FIBERTRACE/%(filter)s/pfsFiberTrace-%(visit)06d-%(spectrograph)1d%(arm)s.fits"
+        python:      "pfs.datamodel.pfsFiberTrace.PfsFiberTrace"
+        persistable: "FiberTraceSet"
+        storage:     "FitsStorage"
+        level:       "Ccd"
+        tables:      "fiberTrace"
+        columns:     "ccd"
+        columns:     "taiObs"
+        reference:   "raw_visit"
+        refCols:     "visit"
+        validRange:  true
+        validStartName: validStart
+        validEndName: validEnd
+    }
     arc: {
         template:    "ARC/%(filter)s/%(calibVersion)s/pfsArc-%(calibDate)s-0-%(spectrograph)1d%(arm)s.fits"
         python:      "lsst.afw.image.MaskedImageF"
