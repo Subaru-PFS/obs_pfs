@@ -114,7 +114,7 @@ calibrations: {
         template:    "FIBERTRACE/%(filter)s/pfsFiberTrace-%(visit)06d-%(spectrograph)1d%(arm)s.fits"
         python:      "pfs.datamodel.pfsFiberTrace.PfsFiberTrace"
         persistable: "FiberTraceSet"
-        storage:     "FitsStorage"
+        storage:     "FitsCatalogStorage"
         level:       "Ccd"
         tables:      "fiberTrace"
         columns:     "ccd"
@@ -237,7 +237,7 @@ datasets: {
         tables:        raw
         tables:        raw_visit
     }
-    constructFiberTraceTask_config: {
+    constructFiberTrace_config: {
         template:      "config/fiberTrace.py"
         python:        "lsst.obs.pfs.constructFiberTraceTask.ConstructFiberTraceConfig"
         persistable:   "Config"
