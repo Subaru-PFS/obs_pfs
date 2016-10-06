@@ -95,13 +95,13 @@ calibrations: {
         validStartName: validStart
         validEndName: validEnd
     }
-    flat: {
-        template:    "FLAT/%(filter)s/%(calibVersion)s/pfsFlat-%(calibDate)s-0-%(spectrograph)1d%(arm)s.fits"
+    fiberFlat: {
+        template:    "FIBERFLAT/%(filter)s/pfsFiberFlat-%(visit)06d-%(spectrograph)1d%(arm)s.fits"
         python:      "lsst.afw.image.MaskedImageF"
         persistable: "MaskedImageF"
         storage:     "FitsStorage"
         level:       "Ccd"
-        tables:      "flat"
+        tables:      "fiberFlat"
         columns:     "ccd"
         columns:     "taiObs"
         reference:   "raw_visit"
