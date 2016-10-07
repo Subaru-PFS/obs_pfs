@@ -91,7 +91,7 @@ class ConstructNormFlatTask(CalibTask):
             exposure = expRef.get('postISRCCD')
             xOffsets.append(exposure.getMetadata().get('sim.slit.xoffset'))
             fiberTrace = expRef.get('fiberTrace', immediate=True)
-            fts = makeFiberTraceSet(fiberTrace, exposure)
+            fts = makeFiberTraceSet(fiberTrace, exposure.getMaskedImage())
             allFts.append(fts)
             if expRef.dataId['visit'] != dataRefList[0].dataId['visit']:
                 sumFlats += exposure.getMaskedImage().getImage().getArray()
