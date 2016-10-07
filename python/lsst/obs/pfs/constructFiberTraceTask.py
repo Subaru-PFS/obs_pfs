@@ -183,7 +183,10 @@ class ConstructFiberTraceTask(CalibTask):
         newExpRefList = []
         for expRef in expRefList:
             exposure = expRef.get('raw')
-            if exposure.getMetadata().get(self.config.xOffsetHdrKeyWord) == 0.:
+            try:
+                if exposure.getMetadata().get(self.config.xOffsetHdrKeyWord) == 0.:
+                    newExpRefList.append(expRef)
+            except:
                 newExpRefList.append(expRef)
             
         return CalibTask.run(self, newExpRefList, butler, calibId)
@@ -289,7 +292,6 @@ class ConstructFiberTraceTask(CalibTask):
             pfsFT.yHigh.append(ft.getFiberTraceFunction().yHigh)
             pfsFT.coeffs.append(ft.getFiberTraceFunction().coefficients)
             prof = ft.getProfile()
-            print 'prof = ',type(prof),', ',prof
             profOut = np.ndarray(shape=[nRows,prof.getWidth()], dtype=np.float32)
             profOut[:,:] = 0.
             profOut[ft.getFiberTraceFunction().yCenter + ft.getFiberTraceFunction().yLow:ft.getFiberTraceFunction().yCenter + ft.getFiberTraceFunction().yHigh+1,:] = prof.getArray()[:,:]

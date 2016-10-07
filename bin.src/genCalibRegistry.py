@@ -65,7 +65,7 @@ if opts.camera.lower() in ("pfs"):
 else:
     Row = collections.namedtuple("Row", ["calibDate", "calibVersion", "ccd"])
 
-for calib in ('bias', 'dark', 'flat', 'fringe', 'traceDef'):
+for calib in ('bias', 'dark', 'fiberFlat', 'imageFlat', 'fiberTrace'):
     if isSqlite:
         cmd = "create table " + calib.lower() + " (id integer primary key autoincrement"
         cmd += ", validStart text, validEnd text"
@@ -90,50 +90,35 @@ for calib in ('bias', 'dark', 'flat', 'fringe', 'traceDef'):
 
     rowsPerFilter = dict()
 
-    if opts.camera.lower() in ("pfs"):
-        checkFits = os.path.join(opts.root, calib.upper(), "*", "*",
-                                       "*-20*-*-*-*-*.fits*")
-    else:
-        checkFits = os.path.join(opts.root, calib.upper(), "20*-*-*", "*", "*",
-                             calib.upper() + "-*.fits*")
+    checkFits = os.path.join(opts.root, calib.upper(), "*", "*", "*.fits")
 
     for fits in glob.glob(checkFits):
-        if opts.camera.lower() in ("suprime-cam", "suprimecam", "sc"):
-            m = re.search(r'\w+/(\d{4})-(\d{2})-(\d{2})/([\w+-]+)/([\w-]+)/\w+-(\d).fits', fits)
-        elif opts.camera.lower() in ("hsc", "hscsim"):
-            m = re.search(r'\w+/(\d{4})-(\d{2})-(\d{2})/([\w+-]+)/([\w-]+)/\w+-(\d{3}).fits', fits)#"BIAS/%(calibDate)s/NONE/%(calibVersion)s/BIAS-%(ccd)03d.fits"
-        elif opts.camera.lower() in ("pfs"):
-            m = re.search(r'\w+/([\w-]+)/([\w-]+)/pfs\w+-(\d{4})-(\d{2})-(\d{2})-0-(\d)(\w).fits', fits)#pfsBias-007251-2m.fits
+        print 'reading fits=<',fits,'>'
+        m = re.search(r'\w+/([\w-]+)/([\w-]+)/pfs\w+-(\d{4})-(\d{2})-(\d{2})-0-(\d)(\w).fits', fits)#pfsBias-007251-2m.fits
         if not m:
-            if (opts.camera.lower() in ("suprime-cam", "suprimecam", "sc", "pfs") and
-                re.search(r'.*/\w+-0000000(\d).fits', fits)):
-                print >>sys.stderr, ("Warning: file naming rules have changed. " +
-                                     "Try renaming %s to %s" %
-                                     (fits, re.sub(r"(.*/\w+)-0000000(\d).fits", r"\1-\2.fits", fits)))
-            print >>sys.stderr, "Warning: Unrecognized file name:", fits
-            continue
-
-        print "Registering:", fits
-        if opts.camera.lower() in ("pfs"):
-            filterName, version, year, month, day, spectrograph, arm = m.groups()
-            ccd = int(spectrograph) - 1
-            if arm in ("m"):
-                ccd = ccd + 4
-            elif arm in ("r"):
-                ccd += 4
-            elif arm in ("n"):
-                ccd += 8
+            m = re.search(r'\w+/([\w-]+)/(\d{4})-(\d{2})-(\d{2})/pfs(\w+)-(\d{6})-(\d)(\w).fits', fits)#pfsBias-007251-2m.fits
+            if not m:
+                print >>sys.stderr, "Warning: Unrecognized file name:", fits
+                continue
+            else:
+                filterName, year, month, day, version, visit, spectrograph, arm = m.groups()
+                version = version[0].lower() + version[1:]
         else:
-            year, month, day, filterName, version, ccd = m.groups()
+            filterName, version, year, month, day, spectrograph, arm = m.groups()
 
         date = datetime.date(int(year), int(month), int(day))
+        print "Registering:", fits
+        ccd = int(spectrograph) - 1
+        if arm in ("m"):
+            ccd = ccd + 4
+        elif arm in ("r"):
+            ccd += 4
+        elif arm in ("n"):
+            ccd += 8
+
         if filterName not in rowsPerFilter:
             rowsPerFilter[filterName] = list()
-        if opts.camera.lower() in ("pfs"):
-            rowsPerFilter[filterName].append(Row(date, version, spectrograph, arm, ccd))
-        else:
-            rowsPerFilter[filterName].append(Row(date, version, ccd))
-
+        rowsPerFilter[filterName].append(Row(date, version, spectrograph, arm, ccd))
 
     # Fix up the validStart,validEnd so there are no overlaps
     for filterName, rows in rowsPerFilter.items():

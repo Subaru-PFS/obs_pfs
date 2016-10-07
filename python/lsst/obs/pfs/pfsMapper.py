@@ -123,6 +123,9 @@ class PfsMapper(CameraMapper):
 
     def std_flat(self, item, dataId):
         return self.standardizeCalib("flat", item, dataId)
+    
+    def std_fiberTrace(self, item, dataId):
+        return item
 
     def _extractAmpId(self, dataId):
         ampId = (self._extractDetectorName(dataId), 0, 0)

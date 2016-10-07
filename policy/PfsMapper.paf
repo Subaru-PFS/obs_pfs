@@ -111,7 +111,7 @@ calibrations: {
         validEndName: validEnd
     }
     fiberTrace: {
-        template:    "FIBERTRACE/%(filter)s/pfsFiberTrace-%(visit)06d-%(spectrograph)1d%(arm)s.fits"
+        template:    "FIBERTRACE/%(filter)s/%(calibDate)s/pfsFiberTrace-%(visit)06d-%(spectrograph)1d%(arm)s.fits"
         python:      "pfs.datamodel.pfsFiberTrace.PfsFiberTrace"
         persistable: "FiberTraceSet"
         storage:     "FitsCatalogStorage"
@@ -245,7 +245,6 @@ datasets: {
         tables:        raw
         tables:        raw_visit
     }
-
     ossThumb: {
         template:    "thumbs/oss-%(visit)07d-%(filter)s%(spectrograph)1d.png"
         python:      __builtin__.str
