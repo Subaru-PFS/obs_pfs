@@ -247,7 +247,8 @@ class ConstructFiberTraceTask(CalibTask):
         print 'struct.outputId = ',struct.outputId
         print 'struct.ccdIdList[0] = ',struct.ccdIdList[0]
         dataId = struct.ccdIdList[0]
-        pfsFT = PfsFiberTrace(dataId['visit'], struct.outputId['spectrograph'], struct.outputId['arm'])
+        pfsFT = PfsFiberTrace(struct.outputId['calibDate'], struct.outputId['spectrograph'], struct.outputId['arm'])
+#        pfsFT = PfsFiberTrace(struct.outputId['visit'], struct.outputId['spectrograph'], struct.outputId['arm'])
         pfsFT.fwhm = self.config.apertureFWHM
         pfsFT.threshold = self.config.signalThreshold
         pfsFT.nTerms = self.config.nTermsGaussFit
