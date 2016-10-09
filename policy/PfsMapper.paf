@@ -249,9 +249,9 @@ datasets: {
         tables:        raw
         tables:        raw_visit
     }
-    constructNormFlat_config: {
-        template:      "config/constructNormFlat.py"
-        python:        "lsst.obs.pfs.constructNormFlatTask.ConstructNormFlatConfig"
+    constructFiberFlat_config: {
+        template:      "config/constructFiberFlat.py"
+        python:        "lsst.obs.pfs.constructFiberFlatTask.ConstructFiberFlatConfig"
         persistable:   "Config"
         storage:       "ConfigStorage"
         tables:        raw

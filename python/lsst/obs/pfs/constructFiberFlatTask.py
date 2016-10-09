@@ -13,7 +13,7 @@ import pfs.drp.stella as drpStella
 import pfs.drp.stella.createFlatFiberTraceProfileTask as cfftpTask
 from pfs.drp.stella.utils import makeFiberTraceSet
 
-class ConstructNormFlatConfig(CalibConfig):
+class ConstructFiberFlatConfig(CalibConfig):
     """Configuration for flat construction"""
     doRepair = Field(dtype=bool, default=True, doc="Repair artifacts?")
     psfFwhm = Field(dtype=float, default=3.0, doc="Repair PSF FWHM (pixels)")
@@ -23,10 +23,10 @@ class ConstructNormFlatConfig(CalibConfig):
     darkTime = Field(dtype=str, default="DARKTIME", doc="Header keyword for time since last CCD wipe, or None",
                      optional=True)
 
-class ConstructNormFlatTask(CalibTask):
+class ConstructFiberFlatTask(CalibTask):
     """Task to construct the normalized Flat"""
-    ConfigClass = ConstructNormFlatConfig
-    _DefaultName = "constructNormFlat"
+    ConfigClass = ConstructFiberFlatConfig
+    _DefaultName = "constructFiberFlat"
     calibName = "fiberFlat"
 
     def __init__(self, *args, **kwargs):
