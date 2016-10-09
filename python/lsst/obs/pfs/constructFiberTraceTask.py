@@ -1,26 +1,17 @@
 #!/usr/bin/env python
-import os
-import pyfits
-import math
-import lsst.afw.image as afwImage
-import numpy as np
-import lsst.afw.display as afwDisplay
-import pfs.drp.stella as drpStella
-import lsst.daf.persistence as dafPersist
-import pfs.drp.stella.findAndTraceAperturesTask as fataTask
-import pfs.drp.stella.createFlatFiberTraceProfileTask as cfftpTask
-#from lsst.utils import getPackageDir
-from lsst.pipe.drivers.constructCalibs import CalibConfig, CalibTask
-from lsst.pex.config import Field, ConfigurableField
-from lsst.pipe.tasks.repair import RepairTask
-import lsst.meas.algorithms as measAlg
 import lsst.afw.detection as afwDet
-from lsst.pipe.drivers.utils import getDataRef
+import lsst.afw.image as afwImage
 from lsst.ctrl.pool.pool import NODE
+import lsst.meas.algorithms as measAlg
+from lsst.pex.config import Field, ConfigurableField
+from lsst.pipe.drivers.constructCalibs import CalibConfig, CalibTask
+from lsst.pipe.tasks.repair import RepairTask
+from lsst.pipe.drivers.utils import getDataRef
+import math
+import numpy as np
 from pfs.datamodel.pfsFiberTrace import PfsFiberTrace
-#from lsst.pipe.base import Struct, TaskRunner, ArgumentParser, CmdLineTask
-#import matplotlib.pyplot as plt
-
+import pfs.drp.stella.createFlatFiberTraceProfileTask as cfftpTask
+import pfs.drp.stella.findAndTraceAperturesTask as fataTask
 
 class ConstructFiberTraceConfig(CalibConfig):
     """Configuration for FiberTrace construction"""
@@ -227,9 +218,7 @@ class ConstructFiberTraceTask(CalibTask):
         myFindTask.config.maxLength = self.config.maxLength
         myFindTask.config.nLost = self.config.nLost
         
-        print 'calib = ',type(calib),': ',calib
         calExp = afwImage.makeExposure(afwImage.makeMaskedImage(calib.getImage()))
-        print 'calExp = ',type(calExp),': ',calExp
         fts = myFindTask.run(calExp)
         
         myProfileTask = cfftpTask.CreateFlatFiberTraceProfileTask()
@@ -244,8 +233,6 @@ class ConstructFiberTraceTask(CalibTask):
 
         fts = myProfileTask.run(fts)
         
-        print 'struct.outputId = ',struct.outputId
-        print 'struct.ccdIdList[0] = ',struct.ccdIdList[0]
         dataId = struct.ccdIdList[0]
         pfsFT = PfsFiberTrace(struct.outputId['calibDate'], struct.outputId['spectrograph'], struct.outputId['arm'])
 #        pfsFT = PfsFiberTrace(struct.outputId['visit'], struct.outputId['spectrograph'], struct.outputId['arm'])
