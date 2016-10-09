@@ -192,9 +192,10 @@ class ConstructFiberFlatTask(CalibTask):
                 drpStella.addFiberTraceToCcdImage(ft, recFt, sumRecIm)
                 drpStella.addFiberTraceToCcdImage(ft, ft.getVariance(), sumVarIm)
 
-        sumVariances = drpStella.where(sumVariances, '<', 0., 0., sumVariances)
+        sumVariances = drpStella.where(sumVariances, '<=', 0., 0.1, sumVariances)
         snrArr = sumFlats / np.sqrt(sumVariances)
 
+        sumFlats = drpStella.where(sumFlats, '<=', 0., 0.1, sumFlats)
         normalizedFlat = sumRecIm.getArray() / sumFlats
         normalizedFlat = drpStella.where(sumRecIm.getArray(), '<=', 0., 1., normalizedFlat)
         normalizedFlat = drpStella.where(snrArr, '<', 100., 1., normalizedFlat)
