@@ -22,6 +22,60 @@ class ConstructFiberFlatConfig(CalibConfig):
     repair = ConfigurableField(target=RepairTask, doc="Task to repair artifacts")
     darkTime = Field(dtype=str, default="DARKTIME", doc="Header keyword for time since last CCD wipe, or None",
                      optional=True)
+    
+    profileInterpolation = Field(
+        doc = "Method for determining the spatial profile, [PISKUNOV, SPLINE3], default: PISKUNOV",
+        dtype = str,
+        default = "SPLINE3")
+    ccdReadOutNoise = Field(
+        doc = "CCD readout noise",
+        dtype = float,
+        default = 1.,
+        check = lambda x : x > 0.)
+    swathWidth = Field(
+        doc = "Size of individual extraction swaths",
+        dtype = int,
+        default = 500,
+        check = lambda x : x > 10)
+    telluric = Field(
+        doc = "Method for determining the background (+sky in case of slit spectra, default: NONE)",
+        dtype = str,
+        default = "NONE")
+    overSample = Field(
+        doc = "Oversampling factor for the determination of the spatial profile (default: 10)",
+        dtype = int,
+        default = 10,
+        check = lambda x : x > 0)
+    maxIterSF = Field(
+        doc = "Maximum number of iterations for the determination of the spatial profile (default: 8)",
+        dtype = int,
+        default = 8,
+        check = lambda x : x > 0)
+    maxIterSky = Field(
+        doc = "Maximum number of iterations for the determination of the (constant) background/sky (default: 10)",
+        dtype = int,
+        default = 10,
+        check = lambda x : x >= 0)
+    maxIterSig = Field(
+        doc = "Maximum number of iterations for masking bad pixels and CCD defects (default: 2)",
+        dtype = int,
+        default = 2,
+        check = lambda x : x > 0)
+    lambdaSF = Field(
+        doc = "Lambda smoothing factor for spatial profile (default: 1. / overSample)",
+        dtype = float,
+        default = 17000.,
+        check = lambda x : x > 0.)
+    lambdaSP = Field(
+        doc = "Lambda smoothing factor for spectrum (default: 0)",
+        dtype = float,
+        default = 0.,
+        check = lambda x : x >= 0)
+    wingSmoothFactor = Field(
+        doc = "Lambda smoothing factor to remove possible oscillation of the wings of the spatial profile (default: 0.)",
+        dtype = float,
+        default = 0.,
+        check = lambda x : x >= 0)
 
 class ConstructFiberFlatTask(CalibTask):
     """Task to construct the normalized Flat"""
@@ -100,14 +154,17 @@ class ConstructFiberFlatTask(CalibTask):
         self.log.info('=== xOffsets = '+str(xOffsets)+' ===')
 
         myProfileTask = cfftpTask.CreateFlatFiberTraceProfileTask()
-        myProfileTask.config.profileInterpolation = 'PISKUNOV'
-        myProfileTask.config.ccdReadOutNoise = 3.19
-        myProfileTask.config.maxIterSF = 15
-        myProfileTask.config.overSample = 15
-        myProfileTask.config.swathWidth = 250
-        myProfileTask.config.lambdaSF = 1./float(myProfileTask.config.overSample)
-        myProfileTask.config.lambdaSP = 0.
-        myProfileTask.config.wingSmoothFactor = 0.
+        myProfileTask.config.profileInterpolation = self.config.profileInterpolation
+        myProfileTask.config.ccdReadOutNoise = self.config.ccdReadOutNoise
+        myProfileTask.config.overSample = self.config.overSample
+        myProfileTask.config.swathWidth = self.config.swathWidth
+        myProfileTask.config.telluric = self.config.telluric
+        myProfileTask.config.maxIterSF = self.config.maxIterSF
+        myProfileTask.config.maxIterSky = self.config.maxIterSky
+        myProfileTask.config.maxIterSig = self.config.maxIterSig
+        myProfileTask.config.lambdaSF = self.config.lambdaSF
+        myProfileTask.config.lambdaSP = self.config.lambdaSP
+        myProfileTask.config.wingSmoothFactor = self.config.wingSmoothFactor
 
         for fts in allFts:
             fts = myProfileTask.run(fts)
@@ -145,10 +202,6 @@ class ConstructFiberFlatTask(CalibTask):
         normalizedFlat = drpStella.where(sumVariances, '<=', 0., 1., normalizedFlat)
         
         normFlatOut = afwImage.makeExposure(afwImage.makeMaskedImage(afwImage.ImageF(normalizedFlat)))
-#        normFlatOut.getMaskedImage().getVariance().getArray()[:][:] = snrArr[:][:]
-#        print 'dir(normFlatOut) = ',dir(normFlatOut)
-#        normFlatOut.getMaskedImage().getMask().getArray()[:][:] = dataRefList[0].get('postISRCCD').getMaskedImage().getMask().getArray()[:][:]
-#        print 'type(normFlatOut) = ',type(normFlatOut)
 
         self.recordCalibInputs(cache.butler, normFlatOut, struct.ccdIdList, struct.outputId)
 
