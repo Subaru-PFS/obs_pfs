@@ -34,6 +34,8 @@ class PfsParseTask(ParseTask):
             if not matches:
                 raise RuntimeError("Unable to interpret filename: %s" % filename)
         site, category, visit, spectrograph, armNum = matches.groups()
+        if int(spectrograph) == 9:
+            spectrograph = '2'
         if int(spectrograph) < minSpectrograph or int(spectrograph) > maxSpectrograph:
             message = 'spectrograph (=',spectrograph,') out of bounds'
             raise Exception(message)
