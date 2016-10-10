@@ -13,3 +13,4 @@ logfile
 pfs/SConscript.old
 pfs/lineLists/refCdHgKrNeXe_red_temp.fits
 bin
+tests/.tests
