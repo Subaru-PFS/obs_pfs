@@ -8,9 +8,7 @@ import numpy
 import pyfits
 import collections
 
-import lsst.pex.policy as pexPolicy
 from lsst.obs.pfs import PfsMapper
-import lsst.afw.cameraGeom.utils as afwCGU
 
 Defect = collections.namedtuple('Defect', ['x0', 'y0', 'width', 'height'])
 mapperMap = {'pfs': PfsMapper}
