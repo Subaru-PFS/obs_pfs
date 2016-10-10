@@ -60,19 +60,13 @@ else:
                          database=pgsqlConf.db)
     cur = conn.cursor()
 
-if opts.camera.lower() in ("pfs"):
-    Row = collections.namedtuple("Row", ["calibDate", "calibVersion", "spectrograph", "arm", "ccd"])
-else:
-    Row = collections.namedtuple("Row", ["calibDate", "calibVersion", "ccd"])
+Row = collections.namedtuple("Row", ["calibDate", "calibVersion", "spectrograph", "arm", "ccd"])
 
-for calib in ('bias', 'dark', 'flat', 'fringe', 'traceDef'):
+for calib in ('bias', 'dark', 'flat', 'fiberFlat', 'imageFlat', 'fiberTrace'):
     if isSqlite:
         cmd = "create table " + calib.lower() + " (id integer primary key autoincrement"
         cmd += ", validStart text, validEnd text"
-        if opts.camera.lower() in ("pfs"):
-            cmd += ", calibDate text, filter text, calibVersion text, spectrograph int, arm text, ccd int"
-        else:
-            cmd += ", calibDate text, filter text, calibVersion text, ccd int"
+        cmd += ", calibDate text, filter text, calibVersion text, spectrograph int, arm text, ccd int"
         cmd += ")"
         conn.execute(cmd)
     else:
@@ -80,60 +74,41 @@ for calib in ('bias', 'dark', 'flat', 'fringe', 'traceDef'):
         cur.execute(cmd)
         cmd = "create table " + calib.lower() + " (id SERIAL NOT NULL PRIMARY KEY"
         cmd += ", validStart VARCHAR(10), validEnd VARCHAR(10)"
-        if opts.camera.lower() in ("pfs"):
-            cmd += ", calibDate VARCHAR(10), filter VARCHAR(5), calibVersion VARCHAR(5), spectrogaph INT, arm VARCHAR(1), ccd INT"
-        else:
-            cmd += ", calibDate VARCHAR(10), filter VARCHAR(16), calibVersion VARCHAR(16), ccd INT"
+        cmd += ", calibDate VARCHAR(10), filter VARCHAR(5), calibVersion VARCHAR(5), spectrogaph INT, arm VARCHAR(1), ccd INT"
         cmd += ")"
         cur.execute(cmd)
     conn.commit()
 
     rowsPerFilter = dict()
 
-    if opts.camera.lower() in ("pfs"):
-        checkFits = os.path.join(opts.root, calib.upper(), "*", "*",
-                                       "*-20*-*-*-*-*.fits*")
-    else:
-        checkFits = os.path.join(opts.root, calib.upper(), "20*-*-*", "*", "*",
-                             calib.upper() + "-*.fits*")
+    checkFits = os.path.join(opts.root, calib.upper(), "*", "*", "*.fits")
 
     for fits in glob.glob(checkFits):
-        if opts.camera.lower() in ("suprime-cam", "suprimecam", "sc"):
-            m = re.search(r'\w+/(\d{4})-(\d{2})-(\d{2})/([\w+-]+)/([\w-]+)/\w+-(\d).fits', fits)
-        elif opts.camera.lower() in ("hsc", "hscsim"):
-            m = re.search(r'\w+/(\d{4})-(\d{2})-(\d{2})/([\w+-]+)/([\w-]+)/\w+-(\d{3}).fits', fits)#"BIAS/%(calibDate)s/NONE/%(calibVersion)s/BIAS-%(ccd)03d.fits"
-        elif opts.camera.lower() in ("pfs"):
-            m = re.search(r'\w+/([\w-]+)/([\w-]+)/pfs\w+-(\d{4})-(\d{2})-(\d{2})-0-(\d)(\w).fits', fits)#pfsBias-007251-2m.fits
+        m = re.search(r'\w+/([\w-]+)/([\w-]+)/pfs\w+-(\d{4})-(\d{2})-(\d{2})-0-(\d)(\w).fits', fits)#pfsBias-007251-2m.fits
         if not m:
-            if (opts.camera.lower() in ("suprime-cam", "suprimecam", "sc", "pfs") and
-                re.search(r'.*/\w+-0000000(\d).fits', fits)):
-                print >>sys.stderr, ("Warning: file naming rules have changed. " +
-                                     "Try renaming %s to %s" %
-                                     (fits, re.sub(r"(.*/\w+)-0000000(\d).fits", r"\1-\2.fits", fits)))
-            print >>sys.stderr, "Warning: Unrecognized file name:", fits
-            continue
+            m = re.search(r'\w+/([\w-]+)/(\d{4})-(\d{2})-(\d{2})/pfs(\w+)-(\d{6})-(\d)(\w).fits', fits)#pfsBias-007251-2m.fits
+            if not m:
+                print >>sys.stderr, "Warning: Unrecognized file name:", fits
+                raise Exception("Unrecognized file name")
+            else:
+                filterName, year, month, day, version, visit, spectrograph, arm = m.groups()
+                version = version[0].lower() + version[1:]
+        else:
+            filterName, version, year, month, day, spectrograph, arm = m.groups()
 
         print "Registering:", fits
-        if opts.camera.lower() in ("pfs"):
-            filterName, version, year, month, day, spectrograph, arm = m.groups()
-            ccd = int(spectrograph) - 1
-            if arm in ("m"):
-                ccd = ccd + 4
-            elif arm in ("r"):
-                ccd += 4
-            elif arm in ("n"):
-                ccd += 8
-        else:
-            year, month, day, filterName, version, ccd = m.groups()
-
         date = datetime.date(int(year), int(month), int(day))
+        ccd = int(spectrograph) - 1
+        if arm in ("m"):
+            ccd = ccd + 4
+        elif arm in ("r"):
+            ccd += 4
+        elif arm in ("n"):
+            ccd += 8
+
         if filterName not in rowsPerFilter:
             rowsPerFilter[filterName] = list()
-        if opts.camera.lower() in ("pfs"):
-            rowsPerFilter[filterName].append(Row(date, version, spectrograph, arm, ccd))
-        else:
-            rowsPerFilter[filterName].append(Row(date, version, ccd))
-
+        rowsPerFilter[filterName].append(Row(date, version, spectrograph, arm, ccd))
 
     # Fix up the validStart,validEnd so there are no overlaps
     for filterName, rows in rowsPerFilter.items():
@@ -161,20 +136,11 @@ for calib in ('bias', 'dark', 'flat', 'fringe', 'traceDef'):
             # print "%f --> %f %f" % (calibDate, validStart, validEnd)
 
             if isSqlite:
-                if opts.camera.lower() in ("pfs"):
-                    conn.execute("INSERT INTO " + calib.lower() + " VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?)",
-                                (validStart, validEnd, calibDate, filterName, row.calibVersion, row.spectrograph, row.arm, row.ccd))
-                else:
-                    conn.execute("INSERT INTO " + calib.lower() + " VALUES (NULL, ?, ?, ?, ?, ?, ?)",
-                                 (validStart, validEnd, calibDate, filterName, row.calibVersion, row.ccd))
+                conn.execute("INSERT INTO " + calib.lower() + " VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?)",
+                            (validStart, validEnd, calibDate, filterName, row.calibVersion, row.spectrograph, row.arm, row.ccd))
             else:
-                if opts.camera.lower() in ("pfs"):
-                    cur.execute("INSERT INTO " + calib.lower() + " (validStart, validEnd, calibDate, filter, calibVersion, spectrograph, arm, ccd) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
-                                (validStart, validEnd, calibDate, filterName, row.calibVersion, row.spectrograph, row.arm, row.ccd))
-                else:
-                    cur.execute("INSERT INTO " + calib.lower() + " (validStart, validEnd, calibDate, filter, calibVersion, ccd) VALUES (%s, %s, %s, %s, %s, %s)",
-                                (validStart, validEnd, calibDate, filterName, row.calibVersion, row.ccd))
-
+                cur.execute("INSERT INTO " + calib.lower() + " (validStart, validEnd, calibDate, filter, calibVersion, spectrograph, arm, ccd) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                            (validStart, validEnd, calibDate, filterName, row.calibVersion, row.spectrograph, row.arm, row.ccd))
 
 conn.commit()
 if not isSqlite:
