@@ -110,6 +110,21 @@ calibrations: {
         validStartName: validStart
         validEndName: validEnd
     }
+    fiberTrace: {
+        template:    "FIBERTRACE/%(filter)s/%(calibVersion)s/pfsFiberTrace-%(calibDate)s-0-%(spectrograph)1d%(arm)s.fits"
+        python:      "pfs.datamodel.pfsFiberTrace.PfsFiberTrace"
+        persistable: "FiberTraceSet"
+        storage:     "FitsCatalogStorage"
+        level:       "Ccd"
+        tables:      "fiberTrace"
+        columns:     "ccd"
+        columns:     "taiObs"
+        reference:   "raw_visit"
+        refCols:     "visit"
+        validRange:  true
+        validStartName: validStart
+        validEndName: validEnd
+    }
     arc: {
         template:    "ARC/%(filter)s/%(calibVersion)s/pfsArc-%(calibDate)s-0-%(spectrograph)1d%(arm)s.fits"
         python:      "lsst.afw.image.MaskedImageF"
@@ -217,6 +232,14 @@ datasets: {
     createDetGeomTask_config: {
         template:      "config/flat.py"
         python:        "pfs.drp.stella.createDetGeom.CreateDetGeomConfig"
+        persistable:   "Config"
+        storage:       "ConfigStorage"
+        tables:        raw
+        tables:        raw_visit
+    }
+    constructFiberTrace_config: {
+        template:      "config/fiberTrace.py"
+        python:        "lsst.obs.pfs.constructFiberTraceTask.ConstructFiberTraceConfig"
         persistable:   "Config"
         storage:       "ConfigStorage"
         tables:        raw
