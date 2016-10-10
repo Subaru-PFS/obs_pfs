@@ -97,7 +97,6 @@ for calib in ('bias', 'dark', 'fiberFlat', 'imageFlat', 'fiberTrace'):
             filterName, version, year, month, day, spectrograph, arm = m.groups()
 
         print "Registering:", fits
-        import pdb; pdb.set_trace()
         date = datetime.date(int(year), int(month), int(day))
         ccd = int(spectrograph) - 1
         if arm in ("m"):
