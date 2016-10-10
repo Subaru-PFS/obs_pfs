@@ -82,11 +82,6 @@ class ConstructFiberTraceConfig(CalibConfig):
         doc = "Method for determining the spatial profile, [PISKUNOV, SPLINE3], default: PISKUNOV",
         dtype = str,
         default = "SPLINE3")
-    ccdReadOutNoise = Field(
-        doc = "CCD readout noise",
-        dtype = float,
-        default = 1.,
-        check = lambda x : x > 0.)
     swathWidth = Field(
         doc = "Size of individual extraction swaths",
         dtype = int,
@@ -223,7 +218,6 @@ class ConstructFiberTraceTask(CalibTask):
         
         myProfileTask = cfftpTask.CreateFlatFiberTraceProfileTask()
         myProfileTask.config.profileInterpolation = self.config.profileInterpolation
-        myProfileTask.config.ccdReadOutNoise = self.config.ccdReadOutNoise
         myProfileTask.config.maxIterSF = self.config.maxIterSF
         myProfileTask.config.overSample = self.config.overSample
         myProfileTask.config.swathWidth = self.config.swathWidth
@@ -250,7 +244,6 @@ class ConstructFiberTraceTask(CalibTask):
         pfsFT.nCutLeft = fts.getFiberTrace(0).getFiberTraceFunction().fiberTraceFunctionControl.nPixCutLeft
         pfsFT.nCutRight = fts.getFiberTrace(0).getFiberTraceFunction().fiberTraceFunctionControl.nPixCutRight
         pfsFT.interpol = self.config.profileInterpolation
-#        READNOISE WHY????
         pfsFT.swathLength = self.config.swathWidth
         pfsFT.overSample = self.config.overSample
         pfsFT.maxIterSF = self.config.maxIterSF
