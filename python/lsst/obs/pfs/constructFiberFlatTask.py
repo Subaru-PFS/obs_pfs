@@ -27,11 +27,6 @@ class ConstructFiberFlatConfig(CalibConfig):
         doc = "Method for determining the spatial profile, [PISKUNOV, SPLINE3], default: PISKUNOV",
         dtype = str,
         default = "SPLINE3")
-    ccdReadOutNoise = Field(
-        doc = "CCD readout noise",
-        dtype = float,
-        default = 1.,
-        check = lambda x : x > 0.)
     swathWidth = Field(
         doc = "Size of individual extraction swaths",
         dtype = int,
@@ -143,7 +138,10 @@ class ConstructFiberFlatTask(CalibTask):
         xOffsets = []
         for expRef in dataRefList:
             exposure = expRef.get('postISRCCD')
-            xOffsets.append(exposure.getMetadata().get('sim.slit.xoffset'))
+            try:
+                xOffsets.append(exposure.getMetadata().get('sim.slit.xoffset'))
+            except Exception:
+                xOffsets.append(0.0)
             fiberTrace = expRef.get('fiberTrace', immediate=True)
             fts = makeFiberTraceSet(fiberTrace, exposure.getMaskedImage())
             allFts.append(fts)
@@ -155,7 +153,6 @@ class ConstructFiberFlatTask(CalibTask):
 
         myProfileTask = cfftpTask.CreateFlatFiberTraceProfileTask()
         myProfileTask.config.profileInterpolation = self.config.profileInterpolation
-        myProfileTask.config.ccdReadOutNoise = self.config.ccdReadOutNoise
         myProfileTask.config.overSample = self.config.overSample
         myProfileTask.config.swathWidth = self.config.swathWidth
         myProfileTask.config.telluric = self.config.telluric

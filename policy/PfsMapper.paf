@@ -85,7 +85,7 @@ calibrations: {
         validEndName: validEnd
     }
     flat: {
-        template:    "FLAT/%(filter)s/%(calibVersion)s/pfsFlat-%(calibDate)s-0-%(spectrograph)1d%(arm)s.fits"
+        template:    "FLAT/%(filter)s/%(calibVersion)s/pfsFiberFlat-%(calibDate)s-0-%(spectrograph)1d%(arm)s.fits"
         python:      "lsst.afw.image.MaskedImageF"
         persistable: "MaskedImageF"
         storage:     "FitsStorage"
