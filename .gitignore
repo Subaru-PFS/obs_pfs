@@ -13,3 +13,8 @@ logfile
 pfs/SConscript.old
 pfs/lineLists/refCdHgKrNeXe_red_temp.fits
 bin
+bak
+config/flat.orig
+job*
+pfs/defects/defectRegistry.sqlite3.bak
+tests/.tests
