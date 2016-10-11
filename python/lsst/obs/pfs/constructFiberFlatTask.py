@@ -81,7 +81,7 @@ class ConstructFiberFlatTask(CalibTask):
     """Task to construct the normalized Flat"""
     ConfigClass = ConstructFiberFlatConfig
     _DefaultName = "constructFiberFlat"
-    calibName = "fiberFlat"
+    calibName = "flat"
 
     def __init__(self, *args, **kwargs):
         CalibTask.__init__(self, *args, **kwargs)
