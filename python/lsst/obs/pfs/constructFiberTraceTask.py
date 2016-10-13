@@ -278,4 +278,5 @@ class ConstructFiberTraceTask(CalibTask):
             profOut[ft.getFiberTraceFunction().yCenter + ft.getFiberTraceFunction().yLow:ft.getFiberTraceFunction().yCenter + ft.getFiberTraceFunction().yHigh+1,:] = prof.getArray()[:,:]
             pfsFT.profiles.append(profOut)
 
-        self.write(cache.butler, pfsFT, struct.outputId)
+        from pfs.drp.stella.datamodelIO import PfsFiberTraceIO
+        self.write(cache.butler, PfsFiberTraceIO(pfsFT), struct.outputId)

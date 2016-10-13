@@ -177,6 +177,22 @@ class PfsMapper(CameraMapper):
 
         raise RuntimeError("Unable to read pfsArm for %s: %s" % (dataId.items(), e))
 
+    def bypass_fiberTrace(self, datasetType, pythonType, location, dataId):
+        from pfs.datamodel.pfsFiberTrace import PfsFiberTrace
+
+        for pathName in location.locationList:
+            dirName = os.path.dirname(pathName)
+
+            pfsFiberTrace = PfsFiberTrace(dataId["dateObs"], dataId["spectrograph"], dataId["arm"])
+            try:
+                pfsFiberTrace.read(dirName=dirName)
+            except Exception as e:
+                pass
+            else:
+                return pfsFiberTrace
+
+        raise RuntimeError("Unable to read pfsFiberTrace for %s: %s" % (dataId.items(), e))
+
     @classmethod
     def getCameraName(cls):
         return "pfs"
