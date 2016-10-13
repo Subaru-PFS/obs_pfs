@@ -160,6 +160,22 @@ class PfsMapper(CameraMapper):
         visit = pathId['visit']
         ccd = pathId['ccd']
         return visit*200 + ccd
+        
+    def bypass_pfsArm(self, datasetType, pythonType, location, dataId):
+        from pfs.datamodel.pfsArm import PfsArm
+
+        for pathName in location.locationList:
+            dirName = os.path.dirname(pathName)
+
+            pfsArm = PfsArm(dataId["visit"], dataId["spectrograph"], dataId["arm"])
+            try:
+                pfsArm.read(dirName=dirName, setPfsConfig=False)
+            except Exception as e:
+                pass
+            else:
+                return pfsArm
+
+        raise RuntimeError("Unable to read pfsArm for %s: %s" % (dataId.items(), e))
 
     @classmethod
     def getCameraName(cls):
