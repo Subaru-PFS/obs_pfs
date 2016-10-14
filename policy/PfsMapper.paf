@@ -100,7 +100,7 @@ calibrations: {
     }
     fiberTrace: {
         template:    "FIBERTRACE/%(filter)s/%(calibVersion)s/pfsFiberTrace-%(calibDate)s-0-%(spectrograph)1d%(arm)s.fits"
-        python:      "pfs.datamodel.pfsFiberTrace.PfsFiberTrace"
+        python:      "pfs.drp.stella.datamodelIO.PfsFiberTraceIO"
         persistable: "FiberTraceSet"
         storage:     "FitsCatalogStorage"
         level:       "Ccd"
