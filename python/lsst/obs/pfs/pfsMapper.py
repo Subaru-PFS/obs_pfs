@@ -127,21 +127,25 @@ class PfsMapper(CameraMapper):
     def std_fiberTrace(self, item, dataId):
         return item
 
+    def map_linearizer(self, dataId, write=False):
+        """Map a linearizer."""
+        raise RuntimeError("No linearizer available.")
+    
     def _extractAmpId(self, dataId):
         ampId = (self._extractDetectorName(dataId), 0, 0)
         return ampId
 
     def _extractDetectorName(self, dataId):
-#        detName = "%(filter)s" % dataId
-#        if detName == 'm':
-#            detName = 'r'
-#        detName = detName + '_' + str("%(spectrograph)s" % dataId)
-#        return detName
-        return self._extractDetectorId(dataId)
+        if True:                        # use 1-based CCD number as "Name"
+            return self._extractDetectorId(dataId)
+        else:
+            armName = dataId["arm"]
+            if armName == 'm':
+                armName = 'r'
+            return "%s_%d" % (armName, dataId["spectrograph"])
 
     def _extractDetectorId(self, dataId):
-        detId = int("%(ccd)d" % dataId)
-        return detId
+        return 1 + 3*(dataId["spectrograph"] - 1) + dict(b=0, r=1, m=1, n=2)[dataId["arm"]]
     
     def _getCcdKeyVal(self, dataId):
         """Return CCD key and value used to look a defect in the defect registry
