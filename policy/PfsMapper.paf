@@ -184,11 +184,19 @@ datasets: {
         tables:        raw_visit
     }
 
+    arc_config: {
+        template:      "config/arc.py"
+        python:        "lsst.obs.pfs.constructArc.ConstructArcConfig"
+        persistable:   "Config"
+        storage:       "ConfigStorage"
+        tables:        raw
+        tables:        raw_visit
+    }
     bias_config: {
         template:      "config/bias.py"
         python:        "lsst.pipe.drivers.constructCalibs.BiasConfig"
-        persistable:      "Config"
-        storage:    "ConfigStorage"
+        persistable:   "Config"
+        storage:       "ConfigStorage"
         tables:        raw
         tables:        raw_visit
     }
