@@ -48,25 +48,22 @@ flatsExpTimes = list()
 flatsLow = list()
 flatsHigh = list()
 for visit in np.arange( args.visitLow, args.visitHigh + 1 ):
-    dataId = dict( ccd=args.ccd, visit=visit )
-    fileName = butler.get( 'raw_filename', dataId )
-    print 'fileName = <',fileName,'>'
-    md = afwImage.readMetadata( fileName[ 0 ] )
+    try:
+        dataId = dict( ccd=args.ccd, visit=visit )
+        fileName = butler.get( 'raw_filename', dataId )
+        md = afwImage.readMetadata( fileName[ 0 ] )
 
-    if md.get("IMAGETYP") == "bias":
-        biasesVisit.append(visit)
-    if md.get("IMAGETYP") == "flat":
-        flatsVisit.append(visit)
-        flatsExpTimes.append(md.get('EXPTIME'))
-        if md.get('EXPTIME') == args.expTimeLow:
-            flatsLow.append(visit)
-        elif md.get('EXPTIME') == args.expTimeHigh:
-            flatsHigh.append(visit)
-
-print 'flatsVisit = ',flatsVisit
-print 'flatsExpTimes = ',flatsExpTimes
-print 'flatsLow = ',len(flatsLow),': ',flatsLow
-print 'flatsHigh = ',len(flatsHigh),': ',flatsHigh
+        if md.get("IMAGETYP") == "bias":
+            biasesVisit.append(visit)
+        if md.get("IMAGETYP") == "flat":
+            flatsVisit.append(visit)
+            flatsExpTimes.append(md.get('EXPTIME'))
+            if md.get('EXPTIME') == args.expTimeLow:
+                flatsLow.append(visit)
+            elif md.get('EXPTIME') == args.expTimeHigh:
+                flatsHigh.append(visit)
+    except:
+        print('visit %d not found' % visit)
 
 dataId = dict(visit=flatsLow[0], ccd=args.ccd)
 image = butler.get('postISRCCD', dataId).getMaskedImage().getImage().getArray()
@@ -85,13 +82,17 @@ if len(flatsLow) > 2:
     medianFlatsLow = np.median(allFlatsLow,2)
 elif len(flatsLow) == 2:
     medianFlatsLow = np.min(allFlatsLow,2)
+elif len(flatsLow) < 1:
+    raise RunTimeError("No flats with %d s exposure time found" % args.expTimeLow)
 else:
-    print 'only one Flat with ',args.expTimeLow,'s exposure time'
+    print 'Less than 2 Flats with ',args.expTimeLow,'s exposure time'
     medianFlatsLow = allFlatsLow[:,:,0]
 if len(flatsHigh) > 2:
     medianFlatsHigh = np.median(allFlatsHigh,2)
 elif len(flatsHigh) == 2:
     medianFlatsHigh = np.min(allFlatsHigh,2)
+elif len(flatsHigh) < 1:
+    raise RunTimeError("No flats with %d s exposure time found" % args.expTimeHigh)
 else:
     print 'only one Flat with ',args.expTimeHigh,'s exposure time'
     medianFlatsHigh = allFlatsHigh[:,:,0]
