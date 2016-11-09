@@ -26,6 +26,7 @@ parser.add_argument("--nCols", help="Number of columns in images", type=int, def
 parser.add_argument("--nPixCut", help="Number of rows/columns around the edge of images to ignore", type=int, default=40)
 parser.add_argument("--nRows", help="Number of rows in images", type=int, default=4174)
 parser.add_argument("--outFile", help="Output defect list relative to OBS_PFS_DIR", default="pfs/defects/2015-12-01/defects.dat")
+parser.add_argument("--rerun", help="Which rerun directory are the postISRCCD images in if not in root?", default="")
 parser.add_argument("--visitLow", help="Lowest visit number to search for flats", type=int, default=6301)
 parser.add_argument("--visitHigh", help="Highest visit number to search for flats", type=int, default=6758)
 args = parser.parse_args()
@@ -40,7 +41,11 @@ if afwDisplay:
     afwDisplay.setDefaultMaskTransparency(75)
 
 badCols = [int(item) for item in args.badCols.split(',')]
-butler = dafPersist.Butler( args.homeDir )
+dataDir = args.homeDir
+if args.rerun != "":
+    dataDir = os.path.join(args.homeDir, 'rerun')
+    dataDir = os.path.join(dataDir, args.rerun)
+butler = dafPersist.Butler( dataDir )
 
 biasesVisit = list()
 flatsVisit = list()
