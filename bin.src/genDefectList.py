@@ -175,25 +175,27 @@ mean = afwMath.makeStatistics(divFlatMIm, afwMath.MEANCLIP).getValue()
 stddev = afwMath.makeStatistics(divFlatMIm,afwMath.STDEVCLIP).getValue()
 
 if args.outFile != '':
+    mask = divFlatMIm.getMask()
+    maskVal = 1 << divFlatMIm.getMask().getMaskPlane('BAD')
     for badCol in badCols:
         text_file.write("%d 0 %d 1 %d\n" % (args.ccd, badCol, args.nRows))
-        divFlatMIm.getMask().getArray()[:,badCol] = 1
+        mask[badCol,:] |= maskVal
     nBad = 0
     for iRow in np.arange(args.nPixCut,divFlat.shape[0]-args.nPixCut):
         for iCol in np.arange(args.nPixCut,args.gapLow):
             if iCol not in badCols:
                 if np.absolute(divFlat[iRow, iCol] - mean) > args.maxSigma * stddev:
                     nBad = nBad + 1
-                    divFlatMIm.getMask().getArray()[iRow,iCol] = 1
                     text_file.write("%d %d %d 1 1\n" % (args.ccd, iCol, iRow))
+                    mask[iCol, iRow] |= maskVal;
 
     for iRow in np.arange(args.nPixCut,divFlat.shape[0]-args.nPixCut):
         for iCol in np.arange(args.gapHigh,args.nCols-args.nPixCut):
             if iCol not in badCols:
                 if np.absolute(divFlat[iRow, iCol] - mean) > args.maxSigma * stddev:
                     nBad = nBad + 1
-                    divFlatMIm.getMask().getArray()[iRow, iCol] = 1
                     text_file.write("%d %d %d 1 1\n" % (args.ccd, iCol, iRow))
+                    mask[iCol, iRow] |= maskVal;
 
     if textArrRead:
         for a in uniqueFirstCharsSorted:
@@ -223,5 +225,5 @@ if afwDisplay:
 
         display0 = afwDisplay.getDisplay()
         display0.mtv(medianFlatsLowExp, title="parent")
-        display0.setMaskTransparency(10)
-        display0.setMaskPlaneColor("CROSSTALK", "orange")
+        display0.setMaskTransparency(50)
+        display0.setMaskPlaneColor("BAD", "orange")
