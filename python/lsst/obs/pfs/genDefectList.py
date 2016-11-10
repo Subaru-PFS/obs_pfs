@@ -56,6 +56,42 @@ logger.setLevel(Log.INFO if args.verbose else Log.WARN)
 if args.debug:
     logger.setLevel(Log.DEBUG)
 
+outFileName = os.path.join(os.environ.get('OBS_PFS_DIR'),args.outFile)
+
+# Read existing defects file
+textArrRead = False
+if args.outFile != '':
+    try:
+        file = open(outFileName, 'r')
+        textArr = file.readlines()
+        textArrRead = True
+        logger.debug("Existing outFile found")
+    except IOError as e:
+        logger.debug("No existing outFile found")
+    text_file = open(outFileName, "w")
+    text_file.write("#\n")
+    text_file.write("# Defects file\n")
+    text_file.write("#\n")
+    text_file.write("# Convert to a fits table using getDefectFits.py;  this is done for you by running scons\n")
+    text_file.write("#\n")
+    text_file.write("#CCD x0    y0    width height\n")
+
+if textArrRead:
+    firstChars = []
+    for i in range(len(textArr)):
+        firstChars.append(textArr[i][0])
+    for i in np.arange(len(firstChars)-1,-1,-1):
+        if firstChars[i] == '#':
+            textArr.pop(i)
+            firstChars.pop(i)
+    uniqueFirstChars = np.unique(firstChars)
+    uniqueFirstCharsSorted = np.sort(uniqueFirstChars)
+    for a in uniqueFirstCharsSorted:
+        if int(a) < args.ccd:
+            for i in range(len(textArr)):
+                if firstChars[i] == a:
+                    text_file.write(textArr[i])
+
 badCols = [int(item) for item in args.badCols.split(',')]
 dataDir = args.homeDir
 if args.rerun != "":
@@ -139,13 +175,6 @@ mean = afwMath.makeStatistics(divFlatMIm, afwMath.MEANCLIP).getValue()
 stddev = afwMath.makeStatistics(divFlatMIm,afwMath.STDEVCLIP).getValue()
 
 if args.outFile != '':
-    text_file = open(os.path.join(os.environ.get('OBS_PFS_DIR'),args.outFile), "w")
-    text_file.write("#\n")
-    text_file.write("# Defects file\n")
-    text_file.write("#\n")
-    text_file.write("# Convert to a fits table using getDefectFits.py;  this is done for you by running scons\n")
-    text_file.write("#\n")
-    text_file.write("#CCD x0    y0    width height\n")
     for badCol in badCols:
         text_file.write("%d 0 %d 1 %d\n" % (args.ccd, badCol, args.nRows))
         divFlatMIm.getMask().getArray()[:,badCol] = 1
@@ -155,17 +184,22 @@ if args.outFile != '':
             if iCol not in badCols:
                 if np.absolute(divFlat[iRow, iCol] - mean) > args.maxSigma * stddev:
                     nBad = nBad + 1
-                    text_file.write("%d %d %d 1 1\n" % (args.ccd, iRow, iCol))
                     divFlatMIm.getMask().getArray()[iRow,iCol] = 1
+                    text_file.write("%d %d %d 1 1\n" % (args.ccd, iCol, iRow))
 
     for iRow in np.arange(args.nPixCut,divFlat.shape[0]-args.nPixCut):
         for iCol in np.arange(args.gapHigh,args.nCols-args.nPixCut):
             if iCol not in badCols:
                 if np.absolute(divFlat[iRow, iCol] - mean) > args.maxSigma * stddev:
                     nBad = nBad + 1
-                    text_file.write("%d %d %d 1 1\n" % (args.ccd, iRow, iCol))
                     divFlatMIm.getMask().getArray()[iRow, iCol] = 1
+                    text_file.write("%d %d %d 1 1\n" % (args.ccd, iCol, iRow))
 
+    for a in uniqueFirstCharsSorted:
+        if int(a) > args.ccd:
+            for i in range(len(textArr)):
+                if firstChars[i] == a:
+                    text_file.write(textArr[i])
     text_file.write("# Dead amps")
     text_file.close()
 
