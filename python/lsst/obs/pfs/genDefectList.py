@@ -2,6 +2,7 @@ import lsst.daf.persistence as dafPersist
 import lsst.afw.image as afwImage
 import pfs.drp.stella as drpStella
 import lsst.afw.math as afwMath
+from lsst.log import Log
 import numpy as np
 import os
 try:
@@ -15,6 +16,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--badCols", help="List of bad columns delimited by ','", type=str, default="1020,1021,1022,1023,1024, 1025, 1026,3068,3069,3070,3071,3072,3073, 3074")
 parser.add_argument("--ccd", help="CCD number for which to create the defect list", type=int, default=5)
 parser.add_argument("--display", help="Set to display outputs", action="store_true")
+parser.add_argument("--debug", help="Set to print debugging outputs", action="store_true")
 parser.add_argument("--expTimeHigh", help="Exposure time for stronger flats", type=int, default=30)
 parser.add_argument("--expTimeLow", help="Exposure time for weaker flats", type=int, default=2)
 parser.add_argument("--gapHigh", help="Number of column where gap between physical devices ends", type=int, default=2052)
@@ -27,6 +29,7 @@ parser.add_argument("--nPixCut", help="Number of rows/columns around the edge of
 parser.add_argument("--nRows", help="Number of rows in images", type=int, default=4174)
 parser.add_argument("--outFile", help="Output defect list relative to OBS_PFS_DIR", default="pfs/defects/2015-12-01/defects.dat")
 parser.add_argument("--rerun", help="Which rerun directory are the postISRCCD images in if not in root?", default="")
+parser.add_argument("--verbose", help="Set to print info outputs", action="store_true")
 parser.add_argument("--visitLow", help="Lowest visit number to search for flats", type=int, default=6301)
 parser.add_argument("--visitHigh", help="Highest visit number to search for flats", type=int, default=6758)
 args = parser.parse_args()
@@ -39,6 +42,19 @@ if afwDisplay:
             print e
 
     afwDisplay.setDefaultMaskTransparency(75)
+
+# Quiet down lots of loggers, so we can see genDefectList logs better
+Log.getLogger("daf.persistence.butler").setLevel(Log.WARN)
+Log.getLogger("afw.image.Mask").setLevel(Log.WARN)
+Log.getLogger("afw.ExposureFormatter").setLevel(Log.WARN)
+Log.getLogger("daf.persistence.LogicalLocation").setLevel(Log.WARN)
+Log.getLogger("CameraMapper").setLevel(Log.WARN)
+Log.getLogger("afw.image.ExposureInfo").setLevel(Log.WARN)
+
+logger = Log.getLogger("genDefectList")
+logger.setLevel(Log.INFO if args.verbose else Log.WARN)
+if args.debug:
+    logger.setLevel(Log.DEBUG)
 
 badCols = [int(item) for item in args.badCols.split(',')]
 dataDir = args.homeDir
@@ -68,7 +84,7 @@ for visit in np.arange( args.visitLow, args.visitHigh + 1 ):
             elif md.get('EXPTIME') == args.expTimeHigh:
                 flatsHigh.append(visit)
     except:
-        print('visit %d not found' % visit)
+        logger.debug("visit %d not found" % visit)
 
 dataId = dict(visit=flatsLow[0], ccd=args.ccd)
 image = butler.get('postISRCCD', dataId).getMaskedImage().getImage().getArray()
@@ -90,7 +106,7 @@ elif len(flatsLow) == 2:
 elif len(flatsLow) < 1:
     raise RunTimeError("No flats with %d s exposure time found" % args.expTimeLow)
 else:
-    print 'Less than 2 Flats with ',args.expTimeLow,'s exposure time'
+    logger.warn('Only 1 Flat with %ds exposure time' % args.expTimeLow)
     medianFlatsLow = allFlatsLow[:,:,0]
 if len(flatsHigh) > 2:
     medianFlatsHigh = np.median(allFlatsHigh,2)
@@ -99,7 +115,7 @@ elif len(flatsHigh) == 2:
 elif len(flatsHigh) < 1:
     raise RunTimeError("No flats with %d s exposure time found" % args.expTimeHigh)
 else:
-    print 'only one Flat with ',args.expTimeHigh,'s exposure time'
+    logger.warn('Only 1 Flat with %ds exposure time' % args.expTimeHigh)
     medianFlatsHigh = allFlatsHigh[:,:,0]
 
 medianFlatsLow = drpStella.where( medianFlatsLow, '==', 0., 0.000001, medianFlatsLow)
@@ -120,10 +136,7 @@ divFlatIm = afwImage.ImageF(divFlat)
 divFlatMIm = afwImage.makeMaskedImage(divFlatIm)
 
 mean = afwMath.makeStatistics(divFlatMIm, afwMath.MEANCLIP).getValue()
-print 'mean = ',mean
-
 stddev = afwMath.makeStatistics(divFlatMIm,afwMath.STDEVCLIP).getValue()
-print 'stddev = ',stddev
 
 if args.outFile != '':
     text_file = open(os.path.join(os.environ.get('OBS_PFS_DIR'),args.outFile), "w")
@@ -156,7 +169,7 @@ if args.outFile != '':
     text_file.write("# Dead amps")
     text_file.close()
 
-    print nBad,' bad pixels found'
+    logger.info('%d bad pixels found' % nBad)
 
 if afwDisplay:
     if args.display:
@@ -165,7 +178,6 @@ if afwDisplay:
         medianFlatsLowExp.getMaskedImage().getMask().getArray()[:,:] = divFlatExp.getMaskedImage().getMask().getArray()[:,:]
 
         display0 = afwDisplay.getDisplay()
-        print 'display0 = ',display0
         display0.mtv(medianFlatsLowExp, title="parent")
         display0.setMaskTransparency(10)
         display0.setMaskPlaneColor("CROSSTALK", "orange")
