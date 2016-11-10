@@ -195,11 +195,12 @@ if args.outFile != '':
                     divFlatMIm.getMask().getArray()[iRow, iCol] = 1
                     text_file.write("%d %d %d 1 1\n" % (args.ccd, iCol, iRow))
 
-    for a in uniqueFirstCharsSorted:
-        if int(a) > args.ccd:
-            for i in range(len(textArr)):
-                if firstChars[i] == a:
-                    text_file.write(textArr[i])
+    if textArrRead:
+        for a in uniqueFirstCharsSorted:
+            if int(a) > args.ccd:
+                for i in range(len(textArr)):
+                    if firstChars[i] == a:
+                        text_file.write(textArr[i])
     text_file.write("# Dead amps")
     text_file.close()
 
