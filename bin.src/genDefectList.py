@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import argparse
 import lsst.afw.image as afwImage
 import lsst.afw.math as afwMath
