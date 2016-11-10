@@ -15,7 +15,7 @@ except ImportError:
 parser = argparse.ArgumentParser()
 
 parser.add_argument("--badCols", help="List of bad columns delimited by ','", type=str, default="1020,1021,1022,1023,1024, 1025, 1026,3068,3069,3070,3071,3072,3073, 3074")
-parser.add_argument("--ccd", help="CCD number for which to create the defect list", type=int, default=5)
+parser.add_argument("--ccd", help="CCD number for which to create the defect list", type=int, default=4)
 parser.add_argument("--display", help="Set to display outputs", action="store_true")
 parser.add_argument("--debug", help="Set to print debugging outputs", action="store_true")
 parser.add_argument("--expTimeHigh", help="Exposure time for stronger flats", type=int, default=30)
