@@ -1,16 +1,16 @@
-import lsst.daf.persistence as dafPersist
+import argparse
 import lsst.afw.image as afwImage
-import pfs.drp.stella as drpStella
 import lsst.afw.math as afwMath
+import lsst.daf.persistence as dafPersist
 from lsst.log import Log
 import numpy as np
 import os
+import pfs.drp.stella as drpStella
 try:
     import lsst.afw.display as afwDisplay
 except ImportError:
     afwDisplay = None
 
-import argparse
 parser = argparse.ArgumentParser()
 
 parser.add_argument("--badCols", help="List of bad columns delimited by ','", type=str, default="1020,1021,1022,1023,1024, 1025, 1026,3068,3069,3070,3071,3072,3073, 3074")
