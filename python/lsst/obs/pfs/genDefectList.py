@@ -134,21 +134,28 @@ for i in np.arange(len(flatsHigh)):
     dataId = dict(visit=flatsHigh[i], ccd=args.ccd)
     image = butler.get('postISRCCD', dataId).getMaskedImage().getImage().getArray()
     allFlatsHigh[:,:,i] = image
-    
-if len(flatsLow) > 2:
+
+nLow = len(flatsLow)
+if nLow > 2:
     medianFlatsLow = np.median(allFlatsLow,2)
-elif len(flatsLow) == 2:
+    logger.info('%d Flats with %ds exposure time found' % (nLow, args.expTimeLow))
+elif nLow == 2:
     medianFlatsLow = np.min(allFlatsLow,2)
-elif len(flatsLow) < 1:
-    raise RunTimeError("No flats with %d s exposure time found" % args.expTimeLow)
+    logger.warn('Only %d Flats with %ds exposure time found' % (nLow, args.expTimeLow))
+elif nLow < 1:
+    raise RunTimeError("No Flats with %d s exposure time found" % args.expTimeLow)
 else:
     logger.warn('Only 1 Flat with %ds exposure time' % args.expTimeLow)
     medianFlatsLow = allFlatsLow[:,:,0]
-if len(flatsHigh) > 2:
+
+nHigh = len(flatsHigh)
+if nHigh > 2:
     medianFlatsHigh = np.median(allFlatsHigh,2)
-elif len(flatsHigh) == 2:
+    logger.info('%d Flats with %ds exposure time found' % (nLow, args.expTimeHigh))
+elif nHigh == 2:
     medianFlatsHigh = np.min(allFlatsHigh,2)
-elif len(flatsHigh) < 1:
+    logger.warn('Only %d Flats with %ds exposure time found' % (nLow, args.expTimeHigh))
+elif nHigh < 1:
     raise RunTimeError("No flats with %d s exposure time found" % args.expTimeHigh)
 else:
     logger.warn('Only 1 Flat with %ds exposure time' % args.expTimeHigh)
