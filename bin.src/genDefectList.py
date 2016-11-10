@@ -163,15 +163,8 @@ else:
 
 medianFlatsLow = drpStella.where( medianFlatsLow, '==', 0., 0.000001, medianFlatsLow)
 medianFlatsHigh = drpStella.where( medianFlatsHigh, '==', 0., 0.000001, medianFlatsHigh)
-            
-if args.medianFlatsOut != '':
-    afwImage.makeImageFromArray(medianFlatsLow).writeFits(args.medianFlatsOut+"Low.fits")
-    afwImage.makeImageFromArray(medianFlatsHigh).writeFits(args.medianFlatsOut+"High.fits")
-
 divFlat = medianFlatsHigh / medianFlatsLow
 
-if args.medianFlatsOut != '':
-    afwImage.makeImageFromArray(divFlat).writeFits(args.medianFlatsOut+"DivHighByLow.fits")
 sctrl = afwMath.StatisticsControl()
 sctrl.setWeighted(False)
 
@@ -212,11 +205,20 @@ if args.outFile != '':
 
     logger.info('%d bad pixels found' % nBad)
 
+if args.medianFlatsOut != '' or args.display:
+    medianFlatsLowExp = afwImage.makeExposure(afwImage.makeMaskedImage(afwImage.ImageF(medianFlatsLow)))
+    medianFlatsLowExp.getMaskedImage().getMask()[:,:] = mask[:,:]
+    medianFlatsHighExp = afwImage.makeExposure(afwImage.makeMaskedImage(afwImage.ImageF(medianFlatsHigh)))
+    medianFlatsHighExp.getMaskedImage().getMask()[:,:] = mask[:,:]
+
+if args.medianFlatsOut != '':
+    medianFlatsLowExp.writeFits(args.medianFlatsOut+"Low.fits")
+    medianFlatsHighExp.writeFits(args.medianFlatsOut+"High.fits")
+    divFlatMIm.writeFits(args.medianFlatsOut+"DivHighByLow.fits")
+
 if afwDisplay:
     if args.display:
         divFlatExp = afwImage.makeExposure(divFlatMIm)
-        medianFlatsLowExp = afwImage.makeExposure(afwImage.makeMaskedImage(afwImage.ImageF(medianFlatsLow)))
-        medianFlatsLowExp.getMaskedImage().getMask().getArray()[:,:] = divFlatExp.getMaskedImage().getMask().getArray()[:,:]
 
         display0 = afwDisplay.getDisplay()
         display0.mtv(medianFlatsLowExp, title="parent")
