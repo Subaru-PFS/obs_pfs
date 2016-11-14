@@ -14,8 +14,8 @@ except ImportError:
 
 parser = argparse.ArgumentParser()
 
+parser.add_argument("--arm", help="Arm for which to create the defect list", type=str, default='r', choices=['b', 'n', 'm', 'r'])
 parser.add_argument("--badCols", help="List of bad columns delimited by ','", type=str, default="1020,1021,1022,1023,1024, 1025, 1026,3068,3069,3070,3071,3072,3073, 3074")
-parser.add_argument("--ccd", help="CCD number for which to create the defect list", type=int, default=4)
 parser.add_argument("--display", help="Set to display outputs", action="store_true")
 parser.add_argument("--debug", help="Set to print debugging outputs", action="store_true")
 parser.add_argument("--expTimeHigh", help="Exposure time for stronger flats", type=int, default=30)
@@ -30,6 +30,7 @@ parser.add_argument("--nRows", help="Number of rows in images", type=int, defaul
 parser.add_argument("--outFile", help="Output defect list relative to OBS_PFS_DIR", type=str, default="pfs/defects/2015-12-01/defects.dat")
 parser.add_argument("--rerun", help="Which rerun directory are the postISRCCD images in if not in root?", type=str, default="")
 parser.add_argument("--root", help="Path to PFS data directory", type=str, default="/Volumes/My Passport/Users/azuri/spectra/pfs/PFS")
+parser.add_argument("--spectrograph", help="Spectrograph number for which to create the defect list", type=int, default=1, choices=[1, 2, 3, 4])
 parser.add_argument("--verbose", help="Set to print info outputs", action="store_true")
 parser.add_argument("--visitLow", help="Lowest visit number to search for flats", type=int, default=6301)
 parser.add_argument("--visitHigh", help="Highest visit number to search for flats", type=int, default=6758)
@@ -77,27 +78,10 @@ if args.outFile != '':
     text_file.write("#\n")
     text_file.write("#CCD x0    y0    width height\n")
 
-if textArrRead:
-    firstChars = []
-    for i in range(len(textArr)):
-        firstChars.append(textArr[i][0])
-    for i in np.arange(len(firstChars)-1,-1,-1):
-        if firstChars[i] == '#':
-            textArr.pop(i)
-            firstChars.pop(i)
-    uniqueFirstChars = np.unique(firstChars)
-    uniqueFirstCharsSorted = np.sort(uniqueFirstChars)
-    for a in uniqueFirstCharsSorted:
-        if int(a) < args.ccd:
-            for i in range(len(textArr)):
-                if firstChars[i] == a:
-                    text_file.write(textArr[i])
-
 badCols = [int(item) for item in args.badCols.split(',')]
 dataDir = args.root
 if args.rerun != "":
-    dataDir = os.path.join(args.root, 'rerun')
-    dataDir = os.path.join(dataDir, args.rerun)
+    dataDir = os.path.join(os.path.join(args.root, 'rerun'), args.rerun)
 butler = dafPersist.Butler( dataDir )
 
 biasesVisit = list()
@@ -107,7 +91,7 @@ flatsLow = list()
 flatsHigh = list()
 for visit in np.arange( args.visitLow, args.visitHigh + 1 ):
     try:
-        dataId = dict( ccd=args.ccd, visit=visit )
+        dataId = dict( spectrograph=args.spectrograph, arm=args.arm, visit=visit )
         fileName = butler.get( 'raw_filename', dataId )
         md = afwImage.readMetadata( fileName[ 0 ] )
 
@@ -123,16 +107,36 @@ for visit in np.arange( args.visitLow, args.visitHigh + 1 ):
     except:
         logger.debug("visit %d not found" % visit)
 
-dataId = dict(visit=flatsLow[0], ccd=args.ccd)
-image = butler.get('postISRCCD', dataId).getMaskedImage().getImage().getArray()
+dataId = dict(visit=flatsLow[0], arm=args.arm, spectrograph=args.spectrograph)
+exp = butler.get('postISRCCD', dataId, immediate=True)
+image = exp.getMaskedImage().getImage().getArray()
+ccd = exp.getDetector().getId()
+logger.info("detector Id = %d" % ccd)
+
+if textArrRead:
+    firstChars = []
+    for i in range(len(textArr)):
+        firstChars.append(textArr[i][0])
+    for i in np.arange(len(firstChars)-1,-1,-1):
+        if firstChars[i] == '#':
+            textArr.pop(i)
+            firstChars.pop(i)
+    uniqueFirstChars = np.unique(firstChars)
+    uniqueFirstCharsSorted = np.sort(uniqueFirstChars)
+    for a in uniqueFirstCharsSorted:
+        if int(a) < ccd:
+            for i in range(len(textArr)):
+                if firstChars[i] == a:
+                    text_file.write(textArr[i])
+
 allFlatsLow = np.ndarray(shape=[image.shape[0], image.shape[1], len(flatsLow)], dtype='float32')
 allFlatsHigh = np.ndarray(shape=[image.shape[0], image.shape[1], len(flatsHigh)], dtype='float32')
 for i in np.arange(len(flatsLow)):
-    dataId = dict(visit=flatsLow[i], ccd=args.ccd)
+    dataId = dict(visit=flatsLow[i], spectrograph=args.spectrograph, arm=args.arm)
     image = butler.get('postISRCCD', dataId).getMaskedImage().getImage().getArray()
     allFlatsLow[:,:,i] = image
 for i in np.arange(len(flatsHigh)):
-    dataId = dict(visit=flatsHigh[i], ccd=args.ccd)
+    dataId = dict(visit=flatsHigh[i], spectrograph=args.spectrograph, arm=args.arm)
     image = butler.get('postISRCCD', dataId).getMaskedImage().getImage().getArray()
     allFlatsHigh[:,:,i] = image
 
@@ -179,7 +183,7 @@ if args.outFile != '':
     mask = divFlatMIm.getMask()
     maskVal = 1 << divFlatMIm.getMask().getMaskPlane('BAD')
     for badCol in badCols:
-        text_file.write("%d 0 %d 1 %d\n" % (args.ccd, badCol, args.nRows))
+        text_file.write("%d 0 %d 1 %d\n" % (ccd, badCol, args.nRows))
         mask[badCol,:] |= maskVal
     nBad = 0
     for iRow in np.arange(args.nPixCut,divFlat.shape[0]-args.nPixCut):
@@ -187,7 +191,7 @@ if args.outFile != '':
             if iCol not in badCols:
                 if np.absolute(divFlat[iRow, iCol] - mean) > args.maxSigma * stddev:
                     nBad = nBad + 1
-                    text_file.write("%d %d %d 1 1\n" % (args.ccd, iCol, iRow))
+                    text_file.write("%d %d %d 1 1\n" % (ccd, iCol, iRow))
                     mask[iCol, iRow] |= maskVal;
 
     for iRow in np.arange(args.nPixCut,divFlat.shape[0]-args.nPixCut):
@@ -195,12 +199,12 @@ if args.outFile != '':
             if iCol not in badCols:
                 if np.absolute(divFlat[iRow, iCol] - mean) > args.maxSigma * stddev:
                     nBad = nBad + 1
-                    text_file.write("%d %d %d 1 1\n" % (args.ccd, iCol, iRow))
+                    text_file.write("%d %d %d 1 1\n" % (ccd, iCol, iRow))
                     mask[iCol, iRow] |= maskVal;
 
     if textArrRead:
         for a in uniqueFirstCharsSorted:
-            if int(a) > args.ccd:
+            if int(a) > ccd:
                 for i in range(len(textArr)):
                     if firstChars[i] == a:
                         text_file.write(textArr[i])
