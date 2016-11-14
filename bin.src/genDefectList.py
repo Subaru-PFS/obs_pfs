@@ -36,6 +36,30 @@ parser.add_argument("--visitLow", help="Lowest visit number to search for flats"
 parser.add_argument("--visitHigh", help="Highest visit number to search for flats", type=int, default=6758)
 args = parser.parse_args()
 
+#check arguments for validity
+if args.arm not in ['b', 'r', 'm', 'n']:
+    raise RuntimeError("arm not valid")
+if args.expTimeLow <= 0:
+    raise RuntimeError("expTimeLow not valid")
+if args.expTimeHigh <= 0:
+    raise RuntimeError("expTimeHigh not valid")
+if args.expTimeLow == args.expTimeHigh:
+    raise RuntimeError("expTimeLow  and expTimeHigh must be different")
+if args.nCols < 0:
+    raise RuntimeError("nCols not valid")
+if args.nPixCut < 0:
+    raise RuntimeError("nPixCut not valid")
+if args.nRows < 0:
+    raise RuntimeError("nRows not valid")
+if args.gapLow < 0 or args.gapLow >= args.nCols:
+    raise RuntimeError("gapLow not valid")
+if args.gapHigh < 0 or args.gapHigh >= args.nCols or args.gapHigh < args.gapLow:
+    raise RuntimeError("gapHigh not valid")
+if args.spectrograph not in np.arange(1,5,1):
+    raise RuntimeError("spectrograph not in range [1..4]")
+if args.visitLow < 0 or args.visitLow > args.visitHigh:
+    raise RuntimeError("visitLow or visitHigh not valid")
+
 if afwDisplay:
     if os.environ.get('DISPLAY_DS9_DIR') != "":
         try:
