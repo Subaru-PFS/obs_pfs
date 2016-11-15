@@ -10,20 +10,9 @@ config.isr.crosstalk.retarget(CrosstalkTask)
 
 config.isr.overscanFitType = "AKIMA_SPLINE"
 config.isr.overscanOrder = 30
-config.isr.doBias = True # Overscan is fairly efficient at removing bias level, but leaves a line in the middle
-config.isr.doDark = True # Required especially around CCD 33
+config.isr.doBias = True
+config.isr.doDark = True
 config.isr.doFringe = False
-#config.isr.fringe.filters = ['y', 'N922']
 config.isr.doWrite = False
 config.isr.doCrosstalk = False
 config.isr.doGuider = False
-
-# These values from RHL's report on "HSC July Commissioning Data" (2013-08-23)
-#config.isr.crosstalk.coeffs.values = [
-#       0.0e-6, -125.0e-6, -149.0e-6, -156.0e-6,
-#    -124.0e-6,    0.0e-6, -132.0e-6, -157.0e-6,
-#    -171.0e-6, -134.0e-6,    0.0e-6, -153.0e-6,
-#    -157.0e-6, -151.0e-6, -137.0e-6,    0.0e-6,
-#       ]
-
-#config.isr.vignette.load(os.path.join(getPackageDir("obs_subaru"), "config", "hsc", "vignette.py"))

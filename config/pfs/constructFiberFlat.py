@@ -1,7 +1,5 @@
-config.darkTime = None
-
 config.isr.doBias = True
-config.isr.doDark = False
+config.isr.doDark = True
 config.isr.doFlat = False
 config.isr.doLinearize = False
 

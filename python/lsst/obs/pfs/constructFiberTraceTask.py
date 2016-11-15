@@ -12,6 +12,7 @@ import numpy as np
 from pfs.datamodel.pfsFiberTrace import PfsFiberTrace
 import pfs.drp.stella.createFlatFiberTraceProfileTask as cfftpTask
 import pfs.drp.stella.findAndTraceAperturesTask as fataTask
+from pfs.drp.stella.datamodelIO import PfsFiberTraceIO
 
 class ConstructFiberTraceConfig(CalibConfig):
     """Configuration for FiberTrace construction"""
@@ -278,5 +279,4 @@ class ConstructFiberTraceTask(CalibTask):
             profOut[ft.getFiberTraceFunction().yCenter + ft.getFiberTraceFunction().yLow:ft.getFiberTraceFunction().yCenter + ft.getFiberTraceFunction().yHigh+1,:] = prof.getArray()[:,:]
             pfsFT.profiles.append(profOut)
 
-        from pfs.drp.stella.datamodelIO import PfsFiberTraceIO
         self.write(cache.butler, PfsFiberTraceIO(pfsFT), struct.outputId)
