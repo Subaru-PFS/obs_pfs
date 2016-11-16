@@ -16,9 +16,7 @@ class DetrendTask(CmdLineTask):
         self.makeSubtask("isr")
 
     def run(self, dataRef):
-        #print 'type(exp) = ',type(exp)
         exp = self.isr.runDataRef(dataRef).exposure  # Should do ISR and CCD assembly
-        #exp = self.isr.runDataRef(dataRef)  # Should do ISR and CCD assembly
         dataRef.put(exp, "calexp")
 
     def _getConfigName(self):
@@ -27,7 +25,3 @@ class DetrendTask(CmdLineTask):
         return None
     def _getEupsVersionsName(self):
         return None
-
-#if __name__ == "__main__":
-#    DetrendTask.parseAndRun()
-
