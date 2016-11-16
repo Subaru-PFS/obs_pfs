@@ -49,7 +49,7 @@ def genDefectFits(source, targetDir):
             columns.append(col)
 
         cols = pyfits.ColDefs(columns)
-        table = pyfits.new_table(cols)
+        table = pyfits.BinTableHDU.from_columns(cols)
 
         table.header['NAME'] = ccd
         name = os.path.join(targetDir, "defects_%s.fits" % ccd)
