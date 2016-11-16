@@ -11,10 +11,9 @@ import collections
 from lsst.obs.pfs import PfsMapper
 
 Defect = collections.namedtuple('Defect', ['x0', 'y0', 'width', 'height'])
-mapperMap = {'pfs': PfsMapper}
 
-def genDefectFits(cameraName, source, targetDir):
-    mapper = mapperMap[cameraName.lower()](root=".")
+def genDefectFits(source, targetDir):
+    mapper = PfsMapper(root=".")
     camera = mapper.camera
 
     ccds = dict()
@@ -68,8 +67,6 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("cameraName", type=str, choices=['PFS'],
-                        help="Camera name: PFS")
     parser.add_argument("defectsFile", type=str, help="Text file containing list of defects")
     parser.add_argument("targetDir", type=str, nargs="?", help="Directory for generated fits files")
     parser.add_argument("-f", "--force", action="store_true", help="Force operations")
@@ -79,4 +76,4 @@ if __name__ == "__main__":
     if not args.targetDir:
         args.targetDir = os.path.split(args.defectsFile)[0]
 
-    genDefectFits(args.cameraName, args.defectsFile, args.targetDir)
+    genDefectFits(args.defectsFile, args.targetDir)
