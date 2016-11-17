@@ -128,6 +128,13 @@ class ConstructFiberTraceConfig(CalibConfig):
         default = 0.,
         check = lambda x : x >= 0)
 
+    def setDefaults(self):
+        CalibConfig.setDefaults(self)
+        self.isr.doBias = True
+        self.isr.doDark = True
+        self.isr.doFlat = False
+        self.isr.doLinearize = False
+
 class ConstructFiberTraceTask(CalibTask):
     """Task to construct the normalized Flat"""
     ConfigClass = ConstructFiberTraceConfig
