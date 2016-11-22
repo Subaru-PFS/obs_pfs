@@ -1,8 +1,4 @@
 # Configuration for PFS ISR
-import os.path
-
-from lsst.utils import getPackageDir
-
 from lsst.obs.subaru.isr import SubaruIsrTask
 config.isr.retarget(SubaruIsrTask)
 from lsst.obs.subaru.crosstalk import CrosstalkTask
