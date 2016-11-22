@@ -46,9 +46,7 @@ def main(root, validityDays):
             print "Registering:", fits
             date = datetime.date(int(year), int(month), int(day))
             ccd = int(spectrograph) - 1
-            if arm in ("m"):
-                ccd = ccd + 4
-            elif arm in ("r"):
+            if arm in ("m", "r"):
                 ccd += 4
             elif arm in ("n"):
                 ccd += 8
