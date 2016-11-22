@@ -11,19 +11,15 @@ import collections
 from lsst.obs.pfs import PfsMapper
 
 Defect = collections.namedtuple('Defect', ['x0', 'y0', 'width', 'height'])
-mapperMap = {'pfs': PfsMapper}
 
-def genDefectFits(cameraName, source, targetDir):
-    mapper = mapperMap[cameraName.lower()](root=".")
+def genDefectFits(source, targetDir):
+    mapper = PfsMapper(root=".")
     camera = mapper.camera
 
     ccds = dict()
     for ccd in camera:
-        print 'dir(ccd) = ',dir(ccd)
         ccdNum = ccd.getId()
-        print 'ccdNum = ',ccdNum
         ccds[ccdNum] = ccd.getName()
-        print 'ccds[',ccdNum,'] = ',ccds[ccdNum]
 
     defects = dict()
 
@@ -53,16 +49,9 @@ def genDefectFits(cameraName, source, targetDir):
             columns.append(col)
 
         cols = pyfits.ColDefs(columns)
-        table = pyfits.new_table(cols)
+        table = pyfits.BinTableHDU.from_columns(cols)
 
         table.header['NAME'] = ccd
-        print 'ccd = ',ccd
-        print 'ccds[ccd] = ',ccds[ccd]
-#        table.header['NAME'] = ccds[ccd]
-
-#        print 'defects_%s.fits = <defects_',ccds[ccd],'.fits'
-        print 'defects_%s.fits = <defects_',ccd,'.fits'
-#        name = os.path.join(targetDir, "defects_%s.fits" % ccds[ccd])
         name = os.path.join(targetDir, "defects_%s.fits" % ccd)
         print "Writing %d defects from CCD %d (%s) to %s" % (table.header['NAXIS2'], ccd, ccds[ccd], name)
         if os.path.exists(name):
@@ -78,8 +67,6 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("cameraName", type=str, choices=['PFS'],
-                        help="Camera name: PFS")
     parser.add_argument("defectsFile", type=str, help="Text file containing list of defects")
     parser.add_argument("targetDir", type=str, nargs="?", help="Directory for generated fits files")
     parser.add_argument("-f", "--force", action="store_true", help="Force operations")
@@ -89,4 +76,4 @@ if __name__ == "__main__":
     if not args.targetDir:
         args.targetDir = os.path.split(args.defectsFile)[0]
 
-    genDefectFits(args.cameraName, args.defectsFile, args.targetDir)
+    genDefectFits(args.defectsFile, args.targetDir)
