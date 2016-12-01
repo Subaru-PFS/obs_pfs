@@ -1,4 +1,3 @@
-#ingestImages.py '/Users/azuri/spectra/pfs/PFS/' --mode=link '/Users/azuri/spectra/pfs/raw/2016-01-12/*.fits' --loglevel 'info' -C /Users/azuri/stella-git/obs_pfs/config/pfs/ingest.py
 import re
 import os
 from lsst.pipe.tasks.ingest import ParseTask, ParseConfig
@@ -9,6 +8,7 @@ class PfsParseConfig(ParseConfig):
         ParseConfig.setDefaults(self)
         self.translators["field"] = "translate_field"
 
+
 class PfsParseTask(ParseTask):
     ConfigClass = PfsParseConfig
 
@@ -18,7 +18,6 @@ class PfsParseTask(ParseTask):
         @param filename    Name of file to inspect
         @return File properties; list of file properties for each extension
         """
-        #print 'interpreting filename <'+filename+'>'
         minSpectrograph = 1
         maxSpectrograph = 4
         minArmNum = 1
@@ -37,24 +36,23 @@ class PfsParseTask(ParseTask):
         if int(spectrograph) == 9:
             spectrograph = '2'
         if int(spectrograph) < minSpectrograph or int(spectrograph) > maxSpectrograph:
-            message = 'spectrograph (=',spectrograph,') out of bounds'
-            raise Exception(message)
-        ccd = int(spectrograph)-1
+            raise RuntimeError("spectrograph=%s is out of bounds [%d,%d]" %
+                               (spectrograph, minSpectrograph, maxSpectrograph))
+        ccd = int(spectrograph) - 1
         if int(armNum) == minArmNum:
-            """do nothing"""
-        elif (int(armNum) == minArmNum + 1) or (int(armNum) == minArmNum + 3):
+            pass
+        elif int(armNum) == minArmNum + 1 or int(armNum) == minArmNum + 3:
             ccd += maxCCDs
         elif int(armNum) == minArmNum + 2:
             ccd += 2*maxCCDs
         else:
-            message = 'arm number (=',armNum,') out of bounds [',minArmNum,'...',maxArmNum,']'
-            raise Exception(message)
+            raise RuntimeError("arm=%s is out of bounds [%d,%d]" % (armNum, minArmNum, maxArmNum))
 
-        filter = arms[ int(armNum) - minArmNum ]
+        filter = arms[int(armNum) - minArmNum]
         arm = filter
-        print 'site = <'+site+'>, category = <'+category+'>, visit = <'+visit+'>, spectrograph = <'+spectrograph+'>, armNum = <'+armNum+'>, filter = <'+filter+'>, ccd = ',ccd
 
-        info = dict(site=site, category=category, visit=int(visit, base=10), filter=filter, arm=arm, spectrograph=int(spectrograph), ccd=ccd)
+        info = dict(site=site, category=category, visit=int(visit, base=10), filter=filter, arm=arm,
+                    spectrograph=int(spectrograph), ccd=ccd)
         if os.path.exists(filename):
             header = afwImage.readMetadata(filename)
             info = self.getInfoFromMetadata(header, info=info)
