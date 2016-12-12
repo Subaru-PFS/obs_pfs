@@ -16,7 +16,7 @@ from pfs.drp.stella.datamodelIO import PfsFiberTraceIO
 
 class ConstructFiberTraceConfig(CalibConfig):
     """Configuration for FiberTrace construction"""
-    xOffsetHdrKeyWord = Field(dtype=str, default='sim.slit.xoffset', doc="Header keyword for xOffset in input files")
+    xOffsetHdrKeyWord = Field(dtype=str, default='sim.slit.xoffset', doc="Header keyword for fiber offset in input files")
     doRepair = Field(dtype=bool, default=True, doc="Repair artifacts?")
     psfFwhm = Field(dtype=float, default=3.0, doc="Repair PSF FWHM (pixels)")
     psfSize = Field(dtype=int, default=21, doc="Repair PSF size (pixels)")
