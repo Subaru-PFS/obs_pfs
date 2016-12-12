@@ -15,6 +15,7 @@ from pfs.drp.stella.utils import makeFiberTraceSet
 
 class ConstructFiberFlatConfig(CalibConfig):
     """Configuration for flat construction"""
+    xOffsetHdrKeyWord = Field(dtype=str, default='sim.slit.xoffset', doc="Header keyword for xOffset in input files")
     doRepair = Field(dtype=bool, default=True, doc="Repair artifacts?")
     psfFwhm = Field(dtype=float, default=3.0, doc="Repair PSF FWHM (pixels)")
     psfSize = Field(dtype=int, default=21, doc="Repair PSF size (pixels)")
@@ -139,7 +140,7 @@ class ConstructFiberFlatTask(CalibTask):
         for expRef in dataRefList:
             exposure = expRef.get('postISRCCD')
             try:
-                xOffsets.append(exposure.getMetadata().get('sim.slit.xoffset'))
+                xOffsets.append(exposure.getMetadata().get(self.config.xOffsetHdrKeyWord))
             except Exception:
                 xOffsets.append(0.0)
             fiberTrace = expRef.get('fiberTrace', immediate=True)
