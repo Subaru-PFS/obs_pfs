@@ -28,7 +28,7 @@ class DitheredFlatsTestCase(tests.TestCase):
 
     def testSimulatedDitheredFlat(self):
         """Test that we can read the xOffset"""
-        dataId = dict(field="FLAT", visit=29, spectrograph=2, arm="r")
+        dataId = dict(field="FLAT", visit=104, spectrograph=1, arm="r")
         simFlat = self.butler.get("postISRCCD", dataId, immediate=True)
         xOffset = simFlat.getMetadata().get(self.xOffsetHdrKeyWordSims)
         self.assertAlmostEqual(xOffset, 0.)
