@@ -120,14 +120,14 @@ class PfsMapper(CameraMapper):
         ----
         rawExp : an Exposure for a raw image.
 
-        ADC versions before version 1 have a spurious pixel inserted
-        at the beginning of the readout. This affects all rows,
-        pushing the last overscan pixel of a given row into the first
-        leadin pixel on the following row.
+        Early ADC versions insert a spurious pixel at the beginning of
+        the readout. This affects all rows, pushing the last overscan
+        pixel of a given row into the first leadin pixel on the
+        following row.
 
         We strip it out, filling the new end pixel with its neighbor.
 
-        This is done in place.
+        The Exposure's Image is modified in place.
         """
 
         imArr = rawExp.getMaskedImage().getImage().getArray()
@@ -136,18 +136,23 @@ class PfsMapper(CameraMapper):
             yslice, xslice = a.getRawBBox().getSlices()
             ampIm = imArr[yslice, xslice]
             ampshape = ampIm.shape
+
+            # Don't bother being tricky: make a copy.
             ampPixels = ampIm.flatten()
             ampPixels[:-1] = ampPixels[1:]
             ampPixels[-1] = ampPixels[-2]
+
             imArr[yslice, xslice] = ampPixels.reshape(ampshape)
 
     def std_raw(self, item, dataId):
-        """Fix an early ADC bug. 
+        """Fixup raw image problems.
+
+        1. Fix an early ADC bug. 
 
         Since this is almost certainly an FPGA bug, I'll base the
-        decision be based on the FPGA version number. As of 2016-12-01
-        the keyword is misnamed, so we can fix the format if it does
-        not exist.
+        decision on the FPGA version number. As of 2016-12-01 the
+        keyword is misnamed, so we can fix the format if the keyword
+        does not exist.
 
         See _shiftAmpPixels() for the implementation.
         """
