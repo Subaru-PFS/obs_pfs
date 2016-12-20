@@ -125,7 +125,7 @@ class PfsMapper(CameraMapper):
         pixel of a given row into the first leadin pixel on the
         following row.
 
-        We strip it out, filling the new end pixel with its neighbor.
+        We strip out the 0th pixel, and leave the last one untouched.
 
         The Exposure's Image is modified in place.
         """
@@ -140,7 +140,6 @@ class PfsMapper(CameraMapper):
             # Don't bother being tricky: make a copy.
             ampPixels = ampIm.flatten()
             ampPixels[:-1] = ampPixels[1:]
-            ampPixels[-1] = ampPixels[-2]
 
             imArr[yslice, xslice] = ampPixels.reshape(ampshape)
 
