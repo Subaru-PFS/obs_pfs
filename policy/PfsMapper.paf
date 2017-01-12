@@ -257,6 +257,14 @@ datasets: {
         tables:        raw
         tables:        raw_visit
     }
+    genDefectListTask_config: {
+        template:      "config/genDefectList.py"
+        python:        "lsst.obs.pfs.genDefectListTask.GenDefectListConfig"
+        persistable:   "Config"
+        storage:       "ConfigStorage"
+        tables:        raw
+        tables:        raw_visit
+    }
 
     ossThumb: {
         template:    "thumbs/oss-%(visit)07d-%(filter)s%(spectrograph)1d.png"
