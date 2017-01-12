@@ -38,8 +38,8 @@ class PfsMapper(CameraMapper):
                 }
         for name in ("raw",
                      # processCcd outputs
-                     "calexp", 
-                     "postISRCCD", 
+                     "calexp",
+                     "postISRCCD",
                      ):
             self.mappings[name].keyDict.update(keys)
 
@@ -84,7 +84,7 @@ class PfsMapper(CameraMapper):
         exp.setMaskedImage(afwMath.flipImage(exp.getMaskedImage(), flipLR, flipTB))
 
         return exp
-    
+
     def standardizeCalib(self, dataset, item, dataId):
         """Standardize a calibration image read in by the butler
 
@@ -123,14 +123,14 @@ class PfsMapper(CameraMapper):
 
     def std_flat(self, item, dataId):
         return self.standardizeCalib("flat", item, dataId)
-    
+
     def std_fiberTrace(self, item, dataId):
         return item
 
     def map_linearizer(self, dataId, write=False):
         """Map a linearizer."""
         raise RuntimeError("No linearizer available.")
-    
+
     def _extractAmpId(self, dataId):
         ampId = (self._extractDetectorName(dataId), 0, 0)
         return ampId
@@ -164,7 +164,7 @@ class PfsMapper(CameraMapper):
         visit = pathId['visit']
         ccd = pathId['ccd']
         return visit*200 + ccd
-        
+
     def bypass_pfsArm(self, datasetType, pythonType, location, dataId):
         from pfs.datamodel.pfsArm import PfsArm
 
