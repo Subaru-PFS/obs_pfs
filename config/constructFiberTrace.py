@@ -1,3 +1,19 @@
+config.interpolation = "POLYNOMIAL"
+config.order = 5
+config.xLow = -4.
+config.xHigh = 4.
+config.apertureFWHM = 2.5
+config.signalThreshold = 100
+config.nTermsGaussFit = 3
+config.saturationLevel = 65000.
+config.minLength = 3000
+config.maxLength = 4096
+config.nLost = 10
+config.swathWidth = 200
+config.telluric = "NONE"
+config.overSample = 10
+config.maxIterSig = 2
+
 config.darkTime = None
 
 config.isr.doBias = True
