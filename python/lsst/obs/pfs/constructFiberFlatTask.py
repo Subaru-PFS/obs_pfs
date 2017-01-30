@@ -59,6 +59,11 @@ class ConstructFiberFlatConfig(CalibConfig):
         dtype = int,
         default = 2,
         check = lambda x : x > 0)
+    minSNR = Field(
+        doc = "Minimum Signal-to-Noise Ratio for normalized Flat pixels",
+        dtype = float,
+        default = 100.,
+        check = lambda x : x > 0.)
     lambdaSF = Field(
         doc = "Lambda smoothing factor for spatial profile (default: 1. / overSample)",
         dtype = float,
@@ -74,6 +79,15 @@ class ConstructFiberFlatConfig(CalibConfig):
         dtype = float,
         default = 0.,
         check = lambda x : x >= 0)
+    xLow = Field(
+        doc = "Lower (left) limit of aperture relative to center position of trace in x (< 0.)",
+        dtype = float,
+        default = -5.)
+    xHigh = Field(
+        doc = "Upper (right) limit of aperture relative to center position of trace in x",
+        dtype = float,
+        default = 5.,
+        check = lambda x : x > 0.)
 
 class ConstructFiberFlatTask(CalibTask):
     """Task to construct the normalized Flat"""
@@ -135,9 +149,12 @@ class ConstructFiberFlatTask(CalibTask):
         myFindTask.config.xHigh = 5.
 
         exposure = dataRefList[0].get('postISRCCD')
+        bias = dataRefList[0].get('bias')
+        fiberTrace = dataRefList[0].get('fiberTrace')
 
-        sumFlats = exposure.getMaskedImage().getImage().getArray()
-        sumVariances = exposure.getMaskedImage().getVariance().getArray()
+        flatsShape = exposure.getMaskedImage().getImage().getArray().shape
+        normFlatOut = np.zeros(shape = flatsShape, dtype = np.float32)
+        normFlatOutIm = afwImage.ImageF(normFlatOut)
 
         allFts = []
         xOffsets = []
@@ -147,13 +164,8 @@ class ConstructFiberFlatTask(CalibTask):
                 xOffsets.append(exposure.getMetadata().get(self.config.xOffsetHdrKeyWord))
             except Exception:
                 xOffsets.append(0.0)
-            #fiberTrace = expRef.get('fiberTrace', immediate=True)
-            #fts = makeFiberTraceSet(fiberTrace, exposure.getMaskedImage())
             fts = myFindTask.run(exposure)
             allFts.append(fts)
-            if expRef.dataId['visit'] != dataRefList[0].dataId['visit']:
-                sumFlats += exposure.getMaskedImage().getImage().getArray()
-                sumVariances += exposure.getMaskedImage().getVariance().getArray()
 
         self.log.info('=== xOffsets = '+str(xOffsets)+' ===')
 
@@ -169,52 +181,115 @@ class ConstructFiberFlatTask(CalibTask):
         myProfileTask.config.lambdaSP = self.config.lambdaSP
         myProfileTask.config.wingSmoothFactor = self.config.wingSmoothFactor
 
-        for fts in allFts:
-            fts = myProfileTask.run(fts)
-
-        sumRec = np.ndarray(shape=sumFlats.shape, dtype='float32')
-        sumRec[:][:] = 0.
-        sumRecIm = afwImage.ImageF(sumRec)
-        rec = np.ndarray(shape=sumFlats.shape, dtype='float32')
-        rec[:][:] = 0.
-        recIm = afwImage.ImageF(rec)
-
-        sumVar = np.ndarray(shape=sumFlats.shape, dtype='float32')
-        sumVar[:][:] = 0.
+        sumOrig = np.zeros(shape=flatsShape, dtype=np.float32)
+        normFlatTemp = np.zeros(shape=flatsShape, dtype=np.float32)
+        normFlatTempIm = afwImage.ImageF(normFlatTemp)
+        normFlatTempMIm = afwImage.makeMaskedImage(normFlatTempIm)
+        sumVar = np.zeros(shape=flatsShape, dtype=np.float32)
         sumVarIm = afwImage.ImageF(sumVar)
 
-        # Add all reconstructed FiberTraces of all dithered flats to one reconstructed image 'recIm'
-        for fts in allFts:
-            recIm.getArray()[:][:] = 0.
-            for ft in fts.getTraces():
-                spectrum = ft.extractFromProfile()
-                recFt = ft.getReconstructed2DSpectrum(spectrum)
-                recFtArr = recFt.getArray()
-                imArr = ft.getImage().getArray()
-                recFtArr = np.where(imArr <= 0., 0., recFtArr)
-                drpStella.addFiberTraceToCcdImage(ft, recFt, sumRecIm)
+        frame = 0
+        # For each FiberTrace of all dithered flats add to one image 'sumOrigIm'
+        for iFt in range(allFts[0].size()):
+            xMinCenterRow = 100000.
+            xMaxCenterRow = 0.;
+            sumOrig[:][:] = 0.
+            sumOrigIm = afwImage.ImageF(sumOrig)
+            sumVar[:][:] = 0.
+            sumVarIm = afwImage.ImageF(sumVar)
+            for fts in allFts:
+                ft = fts.getFiberTrace(iFt)
+                drpStella.addFiberTraceToCcdImage(ft, ft.getImage(), sumOrigIm)
                 drpStella.addFiberTraceToCcdImage(ft, ft.getVariance(), sumVarIm)
 
-        sumVariances = np.where(sumVariances <= 0., 0.1, sumVariances)
-        snrArr = sumFlats / np.sqrt(sumVariances)
+                xCenters = ft.getXCenters()
+                xLeft = xCenters[xCenters.shape[0] / 2] + self.config.xLow
+                xMinCenterRow = np.min([xMinCenterRow, xLeft])
+                xRight = xCenters[xCenters.shape[0] / 2] + self.config.xHigh
+                xMaxCenterRow = np.max([xMaxCenterRow, xRight])
 
-        sumFlats = np.where(sumFlats <= 0., 0.1, sumFlats)
-        normalizedFlat = sumFlats / sumRecIm.getArray()
-        normalizedFlat = np.where(sumRecIm.getArray() <= 0., 1., normalizedFlat)
-        normalizedFlat = np.where(snrArr < 100., 1., normalizedFlat)
-        normalizedFlat = np.where(sumFlats <= 0., 1., normalizedFlat)
-        normalizedFlat = np.where(sumVariances <= 0., 1., normalizedFlat)
+            myFindTask = traceTask.FindAndTraceAperturesTask()
+            myFindTask.config.xHigh = 0.5 * (xMaxCenterRow - xMinCenterRow)
+            myFindTask.config.xLow = -1. * myFindTask.config.xHigh
+            myFindTask.config.apertureFWHM = myFindTask.config.xHigh / 2.
+
+            print 'mean(sumOrig) = ',np.mean(sumOrig)
+            print 'mean(sumOrigIm.getArray()) = ',np.mean(sumOrigIm.getArray())
+            sumOrig = np.where(sumOrig == 0.,
+                               bias.getMaskedImage().getImage().getArray(),
+                               sumOrig)
+            maskedIm = afwImage.makeMaskedImage(sumOrigIm)
+            sumVar = sumVarIm.getArray()
+            maskedIm.getVariance().getArray()[:,:] = sumVar[:,:]
+            exposure = afwImage.makeExposure(maskedIm)
+
+            """find and trace FiberTrace in image containing sum of FiberTraces"""
+            fts = myFindTask.run(exposure)
+
+            """calculate profile for sum of FiberTraces"""
+            myProfileTask.run(fts)
+            ft = fts.getFiberTrace(0)
+
+            if self.config.display:
+#                ds9.setMaskTransparency(50)
+#                drpStella.markFiberTraceInMask(ft,
+#                                               exposure.getMaskedImage().getMask())
+                frame += 1
+                ds9.mtv(exposure, title='Flat iFT=%d' % iFt, frame=frame)
+
+            imFt = ft.getImage()
+            print 'mean(imFt) = ',np.mean(imFt.getArray())
+            varFt = ft.getVariance()
+
+            """extract spectrum and reconstruct FiberTrace"""
+            specFt = ft.extractFromProfile()
+            recFt = ft.getReconstructed2DSpectrum(specFt).getArray()
+            print 'mean(recFt) = ',np.mean(recFt)
+            recFt = np.where(recFt <= 0., 0.1, recFt)
+
+            """calculate normalized Flat for FiberTrace"""
+            normFt = imFt.getArray() / recFt
+            normFt = np.where(recFt <= 0., 1., normFt)
+            snrArr = imFt.getArray() / np.sqrt(varFt.getArray())
+            normFt = np.where(snrArr <= self.config.minSNR, 1., normFt)
+            print 'mean(normFt) = ',np.mean(normFt)
+
+            """add normalized FiberTrace to temporary image, extract the"""
+            """FiberTraceSet from the pfsFiberTrace"""
+            """We do this so we don't add normalized FiberTraces on top of"""
+            """each other"""
+            """In order to avoid this step we need another function like"""
+            """addFiberTraceToCcdImage but with setting the pixel values"""
+            """instead of adding them"""
+            drpStella.addFiberTraceToCcdImage(ft,
+                                              afwImage.ImageF(normFt),
+                                              normFlatTempIm)
+            print 'after addNormFiberTrace: mean(normFlatTempIm) = ',np.mean(normFlatTempIm.getArray())
+            print 'after addNormFiberTrace: mean(normFlatTempMIm) = ',np.mean(normFlatTempMIm.getImage().getArray())
+            fts = makeFiberTraceSet(fiberTrace, normFlatTempMIm)
+            print 'after makeFiberTraceSet: fts.size() = ',fts.size()
+            ftNorm = fts.getFiberTrace(iFt)
+            if self.config.display:
+                normFlatTempMIm = afwImage.makeMaskedImage(normFlatTempIm)
+                drpStella.markFiberTraceInMask(ft,
+                                               normFlatTempMIm.getMask())
+                frame += 1
+                ds9.mtv(normFlatTempMIm, title='normalized Flat iFT=%d' % iFt, frame=frame)
+            drpStella.addFiberTraceToCcdImage(ftNorm,
+                                              ftNorm.getImage(),
+                                              normFlatOutIm)
+            print 'iFt = ',iFt,' finished: mean(normFt) = ',np.mean(normFt)
+
+        normFlatOut = normFlatOutIm.getArray()
+        normFlatOut = np.where(np.fabs(normFlatOut) < 0.01, 1., normFlatOut)
+        normFlatOutIm = afwImage.ImageF(normFlatOut)
         if self.config.display:
-            ds9.mtv(afwImage.ImageF(sumFlats), title='sumFlats', frame=1)
-            ds9.mtv(sumRecIm, title='sumRecIm', frame=2)
-            ds9.mtv(afwImage.ImageF(normalizedFlat), title='normalized Flat', frame=3)
+            frame += 1
+            ds9.mtv(normFlatOutIm, title='normalized Flat', frame=frame)
 
-        normFlatOut = afwImage.makeExposure(afwImage.makeMaskedImage(afwImage.ImageF(normalizedFlat)))
-
-        self.recordCalibInputs(cache.butler, normFlatOut, struct.ccdIdList, struct.outputId)
-
-        self.interpolateNans(normFlatOut)
-
-        normFlatOutDec = afwImage.DecoratedImageF(normFlatOut.getMaskedImage().getImage())
-
+        """Write fiber flat"""
+        normFlatExp = afwImage.makeExposure(afwImage.makeMaskedImage(normFlatOutIm))
+        self.recordCalibInputs(cache.butler, normFlatExp, struct.ccdIdList, struct.outputId)
+        self.interpolateNans(normFlatExp)
+        normFlatOutDec = afwImage.DecoratedImageF(normFlatOutIm)
         self.write(cache.butler, normFlatOutDec, struct.outputId)

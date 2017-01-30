@@ -1,3 +1,23 @@
+config.xOffsetHdrKeyWord = 'sim.slit.xoffset'
+config.doRepair = True
+config.psfFwhm = 3.0
+config.psfSize = 21
+config.crGrow = 2
+config.darkTime = "DARKTIME"
+config.display = True
+config.swathWidth = 500
+config.telluric = "NONE"
+config.overSample = 10
+config.maxIterSF = 8
+config.maxIterSky = 10
+config.maxIterSig = 2
+config.minSNR = 10.
+config.lambdaSF = 17000.
+config.lambdaSP = 0.
+config.wingSmoothFactor = 0.
+config.xLow = -5.
+config.xHigh = 5.
+
 config.isr.doBias = True
 config.isr.doDark = True
 config.isr.doFlat = False
