@@ -11,82 +11,46 @@ from lsst.pipe.tasks.repair import RepairTask
 import math
 import numpy as np
 import pfs.drp.stella as drpStella
-import pfs.drp.stella.createFlatFiberTraceProfileTask as profileTask
-import pfs.drp.stella.findAndTraceAperturesTask as traceTask
+from pfs.drp.stella.createFlatFiberTraceProfileTask import CreateFlatFiberTraceProfileTask
+from pfs.drp.stella.findAndTraceAperturesTask import FindAndTraceAperturesTask
 from pfs.drp.stella.utils import makeFiberTraceSet
 
 class ConstructFiberFlatConfig(CalibConfig):
     """Configuration for flat construction"""
-    xOffsetHdrKeyWord = Field(dtype=str, default='sim.slit.xoffset', doc="Header keyword for fiber offset in input files")
-    doRepair = Field(dtype=bool, default=True, doc="Repair artifacts?")
-    psfFwhm = Field(dtype=float, default=3.0, doc="Repair PSF FWHM (pixels)")
-    psfSize = Field(dtype=int, default=21, doc="Repair PSF size (pixels)")
-    crGrow = Field(dtype=int, default=2, doc="Grow radius for CR (pixels)")
-    repair = ConfigurableField(target=RepairTask, doc="Task to repair artifacts")
-    darkTime = Field(dtype=str, default="DARKTIME", doc="Header keyword for time since last CCD wipe, or None",
-                     optional=True)
-    display = Field(dtype=bool, default=True, doc="Display images?")
-    profileInterpolation = Field(
-        doc = "Method for determining the spatial profile, [PISKUNOV, SPLINE3], default: PISKUNOV",
-        dtype = str,
-        default = "SPLINE3")
-    swathWidth = Field(
-        doc = "Size of individual extraction swaths",
-        dtype = int,
-        default = 500,
-        check = lambda x : x > 10)
-    telluric = Field(
-        doc = "Method for determining the background (+sky in case of slit spectra, default: NONE)",
-        dtype = str,
-        default = "NONE")
-    overSample = Field(
-        doc = "Oversampling factor for the determination of the spatial profile (default: 10)",
-        dtype = int,
-        default = 10,
-        check = lambda x : x > 0)
-    maxIterSF = Field(
-        doc = "Maximum number of iterations for the determination of the spatial profile (default: 8)",
-        dtype = int,
-        default = 8,
-        check = lambda x : x > 0)
-    maxIterSky = Field(
-        doc = "Maximum number of iterations for the determination of the (constant) background/sky (default: 10)",
-        dtype = int,
-        default = 10,
-        check = lambda x : x >= 0)
-    maxIterSig = Field(
-        doc = "Maximum number of iterations for masking bad pixels and CCD defects (default: 2)",
-        dtype = int,
-        default = 2,
-        check = lambda x : x > 0)
+    xOffsetHdrKeyWord = Field(dtype=str,
+                              default='sim.slit.xoffset',
+                              doc="Header keyword for fiber offset in input files")
+    doRepair = Field(dtype=bool,
+        default=True,
+        doc="Repair artifacts?")
+    psfFwhm = Field(dtype=float,
+        default=3.0,
+        doc="Repair PSF FWHM (pixels)")
+    psfSize = Field(dtype=int,
+        default=21,
+        doc="Repair PSF size (pixels)")
+    crGrow = Field(dtype=int,
+        default=2,
+        doc="Grow radius for CR (pixels)")
+    repair = ConfigurableField(target=RepairTask,
+        doc="Task to repair artifacts")
+    trace = ConfigurableField(target=FindAndTraceAperturesTask,
+        doc="Task to trace apertures")
+    traceWide = ConfigurableField(target=FindAndTraceAperturesTask,
+        doc="Task to trace apertures for sum of dithered FiberTraces")
+    profile = ConfigurableField(target=CreateFlatFiberTraceProfileTask,
+        doc="Task to calculate the spatial profile")
+    darkTime = Field(dtype=str,
+        default="DARKTIME",
+        doc="Header keyword for time since last CCD wipe, or None",
+        optional=True)
+    display = Field(dtype=bool,
+        default=True,
+        doc="Display images?")
     minSNR = Field(
         doc = "Minimum Signal-to-Noise Ratio for normalized Flat pixels",
         dtype = float,
         default = 100.,
-        check = lambda x : x > 0.)
-    lambdaSF = Field(
-        doc = "Lambda smoothing factor for spatial profile (default: 1. / overSample)",
-        dtype = float,
-        default = 17000.,
-        check = lambda x : x > 0.)
-    lambdaSP = Field(
-        doc = "Lambda smoothing factor for spectrum (default: 0)",
-        dtype = float,
-        default = 0.,
-        check = lambda x : x >= 0)
-    wingSmoothFactor = Field(
-        doc = "Lambda smoothing factor to remove possible oscillation of the wings of the spatial profile (default: 0.)",
-        dtype = float,
-        default = 0.,
-        check = lambda x : x >= 0)
-    xLow = Field(
-        doc = "Lower (left) limit of aperture relative to center position of trace in x (< 0.)",
-        dtype = float,
-        default = -5.)
-    xHigh = Field(
-        doc = "Upper (right) limit of aperture relative to center position of trace in x",
-        dtype = float,
-        default = 5.,
         check = lambda x : x > 0.)
 
 class ConstructFiberFlatTask(CalibTask):
@@ -98,6 +62,9 @@ class ConstructFiberFlatTask(CalibTask):
     def __init__(self, *args, **kwargs):
         CalibTask.__init__(self, *args, **kwargs)
         self.makeSubtask("repair")
+        self.makeSubtask("trace")
+        self.makeSubtask("traceWide")
+        self.makeSubtask("profile")
 
     @classmethod
     def applyOverrides(cls, config):
@@ -141,12 +108,7 @@ class ConstructFiberFlatTask(CalibTask):
         dataRefList = [getDataRef(cache.butler, dataId) if dataId is not None else None for
                        dataId in struct.ccdIdList]
         self.log.info("Combining %s on %s" % (struct.outputId, NODE))
-
         self.log.info('len(dataRefList) = %d' % len(dataRefList))
-
-        myFindTask = traceTask.FindAndTraceAperturesTask()
-        myFindTask.config.xLow = -5.
-        myFindTask.config.xHigh = 5.
 
         exposure = dataRefList[0].get('postISRCCD')
         bias = dataRefList[0].get('bias')
@@ -164,22 +126,10 @@ class ConstructFiberFlatTask(CalibTask):
                 xOffsets.append(exposure.getMetadata().get(self.config.xOffsetHdrKeyWord))
             except Exception:
                 xOffsets.append(0.0)
-            fts = myFindTask.run(exposure)
+            fts = self.trace.run(exposure)
             allFts.append(fts)
 
         self.log.info('=== xOffsets = '+str(xOffsets)+' ===')
-
-        myProfileTask = profileTask.CreateFlatFiberTraceProfileTask()
-        myProfileTask.config.profileInterpolation = self.config.profileInterpolation
-        myProfileTask.config.overSample = self.config.overSample
-        myProfileTask.config.swathWidth = self.config.swathWidth
-        myProfileTask.config.telluric = self.config.telluric
-        myProfileTask.config.maxIterSF = self.config.maxIterSF
-        myProfileTask.config.maxIterSky = self.config.maxIterSky
-        myProfileTask.config.maxIterSig = self.config.maxIterSig
-        myProfileTask.config.lambdaSF = self.config.lambdaSF
-        myProfileTask.config.lambdaSP = self.config.lambdaSP
-        myProfileTask.config.wingSmoothFactor = self.config.wingSmoothFactor
 
         sumOrig = np.zeros(shape=flatsShape, dtype=np.float32)
         normFlatTemp = np.zeros(shape=flatsShape, dtype=np.float32)
@@ -202,17 +152,6 @@ class ConstructFiberFlatTask(CalibTask):
                 drpStella.addFiberTraceToCcdImage(ft, ft.getImage(), sumOrigIm)
                 drpStella.addFiberTraceToCcdImage(ft, ft.getVariance(), sumVarIm)
 
-                xCenters = ft.getXCenters()
-                xLeft = xCenters[xCenters.shape[0] / 2] + self.config.xLow
-                xMinCenterRow = np.min([xMinCenterRow, xLeft])
-                xRight = xCenters[xCenters.shape[0] / 2] + self.config.xHigh
-                xMaxCenterRow = np.max([xMaxCenterRow, xRight])
-
-            myFindTask = traceTask.FindAndTraceAperturesTask()
-            myFindTask.config.xHigh = 0.5 * (xMaxCenterRow - xMinCenterRow)
-            myFindTask.config.xLow = -1. * myFindTask.config.xHigh
-            myFindTask.config.apertureFWHM = myFindTask.config.xHigh / 2.
-
             print 'mean(sumOrig) = ',np.mean(sumOrig)
             print 'mean(sumOrigIm.getArray()) = ',np.mean(sumOrigIm.getArray())
             sumOrig = np.where(sumOrig == 0.,
@@ -224,10 +163,10 @@ class ConstructFiberFlatTask(CalibTask):
             exposure = afwImage.makeExposure(maskedIm)
 
             """find and trace FiberTrace in image containing sum of FiberTraces"""
-            fts = myFindTask.run(exposure)
+            fts = self.traceWide.run(exposure)
 
             """calculate profile for sum of FiberTraces"""
-            myProfileTask.run(fts)
+            self.profile.run(fts)
             ft = fts.getFiberTrace(0)
 
             if self.config.display:
