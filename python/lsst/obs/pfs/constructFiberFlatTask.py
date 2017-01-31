@@ -43,6 +43,11 @@ class ConstructFiberFlatConfig(CalibConfig):
     display = Field(dtype=bool,
         default=True,
         doc="Display images?")
+    minSNR = Field(
+        doc = "Minimum Signal-to-Noise Ratio for normalized Flat pixels",
+         dtype = float,
+        default = 100.,
+         check = lambda x : x > 0.)
 
 class ConstructFiberFlatTask(CalibTask):
     """Task to construct the normalized Flat"""
@@ -148,11 +153,11 @@ class ConstructFiberFlatTask(CalibTask):
         #to avoid division by zero and remove non-physical negative values,
         #we set the reconstructed values <= 0.0 to 0.01. We later set the normalized
         #Flat to unity where sumRecImArr <= 0.01, as well as all other pixels
-        #with a SNR < 100
+        #with a SNR < self.config.minSNR
         sumRecImArr[sumRecImArr <= 0.0] = 0.01
         normalizedFlat = sumFlats / sumRecImArr
         normalizedFlat[sumRecImArr <= 0.01] = 1.0
-        normalizedFlat[snrArr < 100.0] = 1.0
+        normalizedFlat[snrArr < self.config.minSNR] = 1.0
         normalizedFlat[sumFlats <= 0.0] = 1.0
         normalizedFlat[sumVariances <= 0.0] = 1.0
 
