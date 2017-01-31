@@ -11,7 +11,7 @@ import math
 import numpy as np
 import pfs.drp.stella as drpStella
 import pfs.drp.stella.createFlatFiberTraceProfileTask as cfftpTask
-from pfs.drp.stella.utils import makeFiberTraceSet
+from pfs.drp.stella.findAndTraceAperturesTask import FindAndTraceAperturesTask
 
 class ConstructFiberFlatConfig(CalibConfig):
     """Configuration for flat construction"""
@@ -80,6 +80,8 @@ class ConstructFiberFlatConfig(CalibConfig):
         doc="Grow radius for CR (pixels)")
     repair = ConfigurableField(target=RepairTask,
         doc="Task to repair artifacts")
+    trace = ConfigurableField(target=FindAndTraceAperturesTask,
+        doc="Task to trace apertures")
     darkTime = Field(dtype=str,
         default="DARKTIME",
         doc="Header keyword for time since last CCD wipe, or None",
@@ -94,6 +96,7 @@ class ConstructFiberFlatTask(CalibTask):
     def __init__(self, *args, **kwargs):
         CalibTask.__init__(self, *args, **kwargs)
         self.makeSubtask("repair")
+        self.makeSubtask("trace")
 
     @classmethod
     def applyOverrides(cls, config):
@@ -151,8 +154,7 @@ class ConstructFiberFlatTask(CalibTask):
                 xOffsets.append(exposure.getMetadata().get(self.config.xOffsetHdrKeyWord))
             except Exception:
                 xOffsets.append(0.0)
-            fiberTrace = expRef.get('fiberTrace', immediate=True)
-            fts = makeFiberTraceSet(fiberTrace, exposure.getMaskedImage())
+            fts = self.trace.run(exposure)
             allFts.append(fts)
             if expRef.dataId['visit'] != dataRefList[0].dataId['visit']:
                 sumFlats += exposure.getMaskedImage().getImage().getArray()
