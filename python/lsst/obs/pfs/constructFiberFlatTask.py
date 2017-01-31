@@ -15,15 +15,6 @@ from pfs.drp.stella.utils import makeFiberTraceSet
 
 class ConstructFiberFlatConfig(CalibConfig):
     """Configuration for flat construction"""
-    xOffsetHdrKeyWord = Field(dtype=str, default='sim.slit.xoffset', doc="Header keyword for fiber offset in input files")
-    doRepair = Field(dtype=bool, default=True, doc="Repair artifacts?")
-    psfFwhm = Field(dtype=float, default=3.0, doc="Repair PSF FWHM (pixels)")
-    psfSize = Field(dtype=int, default=21, doc="Repair PSF size (pixels)")
-    crGrow = Field(dtype=int, default=2, doc="Grow radius for CR (pixels)")
-    repair = ConfigurableField(target=RepairTask, doc="Task to repair artifacts")
-    darkTime = Field(dtype=str, default="DARKTIME", doc="Header keyword for time since last CCD wipe, or None",
-                     optional=True)
-    
     profileInterpolation = Field(
         doc = "Method for determining the spatial profile, [PISKUNOV, SPLINE3], default: PISKUNOV",
         dtype = str,
@@ -72,6 +63,27 @@ class ConstructFiberFlatConfig(CalibConfig):
         dtype = float,
         default = 0.,
         check = lambda x : x >= 0)
+    xOffsetHdrKeyWord = Field(dtype=str,
+                              default='sim.slit.xoffset',
+                              doc="Header keyword for fiber offset in input files")
+    doRepair = Field(dtype=bool,
+        default=True,
+        doc="Repair artifacts?")
+    psfFwhm = Field(dtype=float,
+        default=3.0,
+        doc="Repair PSF FWHM (pixels)")
+    psfSize = Field(dtype=int,
+        default=21,
+        doc="Repair PSF size (pixels)")
+    crGrow = Field(dtype=int,
+        default=2,
+        doc="Grow radius for CR (pixels)")
+    repair = ConfigurableField(target=RepairTask,
+        doc="Task to repair artifacts")
+    darkTime = Field(dtype=str,
+        default="DARKTIME",
+        doc="Header keyword for time since last CCD wipe, or None",
+        optional=True)
 
 class ConstructFiberFlatTask(CalibTask):
     """Task to construct the normalized Flat"""
@@ -125,13 +137,9 @@ class ConstructFiberFlatTask(CalibTask):
         dataRefList = [getDataRef(cache.butler, dataId) if dataId is not None else None for
                        dataId in struct.ccdIdList]
         self.log.info("Combining %s on %s" % (struct.outputId, NODE))
-
         self.log.info('len(dataRefList) = %d' % len(dataRefList))
 
-#        flatVisits = []#29,41,42,44,45,46,47,48,49,51,53]
-        
         exposure = dataRefList[0].get('postISRCCD')
-        
         sumFlats = exposure.getMaskedImage().getImage().getArray()
         sumVariances = exposure.getMaskedImage().getVariance().getArray()
 
@@ -164,23 +172,18 @@ class ConstructFiberFlatTask(CalibTask):
         myProfileTask.config.lambdaSP = self.config.lambdaSP
         myProfileTask.config.wingSmoothFactor = self.config.wingSmoothFactor
 
+        # Calculate spatial profiles for all FiberTraceSets
         for fts in allFts:
             fts = myProfileTask.run(fts)
 
-        sumRec = np.ndarray(shape=sumFlats.shape, dtype='float32')
-        sumRec[:][:] = 0.
+        sumRec = np.zeros(shape=sumFlats.shape, dtype='float32')
         sumRecIm = afwImage.ImageF(sumRec)
-        rec = np.ndarray(shape=sumFlats.shape, dtype='float32')
-        rec[:][:] = 0.
-        recIm = afwImage.ImageF(rec)
-
-        sumVar = np.ndarray(shape=sumFlats.shape, dtype='float32')
-        sumVar[:][:] = 0.
+        sumVar = np.zeros(shape=sumFlats.shape, dtype='float32')
         sumVarIm = afwImage.ImageF(sumVar)
 
-        # Add all reconstructed FiberTraces of all dithered flats to one reconstructed image 'recIm'
+        # Add all reconstructed FiberTraces of all dithered flats to one
+        # reconstructed image 'sumRecIm'
         for fts in allFts:
-            recIm.getArray()[:][:] = 0.
             for ft in fts.getTraces():
                 spectrum = ft.extractFromProfile()
                 recFt = ft.getReconstructed2DSpectrum(spectrum)
@@ -204,13 +207,10 @@ class ConstructFiberFlatTask(CalibTask):
         normalizedFlat = drpStella.where(snrArr, '<', 100., 1., normalizedFlat)
         normalizedFlat = drpStella.where(sumFlats, '<=', 0., 1., normalizedFlat)
         normalizedFlat = drpStella.where(sumVariances, '<=', 0., 1., normalizedFlat)
-        
+
+        """Write fiber flat"""
         normFlatOut = afwImage.makeExposure(afwImage.makeMaskedImage(afwImage.ImageF(normalizedFlat)))
-
         self.recordCalibInputs(cache.butler, normFlatOut, struct.ccdIdList, struct.outputId)
-
         self.interpolateNans(normFlatOut)
-        
         normFlatOutDec = afwImage.DecoratedImageF(normFlatOut.getMaskedImage().getImage())
-
         self.write(cache.butler, normFlatOutDec, struct.outputId)
