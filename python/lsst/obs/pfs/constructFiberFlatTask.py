@@ -40,6 +40,9 @@ class ConstructFiberFlatConfig(CalibConfig):
         default="DARKTIME",
         doc="Header keyword for time since last CCD wipe, or None",
         optional=True)
+    display = Field(dtype=bool,
+        default=True,
+        doc="Display images?")
 
 class ConstructFiberFlatTask(CalibTask):
     """Task to construct the normalized Flat"""
@@ -152,9 +155,18 @@ class ConstructFiberFlatTask(CalibTask):
         normalizedFlat[snrArr < 100.0] = 1.0
         normalizedFlat[sumFlats <= 0.0] = 1.0
         normalizedFlat[sumVariances <= 0.0] = 1.0
-        if self.config.display:
-            ds9.mtv(afwImage.ImageF(sumFlats - sumRecImArr), title='sumFlats - sumRecIm', frame=1)
-            ds9.mtv(afwImage.ImageF(normalizedFlat), title='normalized Flat', frame=2)
+
+        import lsstDebug
+        try:
+            import debug
+            if lsstDebug.Info(__name__).display:
+                import lsst.afw.display as afwDisplay
+                display = afwDisplay.getDisplay(frame=1)
+                display.mtv(afwImage.ImageF(sumFlats - sumRecImArr), title='sumFlats - sumRecIm')
+                display.frame = 2
+                display.mtv(afwImage.ImageF(normalizedFlat), title='normalized Flat')
+        except ImportError:
+            debug = None
 
         """Write fiber flat"""
         normFlatOut = afwImage.makeExposure(afwImage.makeMaskedImage(afwImage.ImageF(normalizedFlat)))
