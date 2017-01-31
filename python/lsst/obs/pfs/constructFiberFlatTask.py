@@ -15,27 +15,9 @@ from pfs.drp.stella.findAndTraceAperturesTask import FindAndTraceAperturesTask
 
 class ConstructFiberFlatConfig(CalibConfig):
     """Configuration for flat construction"""
-    xOffsetHdrKeyWord = Field(dtype=str,
-                              default='sim.slit.xoffset',
-                              doc="Header keyword for fiber offset in input files")
-    doRepair = Field(dtype=bool,
-        default=True,
-        doc="Repair artifacts?")
-    psfFwhm = Field(dtype=float,
-        default=3.0,
-        doc="Repair PSF FWHM (pixels)")
-    psfSize = Field(dtype=int,
-        default=21,
-        doc="Repair PSF size (pixels)")
     crGrow = Field(dtype=int,
         default=2,
         doc="Grow radius for CR (pixels)")
-    repair = ConfigurableField(target=RepairTask,
-        doc="Task to repair artifacts")
-    trace = ConfigurableField(target=FindAndTraceAperturesTask,
-        doc="Task to trace apertures")
-    profile = ConfigurableField(target=CreateFlatFiberTraceProfileTask,
-        doc="Task to calculate the spatial profile")
     darkTime = Field(dtype=str,
         default="DARKTIME",
         doc="Header keyword for time since last CCD wipe, or None",
@@ -43,11 +25,29 @@ class ConstructFiberFlatConfig(CalibConfig):
     display = Field(dtype=bool,
         default=True,
         doc="Display images?")
+    doRepair = Field(dtype=bool,
+        default=True,
+        doc="Repair artifacts?")
     minSNR = Field(
         doc = "Minimum Signal-to-Noise Ratio for normalized Flat pixels",
          dtype = float,
         default = 100.,
          check = lambda x : x > 0.)
+    profile = ConfigurableField(target=CreateFlatFiberTraceProfileTask,
+        doc="Task to calculate the spatial profile")
+    psfFwhm = Field(dtype=float,
+        default=3.0,
+        doc="Repair PSF FWHM (pixels)")
+    psfSize = Field(dtype=int,
+        default=21,
+        doc="Repair PSF size (pixels)")
+    repair = ConfigurableField(target=RepairTask,
+        doc="Task to repair artifacts")
+    trace = ConfigurableField(target=FindAndTraceAperturesTask,
+        doc="Task to trace apertures")
+    xOffsetHdrKeyWord = Field(dtype=str,
+                              default='sim.slit.xoffset',
+                              doc="Header keyword for fiber offset in input files")
 
 class ConstructFiberFlatTask(CalibTask):
     """Task to construct the normalized Flat"""
