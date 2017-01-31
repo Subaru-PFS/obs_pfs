@@ -1,6 +1,6 @@
 config.xOffsetHdrKeyWord = 'sim.slit.xoffset'
 config.doRepair = True
-config.psfFwhm = 3.0
+config.psfFwhm = 2.5
 config.psfSize = 21
 config.crGrow = 2
 config.darkTime = "DARKTIME"
@@ -42,7 +42,7 @@ config.traceWide.nLost = 10
 
 config.profile.swathWidth = 300
 config.profile.telluric = "NONE"
-config.profile.overSample = 10
+config.profile.overSample = 100
 config.profile.maxIterSig = 2
 config.profile.lowerSigma = 3.0
 config.profile.upperSigma = 3.0
