@@ -191,24 +191,27 @@ class ConstructFiberFlatTask(CalibTask):
                 recFt = ft.getReconstructed2DSpectrum(spectrum)
                 recFtArr = recFt.getArray()
                 imArr = ft.getImage().getArray()
-                recFtArr = drpStella.where(imArr,'<=',0.,0.,recFtArr)
+                recFtArr[imArr <= 0] = 0.0
                 drpStella.addFiberTraceToCcdImage(ft, recFt, sumRecIm)
                 drpStella.addFiberTraceToCcdImage(ft, ft.getVariance(), sumVarIm)
 
-        sumVariances = drpStella.where(sumVariances, '<=', 0., 0.1, sumVariances)
+        sumVariances[sumVariances <= 0.0] = 0.1
         snrArr = sumFlats / np.sqrt(sumVariances)
 
         sumRecImArr = sumRecIm.getArray()
-        sumRecImArr = np.where(sumRecImArr <= 0.,
-                               0.1,
-                               sumRecImArr)
+        #to avoid division by zero and remove non-physical negative values,
+        #we set the reconstructed values <= 0.0 to 0.01. We later set the normalized
+        #Flat to unity where sumRecImArr <= 0.01, as well as all other pixels
+        #with a SNR < 100
+        sumRecImArr[sumRecImArr <= 0.0] = 0.01
         normalizedFlat = sumFlats / sumRecImArr
-        normalizedFlat = np.where(sumRecImArr <= 0.,
-                                  1.,
-                                  normalizedFlat)
-        normalizedFlat = drpStella.where(snrArr, '<', 100., 1., normalizedFlat)
-        normalizedFlat = drpStella.where(sumFlats, '<=', 0., 1., normalizedFlat)
-        normalizedFlat = drpStella.where(sumVariances, '<=', 0., 1., normalizedFlat)
+        normalizedFlat[sumRecImArr <= 0.01] = 1.0
+        normalizedFlat[snrArr < 100.0] = 1.0
+        normalizedFlat[sumFlats <= 0.0] = 1.0
+        normalizedFlat[sumVariances <= 0.0] = 1.0
+        if self.config.display:
+            ds9.mtv(afwImage.ImageF(sumFlats - sumRecImArr), title='sumFlats - sumRecIm', frame=1)
+            ds9.mtv(afwImage.ImageF(normalizedFlat), title='normalized Flat', frame=2)
 
         """Write fiber flat"""
         normFlatOut = afwImage.makeExposure(afwImage.makeMaskedImage(afwImage.ImageF(normalizedFlat)))
