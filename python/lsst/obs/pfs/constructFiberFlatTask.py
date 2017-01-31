@@ -10,59 +10,11 @@ from lsst.pipe.tasks.repair import RepairTask
 import math
 import numpy as np
 import pfs.drp.stella as drpStella
-import pfs.drp.stella.createFlatFiberTraceProfileTask as cfftpTask
+from pfs.drp.stella.createFlatFiberTraceProfileTask import CreateFlatFiberTraceProfileTask
 from pfs.drp.stella.findAndTraceAperturesTask import FindAndTraceAperturesTask
 
 class ConstructFiberFlatConfig(CalibConfig):
     """Configuration for flat construction"""
-    profileInterpolation = Field(
-        doc = "Method for determining the spatial profile, [PISKUNOV, SPLINE3], default: PISKUNOV",
-        dtype = str,
-        default = "SPLINE3")
-    swathWidth = Field(
-        doc = "Size of individual extraction swaths",
-        dtype = int,
-        default = 500,
-        check = lambda x : x > 10)
-    telluric = Field(
-        doc = "Method for determining the background (+sky in case of slit spectra, default: NONE)",
-        dtype = str,
-        default = "NONE")
-    overSample = Field(
-        doc = "Oversampling factor for the determination of the spatial profile (default: 10)",
-        dtype = int,
-        default = 10,
-        check = lambda x : x > 0)
-    maxIterSF = Field(
-        doc = "Maximum number of iterations for the determination of the spatial profile (default: 8)",
-        dtype = int,
-        default = 8,
-        check = lambda x : x > 0)
-    maxIterSky = Field(
-        doc = "Maximum number of iterations for the determination of the (constant) background/sky (default: 10)",
-        dtype = int,
-        default = 10,
-        check = lambda x : x >= 0)
-    maxIterSig = Field(
-        doc = "Maximum number of iterations for masking bad pixels and CCD defects (default: 2)",
-        dtype = int,
-        default = 2,
-        check = lambda x : x > 0)
-    lambdaSF = Field(
-        doc = "Lambda smoothing factor for spatial profile (default: 1. / overSample)",
-        dtype = float,
-        default = 17000.,
-        check = lambda x : x > 0.)
-    lambdaSP = Field(
-        doc = "Lambda smoothing factor for spectrum (default: 0)",
-        dtype = float,
-        default = 0.,
-        check = lambda x : x >= 0)
-    wingSmoothFactor = Field(
-        doc = "Lambda smoothing factor to remove possible oscillation of the wings of the spatial profile (default: 0.)",
-        dtype = float,
-        default = 0.,
-        check = lambda x : x >= 0)
     xOffsetHdrKeyWord = Field(dtype=str,
                               default='sim.slit.xoffset',
                               doc="Header keyword for fiber offset in input files")
@@ -82,6 +34,8 @@ class ConstructFiberFlatConfig(CalibConfig):
         doc="Task to repair artifacts")
     trace = ConfigurableField(target=FindAndTraceAperturesTask,
         doc="Task to trace apertures")
+    profile = ConfigurableField(target=CreateFlatFiberTraceProfileTask,
+        doc="Task to calculate the spatial profile")
     darkTime = Field(dtype=str,
         default="DARKTIME",
         doc="Header keyword for time since last CCD wipe, or None",
@@ -95,6 +49,7 @@ class ConstructFiberFlatTask(CalibTask):
 
     def __init__(self, *args, **kwargs):
         CalibTask.__init__(self, *args, **kwargs)
+        self.makeSubtask("profile")
         self.makeSubtask("repair")
         self.makeSubtask("trace")
 
@@ -162,21 +117,9 @@ class ConstructFiberFlatTask(CalibTask):
 
         self.log.info('=== xOffsets = '+str(xOffsets)+' ===')
 
-        myProfileTask = cfftpTask.CreateFlatFiberTraceProfileTask()
-        myProfileTask.config.profileInterpolation = self.config.profileInterpolation
-        myProfileTask.config.overSample = self.config.overSample
-        myProfileTask.config.swathWidth = self.config.swathWidth
-        myProfileTask.config.telluric = self.config.telluric
-        myProfileTask.config.maxIterSF = self.config.maxIterSF
-        myProfileTask.config.maxIterSky = self.config.maxIterSky
-        myProfileTask.config.maxIterSig = self.config.maxIterSig
-        myProfileTask.config.lambdaSF = self.config.lambdaSF
-        myProfileTask.config.lambdaSP = self.config.lambdaSP
-        myProfileTask.config.wingSmoothFactor = self.config.wingSmoothFactor
-
         # Calculate spatial profiles for all FiberTraceSets
         for fts in allFts:
-            fts = myProfileTask.run(fts)
+            fts = self.profile.run(fts)
 
         sumRec = np.zeros(shape=sumFlats.shape, dtype='float32')
         sumRecIm = afwImage.ImageF(sumRec)
