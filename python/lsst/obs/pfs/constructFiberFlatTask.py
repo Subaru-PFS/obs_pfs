@@ -193,9 +193,14 @@ class ConstructFiberFlatTask(CalibTask):
         sumVariances = drpStella.where(sumVariances, '<=', 0., 0.1, sumVariances)
         snrArr = sumFlats / np.sqrt(sumVariances)
 
-        sumFlats = drpStella.where(sumFlats, '<=', 0., 0.1, sumFlats)
-        normalizedFlat = sumRecIm.getArray() / sumFlats
-        normalizedFlat = drpStella.where(sumRecIm.getArray(), '<=', 0., 1., normalizedFlat)
+        sumRecImArr = sumRecIm.getArray()
+        sumRecImArr = np.where(sumRecImArr <= 0.,
+                               0.1,
+                               sumRecImArr)
+        normalizedFlat = sumFlats / sumRecImArr
+        normalizedFlat = np.where(sumRecImArr <= 0.,
+                                  1.,
+                                  normalizedFlat)
         normalizedFlat = drpStella.where(snrArr, '<', 100., 1., normalizedFlat)
         normalizedFlat = drpStella.where(sumFlats, '<=', 0., 1., normalizedFlat)
         normalizedFlat = drpStella.where(sumVariances, '<=', 0., 1., normalizedFlat)
