@@ -173,7 +173,7 @@ class ConstructFiberFlatTask(CalibTask):
         except ImportError:
             debug = None
 
-        """Write fiber flat"""
+        #Write fiber flat
         normFlatOut = afwImage.makeExposure(afwImage.makeMaskedImage(afwImage.ImageF(normalizedFlat)))
         self.recordCalibInputs(cache.butler, normFlatOut, struct.ccdIdList, struct.outputId)
         self.interpolateNans(normFlatOut)
