@@ -233,8 +233,8 @@ class ConstructFiberTraceTask(CalibTask):
         myProfileTask.config.lambdaSP = self.config.lambdaSP
         myProfileTask.config.wingSmoothFactor = self.config.wingSmoothFactor
 
-        fts = myProfileTask.run(fts)
         
+        myProfileTask.run(fts)
         dataId = struct.ccdIdList[0]
         pfsFT = PfsFiberTrace(struct.outputId['calibDate'], struct.outputId['spectrograph'], struct.outputId['arm'])
 #        pfsFT = PfsFiberTrace(struct.outputId['visit'], struct.outputId['spectrograph'], struct.outputId['arm'])
