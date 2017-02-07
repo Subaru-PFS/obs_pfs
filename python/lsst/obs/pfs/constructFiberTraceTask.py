@@ -10,140 +10,55 @@ from lsst.pipe.drivers.utils import getDataRef
 import math
 import numpy as np
 from pfs.datamodel.pfsFiberTrace import PfsFiberTrace
-import pfs.drp.stella.createFlatFiberTraceProfileTask as cfftpTask
-import pfs.drp.stella.findAndTraceAperturesTask as fataTask
+from pfs.drp.stella.createFlatFiberTraceProfileTask import CreateFlatFiberTraceProfileTask
+from pfs.drp.stella.findAndTraceAperturesTask import FindAndTraceAperturesTask
 from pfs.drp.stella.datamodelIO import PfsFiberTraceIO
 
 class ConstructFiberTraceConfig(CalibConfig):
     """Configuration for FiberTrace construction"""
-    xOffsetHdrKeyWord = Field(
-        dtype=str,
-        default='sim.slit.xoffset',
-        doc="Header keyword for fiber offset in input files")
-    doRepair = Field(
-        dtype=bool,
-        default=True,
-        doc="Repair artifacts?")
-    psfFwhm = Field(
-        dtype=float,
-        default=3.0,
-        doc="Repair PSF FWHM (pixels)")
-    psfSize = Field(
-        dtype=int,
-        default=21,
-        doc="Repair PSF size (pixels)")
     crGrow = Field(
         dtype=int,
         default=2,
-        doc="Grow radius for CR (pixels)")
+        doc="Grow radius for CR (pixels)"
+    )
+    darkTime = Field(
+        dtype=str,
+        default="DARKTIME",
+        doc="Header keyword for time since last CCD wipe, or None",
+        optional=True
+    )
+    doRepair = Field(
+        dtype=bool,
+        default=True,
+        doc="Repair artifacts?"
+    )
+    profile = ConfigurableField(
+        target=CreateFlatFiberTraceProfileTask,
+        doc="Task to calculate the spatial profile"
+    )
+    psfFwhm = Field(
+        dtype=float,
+        default=3.0,
+        doc="Repair PSF FWHM (pixels)"
+    )
+    psfSize = Field(
+        dtype=int,
+        default=21,
+        doc="Repair PSF size (pixels)"
+    )
     repair = ConfigurableField(
         target=RepairTask,
-        doc="Task to repair artifacts")
-    darkTime = Field(dtype=str, default="DARKTIME", doc="Header keyword for time since last CCD wipe, or None",
-                     optional=True)
-    interpolation = Field(
-          doc = "Interpolation schemes (CHEBYSHEV, LEGENDRE, CUBIC, LINEAR, POLYNOMIAL[only one implemented atm])",
-          dtype = str,
-          default = "POLYNOMIAL")
-    order = Field(
-        doc = "Polynomial order",
-        dtype = int,
-        default = 5,
-        check = lambda x : x >= 0)
-    xLow = Field(
-        doc = "Lower (left) limit of aperture relative to center position of trace in x (< 0.)",
-        dtype = float,
-        default = -4.,
-        check = lambda x : x < 0.)
-    xHigh = Field(
-        doc = "Upper (right) limit of aperture relative to center position of trace in x",
-        dtype = float,
-        default = 4.,
-        check = lambda x : x > 0.)
-    apertureFWHM = Field(
-        doc = "FWHM of an assumed Gaussian spatial profile for tracing the spectra",
-        dtype = float,
-        default = 2.5,
-        check = lambda x : x > 0.)
-    signalThreshold = Field(
-        doc = "Signal below this threshold is assumed zero for tracing the spectra",
-        dtype = float,
-        default = 120.,
-        check = lambda x : x >= 0.)
-    nTermsGaussFit = Field(
-        doc = "1 to look for maximum only without GaussFit; 3 to fit Gaussian; 4 to fit Gaussian plus constant background, 5 to fit Gaussian plus linear term (sloped backgfound)",
-        dtype = int,
-        default = 3,
-        check = lambda x : x > 0)
-    saturationLevel = Field(
-        doc = "CCD saturation level",
-        dtype = float,
-        default = 65000.,
-        check = lambda x : x > 0.)
-    minLength = Field(
-        doc = "Minimum aperture length to count as found FiberTrace",
-        dtype = int,
-        default = 3000,
-        check = lambda x : x >= 0)
-    maxLength = Field(
-        doc = "Maximum aperture length to count as found FiberTrace",
-        dtype = int,
-        default = 4096,
-        check = lambda x : x >= 0)
-    nLost = Field(
-        doc = "Number of consecutive times the trace is lost before aborting the trace",
-        dtype = int,
-        default = 10,
-        check = lambda x : x >= 0)
-
-    profileInterpolation = Field(
-        doc = "Method for determining the spatial profile, [PISKUNOV, SPLINE3], default: PISKUNOV",
-        dtype = str,
-        default = "SPLINE3")
-    swathWidth = Field(
-        doc = "Size of individual extraction swaths",
-        dtype = int,
-        default = 500,
-        check = lambda x : x > 10)
-    telluric = Field(
-        doc = "Method for determining the background (+sky in case of slit spectra, default: NONE)",
-        dtype = str,
-        default = "NONE")
-    overSample = Field(
-        doc = "Oversampling factor for the determination of the spatial profile (default: 10)",
-        dtype = int,
-        default = 10,
-        check = lambda x : x > 0)
-    maxIterSF = Field(
-        doc = "Maximum number of iterations for the determination of the spatial profile (default: 8)",
-        dtype = int,
-        default = 8,
-        check = lambda x : x > 0)
-    maxIterSky = Field(
-        doc = "Maximum number of iterations for the determination of the (constant) background/sky (default: 10)",
-        dtype = int,
-        default = 10,
-        check = lambda x : x >= 0)
-    maxIterSig = Field(
-        doc = "Maximum number of iterations for masking bad pixels and CCD defects (default: 2)",
-        dtype = int,
-        default = 2,
-        check = lambda x : x > 0)
-    lambdaSF = Field(
-        doc = "Lambda smoothing factor for spatial profile (default: 1. / overSample)",
-        dtype = float,
-        default = 17000.,
-        check = lambda x : x > 0.)
-    lambdaSP = Field(
-        doc = "Lambda smoothing factor for spectrum (default: 0)",
-        dtype = float,
-        default = 0.,
-        check = lambda x : x >= 0)
-    wingSmoothFactor = Field(
-        doc = "Lambda smoothing factor to remove possible oscillation of the wings of the spatial profile (default: 0.)",
-        dtype = float,
-        default = 0.,
-        check = lambda x : x >= 0)
+        doc="Task to repair artifacts"
+    )
+    trace = ConfigurableField(
+        target=FindAndTraceAperturesTask,
+        doc="Task to trace apertures"
+    )
+    xOffsetHdrKeyWord = Field(
+        dtype=str,
+        default='sim.slit.xoffset',
+        doc="Header keyword for fiber offset in input files"
+    )
 
     def setDefaults(self):
         CalibConfig.setDefaults(self)
@@ -162,6 +77,8 @@ class ConstructFiberTraceTask(CalibTask):
     def __init__(self, *args, **kwargs):
         CalibTask.__init__(self, *args, **kwargs)
         self.makeSubtask("repair")
+        self.makeSubtask("profile")
+        self.makeSubtask("trace")
 
     @classmethod
     def applyOverrides(cls, config):
@@ -225,58 +142,40 @@ class ConstructFiberTraceTask(CalibTask):
 
         self.interpolateNans(calib)
 
-        myFindTask = fataTask.FindAndTraceAperturesTask()
-        myFindTask.config.interpolation = self.config.interpolation
-        myFindTask.config.order = self.config.order
-        myFindTask.config.xLow = self.config.xLow
-        myFindTask.config.xHigh = self.config.xHigh
-        myFindTask.config.apertureFWHM = self.config.apertureFWHM
-        myFindTask.config.signalThreshold = self.config.signalThreshold
-        myFindTask.config.nTermsGaussFit = self.config.nTermsGaussFit
-        myFindTask.config.saturationLevel = self.config.saturationLevel
-        myFindTask.config.minLength = self.config.minLength
-        myFindTask.config.maxLength = self.config.maxLength
-        myFindTask.config.nLost = self.config.nLost
-
         calExp = afwImage.makeExposure(afwImage.makeMaskedImage(calib.getImage()))
-        fts = myFindTask.run(calExp)
+        fts = self.trace.run(calExp)
 
-        myProfileTask = cfftpTask.CreateFlatFiberTraceProfileTask()
-        myProfileTask.config.profileInterpolation = self.config.profileInterpolation
-        myProfileTask.config.maxIterSF = self.config.maxIterSF
-        myProfileTask.config.overSample = self.config.overSample
-        myProfileTask.config.swathWidth = self.config.swathWidth
-        myProfileTask.config.lambdaSF = self.config.lambdaSF
-        myProfileTask.config.lambdaSP = self.config.lambdaSP
-        myProfileTask.config.wingSmoothFactor = self.config.wingSmoothFactor
-
-        myProfileTask.run(fts)
+        self.profile.run(fts)
 
         dataId = struct.ccdIdList[0]
-        pfsFT = PfsFiberTrace(struct.outputId['calibDate'], struct.outputId['spectrograph'], struct.outputId['arm'])
-        pfsFT.fwhm = self.config.apertureFWHM
-        pfsFT.threshold = self.config.signalThreshold
-        pfsFT.nTerms = self.config.nTermsGaussFit
-        pfsFT.saturationLevel = self.config.saturationLevel
-        pfsFT.minLength = self.config.minLength
-        pfsFT.maxLength = self.config.maxLength
-        pfsFT.nLost = self.config.nLost
-        pfsFT.traceFunction = self.config.interpolation
-        pfsFT.order = self.config.order
-        pfsFT.xLow = self.config.xLow
-        pfsFT.xHigh = self.config.xHigh
-        pfsFT.nCutLeft = fts.getFiberTrace(0).getFiberTraceFunction().fiberTraceFunctionControl.nPixCutLeft
-        pfsFT.nCutRight = fts.getFiberTrace(0).getFiberTraceFunction().fiberTraceFunctionControl.nPixCutRight
-        pfsFT.interpol = self.config.profileInterpolation
-        pfsFT.swathLength = self.config.swathWidth
-        pfsFT.overSample = self.config.overSample
-        pfsFT.maxIterSF = self.config.maxIterSF
-        pfsFT.maxIterSig = fts.getFiberTrace(0).getFiberTraceProfileFittingControl().maxIterSig
-        pfsFT.lambdaSF = self.config.lambdaSF
-        pfsFT.lambdaSP = self.config.lambdaSP
-        pfsFT.lambdaWing = self.config.wingSmoothFactor
-        pfsFT.lSigma = fts.getFiberTrace(0).getFiberTraceProfileFittingControl().lowerSigma
-        pfsFT.uSigma = fts.getFiberTrace(0).getFiberTraceProfileFittingControl().upperSigma
+        pfsFT = PfsFiberTrace(
+            struct.outputId['calibDate'],
+            struct.outputId['spectrograph'],
+            struct.outputId['arm']
+        )
+        pfsFT.fwhm = self.trace.config.apertureFWHM
+        pfsFT.threshold = self.trace.config.signalThreshold
+        pfsFT.nTerms = self.trace.config.nTermsGaussFit
+        pfsFT.saturationLevel = self.trace.config.saturationLevel
+        pfsFT.minLength = self.trace.config.minLength
+        pfsFT.maxLength = self.trace.config.maxLength
+        pfsFT.nLost = self.trace.config.nLost
+        pfsFT.traceFunction = self.trace.config.interpolation
+        pfsFT.order = self.trace.config.order
+        pfsFT.xLow = self.trace.config.xLow
+        pfsFT.xHigh = self.trace.config.xHigh
+        pfsFT.nCutLeft = self.trace.config.nPixCutLeft
+        pfsFT.nCutRight = self.trace.config.nPixCutRight
+        pfsFT.interpol = self.profile.config.profileInterpolation
+        pfsFT.swathLength = self.profile.config.swathWidth
+        pfsFT.overSample = self.profile.config.overSample
+        pfsFT.maxIterSF = self.profile.config.maxIterSF
+        pfsFT.maxIterSig = self.profile.config.maxIterSig
+        pfsFT.lambdaSF = self.profile.config.lambdaSF
+        pfsFT.lambdaSP = self.profile.config.lambdaSP
+        pfsFT.lambdaWing = self.profile.config.wingSmoothFactor
+        pfsFT.lSigma = self.profile.config.lowerSigma
+        pfsFT.uSigma = self.profile.config.upperSigma
 
         pfsFT.fiberId = []
         pfsFT.xCenter = []
