@@ -113,6 +113,62 @@ class PfsMapper(CameraMapper):
             return getattr(parent, "std_" + dataset)(exp, dataId)
         return self._standardizeExposure(mapping, exp, dataId)
 
+    def _shiftAmpPixels(self, rawExp):
+        """Shift pixels in early raw frames.
+
+        Args
+        ----
+        rawExp : an Exposure for a raw image.
+
+        Early ADC versions insert a spurious pixel at the beginning of
+        the readout. This affects all rows, pushing the last overscan
+        pixel of a given row into the first leadin pixel on the
+        following row.
+
+        We strip out the 0th pixel, and leave the last one untouched.
+
+        The Exposure's Image is modified in place.
+        """
+
+        imArr = rawExp.getMaskedImage().getImage().getArray()
+    
+        for a in rawExp.getDetector():
+            yslice, xslice = a.getRawBBox().getSlices()
+            ampIm = imArr[yslice, xslice]
+            ampshape = ampIm.shape
+
+            # Don't bother being tricky: make a copy.
+            ampPixels = ampIm.flatten()
+            ampPixels[:-1] = ampPixels[1:]
+
+            imArr[yslice, xslice] = ampPixels.reshape(ampshape)
+
+    def std_raw(self, item, dataId):
+        """Fixup raw image problems.
+
+        1. Fix an early ADC bug. 
+
+        Since this is almost certainly an FPGA bug, I'll base the
+        decision on the FPGA version number. As of 2016-12-01 the
+        keyword is misnamed, so we can fix the format if the keyword
+        does not exist.
+
+        See _shiftAmpPixels() for the implementation.
+        """
+        
+        exp = super(PfsMapper, self).std_raw(item, dataId)
+
+        md = exp.getMetadata()
+        try:
+            dataVersion = md.get('W_VERSIONS_FPGA')
+        except:
+            dataVersion = 0
+        
+        if dataVersion <= 0x0070:
+            self._shiftAmpPixels(exp)
+        
+        return exp
+
     def std_bias(self, item, dataId):
         return self.standardizeCalib("bias", item, dataId)
 
