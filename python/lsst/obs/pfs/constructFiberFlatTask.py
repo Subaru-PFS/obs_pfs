@@ -10,68 +10,44 @@ from lsst.pipe.tasks.repair import RepairTask
 import math
 import numpy as np
 import pfs.drp.stella as drpStella
-import pfs.drp.stella.createFlatFiberTraceProfileTask as cfftpTask
-from pfs.drp.stella.utils import makeFiberTraceSet
+from pfs.drp.stella.createFlatFiberTraceProfileTask import CreateFlatFiberTraceProfileTask
+from pfs.drp.stella.findAndTraceAperturesTask import FindAndTraceAperturesTask
 
 class ConstructFiberFlatConfig(CalibConfig):
     """Configuration for flat construction"""
-    xOffsetHdrKeyWord = Field(dtype=str, default='sim.slit.xoffset', doc="Header keyword for fiber offset in input files")
-    doRepair = Field(dtype=bool, default=True, doc="Repair artifacts?")
-    psfFwhm = Field(dtype=float, default=3.0, doc="Repair PSF FWHM (pixels)")
-    psfSize = Field(dtype=int, default=21, doc="Repair PSF size (pixels)")
-    crGrow = Field(dtype=int, default=2, doc="Grow radius for CR (pixels)")
-    repair = ConfigurableField(target=RepairTask, doc="Task to repair artifacts")
-    darkTime = Field(dtype=str, default="DARKTIME", doc="Header keyword for time since last CCD wipe, or None",
-                     optional=True)
-    
-    profileInterpolation = Field(
-        doc = "Method for determining the spatial profile, [PISKUNOV, SPLINE3], default: PISKUNOV",
-        dtype = str,
-        default = "SPLINE3")
-    swathWidth = Field(
-        doc = "Size of individual extraction swaths",
-        dtype = int,
-        default = 500,
-        check = lambda x : x > 10)
-    telluric = Field(
-        doc = "Method for determining the background (+sky in case of slit spectra, default: NONE)",
-        dtype = str,
-        default = "NONE")
-    overSample = Field(
-        doc = "Oversampling factor for the determination of the spatial profile (default: 10)",
-        dtype = int,
-        default = 10,
-        check = lambda x : x > 0)
-    maxIterSF = Field(
-        doc = "Maximum number of iterations for the determination of the spatial profile (default: 8)",
-        dtype = int,
-        default = 8,
-        check = lambda x : x > 0)
-    maxIterSky = Field(
-        doc = "Maximum number of iterations for the determination of the (constant) background/sky (default: 10)",
-        dtype = int,
-        default = 10,
-        check = lambda x : x >= 0)
-    maxIterSig = Field(
-        doc = "Maximum number of iterations for masking bad pixels and CCD defects (default: 2)",
-        dtype = int,
-        default = 2,
-        check = lambda x : x > 0)
-    lambdaSF = Field(
-        doc = "Lambda smoothing factor for spatial profile (default: 1. / overSample)",
-        dtype = float,
-        default = 17000.,
-        check = lambda x : x > 0.)
-    lambdaSP = Field(
-        doc = "Lambda smoothing factor for spectrum (default: 0)",
-        dtype = float,
-        default = 0.,
-        check = lambda x : x >= 0)
-    wingSmoothFactor = Field(
-        doc = "Lambda smoothing factor to remove possible oscillation of the wings of the spatial profile (default: 0.)",
-        dtype = float,
-        default = 0.,
-        check = lambda x : x >= 0)
+    crGrow = Field(dtype=int,
+        default=2,
+        doc="Grow radius for CR (pixels)")
+    darkTime = Field(dtype=str,
+        default="DARKTIME",
+        doc="Header keyword for time since last CCD wipe, or None",
+        optional=True)
+    display = Field(dtype=bool,
+        default=True,
+        doc="Display images?")
+    doRepair = Field(dtype=bool,
+        default=True,
+        doc="Repair artifacts?")
+    minSNR = Field(
+        doc = "Minimum Signal-to-Noise Ratio for normalized Flat pixels",
+         dtype = float,
+        default = 100.,
+         check = lambda x : x > 0.)
+    profile = ConfigurableField(target=CreateFlatFiberTraceProfileTask,
+        doc="Task to calculate the spatial profile")
+    psfFwhm = Field(dtype=float,
+        default=3.0,
+        doc="Repair PSF FWHM (pixels)")
+    psfSize = Field(dtype=int,
+        default=21,
+        doc="Repair PSF size (pixels)")
+    repair = ConfigurableField(target=RepairTask,
+        doc="Task to repair artifacts")
+    trace = ConfigurableField(target=FindAndTraceAperturesTask,
+        doc="Task to trace apertures")
+    xOffsetHdrKeyWord = Field(dtype=str,
+                              default='sim.slit.xoffset',
+                              doc="Header keyword for fiber offset in input files")
 
 class ConstructFiberFlatTask(CalibTask):
     """Task to construct the normalized Flat"""
@@ -81,7 +57,9 @@ class ConstructFiberFlatTask(CalibTask):
 
     def __init__(self, *args, **kwargs):
         CalibTask.__init__(self, *args, **kwargs)
+        self.makeSubtask("profile")
         self.makeSubtask("repair")
+        self.makeSubtask("trace")
 
     @classmethod
     def applyOverrides(cls, config):
@@ -125,13 +103,9 @@ class ConstructFiberFlatTask(CalibTask):
         dataRefList = [getDataRef(cache.butler, dataId) if dataId is not None else None for
                        dataId in struct.ccdIdList]
         self.log.info("Combining %s on %s" % (struct.outputId, NODE))
-
         self.log.info('len(dataRefList) = %d' % len(dataRefList))
 
-#        flatVisits = []#29,41,42,44,45,46,47,48,49,51,53]
-        
         exposure = dataRefList[0].get('postISRCCD')
-        
         sumFlats = exposure.getMaskedImage().getImage().getArray()
         sumVariances = exposure.getMaskedImage().getVariance().getArray()
 
@@ -143,8 +117,7 @@ class ConstructFiberFlatTask(CalibTask):
                 xOffsets.append(exposure.getMetadata().get(self.config.xOffsetHdrKeyWord))
             except Exception:
                 xOffsets.append(0.0)
-            fiberTrace = expRef.get('fiberTrace', immediate=True)
-            fts = makeFiberTraceSet(fiberTrace, exposure.getMaskedImage())
+            fts = self.trace.run(exposure)
             allFts.append(fts)
             if expRef.dataId['visit'] != dataRefList[0].dataId['visit']:
                 sumFlats += exposure.getMaskedImage().getImage().getArray()
@@ -152,60 +125,57 @@ class ConstructFiberFlatTask(CalibTask):
 
         self.log.info('=== xOffsets = '+str(xOffsets)+' ===')
 
-        myProfileTask = cfftpTask.CreateFlatFiberTraceProfileTask()
-        myProfileTask.config.profileInterpolation = self.config.profileInterpolation
-        myProfileTask.config.overSample = self.config.overSample
-        myProfileTask.config.swathWidth = self.config.swathWidth
-        myProfileTask.config.telluric = self.config.telluric
-        myProfileTask.config.maxIterSF = self.config.maxIterSF
-        myProfileTask.config.maxIterSky = self.config.maxIterSky
-        myProfileTask.config.maxIterSig = self.config.maxIterSig
-        myProfileTask.config.lambdaSF = self.config.lambdaSF
-        myProfileTask.config.lambdaSP = self.config.lambdaSP
-        myProfileTask.config.wingSmoothFactor = self.config.wingSmoothFactor
-
+        # Calculate spatial profiles for all FiberTraceSets
         for fts in allFts:
-            fts = myProfileTask.run(fts)
+            fts = self.profile.run(fts)
 
-        sumRec = np.ndarray(shape=sumFlats.shape, dtype='float32')
-        sumRec[:][:] = 0.
+        sumRec = np.zeros(shape=sumFlats.shape, dtype='float32')
         sumRecIm = afwImage.ImageF(sumRec)
-        rec = np.ndarray(shape=sumFlats.shape, dtype='float32')
-        rec[:][:] = 0.
-        recIm = afwImage.ImageF(rec)
-
-        sumVar = np.ndarray(shape=sumFlats.shape, dtype='float32')
-        sumVar[:][:] = 0.
+        sumVar = np.zeros(shape=sumFlats.shape, dtype='float32')
         sumVarIm = afwImage.ImageF(sumVar)
 
-        # Add all reconstructed FiberTraces of all dithered flats to one reconstructed image 'recIm'
+        # Add all reconstructed FiberTraces of all dithered flats to one
+        # reconstructed image 'sumRecIm'
         for fts in allFts:
-            recIm.getArray()[:][:] = 0.
             for ft in fts.getTraces():
                 spectrum = ft.extractFromProfile()
                 recFt = ft.getReconstructed2DSpectrum(spectrum)
                 recFtArr = recFt.getArray()
                 imArr = ft.getImage().getArray()
-                recFtArr = drpStella.where(imArr,'<=',0.,0.,recFtArr)
+                recFtArr[imArr <= 0] = 0.0
                 drpStella.addFiberTraceToCcdImage(ft, recFt, sumRecIm)
                 drpStella.addFiberTraceToCcdImage(ft, ft.getVariance(), sumVarIm)
 
-        sumVariances = drpStella.where(sumVariances, '<=', 0., 0.1, sumVariances)
+        sumVariances[sumVariances <= 0.0] = 0.1
         snrArr = sumFlats / np.sqrt(sumVariances)
 
-        sumFlats = drpStella.where(sumFlats, '<=', 0., 0.1, sumFlats)
-        normalizedFlat = sumRecIm.getArray() / sumFlats
-        normalizedFlat = drpStella.where(sumRecIm.getArray(), '<=', 0., 1., normalizedFlat)
-        normalizedFlat = drpStella.where(snrArr, '<', 100., 1., normalizedFlat)
-        normalizedFlat = drpStella.where(sumFlats, '<=', 0., 1., normalizedFlat)
-        normalizedFlat = drpStella.where(sumVariances, '<=', 0., 1., normalizedFlat)
-        
+        sumRecImArr = sumRecIm.getArray()
+        #to avoid division by zero and remove non-physical negative values,
+        #we set the reconstructed values <= 0.0 to 0.01. We later set the normalized
+        #Flat to unity where sumRecImArr <= 0.01, as well as all other pixels
+        #with a SNR < self.config.minSNR
+        sumRecImArr[sumRecImArr <= 0.0] = 0.01
+        normalizedFlat = sumFlats / sumRecImArr
+        normalizedFlat[sumRecImArr <= 0.01] = 1.0
+        normalizedFlat[snrArr < self.config.minSNR] = 1.0
+        normalizedFlat[sumFlats <= 0.0] = 1.0
+        normalizedFlat[sumVariances <= 0.0] = 1.0
+
+        import lsstDebug
+        try:
+            import debug
+            if lsstDebug.Info(__name__).display:
+                import lsst.afw.display as afwDisplay
+                display = afwDisplay.getDisplay(frame=1)
+                display.mtv(afwImage.ImageF(sumFlats - sumRecImArr), title='sumFlats - sumRecIm')
+                display.frame = 2
+                display.mtv(afwImage.ImageF(normalizedFlat), title='normalized Flat')
+        except ImportError:
+            debug = None
+
+        #Write fiber flat
         normFlatOut = afwImage.makeExposure(afwImage.makeMaskedImage(afwImage.ImageF(normalizedFlat)))
-
         self.recordCalibInputs(cache.butler, normFlatOut, struct.ccdIdList, struct.outputId)
-
         self.interpolateNans(normFlatOut)
-        
         normFlatOutDec = afwImage.DecoratedImageF(normFlatOut.getMaskedImage().getImage())
-
         self.write(cache.butler, normFlatOutDec, struct.outputId)

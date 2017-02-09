@@ -29,7 +29,7 @@ class PfsFiberTraceTestCase(tests.TestCase):
         self.butler = dafPersist.Butler(self.butlerDir)
         self.dataId = dict(visit=104, spectrograph=1, arm='r', dateObs='2016-11-11')
         self.flat = self.butler.get("postISRCCD", self.dataId, immediate=True)
-        
+
         self.ftffc = drpStella.FiberTraceFunctionFindingControl()
         self.ftffc.fiberTraceFunctionControl.order = 5
         self.ftffc.fiberTraceFunctionControl.xLow = -5
@@ -43,32 +43,32 @@ class PfsFiberTraceTestCase(tests.TestCase):
         self.ftffc.minLength = 3880
         self.ftffc.maxLength = 3930
         self.ftffc.nLost = 20
-        
+
         self.ftpfc = drpStella.FiberTraceProfileFittingControl()
-        
+
         # This particular flatfile has 12 FiberTraces scattered over the whole CCD
         # If in the future the test data change we need to change these numbers
         self.nFiberTraces = 11
         self.fileNameFormat = "pfsFiberTrace-%10s-0-%1d%1s.fits"
-        
+
     def tearDown(self):
         del self.flat
         del self.ftffc
 
     def testPfsFiberTrace(self):
         """Test that we can create a pfsFiberTrace"""
-        
+
         fiberTraceSet = drpStella.findAndTraceAperturesF(self.flat.getMaskedImage(), self.ftffc)
-        
+
         """Check that we found self.nFiberTraces FiberTraces"""
         self.assertEqual(fiberTraceSet.size(), self.nFiberTraces)
 
         """Check that we can set the FiberTraceProfileFittingControl ftpfc"""
         self.assertTrue(fiberTraceSet.setFiberTraceProfileFittingControl(self.ftpfc))
-        
+
         """Check that we can calculate the spatial profile for all the FiberTraces in fiberTraceSet"""
         self.assertTrue(fiberTraceSet.calcProfileAllTraces())
-        
+
         """Check that we can write a PfsFiberTrace from the fiberTraceSet"""
         dataId = dict(calibDate=self.dataId['dateObs'], spectrograph=self.dataId['spectrograph'], arm=self.dataId['arm'])
         pfsFiberTrace = drpStellaUtils.createPfsFiberTrace(dataId, fiberTraceSet, self.flat.getHeight())
@@ -76,38 +76,38 @@ class PfsFiberTraceTestCase(tests.TestCase):
         fileName = os.path.join('.',PfsFiberTrace.fileNameFormat % (self.dataId['dateObs'], self.dataId['spectrograph'], self.dataId['arm']))
         pfsFiberTraceIO = PfsFiberTraceIO(pfsFiberTrace)
         pfsFiberTraceIO.writeFits(fileName)
-        
+
         """Check that we can read a PfsFiberTrace back in"""
         pfsFiberTraceNew = PfsFiberTrace(self.dataId['dateObs'], self.dataId['spectrograph'], self.dataId['arm'])
         pfsFiberTraceNew.read()
         print 'pfsFiberTraceNew = ',pfsFiberTraceNew
-        
+
         self.assertEqual(pfsFiberTrace.obsDate, pfsFiberTraceNew.obsDate)
         self.assertEqual(pfsFiberTrace.spectrograph, pfsFiberTraceNew.spectrograph)
         self.assertEqual(pfsFiberTrace.arm, pfsFiberTraceNew.arm)
-        self.assertEqual(pfsFiberTrace.fwhm, pfsFiberTraceNew.fwhm)
-        self.assertEqual(pfsFiberTrace.threshold, pfsFiberTraceNew.threshold)
+        self.assertAlmostEqual(pfsFiberTrace.fwhm, pfsFiberTraceNew.fwhm)
+        self.assertAlmostEqual(pfsFiberTrace.threshold, pfsFiberTraceNew.threshold)
         self.assertEqual(pfsFiberTrace.nTerms, pfsFiberTraceNew.nTerms)
-        self.assertEqual(pfsFiberTrace.saturationLevel, pfsFiberTraceNew.saturationLevel)
+        self.assertAlmostEqual(pfsFiberTrace.saturationLevel, pfsFiberTraceNew.saturationLevel)
         self.assertEqual(pfsFiberTrace.minLength, pfsFiberTraceNew.minLength)
         self.assertEqual(pfsFiberTrace.maxLength, pfsFiberTraceNew.maxLength)
         self.assertEqual(pfsFiberTrace.nLost, pfsFiberTraceNew.nLost)
         self.assertEqual(pfsFiberTrace.traceFunction, pfsFiberTraceNew.traceFunction)
         self.assertEqual(pfsFiberTrace.order, pfsFiberTraceNew.order)
-        self.assertEqual(pfsFiberTrace.xLow, pfsFiberTraceNew.xLow)
-        self.assertEqual(pfsFiberTrace.xHigh, pfsFiberTraceNew.xHigh)
+        self.assertAlmostEqual(pfsFiberTrace.xLow, pfsFiberTraceNew.xLow)
+        self.assertAlmostEqual(pfsFiberTrace.xHigh, pfsFiberTraceNew.xHigh)
         self.assertEqual(pfsFiberTrace.nCutLeft, pfsFiberTraceNew.nCutLeft)
         self.assertEqual(pfsFiberTrace.nCutRight, pfsFiberTraceNew.nCutRight)
         self.assertEqual(pfsFiberTrace.interpol, pfsFiberTraceNew.interpol)
         self.assertEqual(pfsFiberTrace.swathLength, pfsFiberTraceNew.swathLength)
         self.assertEqual(pfsFiberTrace.overSample, pfsFiberTraceNew.overSample)
-        self.assertEqual(pfsFiberTrace.maxIterSF, pfsFiberTraceNew.maxIterSF)
-        self.assertEqual(pfsFiberTrace.maxIterSig, pfsFiberTraceNew.maxIterSig)
-        self.assertEqual(pfsFiberTrace.lambdaSF, pfsFiberTraceNew.lambdaSF)
-        self.assertEqual(pfsFiberTrace.lambdaSP, pfsFiberTraceNew.lambdaSP)
-        self.assertEqual(pfsFiberTrace.lambdaWing, pfsFiberTraceNew.lambdaWing)
-        self.assertEqual(pfsFiberTrace.lSigma, pfsFiberTraceNew.lSigma)
-        self.assertEqual(pfsFiberTrace.uSigma, pfsFiberTraceNew.uSigma)
+        self.assertAlmostEqual(pfsFiberTrace.maxIterSF, pfsFiberTraceNew.maxIterSF)
+        self.assertAlmostEqual(pfsFiberTrace.maxIterSig, pfsFiberTraceNew.maxIterSig)
+        self.assertAlmostEqual(pfsFiberTrace.lambdaSF, pfsFiberTraceNew.lambdaSF)
+        self.assertAlmostEqual(pfsFiberTrace.lambdaSP, pfsFiberTraceNew.lambdaSP)
+        self.assertAlmostEqual(pfsFiberTrace.lambdaWing, pfsFiberTraceNew.lambdaWing)
+        self.assertAlmostEqual(pfsFiberTrace.lSigma, pfsFiberTraceNew.lSigma)
+        self.assertAlmostEqual(pfsFiberTrace.uSigma, pfsFiberTraceNew.uSigma)
 
         """Create new FiberTraceSet"""
         ftsNew = makeFiberTraceSet(pfsFiberTraceNew, self.flat.getMaskedImage())
@@ -127,14 +127,14 @@ class PfsFiberTraceTestCase(tests.TestCase):
             self.assertEqual(ft.getWidth(), ftNew.getWidth())
             self.assertEqual(ft.getHeight(), ftNew.getHeight())
             self.assertEqual(ftf.yCenter, ftfNew.yCenter)
-            self.assertEqual(ftf.xCenter, ftfNew.xCenter)
+            self.assertAlmostEqual(ftf.xCenter, ftfNew.xCenter)
             self.assertEqual(ftf.yLow, ftfNew.yLow)
             self.assertEqual(ftf.yHigh, ftfNew.yHigh)
 
             self.assertEqual(ftfc.interpolation, ftfcNew.interpolation)
             self.assertEqual(ftfc.order, ftfcNew.order)
-            self.assertEqual(ftfc.xLow, ftfcNew.xLow)
-            self.assertEqual(ftfc.xHigh, ftfcNew.xHigh)
+            self.assertAlmostEqual(ftfc.xLow, ftfcNew.xLow)
+            self.assertAlmostEqual(ftfc.xHigh, ftfcNew.xHigh)
             self.assertEqual(ftfc.nPixCutLeft, ftfcNew.nPixCutLeft)
             self.assertEqual(ftfc.nPixCutRight, ftfcNew.nPixCutRight)
             self.assertEqual(ftfc.nRows, ftfcNew.nRows)
@@ -172,7 +172,7 @@ class PfsFiberTraceTestCase(tests.TestCase):
                     self.assertAlmostEqual(image[iX,iY], imageNew[iX,iY], places=3)
 
             self.assertEqual(ft.getITrace(), ftNew.getITrace())
-            self.assertEqual(ft.getFiberTraceFunction().xCenter, ftNew.getFiberTraceFunction().xCenter)
+            self.assertAlmostEqual(ft.getFiberTraceFunction().xCenter, ftNew.getFiberTraceFunction().xCenter)
             self.assertEqual(ft.getFiberTraceFunction().yCenter, ftNew.getFiberTraceFunction().yCenter)
             self.assertEqual(ft.getFiberTraceFunction().yLow, ftNew.getFiberTraceFunction().yLow)
             self.assertEqual(ft.getFiberTraceFunction().yHigh, ftNew.getFiberTraceFunction().yHigh)

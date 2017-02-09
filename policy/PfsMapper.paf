@@ -242,7 +242,7 @@ datasets: {
         tables:        raw_visit
     }
     constructFiberTrace_config: {
-        template:      "config/fiberTrace.py"
+        template:      "config/constructFiberTrace.py"
         python:        "lsst.obs.pfs.constructFiberTraceTask.ConstructFiberTraceConfig"
         persistable:   "Config"
         storage:       "ConfigStorage"
@@ -252,6 +252,22 @@ datasets: {
     constructFiberFlat_config: {
         template:      "config/constructFiberFlat.py"
         python:        "lsst.obs.pfs.constructFiberFlatTask.ConstructFiberFlatConfig"
+        persistable:   "Config"
+        storage:       "ConfigStorage"
+        tables:        raw
+        tables:        raw_visit
+    }
+    findAndTrace_config: {
+        template:      "config/findAndTraceApertures.py"
+        python:        "pfs.drp.stella.findAndTraceAperturesTask.FindAndTraceAperturesConfig"
+        persistable:   "Config"
+        storage:       "ConfigStorage"
+        tables:        raw
+        tables:        raw_visit
+    }
+    createFlatFiberTraceProfile_config: {
+        template:      "config/createFlatFiberTraceProfile.py"
+        python:        "pfs.drp.stella.createFlatFiberTraceProfileTask.CreateFlatFiberTraceProfileConfig"
         persistable:   "Config"
         storage:       "ConfigStorage"
         tables:        raw
