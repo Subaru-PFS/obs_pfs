@@ -27,13 +27,13 @@ class MapperTestCase(tests.TestCase):
             shutil.rmtree(self.butlerDir)
         os.makedirs(self.butlerDir)
         os.makedirs(os.path.join(self.butlerDir,'CALIB'))
-        
+
         """Write mapper"""
         mapper = "lsst.obs.pfs.PfsMapper"
         text_file = open(os.path.join(self.butlerDir,"_mapper"), "w")
         text_file.write(mapper)
         text_file.close()
-        
+
         self.rawFiles = os.path.join(drpStellaDataDir,"tests/data/raw/*.fits")
         self.regFile = os.path.join(self.butlerDir,'registry.sqlite3')
         self.dataId = {'visit': '4', 'ccd': 1}
