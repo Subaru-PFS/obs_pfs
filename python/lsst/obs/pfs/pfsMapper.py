@@ -201,7 +201,13 @@ class PfsMapper(CameraMapper):
             return "%s_%d" % (armName, dataId["spectrograph"])
 
     def _extractDetectorId(self, dataId):
-        return 1 + 3*(dataId["spectrograph"] - 1) + dict(b=0, r=1, m=1, n=2)[dataId["arm"]]
+        # The returned DetectorId is in the range [0,11] with blue={0,3,6,9},
+        # red=mediumResolution={1,4,7,10}, and NIR={2,5,8,11} corresponding to
+        # obs_pfs/pfs/camera/camera.py::config.detectorList[1].id
+        #
+        # If we wanted to get rid of this function we would need to modify
+        # genDefectList, genDefectFits, and the defect lookup function
+        return 3*(dataId["spectrograph"] - 1) + dict(b=0, r=1, m=1, n=2)[dataId["arm"]]
 
     def _getCcdKeyVal(self, dataId):
         """Return CCD key and value used to look a defect in the defect registry
