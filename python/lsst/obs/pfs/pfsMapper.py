@@ -192,7 +192,7 @@ class PfsMapper(CameraMapper):
         return ampId
 
     def _extractDetectorName(self, dataId):
-        if True:                        # use 1-based CCD number as "Name"
+        if False:                        # use 0-based CCD number as "Name"
             return self._extractDetectorId(dataId)
         else:
             armName = dataId["arm"]
