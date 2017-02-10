@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import sys
 import os.path
 import re
 
@@ -8,6 +7,7 @@ import numpy
 import pyfits
 import collections
 
+import lsst.log as log
 from lsst.obs.pfs import PfsMapper
 
 Defect = collections.namedtuple('Defect', ['x0', 'y0', 'width', 'height'])
@@ -15,6 +15,9 @@ Defect = collections.namedtuple('Defect', ['x0', 'y0', 'width', 'height'])
 def genDefectFits(source, targetDir):
     mapper = PfsMapper(root=".")
     camera = mapper.camera
+
+    logger = log.Log.getLogger("genDefectFits")
+    logger.setLevel(log.INFO)
 
     ccds = dict()
     for ccd in camera:
@@ -53,12 +56,12 @@ def genDefectFits(source, targetDir):
 
         table.header['NAME'] = ccd
         name = os.path.join(targetDir, "defects_%s.fits" % ccd)
-        print "Writing %d defects from CCD %d (%s) to %s" % (table.header['NAXIS2'], ccd, ccds[ccd], name)
+        logger.info("Writing %d defects from CCD %d (%s) to %s" % (table.header['NAXIS2'], ccd, ccds[ccd], name))
         if os.path.exists(name):
             if args.force:
                 os.unlink(name)
             else:
-                print >> sys.stderr, "File %s already exists; use --force to overwrite" % name
+                logger.warn("File %s already exists; use --force to overwrite" % name)
                 continue
 
         table.writeto(name)
