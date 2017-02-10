@@ -243,6 +243,12 @@ class PfsMapper(CameraMapper):
 
         raise RuntimeError("Unable to read pfsArm for %s: %s" % (dataId.items(), e))
 
+    def getDetectorId(self, dataId):
+        return self._extractDetectorId(dataId)
+
+    def getDetectorName(self, dataId):
+        return self._extractDetectorName(dataId)
+
     @classmethod
     def getCameraName(cls):
         return "pfs"
