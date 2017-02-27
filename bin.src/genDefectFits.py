@@ -12,12 +12,23 @@ from lsst.obs.pfs import PfsMapper
 
 Defect = collections.namedtuple('Defect', ['x0', 'y0', 'width', 'height'])
 
-def genDefectFits(source, targetDir):
+def genDefectFits(source, targetDir, verbose):
+    logLevel = log.FATAL
+    if verbose:
+        logLevel = log.INFO
+    for logger in ['daf.persistence.LogicalLocation',
+                   'CameraMapper']:
+        log.Log.getLogger(logger).setLevel(logLevel)
+
     mapper = PfsMapper(root=".")
     camera = mapper.camera
 
     logger = log.Log.getLogger("genDefectFits")
-    logger.setLevel(log.INFO)
+    if not verbose:
+        logLevel = log.WARN
+    logger.setLevel(logLevel)
+    if verbose:
+        logger.setLevel(logLevel)
 
     ccds = dict()
     for ccd in camera:
@@ -79,4 +90,4 @@ if __name__ == "__main__":
     if not args.targetDir:
         args.targetDir = os.path.split(args.defectsFile)[0]
 
-    genDefectFits(args.defectsFile, args.targetDir)
+    genDefectFits(args.defectsFile, args.targetDir, args.verbose)
