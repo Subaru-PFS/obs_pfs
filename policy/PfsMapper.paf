@@ -114,8 +114,8 @@ calibrations: {
     }
     arc: {
         template:    "ARC/%(filter)s/%(calibVersion)s/pfsArc-%(calibDate)s-0-%(spectrograph)1d%(arm)s.fits"
-        python:      "lsst.afw.image.MaskedImageF"
-        persistable: "MaskedImageF"
+        python:      "lsst.afw.image.ImageF"
+        persistable: "ImageF"
         storage:     "FitsStorage"
         level:       "Ccd"
         tables:      "arc"
