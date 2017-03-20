@@ -16,11 +16,9 @@ class PfsFlatCombineConfig(CalibConfig):
     pass
 
 class PfsFlatCombineTask(CalibTask):
-#    """Mask the vignetted area"""
     ConfigClass = PfsFlatCombineConfig
     _DefaultName = "flat"
     calibName = "flat"
-#    FilterName = "NONE"
 
     @classmethod
     def applyOverrides(cls, config):
@@ -28,29 +26,3 @@ class PfsFlatCombineTask(CalibTask):
         config.isr.doFlat = False
         config.isr.doFringe = False
         config.isr.doLinearize = False
-    
-#    def __init__(self, *args, **kwargs):
-#        super(PfsFlatCombineTask, self).__init__(*args, **kwargs)
-#        
-#    def run(self, sensorRefList, *args, **kwargs):
-#        """Mask vignetted pixels after combining
-
-#        This returns an Exposure instead of an Image, but upstream shouldn't
-#        care, as it just dumps it out via the Butler.
-#        """
-#        combined = super(HscFlatCombineTask, self).run(sensorRefList, *args, **kwargs)
-#        mi = afwImage.makeMaskedImage(combined.getImage())
-#        mi.getMask().set(0)
-
-#        # Retrieve the detector
-#        # XXX It's unfortunate that we have to read an entire image to get the detector, but there's no
-#        # public API in the butler to get the same.
-#        image = sensorRefList[0].get("postISRCCD")
-#        detector = image.getDetector()
-#        del image
-
-#        self.maskVignetting(mi.getMask(), detector)
-#        self.maskBadAmps(mi.getMask(), detector)
-
-#        return afwImage.makeExposure(mi)
-

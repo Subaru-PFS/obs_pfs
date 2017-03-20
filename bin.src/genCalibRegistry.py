@@ -88,7 +88,6 @@ def main(root, validityDays):
     conn.commit()
     conn.close()
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", default=".", required=True, help="Root directory")
