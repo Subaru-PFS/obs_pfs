@@ -38,8 +38,8 @@ class PfsMapper(CameraMapper):
                 }
         for name in ("raw",
                      # processCcd outputs
-                     "calexp", 
-                     "postISRCCD", 
+                     "calexp",
+                     "postISRCCD",
                      ):
             self.mappings[name].keyDict.update(keys)
 
@@ -84,7 +84,7 @@ class PfsMapper(CameraMapper):
         exp.setMaskedImage(afwMath.flipImage(exp.getMaskedImage(), flipLR, flipTB))
 
         return exp
-    
+
     def standardizeCalib(self, dataset, item, dataId):
         """Standardize a calibration image read in by the butler
 
@@ -131,7 +131,7 @@ class PfsMapper(CameraMapper):
         """
 
         imArr = rawExp.getMaskedImage().getImage().getArray()
-    
+
         for a in rawExp.getDetector():
             yslice, xslice = a.getRawBBox().getSlices()
             ampIm = imArr[yslice, xslice]
@@ -146,7 +146,7 @@ class PfsMapper(CameraMapper):
     def std_raw(self, item, dataId):
         """Fixup raw image problems.
 
-        1. Fix an early ADC bug. 
+        1. Fix an early ADC bug.
 
         Since this is almost certainly an FPGA bug, I'll base the
         decision on the FPGA version number. As of 2016-12-01 the
@@ -155,7 +155,7 @@ class PfsMapper(CameraMapper):
 
         See _shiftAmpPixels() for the implementation.
         """
-        
+
         exp = super(PfsMapper, self).std_raw(item, dataId)
 
         md = exp.getMetadata()
@@ -163,10 +163,10 @@ class PfsMapper(CameraMapper):
             dataVersion = md.get('W_VERSIONS_FPGA')
         except:
             dataVersion = 0
-        
+
         if dataVersion <= 0x0070:
             self._shiftAmpPixels(exp)
-        
+
         return exp
 
     def std_bias(self, item, dataId):
@@ -179,14 +179,14 @@ class PfsMapper(CameraMapper):
 
     def std_flat(self, item, dataId):
         return self.standardizeCalib("flat", item, dataId)
-    
+
     def std_fiberTrace(self, item, dataId):
         return item
 
     def map_linearizer(self, dataId, write=False):
         """Map a linearizer."""
         raise RuntimeError("No linearizer available.")
-    
+
     def _extractAmpId(self, dataId):
         ampId = (self._extractDetectorName(dataId), 0, 0)
         return ampId
@@ -202,7 +202,7 @@ class PfsMapper(CameraMapper):
 
     def _extractDetectorId(self, dataId):
         return 1 + 3*(dataId["spectrograph"] - 1) + dict(b=0, r=1, m=1, n=2)[dataId["arm"]]
-    
+
     def _getCcdKeyVal(self, dataId):
         """Return CCD key and value used to look a defect in the defect registry
 
@@ -220,7 +220,7 @@ class PfsMapper(CameraMapper):
         visit = pathId['visit']
         ccd = pathId['ccd']
         return visit*200 + ccd
-        
+
     def bypass_pfsArm(self, datasetType, pythonType, location, dataId):
         from pfs.datamodel.pfsArm import PfsArm
 
