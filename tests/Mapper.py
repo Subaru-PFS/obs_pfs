@@ -40,8 +40,6 @@ class MapperTestCase(tests.TestCase):
 
     def tearDown(self):
         """clean up"""
-#        if os.path.exists(self.butlerDir):
-#            shutil.rmtree(self.butlerDir)
 
     def testFileNameInterpretation(self):
         pfsParseTask = PfsParseTask(name='name')

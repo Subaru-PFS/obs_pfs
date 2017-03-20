@@ -72,7 +72,6 @@ class ConstructFiberTraceTask(CalibTask):
     ConfigClass = ConstructFiberTraceConfig
     _DefaultName = "constructFiberTrace"
     calibName = "fiberTrace"
-#    filterName = "NONE"  # Sets this filter name in the output
 
     def __init__(self, *args, **kwargs):
         CalibTask.__init__(self, *args, **kwargs)
