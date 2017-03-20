@@ -169,6 +169,9 @@ class PfsMapper(CameraMapper):
 
         return exp
 
+    def std_arc(self, item, dataId):
+        return self.standardizeCalib("arc", item, dataId)
+
     def std_bias(self, item, dataId):
         return self.standardizeCalib("bias", item, dataId)
 
