@@ -72,7 +72,6 @@ class PfsFiberTraceTestCase(tests.TestCase):
         """Check that we can write a PfsFiberTrace from the fiberTraceSet"""
         dataId = dict(calibDate=self.dataId['dateObs'], spectrograph=self.dataId['spectrograph'], arm=self.dataId['arm'])
         pfsFiberTrace = drpStellaUtils.createPfsFiberTrace(dataId, fiberTraceSet, self.flat.getHeight())
-        print pfsFiberTrace.obsDate, pfsFiberTrace.spectrograph, pfsFiberTrace.arm
         fileName = os.path.join('.',PfsFiberTrace.fileNameFormat % (self.dataId['dateObs'], self.dataId['spectrograph'], self.dataId['arm']))
         pfsFiberTraceIO = PfsFiberTraceIO(pfsFiberTrace)
         pfsFiberTraceIO.writeFits(fileName)
@@ -80,7 +79,6 @@ class PfsFiberTraceTestCase(tests.TestCase):
         """Check that we can read a PfsFiberTrace back in"""
         pfsFiberTraceNew = PfsFiberTrace(self.dataId['dateObs'], self.dataId['spectrograph'], self.dataId['arm'])
         pfsFiberTraceNew.read()
-        print 'pfsFiberTraceNew = ',pfsFiberTraceNew
 
         self.assertEqual(pfsFiberTrace.obsDate, pfsFiberTraceNew.obsDate)
         self.assertEqual(pfsFiberTrace.spectrograph, pfsFiberTraceNew.spectrograph)
@@ -158,7 +156,12 @@ class PfsFiberTraceTestCase(tests.TestCase):
             for iX in range(profile.shape[0]):
                 for iY in range(profile.shape[1]):
                     if np.abs(profile[iX,iY] - profileNew[iX,iY]) > 0.1:
-                        print 'FiberTrace ',iFt,': large difference detected: profile[',iX,',',iY,'] = ',profile[iX,iY],', profileNew[',iX,',',iY,'] = ',profileNew[iX,iY],'      xCenters[',iX,'] = ',xCenters[iX],', xCentersNew[',iX,'] = ',xCentersNew[iX]
+                        message = ('FiberTrace %d: large difference detected: ' % (iFt))
+                        message += ('profile[%d,%d] = %f' % (iX,iY,profile[iX,iY]))
+                        message += (', profileNew[%d,%d] = %f' % (iX,iY,profileNew[iX,iY]))
+                        message += ('      xCenters[%d] = %f' % (iX,xCenters[iX]))
+                        message += (', xCentersNew[%d] = %f' % (iX,xCentersNew[iX]))
+                        self.log.warn(message)
                     self.assertAlmostEqual(profile[iX,iY], profileNew[iX,iY], places=3)
 
             image = ft.getImage().getArray()
@@ -168,7 +171,12 @@ class PfsFiberTraceTestCase(tests.TestCase):
             for iX in range(image.shape[0]):
                 for iY in range(image.shape[1]):
                     if np.abs(image[iX,iY] - imageNew[iX,iY]) > 0.1:
-                        print 'FiberTrace ',iFt,': large difference detected: image[',iX,',',iY,'] = ',image[iX,iY],', imageNew[',iX,',',iY,'] = ',imageNew[iX,iY],'      xCenters[',iX,'] = ',xCenters[iX],', xCentersNew[',iX,'] = ',xCentersNew[iX]
+                        message = ('FiberTrace %d: large difference detected: ' % (iFt))
+                        message += ('image[%d,%d] = %f' % (iX,iY,image[iX,iY]))
+                        message += (', imageNew[%d,%d] = %f' % (iX,iY,imageNew[iX,iY]))
+                        message += ('      xCenters[%d] = %f' % (iX,xCenters[iX]))
+                        message += (', xCentersNew[%d] = %f' % (iX,xCentersNew[iX]))
+                        self.log.warn(message)
                     self.assertAlmostEqual(image[iX,iY], imageNew[iX,iY], places=3)
 
             self.assertEqual(ft.getITrace(), ftNew.getITrace())

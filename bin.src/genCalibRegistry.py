@@ -3,12 +3,13 @@ import glob
 import os
 import re
 import sqlite3 as sqlite
-import sys
+import lsst.log as log
 import datetime
 import collections
 import argparse
 
 def main(root, validityDays):
+    logger = log.Log.getLogger("genCalibRegistry")
 
     registry = os.path.join(root, "calibRegistry.sqlite3")
 
@@ -35,15 +36,14 @@ def main(root, validityDays):
             if not m:
                 m = re.search(r'\w+/([\w-]+)/(\d{4})-(\d{2})-(\d{2})/pfs(\w+)-(\d{6})-(\d)(\w).fits', fits)
                 if not m:
-                    print >>sys.stderr, "Warning: Unrecognized file name:", fits
-                    raise Exception("Unrecognized file name")
+                    raise Exception("Unrecognized file name: %s" % (fits))
                 else:
                     filterName, year, month, day, version, visit, spectrograph, arm = m.groups()
                     version = version[0].lower() + version[1:]
             else:
                 filterName, version, year, month, day, spectrograph, arm = m.groups()
 
-            print "Registering:", fits
+            logger.info("Registering %s" % (fits))
             date = datetime.date(int(year), int(month), int(day))
             ccd = int(spectrograph) - 1
             if arm in ("m", "r"):
