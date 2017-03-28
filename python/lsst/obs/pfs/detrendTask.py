@@ -30,4 +30,3 @@ class DetrendTask(CmdLineTask):
 
 #if __name__ == "__main__":
 #    DetrendTask.parseAndRun()
-

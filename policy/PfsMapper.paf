@@ -2,8 +2,8 @@
 
 needCalibRegistry: true
 
-camera:        "../pfs/camera"
-defects:    "../pfs/defects"
+camera:  "../pfs/camera"
+defects: "../pfs/defects"
 
 skytiles: {
     resolutionPix: 700    # Resolution for skytiles: 700 --> 500 arcsec sides

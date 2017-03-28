@@ -22,7 +22,7 @@ class DitheredFlatsTestCase(tests.TestCase):
         self.xOffsetHdrKeyWordLAM = 'W_FCA_SHIFT'
         drpStellaDataDir = lsst.utils.getPackageDir("drp_stella_data")
         self.butler = dafPersist.Butler(os.path.join(drpStellaDataDir,"tests/data/PFS/"))
-        
+
     def tearDown(self):
         del self.butler
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # example:
-# createDetGeom.py 
+# createDetGeom.py
 #
 # Note that CreateDetGeomTask is a Task and not a CmdLineTask,
 # so it does not have the standard CmdLineTask arguments.The reason
