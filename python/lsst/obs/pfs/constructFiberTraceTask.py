@@ -106,7 +106,7 @@ class ConstructFiberTraceTask(CalibTask):
         return exposure
 
     def run(self, expRefList, butler, calibId):
-        """Only run for Flats with xOffset == 0.0"""
+        #Only run for Flats with xOffset == 0.0
         newExpRefList = []
         for expRef in expRefList:
             exposure = expRef.get('raw')
