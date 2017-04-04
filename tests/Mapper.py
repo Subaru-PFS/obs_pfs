@@ -37,7 +37,7 @@ class MapperTestCase(tests.TestCase):
             os.makedirs(self.butlerDir)
             os.makedirs(os.path.join(self.butlerDir,'CALIB'))
 
-            """Write mapper"""
+            # Write mapper
             mapper = "lsst.obs.pfs.PfsMapper"
             text_file = open(os.path.join(self.butlerDir,"_mapper"), "w")
             text_file.write(mapper)

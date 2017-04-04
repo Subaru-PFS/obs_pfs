@@ -3,10 +3,10 @@
 Tests for measuring things
 
 Run with:
-   python FiberTrace.py
+   python DitheredFlats.py
 or
    python
-   >>> import FiberTrace; FiberTrace.run()
+   >>> import DitheredFlats; DitheredFlats.run()
 """
 import os
 import unittest
@@ -27,14 +27,14 @@ class DitheredFlatsTestCase(tests.TestCase):
         del self.butler
 
     def testSimulatedDitheredFlat(self):
-        """Test that we can read the xOffset"""
+        """Test simulated dithered Flat"""
         dataId = dict(field="FLAT", visit=104, spectrograph=1, arm="r")
         simFlat = self.butler.get("postISRCCD", dataId, immediate=True)
         xOffset = simFlat.getMetadata().get(self.xOffsetHdrKeyWordSims)
         self.assertAlmostEqual(xOffset, 0.)
 
     def testLAMExposure(self):
-        """Test that we can read the xOffset"""
+        """Test LAM Flat"""
         dataId = dict(field="OBJECT", visit=300, spectrograph=1, arm="r")
         lamExp = self.butler.get("raw", dataId, immediate=True)
         xOffset = lamExp.getMetadata().get(self.xOffsetHdrKeyWordLAM)
