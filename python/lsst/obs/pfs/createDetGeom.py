@@ -1,4 +1,3 @@
-# example: createDetGeom.py
 import lsst.afw.table as afwTable
 import lsst.afw.geom as afwGeom
 import lsst.pex.config as pexConfig

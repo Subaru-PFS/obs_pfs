@@ -1,4 +1,3 @@
-#ingestImages.py '/Users/azuri/spectra/pfs/PFS/' --mode=link '/Users/azuri/spectra/pfs/raw/2016-01-12/*.fits' --loglevel 'info' -C /Users/azuri/stella-git/obs_pfs/config/pfs/ingest.py
 import re
 import os
 from lsst.pipe.tasks.ingest import ParseTask, ParseConfig
