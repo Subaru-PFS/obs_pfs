@@ -165,7 +165,6 @@ class ConstructFiberFlatTask(CalibTask):
         ])
 
         normalizedFlat[bad] = 1.0
-
         normalizedFlat = afwImage.MaskedImageF(afwImage.ImageF(normalizedFlat), afwImage.MaskU(msk))
 
         import lsstDebug
