@@ -264,7 +264,7 @@ class PfsMapper(CameraMapper):
         """
         pathId = self._transformId(dataId)
         visit = pathId['visit']
-        ccd = pathId['ccd']
+        ccd = self._extractDetectorId(dataId)
         return visit*200 + ccd
 
     def bypass_pfsConfig(self, datasetType, pythonType, location, dataId):
