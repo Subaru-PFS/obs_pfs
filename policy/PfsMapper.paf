@@ -86,8 +86,8 @@ calibrations: {
     }
     flat: {
         template:    "FLAT/%(filter)s/%(calibVersion)s/pfsFiberFlat-%(calibDate)s-0-%(spectrograph)1d%(arm)s.fits"
-        python:      "lsst.afw.image.MaskedImageF"
-        persistable: "MaskedImageF"
+        python:      "lsst.afw.image.ExposureF"
+        persistable: "ExposureF"
         storage:     "FitsStorage"
         level:       "Ccd"
         tables:      "flat"

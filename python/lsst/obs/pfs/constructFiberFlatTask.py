@@ -63,7 +63,7 @@ class ConstructFiberFlatTask(CalibTask):
 
     @classmethod
     def applyOverrides(cls, config):
-        """Overrides to apply for dark construction"""
+        """Overrides to apply for flat construction"""
         config.isr.doDark = False
         config.isr.doFlat = False
         config.isr.doFringe = False
@@ -156,10 +156,17 @@ class ConstructFiberFlatTask(CalibTask):
         #with a SNR < self.config.minSNR
         sumRecImArr[sumRecImArr <= 0.0] = 0.01
         normalizedFlat = sumFlats / sumRecImArr
-        normalizedFlat[sumRecImArr <= 0.01] = 1.0
-        normalizedFlat[snrArr < self.config.minSNR] = 1.0
-        normalizedFlat[sumFlats <= 0.0] = 1.0
-        normalizedFlat[sumVariances <= 0.0] = 1.0
+        msk = np.zeros_like(normalizedFlat, dtype=np.uint16)
+
+        bad = np.logical_or.reduce([sumRecImArr <= 0.01,
+                                    snrArr < self.config.minSNR,
+                                    sumFlats <= 0.0,
+                                    #sumVariances <= 0.0, # explicitly set to 0.1 above
+        ])
+
+        normalizedFlat[bad] = 1.0
+
+        normalizedFlat = afwImage.MaskedImageF(afwImage.ImageF(normalizedFlat), afwImage.MaskU(msk))
 
         import lsstDebug
         try:
@@ -174,8 +181,7 @@ class ConstructFiberFlatTask(CalibTask):
             debug = None
 
         #Write fiber flat
-        normFlatOut = afwImage.makeExposure(afwImage.makeMaskedImage(afwImage.ImageF(normalizedFlat)))
+        normFlatOut = afwImage.makeExposure(normalizedFlat)
         self.recordCalibInputs(cache.butler, normFlatOut, struct.ccdIdList, struct.outputId)
         self.interpolateNans(normFlatOut)
-        normFlatOutDec = afwImage.DecoratedImageF(normFlatOut.getMaskedImage().getImage())
-        self.write(cache.butler, normFlatOutDec, struct.outputId)
+        self.write(cache.butler, normFlatOut, struct.outputId)
