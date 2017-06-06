@@ -1,16 +1,33 @@
 #!/usr/bin/env python
 import os
 
+from lsst.obs.base import CameraMapper, MakeRawVisitInfo
+import lsst.afw.image.utils as afwImageUtils
 import lsst.afw.image as afwImage
 import lsst.afw.image.utils as afwImageUtils
 import lsst.afw.math as afwMath
 from lsst.daf.butlerUtils import CameraMapper
 import lsst.pex.policy as pexPolicy
 
+class PfsRawVisitInfo(MakeRawVisitInfo):
+    def getDateAvg(self, md, exposureTime):
+        """Return date at the middle of the exposure
+        @param[in,out] md  metadata, as an lsst.daf.base.PropertyList or PropertySet;
+            items that are used are stripped from the metadata
+            (except TIMESYS, because it may apply to more than one other keyword).
+        @param[in] exposureTime  exposure time (sec)
+        """
+        
+        dateObs = self.popIsoDate(md, "DATE-OBS")
+        return self.offsetDate(dateObs, 0.5*exposureTime)
+
+
 class PfsMapper(CameraMapper):
     """Provides abstract-physical mapping for PFS data"""
     packageName = "obs_pfs"
 
+    MakeRawVisitInfoClass = PfsRawVisitInfo
+    
     def __init__(self, **kwargs):
         policyFile = pexPolicy.DefaultPolicyFile("obs_pfs", "PfsMapper.paf", "policy")
         policy = pexPolicy.Policy(policyFile)
