@@ -123,7 +123,7 @@ class ConstructFiberFlatTask(CalibTask):
                 sumFlats += exposure.getMaskedImage().getImage().getArray()
                 sumVariances += exposure.getMaskedImage().getVariance().getArray()
 
-        self.log.info('=== xOffsets = '+str(xOffsets)+' ===')
+        self.log.info('xOffsets = %s' % (xOffsets))
 
         # Calculate spatial profiles for all FiberTraceSets
         for fts in allFts:
@@ -172,12 +172,26 @@ class ConstructFiberFlatTask(CalibTask):
         import lsstDebug
         try:
             import debug
-            if lsstDebug.Info(__name__).display:
+            di = lsstDebug.Info(__name__)
+            if di.display:
                 import lsst.afw.display as afwDisplay
-                display = afwDisplay.getDisplay(frame=1)
-                display.mtv(afwImage.ImageF(sumFlats - sumRecImArr), title='sumFlats - sumRecIm')
-                display.frame = 2
-                display.mtv(afwImage.ImageF(normalizedFlat), title='normalized Flat')
+
+                if di.frames_flat >= 0:
+                    display = afwDisplay.getDisplay(frame=di.frames_flat)
+                    display.mtv(normalizedFlat, title='normalized Flat')
+
+                if di.frames_meanFlats >= 0:
+                    display = afwDisplay.getDisplay(frame=di.frames_sumFlats)
+                    display.mtv(afwImage.ImageF(sumFlats/len(dataRefList)), title='mean(Flats)')
+
+                if di.frames_meanTraces >= 0:
+                    display = afwDisplay.getDisplay(frame=di.frames_sumTraces)
+                    display.mtv(afwImage.ImageF(sumRecImArr/len(dataRefList)), title='mean(Traces)')
+
+                if di.frames_residuals >= 0:
+                    display = afwDisplay.getDisplay(frame=di.frames_residuals)
+                    display.mtv(afwImage.ImageF((sumFlats - sumRecImArr)/len(dataRefList)),
+                                title='mean(Flats - Traces)')
         except ImportError:
             debug = None
 
