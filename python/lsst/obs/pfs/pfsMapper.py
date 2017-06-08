@@ -25,24 +25,24 @@ class PfsMapper(CameraMapper):
 
         super(PfsMapper, self).__init__(policy, policyFile.getRepositoryPath(), **kwargs)
 
-        # Ensure each dataset type of interest knows about the full range of keys available from the registry
-        keys = {'field': str,
-                'visit': int,
-                'ccd': int, # for compatibility with HSC: serial no of ccd
-                'spectrograph': int, # [0,1,2,3] for each arm in [blue, red, nir, medred]
-                'dateObs': str,
-                'taiObs': str,
-                'filter': str, # 'arm' called filter for compatibility
-                'site': str,
-                'category': str,
-                }
-        for name in ("raw",
-                     # processCcd outputs
-                     "calexp",
-                     "postISRCCD",
-                     ):
-            self.mappings[name].keyDict.update(keys)
-
+        if False:
+            # Ensure each dataset type of interest knows about the full range of keys available from the registry
+            keys = {'field': str,
+                    'visit': int,
+                    'ccd': int, # for compatibility with HSC: serial no of ccd
+                    'spectrograph': int, # [0,1,2,3] for each arm in [blue, red, nir, medred]
+                    'dateObs': str,
+                    'taiObs': str,
+                    'filter': str, # 'arm' called filter for compatibility
+                    'site': str,
+                    'category': str,
+                    }
+            for name in ("raw",
+                         # processCcd outputs
+                         "calexp", 
+                         "postISRCCD", 
+                         ):
+                self.mappings[name].keyDict.update(keys)
 
         # The order of these defineFilter commands matters as their IDs are used to generate at least some
         # object IDs (e.g. on coadds) and changing the order will invalidate old objIDs
@@ -198,10 +198,12 @@ class PfsMapper(CameraMapper):
         if True:                        # use 1-based CCD number as "Name"
             return self._extractDetectorId(dataId)
         else:
-            armName = dataId["arm"]
-            if armName == 'm':
-                armName = 'r'
-            return "%s_%d" % (armName, dataId["spectrograph"])
+            arm = self._getRegistryValue(dataId, "arm")
+            spectrograph = self._getRegistryValue(dataId, "spectrograph")
+
+            if arm == 'm':
+                arm = 'r'
+            return "%s_%d" % (armName, spectrograph)
 
     def _extractDetectorId(self, dataId):
         # The returned DetectorId is in the range [0,11] with blue={0,3,6,9},
@@ -210,8 +212,11 @@ class PfsMapper(CameraMapper):
         #
         # If we wanted to get rid of this function we would need to modify
         # genDefectList, genDefectFits, and the defect lookup function
-        return 3*(dataId["spectrograph"] - 1) + dict(b=0, r=1, m=1, n=2)[dataId["arm"]]
+        arm = self._getRegistryValue(dataId, "arm")
+        spectrograph = self._getRegistryValue(dataId, "spectrograph")
 
+        return 3*(spectrograph - 1) + dict(b=0, r=1, m=1, n=2)[arm]
+    
     def _getCcdKeyVal(self, dataId):
         """Return CCD key and value used to look a defect in the defect registry
 
@@ -288,3 +293,16 @@ class PfsMapper(CameraMapper):
     @classmethod
     def getCameraName(cls):
         return "pfs"
+
+    def _getRegistryValue(self, dataId, k):
+        """Return a value from a dataId, or look it up in the registry if it isn't present"""
+        if k in dataId:
+            return dataId[k]
+        else:
+            dataType = "bias" if "taiObs" in dataId else "raw"
+
+            try:
+                return self.queryMetadata(dataType, [k], dataId)[0][0]
+            except IndexError:
+                raise RuntimeError("Unable to lookup %s in \"%s\" registry for dataId %s" %
+                                   (k, dataType, dataId))
