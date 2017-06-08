@@ -57,9 +57,9 @@ exposures: {
 
 calibrations: {
     bias: {
-        template:    "BIAS/NONE/%(calibVersion)s/pfsBias-%(calibDate)s-0-%(spectrograph)1d%(arm)s.fits"
-        python:      "lsst.afw.image.ImageF"
-        persistable: "ImageF"
+        template:    "BIAS/NONE/pfsBias-%(calibDate)s-0-%(spectrograph)1d%(arm)s.fits"
+        python:      "lsst.afw.image.DecoratedImageF"
+        persistable: "DecoratedImageF"
         storage:     "FitsStorage"
         level:       "Ccd"
         tables:      "bias"
@@ -71,7 +71,7 @@ calibrations: {
         validEndName: validEnd
     }
     dark: {
-        template:    "DARK/NONE/%(calibVersion)s/pfsDark-%(calibDate)s-0-%(spectrograph)1d%(arm)s.fits"
+        template:    "DARK/NONE/pfsDark-%(calibDate)s-0-%(spectrograph)1d%(arm)s.fits"
         python:      "lsst.afw.image.ImageF"
         persistable: "ImageF"
         storage:     "FitsStorage"
@@ -85,7 +85,7 @@ calibrations: {
         validEndName: validEnd
     }
     flat: {
-        template:    "FLAT/%(filter)s/%(calibVersion)s/pfsFiberFlat-%(calibDate)s-0-%(spectrograph)1d%(arm)s.fits"
+        template:    "FLAT/%(filter)s/pfsFiberFlat-%(calibDate)s-0-%(spectrograph)1d%(arm)s.fits"
         python:      "lsst.afw.image.ExposureF"
         persistable: "ExposureF"
         storage:     "FitsStorage"
@@ -99,7 +99,7 @@ calibrations: {
         validEndName: validEnd
     }
     fiberTrace: {
-        template:    "FIBERTRACE/%(filter)s/%(calibVersion)s/pfsFiberTrace-%(calibDate)s-0-%(spectrograph)1d%(arm)s.fits"
+        template:    "FIBERTRACE/%(filter)s/pfsFiberTrace-%(calibDate)s-0-%(spectrograph)1d%(arm)s.fits"
         python:      "pfs.drp.stella.datamodelIO.PfsFiberTraceIO"
         persistable: "FiberTraceSet"
         storage:     "FitsCatalogStorage"
@@ -113,7 +113,7 @@ calibrations: {
         validEndName: validEnd
     }
     arc: {
-        template:    "ARC/%(filter)s/%(calibVersion)s/pfsArc-%(calibDate)s-0-%(spectrograph)1d%(arm)s.fits"
+        template:    "ARC/%(filter)s/pfsArc-%(calibDate)s-0-%(spectrograph)1d%(arm)s.fits"
         python:      "lsst.afw.image.ImageF"
         persistable: "ImageF"
         storage:     "FitsStorage"
@@ -130,7 +130,7 @@ calibrations: {
 
 datasets: {
     pfsConfig: {
-        template:    "pfsState/%(dateObs)s/pfsConfig-0x%(pfsConfigId)08x.fits"
+        template:    "pfsState/%(dateObs)s/pfsConfig-0x%(pfsConfigId)016x.fits"  # N.b. overridden by datamodel
         python:      "pfs.drp.stella.datamodelIO.PfsConfigIO"
         persistable: "PfsConfigIO"
         storage:     "FitsCatalogStorage"

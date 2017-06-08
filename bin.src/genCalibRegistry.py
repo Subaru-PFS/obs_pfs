@@ -17,31 +17,31 @@ def main(root, validityDays):
         os.unlink(registry)
     conn = sqlite.connect(registry)
 
-    Row = collections.namedtuple("Row", ["calibDate", "calibVersion", "spectrograph", "arm", "ccd"])
+    Row = collections.namedtuple("Row", ["calibDate", "spectrograph", "arm", "ccd"])
 
-    for calib in ('arc', 'bias', 'dark', 'fiberFlat', 'fiberTrace', 'flat', 'imageFlat'):
+    for calib in ('bias', 'dark', 'flat', 'fiberFlat', 'imageFlat', 'fiberTrace'):
         cmd = "create table " + calib.lower() + " (id integer primary key autoincrement"
         cmd += ", validStart text, validEnd text"
-        cmd += ", calibDate text, filter text, calibVersion text, spectrograph int, arm text, ccd int"
+        cmd += ", calibDate text, filter text, spectrograph int, arm text, ccd int"
         cmd += ")"
         conn.execute(cmd)
         conn.commit()
 
         rowsPerFilter = dict()
 
-        checkFits = os.path.join(root, calib.upper(), "*", "*", "*.fits")
+        checkFits = [os.path.join(root, calib.upper(), "*", "*.fits")] + \
+                    [os.path.join(root, calib.upper(), "*", "*", "*.fits")]
 
-        for fits in glob.glob(checkFits):
-            m = re.search(r'\w+/([\w-]+)/([\w-]+)/pfs\w+-(\d{4})-(\d{2})-(\d{2})-0-(\d)(\w).fits', fits)
+        for fits in sum([glob.glob(_) for _ in checkFits], []):
+            m = re.search(r'\w+/([\w-]+)/pfs\w+-(\d{4})-(\d{2})-(\d{2})-0-(\d)(\w).fits', fits)
             if not m:
                 m = re.search(r'\w+/([\w-]+)/(\d{4})-(\d{2})-(\d{2})/pfs(\w+)-(\d{6})-(\d)(\w).fits', fits)
                 if not m:
                     raise Exception("Unrecognized file name: %s" % (fits))
                 else:
-                    filterName, year, month, day, version, visit, spectrograph, arm = m.groups()
-                    version = version[0].lower() + version[1:]
+                    filterName, year, month, day, location, visit, spectrograph, arm = m.groups()
             else:
-                filterName, version, year, month, day, spectrograph, arm = m.groups()
+                filterName, year, month, day, spectrograph, arm = m.groups()
 
             logger.info("Registering %s" % (fits))
             date = datetime.date(int(year), int(month), int(day))
@@ -53,7 +53,7 @@ def main(root, validityDays):
 
             if filterName not in rowsPerFilter:
                 rowsPerFilter[filterName] = list()
-            rowsPerFilter[filterName].append(Row(date, version, spectrograph, arm, ccd))
+            rowsPerFilter[filterName].append(Row(date, spectrograph, arm, ccd))
 
         # Fix up the validStart,validEnd so there are no overlaps
         for filterName, rows in rowsPerFilter.items():
@@ -77,8 +77,8 @@ def main(root, validityDays):
                 validStart = valids[row.calibDate][0].isoformat()
                 validEnd = valids[row.calibDate][1].isoformat()
 
-                conn.execute("INSERT INTO " + calib.lower() + " VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?)",
-                             (validStart, validEnd, calibDate, filterName, row.calibVersion, row.spectrograph,
+                conn.execute("INSERT INTO " + calib.lower() + " VALUES (NULL, ?, ?, ?, ?, ?, ?, ?)",
+                             (validStart, validEnd, calibDate, filterName, row.spectrograph,
                               row.arm, row.ccd))
 
     conn.commit()
@@ -93,4 +93,3 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(args.root, args.validity)
-
