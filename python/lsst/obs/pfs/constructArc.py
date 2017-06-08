@@ -29,6 +29,7 @@ class ConstructArcTask(CalibTask):
     ConfigClass = ConstructArcConfig
     _DefaultName = "arc"
     calibName = "arc"
+    filterName = 'NONE'
 
     def __init__(self, *args, **kwargs):
         CalibTask.__init__(self, *args, **kwargs)
