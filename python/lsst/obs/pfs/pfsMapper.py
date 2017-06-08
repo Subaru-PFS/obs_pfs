@@ -221,13 +221,46 @@ class PfsMapper(CameraMapper):
         ccd = pathId['ccd']
         return visit*200 + ccd
 
+    def bypass_pfsConfig(self, datasetType, pythonType, location, dataId):
+        from pfs.datamodel.pfsConfig import PfsConfig
+
+        pfsConfigId = dataId['pfsConfigId']
+
+        for pathName in location.locationList:
+            dirName = os.path.dirname(pathName)
+
+            pfsConfig = PfsConfig(pfsConfigId)
+            try:
+                pfsConfig.read(dirName=dirName)
+            except Exception as e:
+                pass
+            else:
+                return pfsConfig
+
+        if pfsConfigId == 0x0:
+            msg = str(e)
+            if isinstance(e, IOError):
+                msg = msg.replace(r"[Errno 2] ", "") # it isn't an error, just a warning            
+
+            self.log.warn(msg)
+            self.log.info("Creating dummy PfsConfig for pfsConfigId == 0x%x" % (pfsConfigId))
+
+            from pfs.datamodel.pfsConfig import PfsConfig
+            return PfsConfig(pfsConfigId)
+        
+        raise RuntimeError("Unable to read pfsConfig for %s: %s" % (dataId.items(), e))
+
     def bypass_pfsArm(self, datasetType, pythonType, location, dataId):
         from pfs.datamodel.pfsArm import PfsArm
 
         for pathName in location.locationList:
             dirName = os.path.dirname(pathName)
 
-            pfsArm = PfsArm(dataId["visit"], dataId["spectrograph"], dataId["arm"])
+            arm = self._getRegistryValue(dataId, "arm")
+            spectrograph = self._getRegistryValue(dataId, "spectrograph")
+            visit = self._getRegistryValue(dataId, "visit")
+
+            pfsArm = PfsArm(visit, spectrograph, arm)
             try:
                 pfsArm.read(dirName=dirName, setPfsConfig=False)
             except Exception as e:
