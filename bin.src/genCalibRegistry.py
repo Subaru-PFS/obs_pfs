@@ -11,6 +11,10 @@ import argparse
 def main(root, validityDays):
     logger = log.Log.getLogger("genCalibRegistry")
 
+    if not os.path.isdir(root):
+        logger.info("Creating %s" % (root))
+        os.makedirs(root)
+        
     registry = os.path.join(root, "calibRegistry.sqlite3")
 
     if os.path.exists(registry):
