@@ -54,6 +54,7 @@ class ConstructFiberFlatTask(CalibTask):
     ConfigClass = ConstructFiberFlatConfig
     _DefaultName = "constructFiberFlat"
     calibName = "flat"
+    filterName = "NONE"
 
     def __init__(self, *args, **kwargs):
         CalibTask.__init__(self, *args, **kwargs)
