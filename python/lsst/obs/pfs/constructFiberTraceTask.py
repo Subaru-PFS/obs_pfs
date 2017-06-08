@@ -111,11 +111,19 @@ class ConstructFiberTraceTask(CalibTask):
         newExpRefList = []
         for expRef in expRefList:
             exposure = expRef.get('raw')
-            try:
-                if exposure.getMetadata().get(self.config.xOffsetHdrKeyWord) == 0.:
+            md = exposure.getMetadata()
+
+            if self.config.xOffsetHdrKeyWord not in md.names():
+                self.log.warn("Keyword %s not found in metadata; ignoring flat for %s" %
+                              (self.config.xOffsetHdrKeyWord, expRef.dataId))
+            else:
+                if md.get(self.config.xOffsetHdrKeyWord) == 0.:
                     newExpRefList.append(expRef)
-            except:
-                newExpRefList.append(expRef)
+
+        if len(newExpRefList) == 0:
+            self.log.fatal("No flats were found with valid xOffset keyword %s" %
+                           self.config.xOffsetHdrKeyWord)
+            raise RuntimeError("Unable to find any valid flats")
 
         return CalibTask.run(self, newExpRefList, butler, calibId)
 

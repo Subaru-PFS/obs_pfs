@@ -105,23 +105,35 @@ class ConstructFiberFlatTask(CalibTask):
         self.log.info("Combining %s on %s" % (struct.outputId, NODE))
         self.log.info('len(dataRefList) = %d' % len(dataRefList))
 
-        exposure = dataRefList[0].get('postISRCCD')
-        sumFlats = exposure.getMaskedImage().getImage().getArray()
-        sumVariances = exposure.getMaskedImage().getVariance().getArray()
+        sumFlats, sumVariances = None, None
 
         allFts = []
         xOffsets = []
         for expRef in dataRefList:
             exposure = expRef.get('postISRCCD')
-            try:
-                xOffsets.append(exposure.getMetadata().get(self.config.xOffsetHdrKeyWord))
-            except Exception:
-                xOffsets.append(0.0)
+            md = exposure.getMetadata()
+
+            if self.config.xOffsetHdrKeyWord not in md.names():
+                self.log.warn("Keyword %s not found in metadata; ignoring flat for %s" %
+                              (self.config.xOffsetHdrKeyWord, expRef.dataId))
+                continue
+
+            xOffsets.append(md.get(self.config.xOffsetHdrKeyWord))
+
             fts = self.trace.run(exposure)
             allFts.append(fts)
-            if expRef.dataId['visit'] != dataRefList[0].dataId['visit']:
+
+            if sumFlats is None:
+                sumFlats = exposure.getMaskedImage().getImage().getArray()
+                sumVariances = exposure.getMaskedImage().getVariance().getArray()
+            else:
                 sumFlats += exposure.getMaskedImage().getImage().getArray()
                 sumVariances += exposure.getMaskedImage().getVariance().getArray()
+
+        if sumFlats is None:
+            self.log.fatal("No flats were found with valid xOffset keyword %s" %
+                           self.config.xOffsetHdrKeyWord)
+            raise RuntimeError("Unable to find any valid flats")
 
         self.log.info('xOffsets = %s' % (xOffsets))
 
