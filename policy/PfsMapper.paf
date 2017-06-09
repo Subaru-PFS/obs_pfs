@@ -209,7 +209,7 @@ datasets: {
         tables:        raw_visit
     }
     reduceArcTask_config: {
-        template:      "config/arc.py"
+        template:      "config/reduceArc.py"
         python:        "pfs.drp.stella.reduceArcTask.ReduceArcConfig"
         persistable:   "Config"
         storage:       "ConfigStorage"
@@ -217,7 +217,7 @@ datasets: {
         tables:        raw_visit
     }
     reduceArcRefSpecTask_config: {
-        template:      "config/arc.py"
+        template:      "config/reduceArcRefSpec.py"
         python:        "pfs.drp.stella.reduceArcRefSpecTask.ReduceArcRefSpecConfig"
         persistable:   "Config"
         storage:       "ConfigStorage"
@@ -234,7 +234,7 @@ datasets: {
         tables:        raw_visit
     }
     createRefSpecTask_config: {
-        template:      "config/flat.py"
+        template:      "config/createRefSpec.py"
         python:        "pfs.drp.stella.createRefSpec.CreateRefSpecConfig"
         persistable:   "Config"
         storage:       "ConfigStorage"
@@ -242,7 +242,7 @@ datasets: {
         tables:        raw_visit
     }
     createDetGeomTask_config: {
-        template:      "config/flat.py"
+        template:      "config/createDetGeom.py"
         python:        "pfs.drp.stella.createDetGeom.CreateDetGeomConfig"
         persistable:   "Config"
         storage:       "ConfigStorage"
