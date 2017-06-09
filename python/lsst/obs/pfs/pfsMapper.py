@@ -24,8 +24,11 @@ class PfsMapper(CameraMapper):
             kwargs['calibRoot'] = os.path.join(kwargs['root'], 'CALIB')
 
         super(PfsMapper, self).__init__(policy, policyFile.getRepositoryPath(), **kwargs)
-
-        if False:
+        #
+        # This block of code should be removed as soon as we're using a version of pipe_drivers that
+        # handles the expansions.  https://jira.lsstcorp.org/browse/DM-10901
+        #
+        if True:
             # Ensure each dataset type of interest knows about the full range of keys available from the registry
             keys = {'field': str,
                     'visit': int,
