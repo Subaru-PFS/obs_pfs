@@ -1,6 +1,6 @@
 config.isr.doBias = True
-config.isr.doDark = False
-config.isr.doFlat = False
+config.isr.doDark = True
+config.isr.doFlat = True
 config.isr.doLinearize = False
 
 config.repair.cosmicray.nCrPixelMax = 50000
