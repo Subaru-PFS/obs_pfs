@@ -60,23 +60,23 @@ class PfsFiberTraceTestCase(tests.TestCase):
 
         fiberTraceSet = drpStella.findAndTraceAperturesF(self.flat.getMaskedImage(), self.ftffc)
 
-        """Check that we found self.nFiberTraces FiberTraces"""
+        #Check that we found self.nFiberTraces FiberTraces
         self.assertEqual(fiberTraceSet.size(), self.nFiberTraces)
 
-        """Check that we can set the FiberTraceProfileFittingControl ftpfc"""
+        #Check that we can set the FiberTraceProfileFittingControl ftpfc
         self.assertTrue(fiberTraceSet.setFiberTraceProfileFittingControl(self.ftpfc))
 
-        """Check that we can calculate the spatial profile for all the FiberTraces in fiberTraceSet"""
+        #Check that we can calculate the spatial profile for all the FiberTraces in fiberTraceSet
         self.assertTrue(fiberTraceSet.calcProfileAllTraces())
 
-        """Check that we can write a PfsFiberTrace from the fiberTraceSet"""
+        #Check that we can write a PfsFiberTrace from the fiberTraceSet
         dataId = dict(calibDate=self.dataId['dateObs'], spectrograph=self.dataId['spectrograph'], arm=self.dataId['arm'])
         pfsFiberTrace = drpStellaUtils.createPfsFiberTrace(dataId, fiberTraceSet, self.flat.getHeight())
         fileName = os.path.join('.',PfsFiberTrace.fileNameFormat % (self.dataId['dateObs'], self.dataId['spectrograph'], self.dataId['arm']))
         pfsFiberTraceIO = PfsFiberTraceIO(pfsFiberTrace)
         pfsFiberTraceIO.writeFits(fileName)
 
-        """Check that we can read a PfsFiberTrace back in"""
+        #Check that we can read a PfsFiberTrace back in
         pfsFiberTraceNew = PfsFiberTrace(self.dataId['dateObs'], self.dataId['spectrograph'], self.dataId['arm'])
         pfsFiberTraceNew.read()
 
@@ -107,7 +107,7 @@ class PfsFiberTraceTestCase(tests.TestCase):
         self.assertAlmostEqual(pfsFiberTrace.lSigma, pfsFiberTraceNew.lSigma)
         self.assertAlmostEqual(pfsFiberTrace.uSigma, pfsFiberTraceNew.uSigma)
 
-        """Create new FiberTraceSet"""
+        #Create new FiberTraceSet
         ftsNew = makeFiberTraceSet(pfsFiberTraceNew, self.flat.getMaskedImage())
 
         self.assertEqual(fiberTraceSet.size(), ftsNew.size())
