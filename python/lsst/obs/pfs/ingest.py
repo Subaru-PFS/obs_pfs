@@ -29,7 +29,7 @@ class PfsParseTask(ParseTask):
         categories = '[ABCDS]'
         matches = re.search("PF("+sites+")("+categories+")(\d{6})(\d)(\d).fits", filename)
         if not matches:
-            """ Try old format """
+            # Try old format
             matches = re.search("PF("+sites+")("+categories+")-(\d{6})(\d)(\d).fits", filename)
             if not matches:
                 raise RuntimeError("Unable to interpret filename: %s" % filename)

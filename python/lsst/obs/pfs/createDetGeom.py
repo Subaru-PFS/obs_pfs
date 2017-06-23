@@ -6,7 +6,12 @@ import lsst.utils
 import os
 
 class CreateDetGeomConfig(pexConfig.Config):
-    """Configuration for creating the PFS detector geometry files"""
+    """Configuration for creating the PFS detector geometry files
+
+    No changes required compared to the base class, but
+    subclassed for distinction.
+    """
+    pass
 
 class CreateDetGeomTask(Task):
     """Task to create the detector geometry files for PFS"""
@@ -14,8 +19,7 @@ class CreateDetGeomTask(Task):
     _DefaultName = "createDetGeomTask"
 
     def run(self):
-
-        """ Gain and RdNoise from Jim Gunn's talk in Marseille Dec 2015"""
+        # Gain and RdNoise from Jim Gunn's talk in Marseille Dec 2015
         gain = (1.24, 1.24, 1.27, 1.18, 1.26, 1.20, 1.24, 1.26)
         rdnoise = (3.61, 3.78, 3.18, 2.95, 3.19, 3.80, 4.51, 3.18)
 
