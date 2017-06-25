@@ -10,6 +10,7 @@ or
 """
 import os
 import unittest
+
 import lsst.daf.persistence as dafPersist
 import lsst.utils
 import lsst.utils.tests as tests

@@ -8,17 +8,18 @@ or
    python
    >>> import Mapper; Mapper.run()
 """
-
 import os
-import unittest
 import shutil
+import unittest
+
 import numpy as np
+
 import lsst.daf.persistence as dafPersist
 import lsst.log as log
-import lsst.utils
-import lsst.utils.tests as tests
 from lsst.obs.pfs.ingest import PfsParseTask
 from lsst.obs.pfs.pfsMapper import PfsMapper
+import lsst.utils
+import lsst.utils.tests as tests
 
 class MapperTestCase(tests.TestCase):
     """A test case for the mapper and butler"""

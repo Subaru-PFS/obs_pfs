@@ -1,12 +1,14 @@
 #!/usr/bin/env python
+import argparse
+import collections
+import datetime
 import glob
 import os
 import re
+
 import sqlite3 as sqlite
+
 import lsst.log as log
-import datetime
-import collections
-import argparse
 
 def main(root, validityDays):
     logger = log.Log.getLogger("genCalibRegistry")
@@ -14,7 +16,7 @@ def main(root, validityDays):
     if not os.path.isdir(root):
         logger.info("Creating %s" % (root))
         os.makedirs(root)
-        
+
     registry = os.path.join(root, "calibRegistry.sqlite3")
 
     if os.path.exists(registry):

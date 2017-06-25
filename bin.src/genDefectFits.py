@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
+import collections
 import os.path
 import re
 
 import numpy
 import pyfits
-import collections
 
 import lsst.log as log
 from lsst.obs.pfs import PfsMapper

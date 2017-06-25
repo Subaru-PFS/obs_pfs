@@ -1,11 +1,10 @@
 #!/usr/bin/env python
-
 import os
 
-from lsst.daf.butlerUtils import CameraMapper
-import lsst.afw.image.utils as afwImageUtils
 import lsst.afw.image as afwImage
+import lsst.afw.image.utils as afwImageUtils
 import lsst.afw.math as afwMath
+from lsst.daf.butlerUtils import CameraMapper
 import lsst.pex.policy as pexPolicy
 
 class PfsMapper(CameraMapper):
@@ -42,8 +41,8 @@ class PfsMapper(CameraMapper):
                     }
             for name in ("raw",
                          # processCcd outputs
-                         "calexp", 
-                         "postISRCCD", 
+                         "calexp",
+                         "postISRCCD",
                          ):
                 self.mappings[name].keyDict.update(keys)
 
@@ -233,7 +232,7 @@ class PfsMapper(CameraMapper):
         spectrograph = self._getRegistryValue(dataId, "spectrograph")
 
         return 3*(spectrograph - 1) + dict(b=0, r=1, m=1, n=2)[arm]
-    
+
     def _getCcdKeyVal(self, dataId):
         """Return CCD key and value used to look a defect in the defect registry
 
@@ -270,14 +269,14 @@ class PfsMapper(CameraMapper):
         if pfsConfigId == 0x0:
             msg = str(e)
             if isinstance(e, IOError):
-                msg = msg.replace(r"[Errno 2] ", "") # it isn't an error, just a warning            
+                msg = msg.replace(r"[Errno 2] ", "") # it isn't an error, just a warning
 
             self.log.warn(msg)
             self.log.info("Creating dummy PfsConfig for pfsConfigId == 0x%x" % (pfsConfigId))
 
             from pfs.datamodel.pfsConfig import PfsConfig
             return PfsConfig(pfsConfigId)
-        
+
         raise RuntimeError("Unable to read pfsConfig for %s: %s" % (dataId.items(), e))
 
     def bypass_pfsArm(self, datasetType, pythonType, location, dataId):

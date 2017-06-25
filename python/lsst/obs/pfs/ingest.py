@@ -1,8 +1,9 @@
-import re
 import os
-from lsst.pipe.tasks.ingest import ParseTask, ParseConfig
+import re
+
 import lsst.afw.image as afwImage
 from lsst.obs.pfs.pfsMapper import PfsMapper
+from lsst.pipe.tasks.ingest import ParseTask, ParseConfig
 import lsst.utils
 
 class PfsParseConfig(ParseConfig):

@@ -1,4 +1,5 @@
 import os.path
+
 from lsst.utils import getPackageDir
 
 config.profile.load(os.path.join(getPackageDir("drp_stella"), "config", "createFlatFiberTraceProfile.py"))
