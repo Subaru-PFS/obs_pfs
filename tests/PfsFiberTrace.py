@@ -8,17 +8,18 @@ or
    python
    >>> import FiberTrace; FiberTrace.run()
 """
-import numpy as np
 import os
 import unittest
+
+import numpy as np
+
 import lsst.daf.persistence as dafPersist
 import lsst.utils
 import lsst.utils.tests as tests
-import pfs.drp.stella as drpStella
-import pfs.drp.stella.utils as drpStellaUtils
 from pfs.datamodel.pfsFiberTrace import PfsFiberTrace
+import pfs.drp.stella as drpStella
 from pfs.drp.stella.datamodelIO import PfsFiberTraceIO
-from pfs.drp.stella.utils import makeFiberTraceSet
+from pfs.drp.stella.utils import createPfsFiberTrace, makeFiberTraceSet
 
 class PfsFiberTraceTestCase(tests.TestCase):
     """A test case for comparing a reconstructed FiberTraceSet to the original"""
@@ -71,7 +72,7 @@ class PfsFiberTraceTestCase(tests.TestCase):
 
         #Check that we can write a PfsFiberTrace from the fiberTraceSet
         dataId = dict(calibDate=self.dataId['dateObs'], spectrograph=self.dataId['spectrograph'], arm=self.dataId['arm'])
-        pfsFiberTrace = drpStellaUtils.createPfsFiberTrace(dataId, fiberTraceSet, self.flat.getHeight())
+        pfsFiberTrace = createPfsFiberTrace(dataId, fiberTraceSet, self.flat.getHeight())
         fileName = os.path.join('.',PfsFiberTrace.fileNameFormat % (self.dataId['dateObs'], self.dataId['spectrograph'], self.dataId['arm']))
         pfsFiberTraceIO = PfsFiberTraceIO(pfsFiberTrace)
         pfsFiberTraceIO.writeFits(fileName)

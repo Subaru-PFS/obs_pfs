@@ -1,6 +1,6 @@
+from lsst.obs.subaru.isr import SubaruIsrTask
 from lsst.pex.config import Config, ConfigurableField
 from lsst.pipe.base import CmdLineTask
-from lsst.obs.subaru.isr import SubaruIsrTask
 
 class DetrendConfig(Config):
     isr = ConfigurableField(target=SubaruIsrTask, doc="Instrumental signature removal")

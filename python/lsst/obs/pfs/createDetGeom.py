@@ -1,9 +1,10 @@
-import lsst.afw.table as afwTable
+import os
+
 import lsst.afw.geom as afwGeom
+import lsst.afw.table as afwTable
 import lsst.pex.config as pexConfig
 from lsst.pipe.base import Task
 import lsst.utils
-import os
 
 class CreateDetGeomConfig(pexConfig.Config):
     """Configuration for creating the PFS detector geometry files
