@@ -91,14 +91,6 @@ class PfsMapper(CameraMapper):
         @param dataId  The data identifier (unused, included for future flexibility)
         @return standardized Exposure
         """
-        #
-        # This has to go as soon as we switch to meas_base
-        #
-        try:
-            import lsst.obs.base as meas_base
-            self.log.warn("PfsMapper.standardizeCalib is not needed with obs_base")
-        except ImportError:
-            pass
 
         mapping = self.calibrations[dataset]
         if "MaskedImage" in mapping.python:
