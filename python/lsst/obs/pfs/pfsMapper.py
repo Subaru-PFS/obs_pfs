@@ -38,28 +38,6 @@ class PfsMapper(CameraMapper):
             kwargs['calibRoot'] = os.path.join(kwargs['root'], 'CALIB')
 
         super(PfsMapper, self).__init__(policy, policyFile.getRepositoryPath(), **kwargs)
-        #
-        # This block of code should be removed as soon as we're using a version of pipe_drivers that
-        # handles the expansions.  https://jira.lsstcorp.org/browse/DM-10901
-        #
-        if True:
-            # Ensure each dataset type of interest knows about the full range of keys available from the registry
-            keys = {'field': str,
-                    'visit': int,
-                    'ccd': int, # for compatibility with HSC: serial no of ccd
-                    'spectrograph': int, # [0,1,2,3] for each arm in [blue, red, nir, medred]
-                    'dateObs': str,
-                    'taiObs': str,
-                    'filter': str, # 'arm' called filter for compatibility
-                    'site': str,
-                    'category': str,
-                    }
-            for name in ("raw",
-                         # processCcd outputs
-                         "calexp",
-                         "postISRCCD",
-                         ):
-                self.mappings[name].keyDict.update(keys)
 
         # The order of these defineFilter commands matters as their IDs are used to generate at least some
         # object IDs (e.g. on coadds) and changing the order will invalidate old objIDs
