@@ -4,9 +4,7 @@ import os
 from lsst.obs.base import CameraMapper, MakeRawVisitInfo
 import lsst.afw.image.utils as afwImageUtils
 import lsst.afw.image as afwImage
-import lsst.afw.image.utils as afwImageUtils
 import lsst.afw.math as afwMath
-from lsst.daf.butlerUtils import CameraMapper
 import lsst.pex.policy as pexPolicy
 
 class PfsRawVisitInfo(MakeRawVisitInfo):
