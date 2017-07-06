@@ -139,25 +139,34 @@ class ConstructFiberTraceTask(CalibTask):
         return CalibTask.run(self, newExpRefList, butler, calibId)
 
 
-    def combine(self, cache, struct):
+    def combine(self, cache, struct, outputId):
         """!Combine multiple exposures of a particular CCD and write the output
 
         Only the slave nodes execute this method.
 
         @param cache  Process pool cache
         @param struct  Parameters for the combination, which has the following components:
+            * ccdName     Name tuple for CCD
             * ccdIdList   List of data identifiers for combination
             * scales      Scales to apply (expScales are scalings for each exposure,
                                ccdScale is final scale for combined image)
-            * outputId    Data identifier for combined image (fully qualified for this CCD)
+        @param outputId    Data identifier for combined image (exposure part only)
         """
+        # Check if we need to look up any keys that aren't in the output dataId
+        fullOutputId = {k: struct.ccdName[i] for i, k in enumerate(self.config.ccdKeys)}
+        self.addMissingKeys(fullOutputId, cache.butler)
+        fullOutputId.update(outputId)  # must be after the call to queryMetadata
+        outputId = fullOutputId
+        del fullOutputId
+
         dataRefList = [getDataRef(cache.butler, dataId) if dataId is not None else None for
                        dataId in struct.ccdIdList]
-        self.log.info("Combining %s on %s" % (struct.outputId, NODE))
+
+        self.log.info("Combining %s on %s" % (outputId, NODE))
         calib = self.combination.run(dataRefList, expScales=struct.scales.expScales,
                                      finalScale=struct.scales.ccdScale)
 
-        self.recordCalibInputs(cache.butler, calib, struct.ccdIdList, struct.outputId)
+        self.recordCalibInputs(cache.butler, calExp, struct.ccdIdList, outputId)
 
         self.interpolateNans(calib)
 
@@ -168,9 +177,9 @@ class ConstructFiberTraceTask(CalibTask):
 
         dataId = struct.ccdIdList[0]
         pfsFT = PfsFiberTrace(
-            struct.outputId['calibDate'],
-            struct.outputId['spectrograph'],
-            struct.outputId['arm']
+            outputId['calibDate'],
+            outputId['spectrograph'],
+            outputId['arm']
         )
         pfsFT.fwhm = self.trace.config.apertureFWHM
         pfsFT.threshold = self.trace.config.signalThreshold
@@ -223,4 +232,4 @@ class ConstructFiberTraceTask(CalibTask):
             profOut[yStart:yEnd,:] = prof.getArray()[:,:]
             pfsFT.profiles.append(profOut)
 
-        self.write(cache.butler, PfsFiberTraceIO(pfsFT), struct.outputId)
+        self.write(cache.butler, PfsFiberTraceIO(pfsFT), outputId)
