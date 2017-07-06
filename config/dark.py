@@ -1,5 +1,3 @@
-config.darkTime = None
-
 config.isr.doBias = True
 config.isr.doDark = False
 config.isr.doFlat = False
