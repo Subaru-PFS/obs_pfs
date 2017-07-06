@@ -165,17 +165,38 @@ class ConstructFiberTraceTask(CalibTask):
         self.log.info("Combining %s on %s" % (outputId, NODE))
         calib = self.combination.run(dataRefList, expScales=struct.scales.expScales,
                                      finalScale=struct.scales.ccdScale)
+        calExp = afwImage.makeExposure(calib)
 
         self.recordCalibInputs(cache.butler, calExp, struct.ccdIdList, outputId)
 
-        self.interpolateNans(calib)
+        self.interpolateNans(calExp)
 
-        calExp = afwImage.makeExposure(afwImage.makeMaskedImage(calib.getImage()))
+        if self.debugInfo.display:
+            disp = afwDisplay.Display(frame=self.debugInfo.combined_frame)
+
+            disp.mtv(calExp, "Combined")
+
         fts = self.trace.run(calExp)
 
         self.profile.run(fts)
 
-        dataId = struct.ccdIdList[0]
+        if self.debugInfo.display:
+            disp = afwDisplay.Display(frame=self.debugInfo.combined_frame)
+
+            maskPlane = "FIBERTRACE"
+            calExp.getMaskedImage().getMask().addMaskPlane(maskPlane)
+            disp.setMaskPlaneColor(maskPlane, "GREEN")
+
+            ftMask = 1 << calExp.getMaskedImage().getMask().getMaskPlane(maskPlane)
+            for ft in fts.getTraces():
+                markFiberTraceInMask(ft, calExp.getMaskedImage().getMask(), ftMask)
+
+            disp.setMaskTransparency(50)
+            disp.mtv(calExp, "Traced")
+        #
+        # Packge up fts (a FiberTraceSet) into a pfsFiberTrace for I/O;  these two classes
+        # should be merged at some point
+        #
         pfsFT = PfsFiberTrace(
             outputId['calibDate'],
             outputId['spectrograph'],
