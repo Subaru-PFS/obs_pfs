@@ -1,6 +1,6 @@
 setupRequired(afw)
 setupRequired(daf_base)
-setupRequired(daf_butlerUtils >= 3.0.3)
+setupRequired(obs_base)
 setupRequired(numpy)
 setupRequired(obs_subaru)
 setupRequired(pex_config)
