@@ -4,6 +4,7 @@ import re
 import lsst.afw.image as afwImage
 from lsst.obs.pfs.pfsMapper import PfsMapper
 from lsst.pipe.tasks.ingest import ParseTask, ParseConfig
+from lsst.pipe.tasks.ingestCalibs import CalibsParseTask
 import lsst.utils
 
 class PfsParseConfig(ParseConfig):
@@ -75,3 +76,53 @@ class PfsParseTask(ParseTask):
             field = "UNKNOWN"
         self.log.debug('PfsParseTask.translate_field: field = %s' % field)
         return re.sub(r'\W', '_', field).upper()
+
+class PfsCalibsParseTask(CalibsParseTask, PfsParseTask):
+    ConfigClass = PfsParseConfig
+
+    calibTypes = ["Bias", "Dark", "Arc", "FiberTrace", "FiberFlat"]
+    
+    def getInfo(self, filename):
+        """Get information about the image from the filename and its contents
+
+        @param filename    Name of file to inspect
+        @return File properties; list of file properties for each extension
+        """
+        self.log.debug('interpreting filename <%s>' % filename)
+
+        path, name = os.path.split(filename)
+        matches = re.search(r"^pfs(%s)-(\d{4}-\d{2}-\d{2})-(\d)-(\d)(.)\.fits$" % ("|".join(self.calibTypes)),
+                            name)
+
+        if not matches:
+            raise RuntimeError("Unable to interpret %s as a calibration file" % filename)
+        calibType, calibDate, _, spectrograph, arm = matches.groups()
+        
+        try:
+            armNum = self.arms.index(arm) + 1
+        except ValueError:
+            raise RuntimeError("found unknown filter \"%s\" in %s; expected one of %s" %
+                               (arm, filename, self.arms))
+
+        spectrograph = int(spectrograph)
+        visit0 = 0
+
+        if spectrograph < 1 or spectrograph > self.nSpectrograph + 1:
+            raise Exception('spectrograph (=%d) out of bounds 1..%d' % (spectrograph, self.nSpectrograph))
+
+        dataId = dict(spectrograph=spectrograph, arm=arm)
+        ccd = PfsMapper.computeDetectorId(spectrograph, arm)
+        self.log.debug(
+            'visit0 = <%s>, spectrograph = <%d>, arm = <%s>, ccd = <%d>' %
+            (visit0, spectrograph, arm, ccd)
+        )
+
+        info = dict(visit0=visit0, arm=arm, filter=arm, spectrograph=spectrograph, ccd=ccd,
+                    calibDate=calibDate)
+
+        if os.path.exists(filename):
+            header = afwImage.readMetadata(filename)
+            info = self.getInfoFromMetadata(header, info=info)
+
+        return info, [info]
+    

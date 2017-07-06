@@ -98,7 +98,7 @@ calibrations: {
         validStartName: validStart
         validEndName: validEnd
     }
-    fiberTrace: {
+    fibertrace: {
         template:    "FIBERTRACE/%(filter)s/pfsFiberTrace-%(calibDate)s-0-%(spectrograph)1d%(arm)s.fits"
         python:      "pfs.drp.stella.datamodelIO.PfsFiberTraceIO"
         persistable: "FiberTraceSet"

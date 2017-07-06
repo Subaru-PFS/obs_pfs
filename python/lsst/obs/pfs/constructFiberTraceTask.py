@@ -73,7 +73,7 @@ class ConstructFiberTraceTask(CalibTask):
     """Task to construct the normalized Flat"""
     ConfigClass = ConstructFiberTraceConfig
     _DefaultName = "constructFiberTrace"
-    calibName = "fiberTrace"
+    calibName = "fibertrace"
 
     def __init__(self, *args, **kwargs):
         CalibTask.__init__(self, *args, **kwargs)
