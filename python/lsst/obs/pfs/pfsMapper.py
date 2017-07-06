@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+import numpy as np
 
 from lsst.obs.base import CameraMapper, MakeRawVisitInfo
 import lsst.afw.image.utils as afwImageUtils
@@ -8,6 +9,38 @@ import lsst.afw.math as afwMath
 import lsst.pex.policy as pexPolicy
 
 class PfsRawVisitInfo(MakeRawVisitInfo):
+    def setArgDict(self, md, argDict):
+        """Fill an argument dict with arguments for makeVisitInfo and pop associated metadata
+
+        Subclasses are expected to override this method, though the override
+        may wish to call this default implementation, which:
+        - sets exposureTime from "EXPTIME"
+        - sets date by calling getDateAvg
+
+        @param[in,out] md  metadata, as an lsst.daf.base.PropertyList or PropertySet;
+            items that are used are stripped from the metadata
+            (except TIMESYS, because it may apply to more than one other keyword).
+        @param[in,out] argdict  a dict of arguments
+
+        Subclasses should expand this or replace it.
+        """
+        super(PfsRawVisitInfo, self).setArgDict(md, argDict)
+
+        argDict["darkTime"] = self.getDarkTime(argDict)
+
+    def getDarkTime(self, argDict):
+        """Retrieve the dark time from an argDict, waiting to be passed to the VisitInfo ctor"""
+        darkTime = argDict.get("darkTime", float("NaN"))
+        if np.isfinite(darkTime):
+            return darkTime
+
+        self.log.info("darkTime is NaN/Inf; using exposureTime")
+        exposureTime = argDict.get("exposureTime", np.nan)
+        if not np.isfinite(exposureTime):
+            raise RuntimeError("Tried to substitute exposureTime for darkTime but it is also Nan/Inf")
+
+        return exposureTime
+
     def getDateAvg(self, md, exposureTime):
         """Return date at the middle of the exposure
         @param[in,out] md  metadata, as an lsst.daf.base.PropertyList or PropertySet;
@@ -80,40 +113,6 @@ class PfsMapper(CameraMapper):
 
         return exp
 
-    def standardizeCalib(self, dataset, item, dataId):
-        """Standardize a calibration image read in by the butler
-
-        Some calibrations are stored on disk as Images instead of MaskedImages
-        or Exposures.  Here, we convert it to an Exposure.
-
-        @param dataset  Dataset type (e.g., "bias", "dark" or "flat")
-        @param item  The item read by the butler
-        @param dataId  The data identifier (unused, included for future flexibility)
-        @return standardized Exposure
-        """
-
-        mapping = self.calibrations[dataset]
-        if "MaskedImage" in mapping.python:
-            exp = afwImage.makeExposure(item)
-        elif "Image" in mapping.python:
-            if hasattr(item, "getImage"): # For DecoratedImageX
-                md = item.getMetadata()
-                item = item.getImage()
-            else:
-                md = None
-            exp = afwImage.makeExposure(afwImage.makeMaskedImage(item))
-            if md:
-                exp.setMetadata(md)
-        elif "Exposure" in mapping.python:
-            exp = item
-        else:
-            raise RuntimeError("Unrecognised python type: %s" % mapping.python)
-
-        parent = super(PfsMapper, self)
-        if hasattr(parent, "std_" + dataset):
-            return getattr(parent, "std_" + dataset)(exp, dataId)
-        return self._standardizeExposure(mapping, exp, dataId)
-
     def _shiftAmpPixels(self, rawExp):
         """Shift pixels in early raw frames.
 
@@ -170,21 +169,7 @@ class PfsMapper(CameraMapper):
 
         return exp
 
-    def std_arc(self, item, dataId):
-        return self.standardizeCalib("arc", item, dataId)
-
-    def std_bias(self, item, dataId):
-        return self.standardizeCalib("bias", item, dataId)
-
-    def std_dark(self, item, dataId):
-        exp = self.standardizeCalib("dark", item, dataId)
-        exp.getCalib().setExptime(1.0)
-        return exp
-
-    def std_flat(self, item, dataId):
-        return self.standardizeCalib("flat", item, dataId)
-
-    def std_fiberTrace(self, item, dataId):
+    def std_fibertrace(self, item, dataId): # needed to stop the butler generating a version
         return item
 
     def map_linearizer(self, dataId, write=False):
@@ -206,6 +191,18 @@ class PfsMapper(CameraMapper):
                 arm = 'r'
             return "%s_%d" % (armName, spectrograph)
 
+    @staticmethod
+    def computeDetectorId(spectrograph, arm):
+        """
+        Return a DetectorId in the range [0,11] with
+           blue                 = {0,3,6,9},
+           red/mediumResolution = {1,4,7,10}
+           NIR                  = {2,5,8,11}
+        corresponding to obs_pfs/pfs/camera/camera.py::config.detectorList[1].id
+        """
+
+        return 3*(spectrograph - 1) + dict(b=0, r=1, m=1, n=2)[arm]
+
     def _extractDetectorId(self, dataId):
         # The returned DetectorId is in the range [0,11] with blue={0,3,6,9},
         # red=mediumResolution={1,4,7,10}, and NIR={2,5,8,11} corresponding to
@@ -216,7 +213,7 @@ class PfsMapper(CameraMapper):
         arm = self._getRegistryValue(dataId, "arm")
         spectrograph = self._getRegistryValue(dataId, "spectrograph")
 
-        return 3*(spectrograph - 1) + dict(b=0, r=1, m=1, n=2)[arm]
+        return self.computeDetectorId(spectrograph, arm)
 
     def _getCcdKeyVal(self, dataId):
         """Return CCD key and value used to look a defect in the defect registry
