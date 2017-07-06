@@ -235,7 +235,14 @@ class ConstructFiberTraceTask(CalibTask):
         pfsFT.profiles = []
 
         nRows = calib.getImage().getHeight()
-
+        #
+        # The code doesn't impose any requirements on the widths of the traces, while the
+        # datamodel requires that they are all the same.
+        #
+        # For now, trim off extra columns
+        #
+        width = min([fts.getFiberTrace(i).getProfile().getWidth() for i in range(fts.size())])
+        
         for iFt in range(fts.size()):
             ft = fts.getFiberTrace(iFt)
             ftFunc = ft.getFiberTraceFunction()
@@ -246,11 +253,11 @@ class ConstructFiberTraceTask(CalibTask):
             pfsFT.yHigh.append(ftFunc.yHigh)
             pfsFT.coeffs.append(ftFunc.coefficients)
             prof = ft.getProfile()
-            profOut = np.ndarray(shape=[nRows,prof.getWidth()], dtype=np.float32)
+            profOut = np.ndarray(shape=[nRows, width], dtype=np.float32)
             profOut[:,:] = 0.
             yStart = ft.getFiberTraceFunction().yCenter + ft.getFiberTraceFunction().yLow
             yEnd = ft.getFiberTraceFunction().yCenter + ft.getFiberTraceFunction().yHigh + 1
-            profOut[yStart:yEnd,:] = prof.getArray()[:,:]
+            profOut[yStart:yEnd,:] = prof.getArray()[:,:width]
             pfsFT.profiles.append(profOut)
 
         self.write(cache.butler, PfsFiberTraceIO(pfsFT), outputId)
