@@ -22,9 +22,6 @@ class ConstructFiberFlatConfig(CalibConfig):
         default="DARKTIME",
         doc="Header keyword for time since last CCD wipe, or None",
         optional=True)
-    display = Field(dtype=bool,
-        default=True,
-        doc="Display images?")
     doRepair = Field(dtype=bool,
         default=True,
         doc="Repair artifacts?")
@@ -182,33 +179,29 @@ class ConstructFiberFlatTask(CalibTask):
         normalizedFlat = afwImage.MaskedImageF(afwImage.ImageF(normalizedFlat), afwImage.MaskU(msk))
 
         import lsstDebug
-        try:
-            import debug
-            di = lsstDebug.Info(__name__)
-            if di.display:
-                import lsst.afw.display as afwDisplay
+        di = lsstDebug.Info(__name__)
+        if di.display:
+            import lsst.afw.display as afwDisplay
 
-                if di.frames_flat >= 0:
-                    display = afwDisplay.getDisplay(frame=di.frames_flat)
-                    display.mtv(normalizedFlat, title='normalized Flat')
+            if di.frames_flat >= 0:
+                display = afwDisplay.getDisplay(frame=di.frames_flat)
+                display.mtv(normalizedFlat, title='normalized Flat')
 
-                if di.frames_meanFlats >= 0:
-                    display = afwDisplay.getDisplay(frame=di.frames_sumFlats)
-                    display.mtv(afwImage.ImageF(sumFlats/len(dataRefList)), title='mean(Flats)')
+            if di.frames_meanFlats >= 0:
+                display = afwDisplay.getDisplay(frame=di.frames_sumFlats)
+                display.mtv(afwImage.ImageF(sumFlats/len(dataRefList)), title='mean(Flats)')
 
-                if di.frames_meanTraces >= 0:
-                    display = afwDisplay.getDisplay(frame=di.frames_sumTraces)
-                    display.mtv(afwImage.ImageF(sumRecImArr/len(dataRefList)), title='mean(Traces)')
+            if di.frames_meanTraces >= 0:
+                display = afwDisplay.getDisplay(frame=di.frames_sumTraces)
+                display.mtv(afwImage.ImageF(sumRecImArr/len(dataRefList)), title='mean(Traces)')
 
-                if di.frames_residuals >= 0:
-                    display = afwDisplay.getDisplay(frame=di.frames_residuals)
-                    display.mtv(afwImage.ImageF((sumFlats - sumRecImArr)/len(dataRefList)),
-                                title='mean(Flats - Traces)')
-        except ImportError:
-            debug = None
+            if di.frames_residuals >= 0:
+                display = afwDisplay.getDisplay(frame=di.frames_residuals)
+                display.mtv(afwImage.ImageF((sumFlats - sumRecImArr)/len(dataRefList)),
+                            title='mean(Flats - Traces)')
 
         #Write fiber flat
         normFlatOut = afwImage.makeExposure(normalizedFlat)
-        self.recordCalibInputs(cache.butler, normFlatOut, struct.ccdIdList, struct.outputId)
+        self.recordCalibInputs(cache.butler, normFlatOut, struct.ccdIdList, outputId)
         self.interpolateNans(normFlatOut)
-        self.write(cache.butler, normFlatOut, struct.outputId)
+        self.write(cache.butler, normFlatOut, outputId)

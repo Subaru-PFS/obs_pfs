@@ -11,7 +11,6 @@ config.psfFwhm = 2.5
 config.psfSize = 21
 config.crGrow = 2
 config.darkTime = "DARKTIME"
-config.display = True
 config.minSNR = 50.
 
 config.isr.doBias = True

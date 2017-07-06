@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import lsst.afw.detection as afwDet
+import lsst.afw.display as afwDisplay
 import lsst.afw.image as afwImage
 from lsst.ctrl.pool.pool import NODE
 import lsst.meas.algorithms as measAlg
@@ -10,6 +11,7 @@ from lsst.pipe.drivers.utils import getDataRef
 import math
 import numpy as np
 from pfs.datamodel.pfsFiberTrace import PfsFiberTrace
+from pfs.drp.stella import markFiberTraceInMask
 from pfs.drp.stella.createFlatFiberTraceProfileTask import CreateFlatFiberTraceProfileTask
 from pfs.drp.stella.findAndTraceAperturesTask import FindAndTraceAperturesTask
 from pfs.drp.stella.datamodelIO import PfsFiberTraceIO
@@ -79,6 +81,9 @@ class ConstructFiberTraceTask(CalibTask):
         self.makeSubtask("profile")
         self.makeSubtask("trace")
 
+        import lsstDebug
+        self.debugInfo = lsstDebug.Info(__name__)
+
     @classmethod
     def applyOverrides(cls, config):
         """Overrides to apply for FiberTrace construction"""
@@ -103,6 +108,13 @@ class ConstructFiberTraceTask(CalibTask):
                 fpSet = afwDet.FootprintSet(mask.convertU(), afwDet.Threshold(0.5))
                 fpSet = afwDet.FootprintSet(fpSet, self.config.crGrow, True)
                 fpSet.setMask(exposure.getMaskedImage().getMask(), "CR")
+
+        if self.debugInfo.display and self.debugInfo.display_inputs:
+            disp = afwDisplay.Display(frame=self.debugInfo.inputs_frame)
+
+            visit = sensorRef.dataId['visit']
+            disp.mtv(exposure, "raw %d" % (visit))
+                
         return exposure
 
     def run(self, expRefList, butler, calibId):
