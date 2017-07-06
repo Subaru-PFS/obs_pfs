@@ -72,8 +72,8 @@ calibrations: {
     }
     dark: {
         template:    "DARK/NONE/pfsDark-%(calibDate)s-0-%(spectrograph)1d%(arm)s.fits"
-        python:      "lsst.afw.image.ImageF"
-        persistable: "ImageF"
+        python:      "lsst.afw.image.DecoratedImageF"
+        persistable: "DecoratedImageF"
         storage:     "FitsStorage"
         level:       "Ccd"
         tables:      "dark"
@@ -114,8 +114,8 @@ calibrations: {
     }
     arc: {
         template:    "ARC/%(filter)s/pfsArc-%(calibDate)s-0-%(spectrograph)1d%(arm)s.fits"
-        python:      "lsst.afw.image.ImageF"
-        persistable: "ImageF"
+        python:      "lsst.afw.image.ExposureF"
+        persistable: "ExposureF"
         storage:     "FitsStorage"
         level:       "Ccd"
         tables:      "arc"

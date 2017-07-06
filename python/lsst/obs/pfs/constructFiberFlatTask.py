@@ -61,7 +61,6 @@ class ConstructFiberFlatTask(CalibTask):
     @classmethod
     def applyOverrides(cls, config):
         """Overrides to apply for flat construction"""
-        config.isr.doDark = False
         config.isr.doFlat = False
         config.isr.doFringe = False
 
