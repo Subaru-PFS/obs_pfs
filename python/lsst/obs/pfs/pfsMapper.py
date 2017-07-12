@@ -238,6 +238,7 @@ class PfsMapper(CameraMapper):
         pfsConfigId = dataId['pfsConfigId']
 
         for pathName in location.locationList:
+            pathName = os.path.join(location.storage.root, pathName)
             dirName = os.path.dirname(pathName)
 
             pfsConfig = PfsConfig(pfsConfigId)
@@ -265,6 +266,7 @@ class PfsMapper(CameraMapper):
         from pfs.datamodel.pfsArm import PfsArm
 
         for pathName in location.locationList:
+            pathName = os.path.join(location.storage.root, pathName)
             dirName = os.path.dirname(pathName)
 
             arm = self._getRegistryValue(dataId, "arm")
