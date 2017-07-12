@@ -21,10 +21,10 @@ class PfsRawVisitInfo(MakeRawVisitInfo):
             items that are used are stripped from the metadata
             (except TIMESYS, because it may apply to more than one other keyword).
         @param[in,out] argdict  a dict of arguments
-
-        Subclasses should expand this or replace it.
         """
         super(PfsRawVisitInfo, self).setArgDict(md, argDict)
+        if "DARKTIME" in md.names():
+            argDict["darkTime"] = self.popFloat(md, "DARKTIME")
 
         argDict["darkTime"] = self.getDarkTime(argDict)
 
