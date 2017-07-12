@@ -220,7 +220,7 @@ class ConstructFiberTraceTask(CalibTask):
         pfsFT.yLow = []
         pfsFT.yHigh = []
         pfsFT.coeffs = []
-        pfsFT.profiles = []
+        pfsFT.profiles = None           # we'll set it when we know its dimension
 
         nRows = calib.getImage().getHeight()
         #
@@ -230,6 +230,8 @@ class ConstructFiberTraceTask(CalibTask):
         # For now, trim off extra columns
         #
         width = min([fts.getFiberTrace(i).getProfile().getWidth() for i in range(fts.size())])
+        pfsFT.profiles = np.empty((fts.size(), nRows, width), dtype=np.float32)
+        pfsFT.profiles[:] = np.nan
         
         for iFt in range(fts.size()):
             ft = fts.getFiberTrace(iFt)
@@ -240,12 +242,10 @@ class ConstructFiberTraceTask(CalibTask):
             pfsFT.yLow.append(ftFunc.yLow)
             pfsFT.yHigh.append(ftFunc.yHigh)
             pfsFT.coeffs.append(ftFunc.coefficients)
-            prof = ft.getProfile()
-            profOut = np.ndarray(shape=[nRows, width], dtype=np.float32)
-            profOut[:,:] = 0.
             yStart = ft.getFiberTraceFunction().yCenter + ft.getFiberTraceFunction().yLow
             yEnd = ft.getFiberTraceFunction().yCenter + ft.getFiberTraceFunction().yHigh + 1
-            profOut[yStart:yEnd,:] = prof.getArray()[:,:width]
-            pfsFT.profiles.append(profOut)
 
-        self.write(cache.butler, PfsFiberTraceIO(pfsFT), outputId)
+            pfsFT.profiles[iFt, yStart:yEnd, :] = ft.getProfile().getArray()[:,:width]
+
+        pfsFiberTrace = PfsFiberTraceIO(pfsFT)
+        self.write(cache.butler, pfsFiberTrace, outputId)
