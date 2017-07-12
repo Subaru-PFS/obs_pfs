@@ -11,6 +11,7 @@ from lsst.pipe.drivers.utils import getDataRef
 import math
 import numpy as np
 from pfs.datamodel.pfsFiberTrace import PfsFiberTrace
+import pfs.drp.stella.utils as dsUtils
 from pfs.drp.stella import markFiberTraceInMask
 from pfs.drp.stella.createFlatFiberTraceProfileTask import CreateFlatFiberTraceProfileTask
 from pfs.drp.stella.findAndTraceAperturesTask import FindAndTraceAperturesTask
@@ -177,18 +178,11 @@ class ConstructFiberTraceTask(CalibTask):
         if self.debugInfo.display:
             disp = afwDisplay.Display(frame=self.debugInfo.combined_frame)
 
-            maskPlane = "FIBERTRACE"
-            calExp.getMaskedImage().getMask().addMaskPlane(maskPlane)
-            disp.setMaskPlaneColor(maskPlane, "GREEN")
-
-            ftMask = 1 << calExp.getMaskedImage().getMask().getMaskPlane(maskPlane)
-            for ft in fts.getTraces():
-                markFiberTraceInMask(ft, calExp.getMaskedImage().getMask(), ftMask)
-
+            dsUtils.addFiberTraceSetToMask(calExp.getMaskedImage().getMask(), fts.getTraces(), disp)
             disp.setMaskTransparency(50)
             disp.mtv(calExp, "Traced")
         #
-        # Packge up fts (a FiberTraceSet) into a pfsFiberTrace for I/O;  these two classes
+        # Package up fts (a FiberTraceSet) into a pfsFiberTrace for I/O;  these two classes
         # should be merged at some point
         #
         pfsFT = PfsFiberTrace(
