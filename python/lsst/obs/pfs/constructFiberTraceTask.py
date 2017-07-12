@@ -23,12 +23,6 @@ class ConstructFiberTraceConfig(CalibConfig):
         default=2,
         doc="Grow radius for CR (pixels)"
     )
-    darkTime = Field(
-        dtype=str,
-        default="DARKTIME",
-        doc="Header keyword for time since last CCD wipe, or None",
-        optional=True
-    )
     doRepair = Field(
         dtype=bool,
         default=True,

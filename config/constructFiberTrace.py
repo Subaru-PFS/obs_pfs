@@ -5,8 +5,6 @@ from lsst.utils import getPackageDir
 config.profile.load(os.path.join(getPackageDir("drp_stella"), "config", "createFlatFiberTraceProfile.py"))
 config.trace.load(os.path.join(getPackageDir("drp_stella"), "config", "findAndTraceApertures.py"))
 
-config.darkTime = None
-
 config.isr.doBias = True
 config.isr.doDark = True
 config.isr.doFlat = False
