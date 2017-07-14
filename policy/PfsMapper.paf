@@ -264,6 +264,14 @@ datasets: {
         tables:        raw
         tables:        raw_visit
     }
+    constructLineList_config: {
+        template:      "config/constructLineList.py"
+        python:        "lsst.obs.pfs.constructLineList.ConstructLineListConfig"
+        persistable:   "Config"
+        storage:       "ConfigStorage"
+        tables:        raw
+        tables:        raw_visit
+    }
     findAndTrace_config: {
         template:      "config/findAndTraceApertures.py"
         python:        "pfs.drp.stella.findAndTraceAperturesTask.FindAndTraceAperturesConfig"
