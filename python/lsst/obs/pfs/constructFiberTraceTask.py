@@ -118,6 +118,7 @@ class ConstructFiberTraceTask(CalibTask):
                 self.log.warn("Keyword %s not found in metadata; ignoring flat for %s" %
                               (self.config.xOffsetHdrKeyWord, expRef.dataId))
             else:
+                self.log.info('offset = %f' % (md.get(self.config.xOffsetHdrKeyWord)))
                 if md.get(self.config.xOffsetHdrKeyWord) == 0.:
                     newExpRefList.append(expRef)
 
