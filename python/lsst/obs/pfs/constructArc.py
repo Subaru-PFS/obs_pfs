@@ -1,11 +1,9 @@
 #!/usr/bin/env python
-import os
 import lsst.afw.detection as afwDet
 import lsst.meas.algorithms as measAlg
 from lsst.pex.config import Field, ConfigurableField
 from lsst.pipe.drivers.constructCalibs import CalibConfig, CalibTask
 from lsst.pipe.tasks.repair import RepairTask
-from lsst.utils import getPackageDir
 import math
 
 class ConstructArcConfig(CalibConfig):
@@ -15,14 +13,6 @@ class ConstructArcConfig(CalibConfig):
     psfSize = Field(dtype=int, default=21, doc="Repair PSF size (pixels)")
     crGrow = Field(dtype=int, default=2, doc="Grow radius for CR (pixels)")
     repair = ConfigurableField(target=RepairTask, doc="Task to repair artifacts")
-
-    function = Field( doc = "Function for fitting the dispersion", dtype=str, default="POLYNOMIAL" );
-    order = Field( doc = "Fitting function order", dtype=int, default = 5 );
-    searchRadius = Field( doc = "Radius in pixels relative to line list to search for emission line peak", dtype = int, default = 2 );
-    fwhm = Field( doc = "FWHM of emission lines", dtype=float, default = 2.6 );
-    nRowsPrescan = Field( doc = "Number of prescan rows in raw CCD image", dtype=int, default = 49 );
-    wavelengthFile = Field( doc = "reference pixel-wavelength file including path", dtype = str, default=os.path.join(getPackageDir("obs_pfs"), "pfs/RedFiberPixels.fits.gz"));
-    lineList = Field( doc = "reference line list including path", dtype = str, default=os.path.join(getPackageDir("obs_pfs"), "pfs/lineLists/CdHgKrNeXe_red.fits"));
 
 class ConstructArcTask(CalibTask):
     """Task to construct the Arc"""
