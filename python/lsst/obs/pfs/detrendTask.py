@@ -1,12 +1,12 @@
 import math
 import lsst.meas.algorithms as measAlg
-from lsst.obs.subaru.isr import SubaruIsrTask
+from lsst.ip.isr import IsrTask
 from lsst.pipe.tasks.repair import RepairTask
 from lsst.pex.config import Config, ConfigurableField, Field
 from lsst.pipe.base import CmdLineTask
 
 class DetrendConfig(Config):
-    isr = ConfigurableField(target=SubaruIsrTask, doc="Instrumental signature removal")
+    isr = ConfigurableField(target=IsrTask, doc="Instrumental signature removal")
     doRepair = Field(dtype=bool, default=True, doc="Repair artifacts?")
     repair = ConfigurableField(target=RepairTask, doc="Task to repair artifacts")
 
