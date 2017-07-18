@@ -121,6 +121,9 @@ class ConstructFiberFlatTask(CalibTask):
             xOffsets.append(md.get(self.config.xOffsetHdrKeyWord))
 
             fts = self.trace.run(exposure)
+            self.log.info('%d FiberTraces found for arm %d%s, visit %d' %
+                          (fts.size(),
+                           expRef.dataId['spectrograph'], expRef.dataId['arm'], expRef.dataId['visit']))
             allFts.append(fts)
 
             if sumFlats is None:

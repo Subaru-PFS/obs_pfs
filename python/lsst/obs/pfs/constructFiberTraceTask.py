@@ -168,6 +168,7 @@ class ConstructFiberTraceTask(CalibTask):
             disp.mtv(calExp, "Combined")
 
         fts = self.trace.run(calExp)
+        self.log.info('%d FiberTraces found on combined flat' % (fts.size()))
 
         self.profile.run(fts)
 
