@@ -65,10 +65,10 @@ class PfsFiberTraceTestCase(tests.TestCase):
         self.assertEqual(fiberTraceSet.size(), self.nFiberTraces)
 
         #Check that we can set the FiberTraceProfileFittingControl ftpfc
-        self.assertTrue(fiberTraceSet.setFiberTraceProfileFittingControl(self.ftpfc))
+        fiberTraceSet.setFiberTraceProfileFittingControl(self.ftpfc)
 
         #Check that we can calculate the spatial profile for all the FiberTraces in fiberTraceSet
-        self.assertTrue(fiberTraceSet.calcProfileAllTraces())
+        fiberTraceSet.calcProfileAllTraces()
 
         #Check that we can write a PfsFiberTrace from the fiberTraceSet
         dataId = dict(calibDate=self.dataId['dateObs'], spectrograph=self.dataId['spectrograph'], arm=self.dataId['arm'])
