@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import lsst.afw.detection as afwDet
+import lsst.afw.display as afwDisplay
 import lsst.afw.image as afwImage
 from lsst.ctrl.pool.pool import NODE
 import lsst.meas.algorithms as measAlg
@@ -10,6 +11,8 @@ from lsst.pipe.drivers.utils import getDataRef
 import math
 import numpy as np
 from pfs.datamodel.pfsFiberTrace import PfsFiberTrace
+import pfs.drp.stella.utils as dsUtils
+from pfs.drp.stella import markFiberTraceInMask
 from pfs.drp.stella.createFlatFiberTraceProfileTask import CreateFlatFiberTraceProfileTask
 from pfs.drp.stella.findAndTraceAperturesTask import FindAndTraceAperturesTask
 from pfs.drp.stella.datamodelIO import PfsFiberTraceIO
@@ -20,12 +23,6 @@ class ConstructFiberTraceConfig(CalibConfig):
         dtype=int,
         default=2,
         doc="Grow radius for CR (pixels)"
-    )
-    darkTime = Field(
-        dtype=str,
-        default="DARKTIME",
-        doc="Header keyword for time since last CCD wipe, or None",
-        optional=True
     )
     doRepair = Field(
         dtype=bool,
@@ -62,22 +59,21 @@ class ConstructFiberTraceConfig(CalibConfig):
 
     def setDefaults(self):
         CalibConfig.setDefaults(self)
-        self.isr.doBias = True
-        self.isr.doDark = True
-        self.isr.doFlat = False
-        self.isr.doLinearize = False
 
 class ConstructFiberTraceTask(CalibTask):
     """Task to construct the normalized Flat"""
     ConfigClass = ConstructFiberTraceConfig
     _DefaultName = "constructFiberTrace"
-    calibName = "fiberTrace"
+    calibName = "fibertrace"
 
     def __init__(self, *args, **kwargs):
         CalibTask.__init__(self, *args, **kwargs)
         self.makeSubtask("repair")
         self.makeSubtask("profile")
         self.makeSubtask("trace")
+
+        import lsstDebug
+        self.debugInfo = lsstDebug.Info(__name__)
 
     @classmethod
     def applyOverrides(cls, config):
@@ -100,9 +96,16 @@ class ConstructFiberTraceTask(CalibTask):
             if self.config.crGrow > 0:
                 mask = exposure.getMaskedImage().getMask().clone()
                 mask &= mask.getPlaneBitMask("CR")
-                fpSet = afwDet.FootprintSet(mask.convertU(), afwDet.Threshold(0.5))
+                fpSet = afwDet.FootprintSet(mask, afwDet.Threshold(0.5))
                 fpSet = afwDet.FootprintSet(fpSet, self.config.crGrow, True)
                 fpSet.setMask(exposure.getMaskedImage().getMask(), "CR")
+
+        if self.debugInfo.display and self.debugInfo.display_inputs:
+            disp = afwDisplay.Display(frame=self.debugInfo.inputs_frame)
+
+            visit = sensorRef.dataId['visit']
+            disp.mtv(exposure, "raw %d" % (visit))
+                
         return exposure
 
     def run(self, expRefList, butler, calibId):
@@ -127,38 +130,62 @@ class ConstructFiberTraceTask(CalibTask):
         return CalibTask.run(self, newExpRefList, butler, calibId)
 
 
-    def combine(self, cache, struct):
+    def combine(self, cache, struct, outputId):
         """!Combine multiple exposures of a particular CCD and write the output
 
         Only the slave nodes execute this method.
 
         @param cache  Process pool cache
         @param struct  Parameters for the combination, which has the following components:
+            * ccdName     Name tuple for CCD
             * ccdIdList   List of data identifiers for combination
             * scales      Scales to apply (expScales are scalings for each exposure,
                                ccdScale is final scale for combined image)
-            * outputId    Data identifier for combined image (fully qualified for this CCD)
+        @param outputId    Data identifier for combined image (exposure part only)
         """
+        # Check if we need to look up any keys that aren't in the output dataId
+        fullOutputId = {k: struct.ccdName[i] for i, k in enumerate(self.config.ccdKeys)}
+        self.addMissingKeys(fullOutputId, cache.butler)
+        fullOutputId.update(outputId)  # must be after the call to queryMetadata
+        outputId = fullOutputId
+        del fullOutputId
+
         dataRefList = [getDataRef(cache.butler, dataId) if dataId is not None else None for
                        dataId in struct.ccdIdList]
-        self.log.info("Combining %s on %s" % (struct.outputId, NODE))
+
+        self.log.info("Combining %s on %s" % (outputId, NODE))
         calib = self.combination.run(dataRefList, expScales=struct.scales.expScales,
                                      finalScale=struct.scales.ccdScale)
+        calExp = afwImage.makeExposure(calib)
 
-        self.recordCalibInputs(cache.butler, calib, struct.ccdIdList, struct.outputId)
+        self.recordCalibInputs(cache.butler, calExp, struct.ccdIdList, outputId)
 
-        self.interpolateNans(calib)
+        self.interpolateNans(calExp)
 
-        calExp = afwImage.makeExposure(afwImage.makeMaskedImage(calib.getImage()))
+        if self.debugInfo.display:
+            disp = afwDisplay.Display(frame=self.debugInfo.combined_frame)
+
+            disp.mtv(calExp, "Combined")
+
         fts = self.trace.run(calExp)
+        self.log.info('%d FiberTraces found on combined flat' % (fts.size()))
 
         self.profile.run(fts)
 
-        dataId = struct.ccdIdList[0]
+        if self.debugInfo.display:
+            disp = afwDisplay.Display(frame=self.debugInfo.combined_frame)
+
+            dsUtils.addFiberTraceSetToMask(calExp.getMaskedImage().getMask(), fts.getTraces(), disp)
+            disp.setMaskTransparency(50)
+            disp.mtv(calExp, "Traced")
+        #
+        # Package up fts (a FiberTraceSet) into a pfsFiberTrace for I/O;  these two classes
+        # should be merged at some point
+        #
         pfsFT = PfsFiberTrace(
-            struct.outputId['calibDate'],
-            struct.outputId['spectrograph'],
-            struct.outputId['arm']
+            outputId['calibDate'],
+            outputId['spectrograph'],
+            outputId['arm']
         )
         pfsFT.fwhm = self.trace.config.apertureFWHM
         pfsFT.threshold = self.trace.config.signalThreshold
@@ -190,10 +217,19 @@ class ConstructFiberTraceTask(CalibTask):
         pfsFT.yLow = []
         pfsFT.yHigh = []
         pfsFT.coeffs = []
-        pfsFT.profiles = []
+        pfsFT.profiles = None           # we'll set it when we know its dimension
 
         nRows = calib.getImage().getHeight()
-
+        #
+        # The code doesn't impose any requirements on the widths of the traces, while the
+        # datamodel requires that they are all the same.
+        #
+        # For now, trim off extra columns
+        #
+        width = min([fts.getFiberTrace(i).getProfile().getWidth() for i in range(fts.size())])
+        pfsFT.profiles = np.empty((fts.size(), nRows, width), dtype=np.float32)
+        pfsFT.profiles[:] = np.nan
+        
         for iFt in range(fts.size()):
             ft = fts.getFiberTrace(iFt)
             ftFunc = ft.getFiberTraceFunction()
@@ -203,12 +239,10 @@ class ConstructFiberTraceTask(CalibTask):
             pfsFT.yLow.append(ftFunc.yLow)
             pfsFT.yHigh.append(ftFunc.yHigh)
             pfsFT.coeffs.append(ftFunc.coefficients)
-            prof = ft.getProfile()
-            profOut = np.ndarray(shape=[nRows,prof.getWidth()], dtype=np.float32)
-            profOut[:,:] = 0.
             yStart = ft.getFiberTraceFunction().yCenter + ft.getFiberTraceFunction().yLow
             yEnd = ft.getFiberTraceFunction().yCenter + ft.getFiberTraceFunction().yHigh + 1
-            profOut[yStart:yEnd,:] = prof.getArray()[:,:]
-            pfsFT.profiles.append(profOut)
 
-        self.write(cache.butler, PfsFiberTraceIO(pfsFT), struct.outputId)
+            pfsFT.profiles[iFt, yStart:yEnd, :] = ft.getProfile().getArray()[:,:width]
+
+        pfsFiberTrace = PfsFiberTraceIO(pfsFT)
+        self.write(cache.butler, pfsFiberTrace, outputId)

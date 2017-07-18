@@ -4,7 +4,7 @@ import glob
 import os
 import lsst.sconsUtils
 
-obs_subaruDir = os.environ["OBS_SUBARU_DIR"]
+obs_subaruDir = lsst.sconsUtils.env.ProductDir("obs_subaru")
 
 # scons steals our environment away, so we have to reinstate it
 env = lsst.sconsUtils.env.Clone()
@@ -20,7 +20,7 @@ libpathstr = lsst.sconsUtils.utils.libraryLoaderEnvironment()
 python = "{} python".format(libpathstr)
 
 # Dependency required for running the python scripts
-dep = os.path.join(obs_subaruDir, "python/lsst/obs/subaru/_subaruLib.so")
+dep = os.path.join(obs_subaruDir, "python/lsst/obs/subaru/_crosstalk.so")
 
 defectsDatList = glob.glob("defects/*/defects.dat")
 for defectsDat in defectsDatList:

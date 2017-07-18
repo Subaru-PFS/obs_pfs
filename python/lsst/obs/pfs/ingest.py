@@ -4,6 +4,7 @@ import re
 import lsst.afw.image as afwImage
 from lsst.obs.pfs.pfsMapper import PfsMapper
 from lsst.pipe.tasks.ingest import ParseTask, ParseConfig
+from lsst.pipe.tasks.ingestCalibs import CalibsParseTask
 import lsst.utils
 
 class PfsParseConfig(ParseConfig):
@@ -14,6 +15,11 @@ class PfsParseConfig(ParseConfig):
 class PfsParseTask(ParseTask):
     ConfigClass = PfsParseConfig
 
+    nSpectrograph = 4
+    arms = ['b', 'r', 'n', 'm']
+    sites = '[JLXIASPF]'
+    categories = '[ABCDS]'
+    
     def getInfo(self, filename):
         """Get information about the image from the filename and its contents
 
@@ -21,44 +27,42 @@ class PfsParseTask(ParseTask):
         @return File properties; list of file properties for each extension
         """
         self.log.debug('interpreting filename <%s>' % filename)
-        minSpectrograph = 1
-        maxSpectrograph = 4
-        minArmNum = 1
-        maxArmNum = 4
-        arms = ['b', 'r', 'n', 'm']
-        sites = '[JLXIASPF]'
-        categories = '[ABCDS]'
-        matches = re.search("PF("+sites+")("+categories+")(\d{6})(\d)(\d).fits", filename)
+
+        path, name = os.path.split(filename)
+
+        matches = re.search(r"^PF(%s)(%s)-?(\d{6})(\d)(\d)\.fits$" % (self.sites, self.categories), name)
         if not matches:
-            # Try old format
-            matches = re.search("PF("+sites+")("+categories+")-(\d{6})(\d)(\d).fits", filename)
-            if not matches:
-                raise RuntimeError("Unable to interpret filename: %s" % filename)
+            raise RuntimeError("Unable to interpret filename: %s" % filename)
         site, category, visit, spectrograph, armNum = matches.groups()
 
-        # spectrograph '2' was called '9' at JHU, at least in the early days, so if we find
-        # a spectrograph '9' we re-assign its number to '2'
-        if int(spectrograph) == 9:
-            spectrograph = '2'
+        armNum = int(armNum)
+        spectrograph = int(spectrograph)
+        visit = int(visit, base=10)
 
-        if int(spectrograph) < minSpectrograph or int(spectrograph) > maxSpectrograph:
-            raise Exception('spectrograph (=$s) out of bounds' % spectrograph)
+        # spectrograph 2 was called 9 at JHU, at least in the early days, so if we find
+        # a spectrograph 9 we re-assign its number to 2
+        if spectrograph == 9:
+            spectrograph = 2
+            self.log.info("Visit %06d has spectrograph == 9" % visit)
 
-        if int(armNum) < minArmNum or int(armNum) > maxArmNum:
-            raise Exception('armNum (=$s) out of bounds' % armNum)
+        if spectrograph < 1 or spectrograph > self.nSpectrograph + 1:
+            raise Exception('spectrograph (=%d) out of bounds 1..%d' % (spectrograph, self.nSpectrograph))
 
-        filter = arms[ int(armNum) - minArmNum ]
-        arm = filter
+        try:
+            arm = self.arms[armNum - 1]   # 1-indexed
+        except IndexError:
+            raise Exception('armNum (=%d) out of bounds 1..%d' % (armNum, max(self.arms.keys())))
 
-        dataId = {'spectrograph': int(spectrograph), 'arm': arm}
-        mapper = PfsMapper(root=lsst.utils.getPackageDir('drp_stella'))
-        ccd = mapper.getDetectorId(dataId)
-        self.log.info(
-            'site = <%s>, category = <%s>, visit = <%s>, spectrograph = <%s>, armNum = <%s>, filter = <%s>, ccd = <%d>'
-            % (site,category,visit,spectrograph,armNum,filter,ccd)
+        dataId = dict(spectrograph=spectrograph, arm=arm)
+        ccd = PfsMapper.computeDetectorId(spectrograph, arm)
+        self.log.debug(
+            'site = <%s>, category = <%s>, visit = <%s>, spectrograph = <%d>, armNum = <%d>, arm = <%s>, ccd = <%d>'
+            % (site,category,visit,spectrograph,armNum,arm,ccd)
         )
 
-        info = dict(site=site, category=category, visit=int(visit, base=10), filter=filter, arm=arm, spectrograph=int(spectrograph), ccd=ccd)
+        info = dict(site=site, category=category, visit=visit, filter=arm, arm=arm,
+                    spectrograph=spectrograph, ccd=ccd)
+
         if os.path.exists(filename):
             header = afwImage.readMetadata(filename)
             info = self.getInfoFromMetadata(header, info=info)
@@ -75,3 +79,53 @@ class PfsParseTask(ParseTask):
             field = "UNKNOWN"
         self.log.debug('PfsParseTask.translate_field: field = %s' % field)
         return re.sub(r'\W', '_', field).upper()
+
+class PfsCalibsParseTask(CalibsParseTask, PfsParseTask):
+    ConfigClass = PfsParseConfig
+
+    calibTypes = ["Bias", "Dark", "Arc", "FiberTrace", "FiberFlat"]
+    
+    def getInfo(self, filename):
+        """Get information about the image from the filename and its contents
+
+        @param filename    Name of file to inspect
+        @return File properties; list of file properties for each extension
+        """
+        self.log.debug('interpreting filename <%s>' % filename)
+
+        path, name = os.path.split(filename)
+        matches = re.search(r"^pfs(%s)-(\d{4}-\d{2}-\d{2})-(\d)-(\d)(.)\.fits$" % ("|".join(self.calibTypes)),
+                            name)
+
+        if not matches:
+            raise RuntimeError("Unable to interpret %s as a calibration file" % filename)
+        calibType, calibDate, _, spectrograph, arm = matches.groups()
+        
+        try:
+            armNum = self.arms.index(arm) + 1
+        except ValueError:
+            raise RuntimeError("found unknown filter \"%s\" in %s; expected one of %s" %
+                               (arm, filename, self.arms))
+
+        spectrograph = int(spectrograph)
+        visit0 = 0
+
+        if spectrograph < 1 or spectrograph > self.nSpectrograph + 1:
+            raise Exception('spectrograph (=%d) out of bounds 1..%d' % (spectrograph, self.nSpectrograph))
+
+        dataId = dict(spectrograph=spectrograph, arm=arm)
+        ccd = PfsMapper.computeDetectorId(spectrograph, arm)
+        self.log.debug(
+            'visit0 = <%s>, spectrograph = <%d>, arm = <%s>, ccd = <%d>' %
+            (visit0, spectrograph, arm, ccd)
+        )
+
+        info = dict(visit0=visit0, arm=arm, filter=arm, spectrograph=spectrograph, ccd=ccd,
+                    calibDate=calibDate)
+
+        if os.path.exists(filename):
+            header = afwImage.readMetadata(filename)
+            info = self.getInfoFromMetadata(header, info=info)
+
+        return info, [info]
+    

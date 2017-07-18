@@ -18,13 +18,6 @@ class ConstructFiberFlatConfig(CalibConfig):
     crGrow = Field(dtype=int,
         default=2,
         doc="Grow radius for CR (pixels)")
-    darkTime = Field(dtype=str,
-        default="DARKTIME",
-        doc="Header keyword for time since last CCD wipe, or None",
-        optional=True)
-    display = Field(dtype=bool,
-        default=True,
-        doc="Display images?")
     doRepair = Field(dtype=bool,
         default=True,
         doc="Repair artifacts?")
@@ -64,7 +57,6 @@ class ConstructFiberFlatTask(CalibTask):
     @classmethod
     def applyOverrides(cls, config):
         """Overrides to apply for flat construction"""
-        config.isr.doDark = False
         config.isr.doFlat = False
         config.isr.doFringe = False
 
@@ -83,26 +75,34 @@ class ConstructFiberFlatTask(CalibTask):
             if self.config.crGrow > 0:
                 mask = exposure.getMaskedImage().getMask().clone()
                 mask &= mask.getPlaneBitMask("CR")
-                fpSet = afwDet.FootprintSet(mask.convertU(), afwDet.Threshold(0.5))
+                fpSet = afwDet.FootprintSet(mask, afwDet.Threshold(0.5))
                 fpSet = afwDet.FootprintSet(fpSet, self.config.crGrow, True)
                 fpSet.setMask(exposure.getMaskedImage().getMask(), "CR")
         return exposure
 
-    def combine(self, cache, struct):
+    def combine(self, cache, struct, outputId):
         """!Combine multiple exposures of a particular CCD and write the output
 
         Only the slave nodes execute this method.
 
         @param cache  Process pool cache
         @param struct  Parameters for the combination, which has the following components:
+            * ccdName     Name tuple for CCD
             * ccdIdList   List of data identifiers for combination
             * scales      Scales to apply (expScales are scalings for each exposure,
                                ccdScale is final scale for combined image)
-            * outputId    Data identifier for combined image (fully qualified for this CCD)
+        @param outputId    Data identifier for combined image (exposure part only)
         """
+        # Check if we need to look up any keys that aren't in the output dataId
+        fullOutputId = {k: struct.ccdName[i] for i, k in enumerate(self.config.ccdKeys)}
+        self.addMissingKeys(fullOutputId, cache.butler)
+        fullOutputId.update(outputId)  # must be after the call to queryMetadata
+        outputId = fullOutputId
+        del fullOutputId
+
         dataRefList = [getDataRef(cache.butler, dataId) if dataId is not None else None for
                        dataId in struct.ccdIdList]
-        self.log.info("Combining %s on %s" % (struct.outputId, NODE))
+        self.log.info("Combining %s on %s" % (outputId, NODE))
         self.log.info('len(dataRefList) = %d' % len(dataRefList))
 
         sumFlats, sumVariances = None, None
@@ -121,6 +121,9 @@ class ConstructFiberFlatTask(CalibTask):
             xOffsets.append(md.get(self.config.xOffsetHdrKeyWord))
 
             fts = self.trace.run(exposure)
+            self.log.info('%d FiberTraces found for arm %d%s, visit %d' %
+                          (fts.size(),
+                           expRef.dataId['spectrograph'], expRef.dataId['arm'], expRef.dataId['visit']))
             allFts.append(fts)
 
             if sumFlats is None:
@@ -182,33 +185,29 @@ class ConstructFiberFlatTask(CalibTask):
         normalizedFlat = afwImage.MaskedImageF(afwImage.ImageF(normalizedFlat), afwImage.MaskU(msk))
 
         import lsstDebug
-        try:
-            import debug
-            di = lsstDebug.Info(__name__)
-            if di.display:
-                import lsst.afw.display as afwDisplay
+        di = lsstDebug.Info(__name__)
+        if di.display:
+            import lsst.afw.display as afwDisplay
 
-                if di.frames_flat >= 0:
-                    display = afwDisplay.getDisplay(frame=di.frames_flat)
-                    display.mtv(normalizedFlat, title='normalized Flat')
+            if di.frames_flat >= 0:
+                display = afwDisplay.getDisplay(frame=di.frames_flat)
+                display.mtv(normalizedFlat, title='normalized Flat')
 
-                if di.frames_meanFlats >= 0:
-                    display = afwDisplay.getDisplay(frame=di.frames_sumFlats)
-                    display.mtv(afwImage.ImageF(sumFlats/len(dataRefList)), title='mean(Flats)')
+            if di.frames_meanFlats >= 0:
+                display = afwDisplay.getDisplay(frame=di.frames_sumFlats)
+                display.mtv(afwImage.ImageF(sumFlats/len(dataRefList)), title='mean(Flats)')
 
-                if di.frames_meanTraces >= 0:
-                    display = afwDisplay.getDisplay(frame=di.frames_sumTraces)
-                    display.mtv(afwImage.ImageF(sumRecImArr/len(dataRefList)), title='mean(Traces)')
+            if di.frames_meanTraces >= 0:
+                display = afwDisplay.getDisplay(frame=di.frames_sumTraces)
+                display.mtv(afwImage.ImageF(sumRecImArr/len(dataRefList)), title='mean(Traces)')
 
-                if di.frames_residuals >= 0:
-                    display = afwDisplay.getDisplay(frame=di.frames_residuals)
-                    display.mtv(afwImage.ImageF((sumFlats - sumRecImArr)/len(dataRefList)),
-                                title='mean(Flats - Traces)')
-        except ImportError:
-            debug = None
+            if di.frames_residuals >= 0:
+                display = afwDisplay.getDisplay(frame=di.frames_residuals)
+                display.mtv(afwImage.ImageF((sumFlats - sumRecImArr)/len(dataRefList)),
+                            title='mean(Flats - Traces)')
 
         #Write fiber flat
         normFlatOut = afwImage.makeExposure(normalizedFlat)
-        self.recordCalibInputs(cache.butler, normFlatOut, struct.ccdIdList, struct.outputId)
+        self.recordCalibInputs(cache.butler, normFlatOut, struct.ccdIdList, outputId)
         self.interpolateNans(normFlatOut)
-        self.write(cache.butler, normFlatOut, struct.outputId)
+        self.write(cache.butler, normFlatOut, outputId)

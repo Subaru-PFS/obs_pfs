@@ -1,8 +1,4 @@
-config.isr.doBias = True
-config.isr.doDark = True
-config.isr.doFlat = True
-config.isr.doLinearize = False
+import os.path
+from lsst.utils
 
-config.repair.cosmicray.nCrPixelMax = 50000
-config.repair.cosmicray.minSigma = 5.0
-config.repair.cosmicray.min_DN = 50.0
+config.load(os.path.join(lsst.utils.getPackageDir("obs_pfs"), "config", "pfs.py"))

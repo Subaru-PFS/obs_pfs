@@ -1,16 +1,64 @@
 #!/usr/bin/env python
 import os
+import numpy as np
 
-import lsst.afw.image as afwImage
+from lsst.obs.base import CameraMapper, MakeRawVisitInfo
 import lsst.afw.image.utils as afwImageUtils
+import lsst.afw.image as afwImage
 import lsst.afw.math as afwMath
-from lsst.daf.butlerUtils import CameraMapper
 import lsst.pex.policy as pexPolicy
+
+class PfsRawVisitInfo(MakeRawVisitInfo):
+    def setArgDict(self, md, argDict):
+        """Fill an argument dict with arguments for makeVisitInfo and pop associated metadata
+
+        Subclasses are expected to override this method, though the override
+        may wish to call this default implementation, which:
+        - sets exposureTime from "EXPTIME"
+        - sets date by calling getDateAvg
+
+        @param[in,out] md  metadata, as an lsst.daf.base.PropertyList or PropertySet;
+            items that are used are stripped from the metadata
+            (except TIMESYS, because it may apply to more than one other keyword).
+        @param[in,out] argdict  a dict of arguments
+        """
+        super(PfsRawVisitInfo, self).setArgDict(md, argDict)
+        if "DARKTIME" in md.names():
+            argDict["darkTime"] = self.popFloat(md, "DARKTIME")
+
+        argDict["darkTime"] = self.getDarkTime(argDict)
+
+    def getDarkTime(self, argDict):
+        """Retrieve the dark time from an argDict, waiting to be passed to the VisitInfo ctor"""
+        darkTime = argDict.get("darkTime", float("NaN"))
+        if np.isfinite(darkTime):
+            return darkTime
+
+        self.log.info("darkTime is NaN/Inf; using exposureTime")
+        exposureTime = argDict.get("exposureTime", np.nan)
+        if not np.isfinite(exposureTime):
+            raise RuntimeError("Tried to substitute exposureTime for darkTime but it is also Nan/Inf")
+
+        return exposureTime
+
+    def getDateAvg(self, md, exposureTime):
+        """Return date at the middle of the exposure
+        @param[in,out] md  metadata, as an lsst.daf.base.PropertyList or PropertySet;
+            items that are used are stripped from the metadata
+            (except TIMESYS, because it may apply to more than one other keyword).
+        @param[in] exposureTime  exposure time (sec)
+        """
+        
+        dateObs = self.popIsoDate(md, "DATE-OBS")
+        return self.offsetDate(dateObs, 0.5*exposureTime)
+
 
 class PfsMapper(CameraMapper):
     """Provides abstract-physical mapping for PFS data"""
     packageName = "obs_pfs"
 
+    MakeRawVisitInfoClass = PfsRawVisitInfo
+    
     def __init__(self, **kwargs):
         policyFile = pexPolicy.DefaultPolicyFile("obs_pfs", "PfsMapper.paf", "policy")
         policy = pexPolicy.Policy(policyFile)
@@ -23,28 +71,6 @@ class PfsMapper(CameraMapper):
             kwargs['calibRoot'] = os.path.join(kwargs['root'], 'CALIB')
 
         super(PfsMapper, self).__init__(policy, policyFile.getRepositoryPath(), **kwargs)
-        #
-        # This block of code should be removed as soon as we're using a version of pipe_drivers that
-        # handles the expansions.  https://jira.lsstcorp.org/browse/DM-10901
-        #
-        if True:
-            # Ensure each dataset type of interest knows about the full range of keys available from the registry
-            keys = {'field': str,
-                    'visit': int,
-                    'ccd': int, # for compatibility with HSC: serial no of ccd
-                    'spectrograph': int, # [0,1,2,3] for each arm in [blue, red, nir, medred]
-                    'dateObs': str,
-                    'taiObs': str,
-                    'filter': str, # 'arm' called filter for compatibility
-                    'site': str,
-                    'category': str,
-                    }
-            for name in ("raw",
-                         # processCcd outputs
-                         "calexp",
-                         "postISRCCD",
-                         ):
-                self.mappings[name].keyDict.update(keys)
 
         # The order of these defineFilter commands matters as their IDs are used to generate at least some
         # object IDs (e.g. on coadds) and changing the order will invalidate old objIDs
@@ -86,48 +112,6 @@ class PfsMapper(CameraMapper):
         exp.setMaskedImage(afwMath.flipImage(exp.getMaskedImage(), flipLR, flipTB))
 
         return exp
-
-    def standardizeCalib(self, dataset, item, dataId):
-        """Standardize a calibration image read in by the butler
-
-        Some calibrations are stored on disk as Images instead of MaskedImages
-        or Exposures.  Here, we convert it to an Exposure.
-
-        @param dataset  Dataset type (e.g., "bias", "dark" or "flat")
-        @param item  The item read by the butler
-        @param dataId  The data identifier (unused, included for future flexibility)
-        @return standardized Exposure
-        """
-        #
-        # This has to go as soon as we switch to meas_base
-        #
-        try:
-            import lsst.obs.base as meas_base
-            self.log.warn("PfsMapper.standardizeCalib is not needed with obs_base")
-        except ImportError:
-            pass
-
-        mapping = self.calibrations[dataset]
-        if "MaskedImage" in mapping.python:
-            exp = afwImage.makeExposure(item)
-        elif "Image" in mapping.python:
-            if hasattr(item, "getImage"): # For DecoratedImageX
-                md = item.getMetadata()
-                item = item.getImage()
-            else:
-                md = None
-            exp = afwImage.makeExposure(afwImage.makeMaskedImage(item))
-            if md:
-                exp.setMetadata(md)
-        elif "Exposure" in mapping.python:
-            exp = item
-        else:
-            raise RuntimeError("Unrecognised python type: %s" % mapping.python)
-
-        parent = super(PfsMapper, self)
-        if hasattr(parent, "std_" + dataset):
-            return getattr(parent, "std_" + dataset)(exp, dataId)
-        return self._standardizeExposure(mapping, exp, dataId)
 
     def _shiftAmpPixels(self, rawExp):
         """Shift pixels in early raw frames.
@@ -185,21 +169,7 @@ class PfsMapper(CameraMapper):
 
         return exp
 
-    def std_arc(self, item, dataId):
-        return self.standardizeCalib("arc", item, dataId)
-
-    def std_bias(self, item, dataId):
-        return self.standardizeCalib("bias", item, dataId)
-
-    def std_dark(self, item, dataId):
-        exp = self.standardizeCalib("dark", item, dataId)
-        exp.getCalib().setExptime(1.0)
-        return exp
-
-    def std_flat(self, item, dataId):
-        return self.standardizeCalib("flat", item, dataId)
-
-    def std_fiberTrace(self, item, dataId):
+    def std_fibertrace(self, item, dataId): # needed to stop the butler generating a version
         return item
 
     def map_linearizer(self, dataId, write=False):
@@ -221,6 +191,18 @@ class PfsMapper(CameraMapper):
                 arm = 'r'
             return "%s_%d" % (armName, spectrograph)
 
+    @staticmethod
+    def computeDetectorId(spectrograph, arm):
+        """
+        Return a DetectorId in the range [0,11] with
+           blue                 = {0,3,6,9},
+           red/mediumResolution = {1,4,7,10}
+           NIR                  = {2,5,8,11}
+        corresponding to obs_pfs/pfs/camera/camera.py::config.detectorList[1].id
+        """
+
+        return 3*(spectrograph - 1) + dict(b=0, r=1, m=1, n=2)[arm]
+
     def _extractDetectorId(self, dataId):
         # The returned DetectorId is in the range [0,11] with blue={0,3,6,9},
         # red=mediumResolution={1,4,7,10}, and NIR={2,5,8,11} corresponding to
@@ -231,7 +213,7 @@ class PfsMapper(CameraMapper):
         arm = self._getRegistryValue(dataId, "arm")
         spectrograph = self._getRegistryValue(dataId, "spectrograph")
 
-        return 3*(spectrograph - 1) + dict(b=0, r=1, m=1, n=2)[arm]
+        return self.computeDetectorId(spectrograph, arm)
 
     def _getCcdKeyVal(self, dataId):
         """Return CCD key and value used to look a defect in the defect registry
@@ -247,7 +229,7 @@ class PfsMapper(CameraMapper):
         """
         pathId = self._transformId(dataId)
         visit = pathId['visit']
-        ccd = pathId['ccd']
+        ccd = self._extractDetectorId(dataId)
         return visit*200 + ccd
 
     def bypass_pfsConfig(self, datasetType, pythonType, location, dataId):
@@ -256,6 +238,7 @@ class PfsMapper(CameraMapper):
         pfsConfigId = dataId['pfsConfigId']
 
         for pathName in location.locationList:
+            pathName = os.path.join(location.storage.root, pathName)
             dirName = os.path.dirname(pathName)
 
             pfsConfig = PfsConfig(pfsConfigId)
@@ -283,6 +266,7 @@ class PfsMapper(CameraMapper):
         from pfs.datamodel.pfsArm import PfsArm
 
         for pathName in location.locationList:
+            pathName = os.path.join(location.storage.root, pathName)
             dirName = os.path.dirname(pathName)
 
             arm = self._getRegistryValue(dataId, "arm")
