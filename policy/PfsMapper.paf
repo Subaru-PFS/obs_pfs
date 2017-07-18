@@ -57,7 +57,7 @@ exposures: {
 
 calibrations: {
     bias: {
-        template:    "BIAS/NONE/pfsBias-%(calibDate)s-0-%(spectrograph)1d%(arm)s.fits"
+        template:    "BIAS/pfsBias-%(calibDate)s-0-%(spectrograph)1d%(arm)s.fits"
         python:      "lsst.afw.image.DecoratedImageF"
         persistable: "DecoratedImageF"
         storage:     "FitsStorage"
@@ -71,7 +71,7 @@ calibrations: {
         validEndName: validEnd
     }
     dark: {
-        template:    "DARK/NONE/pfsDark-%(calibDate)s-0-%(spectrograph)1d%(arm)s.fits"
+        template:    "DARK/pfsDark-%(calibDate)s-0-%(spectrograph)1d%(arm)s.fits"
         python:      "lsst.afw.image.DecoratedImageF"
         persistable: "DecoratedImageF"
         storage:     "FitsStorage"
@@ -85,7 +85,7 @@ calibrations: {
         validEndName: validEnd
     }
     flat: {
-        template:    "FLAT/%(filter)s/pfsFiberFlat-%(calibDate)s-0-%(spectrograph)1d%(arm)s.fits"
+        template:    "FLAT/pfsFiberFlat-%(calibDate)s-0-%(spectrograph)1d%(arm)s.fits"
         python:      "lsst.afw.image.ExposureF"
         persistable: "ExposureF"
         storage:     "FitsStorage"
@@ -99,7 +99,7 @@ calibrations: {
         validEndName: validEnd
     }
     fibertrace: {
-        template:    "FIBERTRACE/%(filter)s/pfsFiberTrace-%(calibDate)s-0-%(spectrograph)1d%(arm)s.fits"
+        template:    "FIBERTRACE/pfsFiberTrace-%(calibDate)s-0-%(spectrograph)1d%(arm)s.fits"
         python:      "pfs.drp.stella.datamodelIO.PfsFiberTraceIO"
         persistable: "FiberTraceSet"
         storage:     "FitsCatalogStorage"
@@ -113,7 +113,7 @@ calibrations: {
         validEndName: validEnd
     }
     arc: {
-        template:    "ARC/%(filter)s/pfsArc-%(calibDate)s-0-%(spectrograph)1d%(arm)s.fits"
+        template:    "ARC/pfsArc-%(calibDate)s-0-%(spectrograph)1d%(arm)s.fits"
         python:      "lsst.afw.image.ExposureF"
         persistable: "ExposureF"
         storage:     "FitsStorage"
@@ -176,7 +176,7 @@ datasets: {
         tables:        raw_visit
     }
     processCcd_metadata: {
-        template:      "processCcd_metadata/%(visit)07d-%(filter)s%(spectrograph)1d.boost"
+        template:      "processCcd_metadata/%(visit)07d-%(spectrograph)1d%(arm)s.boost"
         python:        "lsst.daf.base.PropertySet"
         persistable:        "PropertySet"
         storage:    "BoostStorage"
@@ -282,14 +282,14 @@ datasets: {
     }
 
     ossThumb: {
-        template:    "thumbs/oss-%(visit)07d-%(filter)s%(spectrograph)1d.png"
+        template:    "thumbs/oss-%(visit)07d-%(spectrograph)1d%(arm)s.png"
         python:      __builtin__.str
         persistable: None
         storage:     TextStorage
         tables:      raw
     }
     flattenedThumb: {
-        template:    "thumbs/flattened-%(visit)07d-%(filter)s%(spectrograph)1d.png"
+        template:    "thumbs/flattened-%(visit)07d-%(spectrograph)1d$(arm)s.png"
         python:      __builtin__.str
         persistable: None
         storage:     TextStorage
