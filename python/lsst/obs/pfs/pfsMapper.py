@@ -23,9 +23,10 @@ class PfsRawVisitInfo(MakeRawVisitInfo):
         @param[in,out] argdict  a dict of arguments
         """
         super(PfsRawVisitInfo, self).setArgDict(md, argDict)
-        if "DARKTIME" in md.names():
-            argDict["darkTime"] = self.popFloat(md, "DARKTIME")
-
+        argDict["darkTime"] = self.popFloat(md, "DARKTIME")
+        #
+        # Done setting argDict; check values now that all the header keywords have been consumed
+        #
         argDict["darkTime"] = self.getDarkTime(argDict)
 
     def getDarkTime(self, argDict):
