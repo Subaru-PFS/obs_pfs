@@ -100,7 +100,7 @@ class ConstructFiberTraceTask(CalibTask):
             if self.config.crGrow > 0:
                 mask = exposure.getMaskedImage().getMask().clone()
                 mask &= mask.getPlaneBitMask("CR")
-                fpSet = afwDet.FootprintSet(mask.convertU(), afwDet.Threshold(0.5))
+                fpSet = afwDet.FootprintSet(mask, afwDet.Threshold(0.5))
                 fpSet = afwDet.FootprintSet(fpSet, self.config.crGrow, True)
                 fpSet.setMask(exposure.getMaskedImage().getMask(), "CR")
 
