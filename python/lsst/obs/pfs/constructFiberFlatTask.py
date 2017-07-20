@@ -180,9 +180,9 @@ class ConstructFiberFlatTask(CalibTask):
         ])
 
         normalizedFlat[bad] = 1.0
-        msk[bad] |= (1 << afwImage.MaskU.addMaskPlane("BAD_FLAT"))
+        msk[bad] |= (1 << afwImage.Mask.addMaskPlane("BAD_FLAT"))
 
-        normalizedFlat = afwImage.MaskedImageF(afwImage.ImageF(normalizedFlat), afwImage.MaskU(msk))
+        normalizedFlat = afwImage.MaskedImageF(afwImage.ImageF(normalizedFlat), afwImage.Mask(msk))
 
         import lsstDebug
         di = lsstDebug.Info(__name__)
