@@ -171,7 +171,7 @@ class ConstructFiberFlatTask(CalibTask):
         #with a SNR < self.config.minSNR
         sumRecImArr[sumRecImArr <= 0.0] = 0.01
         normalizedFlat = sumFlats / sumRecImArr
-        msk = np.zeros_like(normalizedFlat, dtype=np.uint16)
+        msk = np.zeros_like(normalizedFlat, dtype=afwImage.MaskPixel)
 
         bad = np.logical_or.reduce([sumRecImArr <= 0.01,
                                     snrArr < self.config.minSNR,
@@ -182,7 +182,7 @@ class ConstructFiberFlatTask(CalibTask):
         normalizedFlat[bad] = 1.0
         msk[bad] |= (1 << afwImage.Mask.addMaskPlane("BAD_FLAT"))
 
-        normalizedFlat = afwImage.MaskedImageF(afwImage.ImageF(normalizedFlat), afwImage.Mask(msk))
+        normalizedFlat = afwImage.makeMaskedImage(afwImage.ImageF(normalizedFlat), afwImage.Mask(msk))
 
         import lsstDebug
         di = lsstDebug.Info(__name__)
