@@ -59,7 +59,7 @@ class PfsFiberTraceTestCase(tests.TestCase):
     def testPfsFiberTrace(self):
         """Test that we can create a pfsFiberTrace"""
 
-        fiberTraceSet = drpStella.findAndTraceAperturesF(self.flat.getMaskedImage(), self.ftffc)
+        fiberTraceSet = drpStella.findAndTraceApertures(self.flat.getMaskedImage(), self.ftffc)
 
         #Check that we found self.nFiberTraces FiberTraces
         self.assertEqual(fiberTraceSet.size(), self.nFiberTraces)
