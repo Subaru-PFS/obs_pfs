@@ -165,8 +165,8 @@ class PfsFiberTraceTestCase(tests.TestCase):
                         self.log.warn(message)
                     self.assertAlmostEqual(profile[iX,iY], profileNew[iX,iY], places=3)
 
-            image = ft.getImage().getArray()
-            imageNew = ftNew.getImage().getArray()
+            image = ft.getTrace().getImage().getArray()
+            imageNew = ftNew.getTrace().getImage().getArray()
             self.assertEqual(image.shape[0], imageNew.shape[0])
             self.assertEqual(image.shape[1], imageNew.shape[1])
             for iX in range(image.shape[0]):
