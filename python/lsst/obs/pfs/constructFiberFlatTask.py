@@ -156,10 +156,10 @@ class ConstructFiberFlatTask(CalibTask):
                 spectrum = ft.extractFromProfile()
                 recFt = ft.getReconstructed2DSpectrum(spectrum)
                 recFtArr = recFt.getArray()
-                imArr = ft.getImage().getArray()
+                imArr = ft.getTrace().getImage().getArray()
                 recFtArr[imArr <= 0] = 0.0
                 drpStella.addFiberTraceToCcdImage(ft, recFt, sumRecIm)
-                drpStella.addFiberTraceToCcdImage(ft, ft.getVariance(), sumVarIm)
+                drpStella.addFiberTraceToCcdImage(ft, ft.getTrace().getVariance(), sumVarIm)
 
         sumVariances[sumVariances <= 0.0] = 0.1
         snrArr = sumFlats / np.sqrt(sumVariances)
