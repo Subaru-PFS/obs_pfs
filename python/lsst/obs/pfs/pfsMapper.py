@@ -7,6 +7,7 @@ import lsst.afw.image.utils as afwImageUtils
 import lsst.afw.image as afwImage
 import lsst.afw.math as afwMath
 import lsst.pex.policy as pexPolicy
+from lsst.obs.pfs.pfsCamera import PfsCamera
 
 class PfsRawVisitInfo(MakeRawVisitInfo):
     def setArgDict(self, md, argDict):
@@ -106,6 +107,11 @@ class PfsMapper(CameraMapper):
         # This shouldn't be the mapper's job at all; see #2797.
 
         PfsMapper._nbit_id = 64# - (PfsMapper._nbit_tract + 2*PfsMapper._nbit_patch + PfsMapper._nbit_filter)
+
+    def _makeCamera(self, policy, repositoryDir):
+        """Make a camera (instance of lsst.afw.cameraGeom.Camera) describing the camera geometry
+        """
+        return PfsCamera()
 
     @staticmethod
     def _flipChipsLR(exp, wcs, dataId, dims=None):
