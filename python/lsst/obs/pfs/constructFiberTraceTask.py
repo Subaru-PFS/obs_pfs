@@ -12,7 +12,6 @@ import math
 import numpy as np
 from pfs.datamodel.pfsFiberTrace import PfsFiberTrace
 import pfs.drp.stella.utils as dsUtils
-from pfs.drp.stella import markFiberTraceInMask
 from pfs.drp.stella.createFlatFiberTraceProfileTask import CreateFlatFiberTraceProfileTask
 from pfs.drp.stella.findAndTraceAperturesTask import FindAndTraceAperturesTask
 from pfs.drp.stella.datamodelIO import PfsFiberTraceIO
