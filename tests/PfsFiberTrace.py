@@ -50,7 +50,6 @@ class PfsFiberTraceTestCase(tests.TestCase):
         # This particular flatfile has 12 FiberTraces scattered over the whole CCD
         # If in the future the test data change we need to change these numbers
         self.nFiberTraces = 11
-        self.fileNameFormat = "pfsFiberTrace-%10s-0-%1d%1s.fits"
 
     def tearDown(self):
         del self.flat
@@ -73,13 +72,32 @@ class PfsFiberTraceTestCase(tests.TestCase):
         #Check that we can write a PfsFiberTrace from the fiberTraceSet
         dataId = dict(calibDate=self.dataId['dateObs'], spectrograph=self.dataId['spectrograph'], arm=self.dataId['arm'])
         pfsFiberTrace = createPfsFiberTrace(dataId, fiberTraceSet, self.flat.getHeight())
-        fileName = os.path.join('.',PfsFiberTrace.fileNameFormat % (self.dataId['dateObs'], self.dataId['spectrograph'], self.dataId['arm']))
-        pfsFiberTraceIO = PfsFiberTraceIO(pfsFiberTrace)
-        pfsFiberTraceIO.writeFits(fileName)
 
-        #Check that we can read a PfsFiberTrace back in
-        pfsFiberTraceNew = PfsFiberTrace(self.dataId['dateObs'], self.dataId['spectrograph'], self.dataId['arm'])
-        pfsFiberTraceNew.read()
+        # This would be easier if lsst.utils.tests provided a suitable context manager
+        # to make a directory (or [yes!] we were using py3 which has tempfile.TemporaryDirectory())
+        try:
+            tmpDir = ".tests/tmp_PfsFiberTrace"
+
+            if not os.path.isdir(tmpDir):
+                os.makedirs(tmpDir)
+
+            pfsFiberTrace.write(tmpDir)
+
+            #Check that we can read a PfsFiberTrace back in
+            pfsFiberTraceNew = PfsFiberTrace(self.dataId['dateObs'],
+                                             self.dataId['spectrograph'], self.dataId['arm'])
+            pfsFiberTraceNew.read(tmpDir)
+        except Exception:
+            print("Not removing %s" % tmpDir)
+            raise
+        else:
+            import glob
+            try:
+                for f in glob.glob(os.path.join(tmpDir, "*")):
+                    os.unlink(f)
+                os.removedirs(tmpDir)
+            except Exception as e:
+                print("Failed to remove %s: %s" % (tmpDir, e))
 
         self.assertEqual(pfsFiberTrace.obsDate, pfsFiberTraceNew.obsDate)
         self.assertEqual(pfsFiberTrace.spectrograph, pfsFiberTraceNew.spectrograph)
