@@ -193,7 +193,7 @@ class PfsMapper(CameraMapper):
         
         if arm == 'm':
             arm = 'r'
-        return "%d%s" % (spectrograph, arm)
+        return "%s%d" % (arm, spectrograph)
 
     @staticmethod
     def computeDetectorId(spectrograph, arm):

@@ -83,7 +83,7 @@ Detector : &Detector
 # with 1% gaps between the chips
 #
 CCDs : &CCDs
-    1r : &CCD                           # Spectrograph 1, red arm
+    r1 : &CCD                           # Spectrograph 1, red arm
         << : *Detector
         detectorType : 0                # r CCD
         id : 0
@@ -134,7 +134,7 @@ CCDs : &CCDs
                 ixy : [7, 0]
                 gain : 1.26
                 readNoise : 6
-    1b :                                # Spectrograph 1, blue arm
+    b1 :                                # Spectrograph 1, blue arm
         << : *Detector
         detectorType : 1                # b CCD
         id : 1
