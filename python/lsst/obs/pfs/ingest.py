@@ -94,12 +94,12 @@ class PfsCalibsParseTask(CalibsParseTask, PfsParseTask):
         self.log.debug('interpreting filename <%s>' % filename)
 
         path, name = os.path.split(filename)
-        matches = re.search(r"^pfs(%s)-(\d{4}-\d{2}-\d{2})-(\d)-(\d)(.)\.fits$" % ("|".join(self.calibTypes)),
+        matches = re.search(r"^pfs(%s)-(\d{4}-\d{2}-\d{2})-(\d)-([brnm])(\d)\.fits$" % ("|".join(self.calibTypes)),
                             name)
 
         if not matches:
             raise RuntimeError("Unable to interpret %s as a calibration file" % filename)
-        calibType, calibDate, _, spectrograph, arm = matches.groups()
+        calibType, calibDate, _, arm, spectrograph = matches.groups()
         
         try:
             armNum = self.arms.index(arm) + 1

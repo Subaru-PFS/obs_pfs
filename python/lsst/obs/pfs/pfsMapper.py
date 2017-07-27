@@ -7,6 +7,7 @@ import lsst.afw.image.utils as afwImageUtils
 import lsst.afw.image as afwImage
 import lsst.afw.math as afwMath
 import lsst.pex.policy as pexPolicy
+from lsst.obs.pfs.pfsCamera import PfsCamera
 
 class PfsRawVisitInfo(MakeRawVisitInfo):
     def setArgDict(self, md, argDict):
@@ -107,6 +108,11 @@ class PfsMapper(CameraMapper):
 
         PfsMapper._nbit_id = 64# - (PfsMapper._nbit_tract + 2*PfsMapper._nbit_patch + PfsMapper._nbit_filter)
 
+    def _makeCamera(self, policy, repositoryDir):
+        """Make a camera (instance of lsst.afw.cameraGeom.Camera) describing the camera geometry
+        """
+        return PfsCamera()
+
     @staticmethod
     def _flipChipsLR(exp, wcs, dataId, dims=None):
         flipLR, flipTB = (True, False)
@@ -182,15 +188,12 @@ class PfsMapper(CameraMapper):
         return ampId
 
     def _extractDetectorName(self, dataId):
-        if True:                        # use 1-based CCD number as "Name"
-            return self._extractDetectorId(dataId)
-        else:
-            arm = self._getRegistryValue(dataId, "arm")
-            spectrograph = self._getRegistryValue(dataId, "spectrograph")
-
-            if arm == 'm':
-                arm = 'r'
-            return "%s_%d" % (armName, spectrograph)
+        arm = self._getRegistryValue(dataId, "arm")
+        spectrograph = self._getRegistryValue(dataId, "spectrograph")
+        
+        if arm == 'm':
+            arm = 'r'
+        return "%s%d" % (arm, spectrograph)
 
     @staticmethod
     def computeDetectorId(spectrograph, arm):
@@ -221,7 +224,7 @@ class PfsMapper(CameraMapper):
 
         The default implementation simply returns ("ccd", full detector name)
         """
-        return ("ccd", self._extractDetectorId(dataId))
+        return ("ccd", self._extractDetectorName(dataId))
 
     def _computeCcdExposureId(self, dataId):
         """Compute the 64-bit (long) identifier for a CCD exposure.

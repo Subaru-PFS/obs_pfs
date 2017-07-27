@@ -27,6 +27,6 @@ for defectsDat in defectsDatList:
     command = "%s bin.src/genDefectFits.py %s --force" % (python, os.path.join("pfs", defectsDat))
     env.AlwaysBuild(env.Command(defectsDat + "-fits", [defectsDat, dep], command))
 
-command = "%s %s/bin.src/genDefectRegistry.py --root pfs/defects" % (python, obs_subaruDir)
+command = "%s bin.src/genDefectRegistry.py --root pfs/defects" % (python)
 registry = env.AlwaysBuild(env.Command("defects/defectRegistry.sqlite3",
                                        [d + "-fits" for d in defectsDatList] + [dep], command))

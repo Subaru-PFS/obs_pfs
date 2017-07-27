@@ -1,0 +1,176 @@
+#
+# LSST Data Management System
+# Copyright 2017 LSST Corporation.
+#
+# This product includes software developed by the
+# LSST Project (http://www.lsst.org/).
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the LSST License Statement and
+# the GNU General Public License along with this program.  If not,
+# see <http://www.lsstcorp.org/LegalNotices/>.
+#
+#
+
+name : "PFS"
+plateScale : 1.0                        # plate scale; not well defined for a spectrograph
+radialCoeffs : [0.0, 1.0, 0.0, 0.0]     # radial distortion coefficients (c_0 + c_1 r + c_2 r^2 + ...)
+
+#
+# A single amplifier ("segment" to the camera team)
+#
+AMP : &AMP
+    # trimmed
+    hdu : 1                             # Only one HDU in the file
+
+    flipXY :     [False, False]
+    perAmpData : False                  # is the amp data split across multiple HDUs/Files?
+
+    #                         [[x0,  y0], [xSize, ySize]]
+    rawBBox                 : [[0,    0], [552,    4300]] # total size of one amp's raw data
+    
+    rawDataBBox             : [[8,   48], [512,    4176]] # data region in raw data
+    rawSerialPrescanBBox    : [[0,   48], [8,      4176]] # serial prescan (we could use the first 48 too)
+    rawSerialOverscanBBox   : [[520, 48], [32,     4176]] # serial overscan
+    rawParallelPrescanBBox  : [[0,    1], [0,         0]] # pixels digitised before first parallel transfer
+    rawParallelOverscanBBox : [[8, 4224], [0,        76]] # parallel overscan
+
+    saturation : 65535                  # saturation level, DN XXX Should this be in electrons?
+
+    # Linearity correction is still under discussion, so this is a placeholder.
+    linearityType : PROPORTIONAL
+    linearityThreshold : 0
+    linearityMax : 65535                # == saturation
+    linearityCoeffs : [0, 65535]        # == [linearityThreshold, linearityMax]
+
+#
+# A single detector;  each optical detector is a Pair of Hamamatsu CCDs with 2*4 amplifiers
+#
+Detector : &Detector
+    detectorType : .nan
+    refpos : [2048, 2088]               # centre of chip
+    offset : [.nan, .nan]
+    # 
+    bbox : [[0, 0], [4095, 4175]]       # total bbox of trimmed detector
+    pixelSize : [0.015, 0.015]          # in mm
+    transformDict : {nativeSys : 'Pixels', transforms : None}
+    transposeDetector : False
+    pitch : 0.0                         # (degrees)
+    yaw : 0.0                           # rotation in plane of camera (degrees)
+    roll : 0.0                          # (degrees)
+
+    amplifiers : {}
+#
+# Define our specific devices
+#
+# All the cameras present in this file.  Each camera is a Pair of Hamamatsu Detectors with 2*4 amplifiers
+#
+# Define our specific devices.  Some are HgCdTe -- change yamlCamera.py CCDs -> Detectors
+#
+# The layout specified by "offset" is:
+#   n1 n2 n3 n4
+#   r1 r2 r3 r4
+#   b1 b2 b3 b4
+# with 1% gaps between the chips
+#
+CCDs : &CCDs
+    r1 : &CCD                           # Spectrograph 1, red arm
+        << : *Detector
+        detectorType : 0                # r CCD
+        id : 0
+        serial : Hamamatsu r1
+        offset : [-93.1, 0.0]           # mm
+
+        amplifiers:
+            "0": &A0
+                <<: *AMP
+                ixy : [0, 0]
+                readCorner : LL
+                gain : 1.24
+                readNoise : 6
+            "1": &A1
+                <<: *A0
+                ixy : [1, 0]
+                readCorner : LR
+                flipXY : [True, False]
+                gain : 1.24
+                readNoise : 6
+            "2": &A2
+                <<: *A0
+                ixy : [2, 0]
+                gain : 1.27
+                readNoise : 6
+            "3": &A3
+                <<: *A1
+                ixy : [3, 0]
+                gain : 1.18
+                readNoise : 6
+            "4": &A4
+                <<: *A0
+                ixy : [4, 0]
+                gain : 1.26
+                readNoise : 6
+            "5": &A5
+                <<: *A1
+                ixy : [5, 0]
+                gain : 1.20
+                readNoise : 6
+            "6": &A6
+                <<: *A0
+                ixy : [6, 0]
+                gain : 1.24
+                readNoise : 6
+            "7": &A7
+                <<: *A1
+                ixy : [7, 0]
+                gain : 1.26
+                readNoise : 6
+    b1 :                                # Spectrograph 1, blue arm
+        << : *Detector
+        detectorType : 1                # b CCD
+        id : 1
+        serial : Hamamatsu b1
+        offset : [-93.1, -65.1]         # mm
+
+        amplifiers:
+            "0":
+                <<: *A0
+                gain : 1.24
+                readNoise : 6
+            "1":
+                <<: *A1
+                gain : 1.24
+                readNoise : 6
+            "2":
+                <<: *A2
+                gain : 1.27
+                readNoise : 6
+            "3":
+                <<: *A3
+                gain : 1.18
+                readNoise : 6
+            "4":
+                <<: *A4
+                gain : 1.26
+                readNoise : 6
+            "5":
+                <<: *A5
+                gain : 1.20
+                readNoise : 6
+            "6":
+                <<: *A6
+                gain : 1.24
+                readNoise : 6
+            "7":
+                <<: *A7
+                gain : 1.26
+                readNoise : 6
