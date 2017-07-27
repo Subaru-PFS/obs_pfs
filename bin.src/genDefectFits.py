@@ -32,8 +32,8 @@ def genDefectFits(source, targetDir, verbose):
 
     ccds = dict()
     for ccd in camera:
-        ccdNum = ccd.getId()
-        ccds[ccdNum] = ccd.getName()
+        ccdName = ccd.getName()
+        ccds[ccdName] = ccd.getId()
 
     defects = dict()
 
@@ -43,9 +43,8 @@ def genDefectFits(source, targetDir, verbose):
         if len(line) == 0:
             continue
         ccd, x0, y0, width, height = re.split("\s+", line)
-        ccd = int(ccd)
         if not ccds.has_key(ccd):
-            raise RuntimeError("Unrecognised ccd: %d" % ccd)
+            raise RuntimeError("Unrecognised ccd: %s" % ccd)
         if not defects.has_key(ccd):
             defects[ccd] = list()
         defects[ccd].append(Defect(x0=int(x0), y0=int(y0), width=int(width), height=int(height)))
@@ -67,7 +66,7 @@ def genDefectFits(source, targetDir, verbose):
 
         table.header['NAME'] = ccd
         name = os.path.join(targetDir, "defects_%s.fits" % ccd)
-        logger.info("Writing %d defects from CCD %d (%s) to %s" % (table.header['NAXIS2'], ccd, ccds[ccd], name))
+        logger.info("Writing %d defects from CCD %s (%s) to %s" % (table.header['NAXIS2'], ccd, ccds[ccd], name))
         if os.path.exists(name):
             if args.force:
                 os.unlink(name)

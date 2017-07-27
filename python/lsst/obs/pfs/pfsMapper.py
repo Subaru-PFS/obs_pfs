@@ -188,15 +188,12 @@ class PfsMapper(CameraMapper):
         return ampId
 
     def _extractDetectorName(self, dataId):
-        if True:                        # use 1-based CCD number as "Name"
-            return self._extractDetectorId(dataId)
-        else:
-            arm = self._getRegistryValue(dataId, "arm")
-            spectrograph = self._getRegistryValue(dataId, "spectrograph")
-
-            if arm == 'm':
-                arm = 'r'
-            return "%s_%d" % (armName, spectrograph)
+        arm = self._getRegistryValue(dataId, "arm")
+        spectrograph = self._getRegistryValue(dataId, "spectrograph")
+        
+        if arm == 'm':
+            arm = 'r'
+        return "%d%s" % (spectrograph, arm)
 
     @staticmethod
     def computeDetectorId(spectrograph, arm):
@@ -227,7 +224,7 @@ class PfsMapper(CameraMapper):
 
         The default implementation simply returns ("ccd", full detector name)
         """
-        return ("ccd", self._extractDetectorId(dataId))
+        return ("ccd", self._extractDetectorName(dataId))
 
     def _computeCcdExposureId(self, dataId):
         """Compute the 64-bit (long) identifier for a CCD exposure.
