@@ -6,7 +6,6 @@ config.load(os.path.join(getPackageDir("obs_pfs"), "config", "pfs.py"))
 config.profile.load(os.path.join(getPackageDir("drp_stella"), "config", "createFlatFiberTraceProfile.py"))
 config.trace.load(os.path.join(getPackageDir("drp_stella"), "config", "findAndTraceApertures.py"))
 
-config.darkTime = None
 config.trace.xLow = -5.4
 config.trace.xHigh = 5.4
 config.xOffsetHdrKeyWord = "sim.slit.xoffset"#"W_FCA_DITHER"
