@@ -138,7 +138,7 @@ datasets: {
         tables:        "raw_visit"
     }
     pfsArm: {
-        template:      "pfsArm/%(dateObs)s/v%(visit)07d/pfsArm-%(visit)06d-%(spectrograph)d%(arm)s.fits"
+        template:      "pfsArm/%(dateObs)s/v%(visit)07d/pfsArm-%(visit)06d-%(arm)s%(spectrograph)d.fits"
         python:        "pfs.drp.stella.datamodelIO.PfsArmIO"
         persistable:   "PfsArmIO"
         storage:       "FitsCatalogStorage"
@@ -176,7 +176,7 @@ datasets: {
         tables:        raw_visit
     }
     processCcd_metadata: {
-        template:      "processCcd_metadata/%(visit)07d-%(spectrograph)1d%(arm)s.boost"
+        template:      "processCcd_metadata/%(visit)07d-%(arm)s%(spectrograph)1d.boost"
         python:        "lsst.daf.base.PropertySet"
         persistable:        "PropertySet"
         storage:    "BoostStorage"
@@ -282,14 +282,14 @@ datasets: {
     }
 
     ossThumb: {
-        template:    "thumbs/oss-%(visit)07d-%(spectrograph)1d%(arm)s.png"
+        template:    "thumbs/oss-%(visit)07d-%(arm)s%(spectrograph)1d.png"
         python:      __builtin__.str
         persistable: None
         storage:     TextStorage
         tables:      raw
     }
     flattenedThumb: {
-        template:    "thumbs/flattened-%(visit)07d-%(spectrograph)1d$(arm)s.png"
+        template:    "thumbs/flattened-%(visit)07d-%(arm)s%(spectrograph)1d.png"
         python:      __builtin__.str
         persistable: None
         storage:     TextStorage
