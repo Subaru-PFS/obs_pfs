@@ -266,7 +266,12 @@ class PfsMapper(CameraMapper):
 
         raise RuntimeError("Unable to read pfsConfig for %s: %s" % (dataId.items(), e))
 
-    def bypass_pfsArm(self, datasetType, pythonType, location, dataId):
+    #
+    # This is disabled due to butler changes that mean it is silently ignored
+    # when the file requested doesn't exist.  Instead we do disgusting things
+    # parsing filenames in PfsArmIO.readFits
+    #
+    def XXXbypass_pfsArm(self, datasetType, pythonType, location, dataId):
         from pfs.datamodel.pfsArm import PfsArm
 
         for pathName in location.locationList:
