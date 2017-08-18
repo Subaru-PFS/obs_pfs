@@ -9,8 +9,6 @@ from lsst.pipe.drivers.utils import getDataRef
 from lsst.pipe.tasks.repair import RepairTask
 import math
 import numpy as np
-import pfs.drp.stella as drpStella
-from pfs.drp.stella.createFlatFiberTraceProfileTask import CreateFlatFiberTraceProfileTask
 from pfs.drp.stella.findAndTraceAperturesTask import FindAndTraceAperturesTask
 
 class ConstructFiberFlatConfig(CalibConfig):
@@ -26,8 +24,6 @@ class ConstructFiberFlatConfig(CalibConfig):
          dtype = float,
         default = 100.,
          check = lambda x : x > 0.)
-    profile = ConfigurableField(target=CreateFlatFiberTraceProfileTask,
-        doc="Task to calculate the spatial profile")
     psfFwhm = Field(dtype=float,
         default=3.0,
         doc="Repair PSF FWHM (pixels)")
@@ -50,7 +46,6 @@ class ConstructFiberFlatTask(CalibTask):
 
     def __init__(self, *args, **kwargs):
         CalibTask.__init__(self, *args, **kwargs)
-        self.makeSubtask("profile")
         self.makeSubtask("repair")
         self.makeSubtask("trace")
 
@@ -140,10 +135,6 @@ class ConstructFiberFlatTask(CalibTask):
 
         self.log.info('xOffsets = %s' % (xOffsets))
 
-        # Calculate spatial profiles for all FiberTraceSets
-        for fts in allFts:
-            fts = self.profile.run(fts)
-
         sumRec = np.zeros(shape=sumFlats.shape, dtype='float32')
         sumRecIm = afwImage.ImageF(sumRec)
         sumVar = np.zeros(shape=sumFlats.shape, dtype='float32')
@@ -151,16 +142,19 @@ class ConstructFiberFlatTask(CalibTask):
 
         # Add all reconstructed FiberTraces of all dithered flats to one
         # reconstructed image 'sumRecIm'
-        for fts in allFts:
+        for iFts in range(len(allFts)):
+            fts = allFts[iFts]
+            maskedImage = dataRefList[iFts].get('postISRCCD').getMaskedImage()
             for ft in fts.getTraces():
-                spectrum = ft.extractFromProfile()
+                spectrum = ft.extractFromProfile(maskedImage)
                 recFt = ft.getReconstructed2DSpectrum(spectrum)
                 recFtArr = recFt.getArray()
                 imArr = ft.getTrace().getImage().getArray()
                 recFtArr[imArr <= 0] = 0.0
-                drpStella.addFiberTraceToCcdImage(ft, recFt, sumRecIm)
-                drpStella.addFiberTraceToCcdImage(ft, ft.getTrace().getVariance(), sumVarIm)
-
+                bbox = ft.getTrace().getBBox()
+                sumRecIm[bbox] += recFt
+                sumVarIm[bbox] = ft.getTrace().getVariance()
+                    
         sumVariances[sumVariances <= 0.0] = 0.1
         snrArr = sumFlats / np.sqrt(sumVariances)
 

@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+import math
+import os
+
 import lsst.afw.detection as afwDet
 import lsst.afw.display as afwDisplay
 import lsst.afw.image as afwImage
@@ -8,11 +11,10 @@ from lsst.pex.config import Field, ConfigurableField
 from lsst.pipe.drivers.constructCalibs import CalibConfig, CalibTask
 from lsst.pipe.tasks.repair import RepairTask
 from lsst.pipe.drivers.utils import getDataRef
-import math
-import numpy as np
+from lsst.utils import getPackageDir
 from pfs.datamodel.pfsFiberTrace import PfsFiberTrace
-import pfs.drp.stella.utils as dsUtils
-from pfs.drp.stella.createFlatFiberTraceProfileTask import CreateFlatFiberTraceProfileTask
+import pfs.drp.stella as drpStella
+from pfs.drp.stella.utils import readWavelengthFile, addFiberTraceSetToMask
 from pfs.drp.stella.findAndTraceAperturesTask import FindAndTraceAperturesTask
 from pfs.drp.stella.datamodelIO import PfsFiberTraceIO
 
@@ -28,9 +30,10 @@ class ConstructFiberTraceConfig(CalibConfig):
         default=True,
         doc="Repair artifacts?"
     )
-    profile = ConfigurableField(
-        target=CreateFlatFiberTraceProfileTask,
-        doc="Task to calculate the spatial profile"
+    fiberPixelFile = Field(
+        dtype=str,
+        default=os.path.join(getPackageDir("obs_pfs"), "pfs/RedFiberPixels.fits.gz"),
+        doc="File containing the map for fiber pixels"
     )
     psfFwhm = Field(
         dtype=float,
@@ -68,7 +71,6 @@ class ConstructFiberTraceTask(CalibTask):
     def __init__(self, *args, **kwargs):
         CalibTask.__init__(self, *args, **kwargs)
         self.makeSubtask("repair")
-        self.makeSubtask("profile")
         self.makeSubtask("trace")
 
         import lsstDebug
@@ -104,7 +106,7 @@ class ConstructFiberTraceTask(CalibTask):
 
             visit = sensorRef.dataId['visit']
             disp.mtv(exposure, "raw %d" % (visit))
-                
+
         return exposure
 
     def run(self, expRefList, butler, calibId):
@@ -169,12 +171,14 @@ class ConstructFiberTraceTask(CalibTask):
         fts = self.trace.run(calExp)
         self.log.info('%d FiberTraces found on combined flat' % (fts.size()))
 
-        self.profile.run(fts)
+        # assign trace IDs
+        xCenters, wavelengths, traceIds = readWavelengthFile(self.config.fiberPixelFile)
+        fts.assignTraceIDs(traceIds, xCenters)
 
         if self.debugInfo.display:
             disp = afwDisplay.Display(frame=self.debugInfo.combined_frame)
 
-            dsUtils.addFiberTraceSetToMask(calExp.getMaskedImage().getMask(), fts.getTraces(), disp)
+            addFiberTraceSetToMask(calExp.getMaskedImage().getMask(), fts.getTraces(), disp)
             disp.setMaskTransparency(50)
             disp.mtv(calExp, "Traced")
         #
@@ -186,62 +190,11 @@ class ConstructFiberTraceTask(CalibTask):
             outputId['spectrograph'],
             outputId['arm']
         )
-        pfsFT.fwhm = self.trace.config.apertureFWHM
-        pfsFT.threshold = self.trace.config.signalThreshold
-        pfsFT.nTerms = self.trace.config.nTermsGaussFit
-        pfsFT.saturationLevel = self.trace.config.saturationLevel
-        pfsFT.minLength = self.trace.config.minLength
-        pfsFT.maxLength = self.trace.config.maxLength
-        pfsFT.nLost = self.trace.config.nLost
-        pfsFT.traceFunction = self.trace.config.interpolation
-        pfsFT.order = self.trace.config.order
-        pfsFT.xLow = self.trace.config.xLow
-        pfsFT.xHigh = self.trace.config.xHigh
-        pfsFT.nCutLeft = self.trace.config.nPixCutLeft
-        pfsFT.nCutRight = self.trace.config.nPixCutRight
-        pfsFT.interpol = self.profile.config.profileInterpolation
-        pfsFT.swathLength = self.profile.config.swathWidth
-        pfsFT.overSample = self.profile.config.overSample
-        pfsFT.maxIterSF = self.profile.config.maxIterSF
-        pfsFT.maxIterSig = self.profile.config.maxIterSig
-        pfsFT.lambdaSF = self.profile.config.lambdaSF
-        pfsFT.lambdaSP = self.profile.config.lambdaSP
-        pfsFT.lambdaWing = self.profile.config.wingSmoothFactor
-        pfsFT.lSigma = self.profile.config.lowerSigma
-        pfsFT.uSigma = self.profile.config.upperSigma
 
-        pfsFT.fiberId = []
-        pfsFT.xCenter = []
-        pfsFT.yCenter = []
-        pfsFT.yLow = []
-        pfsFT.yHigh = []
-        pfsFT.coeffs = []
-        pfsFT.profiles = None           # we'll set it when we know its dimension
-
-        nRows = calib.getImage().getHeight()
-        #
-        # The code doesn't impose any requirements on the widths of the traces, while the
-        # datamodel requires that they are all the same.
-        #
-        # For now, trim off extra columns
-        #
-        width = min([fts.getFiberTrace(i).getProfile().getWidth() for i in range(fts.size())])
-        pfsFT.profiles = np.empty((fts.size(), nRows, width), dtype=np.float32)
-        pfsFT.profiles[:] = np.nan
-        
         for iFt in range(fts.size()):
             ft = fts.getFiberTrace(iFt)
-            ftFunc = ft.getFiberTraceFunction()
-            pfsFT.fiberId.append(ft.getITrace()+1)
-            pfsFT.xCenter.append(ftFunc.xCenter)
-            pfsFT.yCenter.append(ftFunc.yCenter)
-            pfsFT.yLow.append(ftFunc.yLow)
-            pfsFT.yHigh.append(ftFunc.yHigh)
-            pfsFT.coeffs.append(ftFunc.coefficients)
-            yStart = ft.getFiberTraceFunction().yCenter + ft.getFiberTraceFunction().yLow
-            yEnd = ft.getFiberTraceFunction().yCenter + ft.getFiberTraceFunction().yHigh + 1
-
-            pfsFT.profiles[iFt, yStart:yEnd, :] = ft.getProfile().getArray()[:,:width]
+            pfsFT.fiberId.append(ft.getITrace() + 1)
+            pfsFT.traces.append(ft.getTrace())
 
         pfsFiberTrace = PfsFiberTraceIO(pfsFT)
         self.write(cache.butler, pfsFiberTrace, outputId)
