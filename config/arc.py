@@ -1,4 +1,4 @@
 import os.path
-from lsst.utils
+from lsst.utils import getPackageDir
 
-config.load(os.path.join(lsst.utils.getPackageDir("obs_pfs"), "config", "pfs.py"))
+config.load(os.path.join(getPackageDir("obs_pfs"), "config", "pfs.py"))
