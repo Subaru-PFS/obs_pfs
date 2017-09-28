@@ -250,7 +250,7 @@ datasets: {
     }
     constructFiberTrace_config: {
         template:      "config/constructFiberTrace.py"
-        python:        "lsst.obs.pfs.constructFiberTraceTask.ConstructFiberTraceConfig"
+        python:        "pfs.drp.stella.constructFiberTraceTask.ConstructFiberTraceConfig"
         persistable:   "Config"
         storage:       "ConfigStorage"
         tables:        raw
@@ -258,7 +258,7 @@ datasets: {
     }
     constructFiberFlat_config: {
         template:      "config/constructFiberFlat.py"
-        python:        "lsst.obs.pfs.constructFiberFlatTask.ConstructFiberFlatConfig"
+        python:        "pfs.drp.stella.constructFiberFlatTask.ConstructFiberFlatConfig"
         persistable:   "Config"
         storage:       "ConfigStorage"
         tables:        raw
