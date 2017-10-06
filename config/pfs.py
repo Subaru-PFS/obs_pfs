@@ -23,4 +23,4 @@ if hasattr(config, 'repair'):
     config.repair.cosmicray.min_DN = 50.0
 
 if hasattr(config, 'xOffsetHdrKeyWord'):
-    config.xOffsetHdrKeyWord = 'sim.slit.xoffset'
+    config.xOffsetHdrKeyWord = 'W_FCA_DITHER'
