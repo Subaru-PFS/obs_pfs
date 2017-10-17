@@ -12,9 +12,10 @@ config.register.columns = {'site': 'text', #J: JHU, L: LAM, X: Subaru offline, I
                            'expTime': 'double',
                            'dataType': 'text',
                            'taiObs': 'text',
+                           'pfsConfigId': 'int',
                           }
-config.register.unique = ['site', 'category', 'visit', 'filter', 'arm', 'spectrograph']
-config.register.visit = ['visit', 'field', 'filter', 'spectrograph', 'arm', 'dateObs', 'taiObs']
+config.register.unique = ['site', 'category', 'visit', 'filter', 'arm', 'spectrograph', 'pfsConfigId']
+config.register.visit = ['visit', 'field', 'filter', 'spectrograph', 'arm', 'dateObs', 'taiObs', 'pfsConfigId']
 
 config.parse.translation = {'dataType': 'IMAGETYP',
                             'expTime': 'EXPTIME',
@@ -25,5 +26,6 @@ config.parse.defaults = {'ccdTemp': "0", # Added in commissioning run 3
                        }
 config.parse.translators = {'field': 'translate_field',
                             'dateObs': 'translate_date',
-                            'taiObs': 'translate_date'
+                            'taiObs': 'translate_date',
+                            'pfsConfigId': 'translate_pfsConfigId',
 }

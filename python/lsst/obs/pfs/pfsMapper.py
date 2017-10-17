@@ -8,6 +8,8 @@ import lsst.afw.image as afwImage
 import lsst.afw.math as afwMath
 import lsst.pex.policy as pexPolicy
 from lsst.obs.pfs.pfsCamera import PfsCamera
+from pfs.drp.stella.datamodelIO import PfsArmIO
+
 
 class PfsRawVisitInfo(MakeRawVisitInfo):
     def setArgDict(self, md, argDict):
@@ -258,7 +260,8 @@ class PfsMapper(CameraMapper):
             if isinstance(e, IOError):
                 msg = msg.replace(r"[Errno 2] ", "") # it isn't an error, just a warning
 
-            self.log.warn(msg)
+            self.log.warn("%s" % (msg,))
+            self.log.debug("%s" % (dirName,))
             self.log.info("Creating dummy PfsConfig for pfsConfigId == 0x%x" % (pfsConfigId))
 
             from pfs.datamodel.pfsConfig import PfsConfig
@@ -314,3 +317,30 @@ class PfsMapper(CameraMapper):
             except IndexError:
                 raise RuntimeError("Unable to lookup %s in \"%s\" registry for dataId %s" %
                                    (k, dataType, dataId))
+
+def assemble_pfsArm(dataId, componentInfo, cls):
+    """Called by the butler to construct the composite type "pfsArm"
+
+    Parameters
+    ----------
+    dataId : `lsst.daf.persistence.dataId.DataId`
+        the data ID
+    componentInfo : `dict`
+        dict containing the components, as defined by the composite definition in the mapper policy
+    cls : 'object'
+        unused
+
+    Returns
+    -------
+        The assembled pfsArm
+    """
+
+    pfsArm = componentInfo['pfsArm'].obj
+    pfsArm.pfsConfig = componentInfo['pfsConfig'].obj
+
+    return pfsArm
+
+def disassemble_pfsArm(dataId, obj, componentInfo):
+    """Called by the butler to deconstruct the composite type "pfsArm"
+    """
+    componentInfo['pfsArm'].obj = PfsArmIO(obj._pfsArm)

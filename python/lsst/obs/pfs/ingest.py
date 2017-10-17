@@ -80,6 +80,16 @@ class PfsParseTask(ParseTask):
         self.log.debug('PfsParseTask.translate_field: field = %s' % field)
         return re.sub(r'\W', '_', field).upper()
 
+    def translate_pfsConfigId(self, md):
+        """Get 'pfsConfigId' from metadata, setting the value to 0x0 if it's not present
+        """
+        key = "PFSCONFIGID"
+
+        if md.exists(key):
+            return md.get(key)
+        else:
+            return 0x0
+
 class PfsCalibsParseTask(CalibsParseTask, PfsParseTask):
     ConfigClass = PfsParseConfig
 

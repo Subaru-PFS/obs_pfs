@@ -129,6 +129,20 @@ calibrations: {
 }
 
 datasets: {
+    pfsArm: {
+        composite: {
+            pfsArm: {
+                datasetType: _pfsArm
+            }
+            pfsConfig: {
+                inputOnly: True
+                datasetType: pfsConfig
+            }
+        }
+        assembler: 'lsst.obs.pfs.pfsMapper.assemble_pfsArm'
+        disassembler: 'lsst.obs.pfs.pfsMapper.disassemble_pfsArm'
+    }
+
     pfsConfig: {
         template:    "pfsState/%(dateObs)s/pfsConfig-0x%(pfsConfigId)016x.fits"  # N.b. overridden by datamodel
         python:      "pfs.drp.stella.datamodelIO.PfsConfigIO"
@@ -137,7 +151,8 @@ datasets: {
         tables:        "raw"
         tables:        "raw_visit"
     }
-    pfsArm: {
+
+    _pfsArm: {
         template:      "pfsArm/%(dateObs)s/v%(visit)07d/pfsArm-%(visit)06d-%(arm)s%(spectrograph)d.fits"
         python:        "pfs.drp.stella.datamodelIO.PfsArmIO"
         persistable:   "PfsArmIO"
