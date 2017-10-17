@@ -137,7 +137,7 @@ class PfsFiberTraceTestCase(tests.TestCase):
             ftfNew = ftNew.getFiberTraceFunction()
             ftfc = ftf.fiberTraceFunctionControl
             ftfcNew = ftfNew.fiberTraceFunctionControl
-            self.assertEqual(ft.getITrace(), ftNew.getITrace())
+            self.assertEqual(ft.getFiberId(), ftNew.getFiberId())
             self.assertEqual(ft.isTraceSet(), ftNew.isTraceSet())
             self.assertEqual(ft.isProfileSet(), ftNew.isProfileSet())
             self.assertEqual(ft.isFiberTraceProfileFittingControlSet(), ftNew.isFiberTraceProfileFittingControlSet())
@@ -198,7 +198,7 @@ class PfsFiberTraceTestCase(tests.TestCase):
                         self.log.warn(message)
                     self.assertAlmostEqual(image[iX,iY], imageNew[iX,iY], places=3)
 
-            self.assertEqual(ft.getITrace(), ftNew.getITrace())
+            self.assertEqual(ft.getFiberId(), ftNew.getFiberId())
             self.assertAlmostEqual(ft.getFiberTraceFunction().xCenter, ftNew.getFiberTraceFunction().xCenter)
             self.assertEqual(ft.getFiberTraceFunction().yCenter, ftNew.getFiberTraceFunction().yCenter)
             self.assertEqual(ft.getFiberTraceFunction().yLow, ftNew.getFiberTraceFunction().yLow)
