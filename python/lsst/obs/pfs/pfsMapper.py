@@ -8,7 +8,6 @@ import lsst.afw.image as afwImage
 import lsst.afw.math as afwMath
 import lsst.pex.policy as pexPolicy
 from lsst.obs.pfs.pfsCamera import PfsCamera
-from pfs.drp.stella.datamodelIO import PfsArmIO
 
 
 class PfsRawVisitInfo(MakeRawVisitInfo):
@@ -343,4 +342,6 @@ def assemble_pfsArm(dataId, componentInfo, cls):
 def disassemble_pfsArm(dataId, obj, componentInfo):
     """Called by the butler to deconstruct the composite type "pfsArm"
     """
+    from pfs.drp.stella.datamodelIO import PfsArmIO
+    
     componentInfo['pfsArm'].obj = PfsArmIO(obj._pfsArm)
