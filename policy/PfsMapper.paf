@@ -112,13 +112,13 @@ calibrations: {
         validStartName: validStart
         validEndName: validEnd
     }
-    arc: {
-        template:    "ARC/pfsArc-%(calibDate)s-0-%(arm)s%(spectrograph)1d.fits"
-        python:      "lsst.afw.image.ExposureF"
-        persistable: "ExposureF"
-        storage:     "FitsStorage"
+    detectormap: {
+        template:    "DETECTORMAP/pfsDetectorMap-%(visit0)06d-%(arm)s%(spectrograph)1d.fits"
+        python:      "pfs.drp.stella.utils.DetectorMapIO"
+        persistable: "DetectorMap"
+        storage:     "FitsCatalogStorage"
         level:       "Ccd"
-        tables:      "arc"
+        tables:      "detectorMap"
         columns:     "taiObs"
         reference:   "raw_visit"
         refCols:     "visit"

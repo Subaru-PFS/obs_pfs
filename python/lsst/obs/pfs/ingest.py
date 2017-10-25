@@ -93,7 +93,7 @@ class PfsParseTask(ParseTask):
 class PfsCalibsParseTask(CalibsParseTask, PfsParseTask):
     ConfigClass = PfsParseConfig
 
-    calibTypes = ["Bias", "Dark", "Arc", "FiberTrace", "FiberFlat"]
+    calibTypes = ["Bias", "Dark", "DetectorMap", "FiberTrace", "FiberFlat"]
     
     def getInfo(self, filename):
         """Get information about the image from the filename and its contents
@@ -104,12 +104,21 @@ class PfsCalibsParseTask(CalibsParseTask, PfsParseTask):
         self.log.debug('interpreting filename <%s>' % filename)
 
         path, name = os.path.split(filename)
-        matches = re.search(r"^pfs(%s)-(\d{4}-\d{2}-\d{2})-(\d)-([brnm])(\d)\.fits$" % ("|".join(self.calibTypes)),
-                            name)
+        matches = re.search(r"^pfs(%s)-(\d{4}-\d{2}-\d{2})-(\d)-([brnm])(\d)\.fits$" % \
+                            ("|".join(self.calibTypes)), name)
+        
+        calibDate = None                # one possible label for calibrations (deprecated!)
+        visit0 = None                   # another possible label;  the one in the datamodel
+        if matches:
+            calibType, calibDate, _, arm, spectrograph = matches.groups()
+        else:
+            matches = re.search(r"^pfs(%s)-(\d{6})-([brnm])(\d)\.fits$" % ("|".join(self.calibTypes)), name)
+            if matches:
+                calibType, visit0, arm, spectrograph = matches.groups()
+                visit0 = int(visit0)
 
-        if not matches:
+        if matches is None:
             raise RuntimeError("Unable to interpret %s as a calibration file" % filename)
-        calibType, calibDate, _, arm, spectrograph = matches.groups()
         
         try:
             armNum = self.arms.index(arm) + 1
@@ -118,7 +127,6 @@ class PfsCalibsParseTask(CalibsParseTask, PfsParseTask):
                                (arm, filename, self.arms))
 
         spectrograph = int(spectrograph)
-        visit0 = 0
 
         if spectrograph < 1 or spectrograph > self.nSpectrograph + 1:
             raise Exception('spectrograph (=%d) out of bounds 1..%d' % (spectrograph, self.nSpectrograph))
@@ -126,7 +134,7 @@ class PfsCalibsParseTask(CalibsParseTask, PfsParseTask):
         dataId = dict(spectrograph=spectrograph, arm=arm)
         ccd = PfsMapper.computeDetectorId(spectrograph, arm)
         self.log.debug(
-            'visit0 = <%s>, spectrograph = <%d>, arm = <%s>, ccd = <%d>' %
+            'visit0 = <%d>, spectrograph = <%d>, arm = <%s>, ccd = <%d>' %
             (visit0, spectrograph, arm, ccd)
         )
 
