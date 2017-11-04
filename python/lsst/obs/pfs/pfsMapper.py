@@ -317,6 +317,9 @@ class PfsMapper(CameraMapper):
                 raise RuntimeError("Unable to lookup %s in \"%s\" registry for dataId %s" %
                                    (k, dataType, dataId))
 
+    def std_detectormap(self, item, dataId):
+        return item
+
 def assemble_pfsArm(dataId, componentInfo, cls):
     """Called by the butler to construct the composite type "pfsArm"
 
