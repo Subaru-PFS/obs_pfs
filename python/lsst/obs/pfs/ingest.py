@@ -108,7 +108,7 @@ class PfsCalibsParseTask(CalibsParseTask, PfsParseTask):
                             ("|".join(self.calibTypes)), name)
         
         calibDate = None                # one possible label for calibrations (deprecated!)
-        visit0 = None                   # another possible label;  the one in the datamodel
+        visit0 = 0                      # another possible label;  the one in the datamodel
         if matches:
             calibType, calibDate, _, arm, spectrograph = matches.groups()
         else:
