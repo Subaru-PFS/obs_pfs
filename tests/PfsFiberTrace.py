@@ -8,6 +8,7 @@ or
    python
    >>> import FiberTrace; FiberTrace.run()
 """
+from __future__ import print_function
 import os
 import unittest
 

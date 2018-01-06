@@ -43,16 +43,16 @@ def genDefectFits(source, targetDir, verbose):
         if len(line) == 0:
             continue
         ccd, x0, y0, width, height = re.split("\s+", line)
-        if not ccds.has_key(ccd):
+        if ccd not in ccds:
             raise RuntimeError("Unrecognised ccd: %s" % ccd)
-        if not defects.has_key(ccd):
+        if ccd not in defects:
             defects[ccd] = list()
         defects[ccd].append(Defect(x0=int(x0), y0=int(y0), width=int(width), height=int(height)))
     f.close()
 
     for ccd in ccds:
         # Make empty defect FITS file for CCDs with no defects
-        if not defects.has_key(ccd):
+        if ccd not in defects:
             defects[ccd] = list()
 
         columns = list()

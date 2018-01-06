@@ -28,7 +28,7 @@ class MapperTestCase(tests.TestCase):
         self.logger = log.Log.getLogger('MapperTests')
         try:
             self.drpStellaDataDir = lsst.utils.getPackageDir("drp_stella_data")
-        except Exception, e:
+        except Exception as e:
             self.drpStellaDataDir = None
             self.logger.warn('cannot run tests as drp_stella_data is not setup')
         if self.drpStellaDataDir is not None:
