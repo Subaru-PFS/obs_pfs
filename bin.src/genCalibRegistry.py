@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from builtins import zip
 import argparse
 import collections
 import datetime
