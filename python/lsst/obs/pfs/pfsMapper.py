@@ -169,7 +169,7 @@ class PfsMapper(CameraMapper):
 
         md = exp.getMetadata()
         try:
-            dataVersion = md.get('W_VERSIONS_FPGA')
+            dataVersion = int(md.get('W_VERSIONS_FPGA'), 16)
         except:
             dataVersion = 0
 
