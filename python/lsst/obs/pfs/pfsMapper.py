@@ -251,15 +251,13 @@ class PfsMapper(CameraMapper):
             try:
                 pfsConfig.read(dirName=dirName)
             except Exception as e:
-                pass
+                msg = str(e)
+                if isinstance(e, IOError):
+                    msg = msg.replace(r"[Errno 2] ", "") # it isn't an error, just a warning
             else:
                 return pfsConfig
 
         if pfsConfigId == 0x0:
-            msg = str(e)
-            if isinstance(e, IOError):
-                msg = msg.replace(r"[Errno 2] ", "") # it isn't an error, just a warning
-
             self.log.warn("%s" % (msg,))
             self.log.debug("%s" % (dirName,))
             self.log.info("Creating dummy PfsConfig for pfsConfigId == 0x%x" % (pfsConfigId))
