@@ -24,3 +24,5 @@ if hasattr(config, 'repair'):
 
 if hasattr(config, 'xOffsetHdrKeyWord'):
     config.xOffsetHdrKeyWord = 'W_FCA_DITHER'
+
+config.isr.doAddDistortionModel = False
