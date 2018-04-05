@@ -13,6 +13,8 @@ config.isr.expectWcs = False            # our spectrographs don't write a WCS to
 config.isr.doLinearize = False
 config.isr.doFringe = False
 config.isr.doWrite = False
+config.isr.expectWcs=False
+config.isr.doAddDistortionModel=False
 
 config.isr.overscanFitType = "AKIMA_SPLINE"
 config.isr.overscanOrder = 30
