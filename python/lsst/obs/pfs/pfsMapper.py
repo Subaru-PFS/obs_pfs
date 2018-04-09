@@ -7,8 +7,8 @@ from lsst.obs.base import CameraMapper, MakeRawVisitInfo
 import lsst.afw.image.utils as afwImageUtils
 import lsst.afw.image as afwImage
 import lsst.afw.math as afwMath
-import lsst.pex.policy as pexPolicy
 from lsst.obs.pfs.pfsCamera import PfsCamera
+from lsst.daf.persistence import Policy
 
 
 class PfsRawVisitInfo(MakeRawVisitInfo):
@@ -64,8 +64,8 @@ class PfsMapper(CameraMapper):
     MakeRawVisitInfoClass = PfsRawVisitInfo
     
     def __init__(self, **kwargs):
-        policyFile = pexPolicy.DefaultPolicyFile("obs_pfs", "PfsMapper.paf", "policy")
-        policy = pexPolicy.Policy(policyFile)
+        policyFile = Policy.defaultPolicyFile("obs_pfs", "PfsMapper.yaml", "policy")
+        policy = Policy(policyFile)
         if not kwargs.get('root', None):
             try:
                 kwargs['root'] = os.path.join(os.environ.get('PFS_DATA_DIR'), 'PFS')
@@ -74,8 +74,8 @@ class PfsMapper(CameraMapper):
         if not kwargs.get('calibRoot', None):
             kwargs['calibRoot'] = os.path.join(kwargs['root'], 'CALIB')
 
-        super(PfsMapper, self).__init__(policy, policyFile.getRepositoryPath(), **kwargs)
-
+        super(PfsMapper, self).__init__(policy, os.path.dirname(policyFile), **kwargs)
+        
         # The order of these defineFilter commands matters as their IDs are used to generate at least some
         # object IDs (e.g. on coadds) and changing the order will invalidate old objIDs
 

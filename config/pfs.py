@@ -41,3 +41,5 @@ if hasattr(config, 'trace'):
 
 if hasattr(config, 'xOffsetHdrKeyWord'):
     config.xOffsetHdrKeyWord = 'W_FCA_DITHER'
+
+config.isr.doAddDistortionModel = False
