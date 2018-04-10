@@ -26,7 +26,7 @@ if hasattr(config, 'repair'):
     config.repair.interp.modelPsf.defaultFwhm = 1.75
     config.repair.cosmicray.cond3_fac = 4
     config.repair.cosmicray.cond3_fac2 = 1
-    config.repair.cosmicray.nCrPixelMax = 60000
+    config.repair.cosmicray.nCrPixelMax = 5000000
     config.repair.cosmicray.minSigma = 10.0
     config.repair.cosmicray.min_DN = 500.0
 
