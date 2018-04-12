@@ -144,7 +144,7 @@ datasets:
     - raw
     - raw_visit
 
-  reduceArcTask_config:
+  reduceArc_config:
     template: config/reduceArc.py
     python: pfs.drp.stella.reduceArcTask.ReduceArcConfig
     persistable: Config
