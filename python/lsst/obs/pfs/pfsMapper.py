@@ -238,6 +238,9 @@ class PfsMapper(CameraMapper):
         ccd = self._extractDetectorId(dataId)
         return visit*200 + ccd
 
+    def bypass_ccdExposureId(self, datasetType, pythonType, location, dataId):
+        return self._computeCcdExposureId(dataId)
+
     def bypass_pfsConfig(self, datasetType, pythonType, location, dataId):
         from pfs.datamodel.pfsConfig import PfsConfig
 
