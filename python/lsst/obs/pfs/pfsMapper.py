@@ -339,7 +339,7 @@ def assemble_pfsArm(dataId, componentInfo, cls):
         The assembled pfsArm
     """
 
-    pfsArm = componentInfo['pfsArm'].obj
+    pfsArm = componentInfo['spectra'].obj
     pfsArm.pfsConfig = componentInfo['pfsConfig'].obj
 
     return pfsArm
@@ -347,6 +347,7 @@ def assemble_pfsArm(dataId, componentInfo, cls):
 def disassemble_pfsArm(dataId, obj, componentInfo):
     """Called by the butler to deconstruct the composite type "pfsArm"
     """
-    from pfs.drp.stella.datamodelIO import PfsArmIO
-    
-    componentInfo['pfsArm'].obj = PfsArmIO(obj._pfsArm)
+    from pfs.drp.stella.datamodelIO import PfsConfigIO
+
+    componentInfo['spectra'].obj = obj
+    componentInfo['pfsConfig'].obj = PfsConfigIO(obj.toPfsArm(dataId).pfsConfig)
