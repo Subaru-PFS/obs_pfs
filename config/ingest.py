@@ -23,11 +23,9 @@ config.parse.translation = {'dataType': 'IMAGETYP',
                             'expTime': 'EXPTIME',
                             'dateObs': 'DATE-OBS',
                             'taiObs': 'DATE-OBS',
-}
+                            }
 config.parse.defaults = {'ccdTemp': "0", # Added in commissioning run 3
-                       }
-config.parse.translators = {'field': 'translate_field',
-                            'dateObs': 'translate_date',
-                            'taiObs': 'translate_date',
-                            'pfsConfigId': 'translate_pfsConfigId',
-}
+                         }
+config.parse.translators.update(field='translate_field',
+                                dateObs='translate_date',
+                                taiObs='translate_date')

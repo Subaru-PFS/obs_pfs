@@ -5,27 +5,39 @@ import lsst.afw.image as afwImage
 from lsst.obs.pfs.pfsMapper import PfsMapper
 from lsst.pipe.tasks.ingest import ParseTask, ParseConfig
 from lsst.pipe.tasks.ingestCalibs import CalibsParseTask
-import lsst.utils
+
+__all__ = ["PfsParseConfig", "PfsParseTask"]
+
 
 class PfsParseConfig(ParseConfig):
     def setDefaults(self):
         ParseConfig.setDefaults(self)
         self.translators["field"] = "translate_field"
+        self.translators["pfsConfigId"] = "translate_pfsConfigId"
         self.translators["slitOffset"] = "translate_slitOffset"
+
 
 class PfsParseTask(ParseTask):
     ConfigClass = PfsParseConfig
+    nSpectrograph = 4  # Number of spectrographs
+    arms = ['b', 'r', 'n', 'm']  # Possible spectrograph arm names
+    sites = '[JLXIASPF]'  # Possible site names
+    categories = '[ABCDS]'  # Possible category names
 
-    nSpectrograph = 4
-    arms = ['b', 'r', 'n', 'm']
-    sites = '[JLXIASPF]'
-    categories = '[ABCDS]'
-    
     def getInfo(self, filename):
         """Get information about the image from the filename and its contents
 
-        @param filename    Name of file to inspect
-        @return File properties; list of file properties for each extension
+        Parameters
+        ----------
+        filename : `str`
+            Name of file to inspect
+
+        Returns
+        -------
+        info : `dict`
+            File properties from the PHU.
+        infoList : `list` of `dict`
+            File properties from the extensions.
         """
         self.log.debug('interpreting filename <%s>' % filename)
 
@@ -47,19 +59,17 @@ class PfsParseTask(ParseTask):
             self.log.info("Visit %06d has spectrograph == 9" % visit)
 
         if spectrograph < 1 or spectrograph > self.nSpectrograph + 1:
-            raise Exception('spectrograph (=%d) out of bounds 1..%d' % (spectrograph, self.nSpectrograph))
+            raise RuntimeError('spectrograph (=%d) out of bounds 1..%d' % (spectrograph, self.nSpectrograph))
 
         try:
             arm = self.arms[armNum - 1]   # 1-indexed
-        except IndexError:
-            raise Exception('armNum (=%d) out of bounds 1..%d' % (armNum, max(self.arms.keys())))
+        except IndexError as exc:
+            raise IndexError('armNum=%d out of bounds 1..%d' % (armNum, max(self.arms.keys()))) from exc
 
-        dataId = dict(spectrograph=spectrograph, arm=arm)
         ccd = PfsMapper.computeDetectorId(spectrograph, arm)
-        self.log.debug(
-            'site = <%s>, category = <%s>, visit = <%s>, spectrograph = <%d>, armNum = <%d>, arm = <%s>, ccd = <%d>'
-            % (site,category,visit,spectrograph,armNum,arm,ccd)
-        )
+        self.log.debug('site = <%s>, category = <%s>, visit = <%s>, spectrograph = <%d>, armNum = <%d>, '
+                       'arm = <%s>, ccd = <%d>' %
+                       (site, category, visit, spectrograph, armNum, arm, ccd))
 
         info = dict(site=site, category=category, visit=visit, filter=arm, arm=arm,
                     spectrograph=spectrograph, ccd=ccd)
@@ -82,14 +92,14 @@ class PfsParseTask(ParseTask):
         return re.sub(r'\W', '_', field).upper()
 
     def translate_pfsConfigId(self, md):
-        """Get 'pfsConfigId' from metadata, setting the value to 0x0 if it's not present
+        """Get 'pfsConfigId' from metadata
+
+        Fall back to the value to 0x0 if it's not present.
         """
         key = "PFSCONFIGID"
-
         if md.exists(key):
             return md.get(key)
-        else:
-            return 0x0
+        return 0x0
 
     def translate_slitOffset(self, md):
         """Get slitOffset from header metadata
@@ -104,11 +114,11 @@ class PfsParseTask(ParseTask):
                 return md.get(key)
         return 0.0
 
+
 class PfsCalibsParseTask(CalibsParseTask, PfsParseTask):
     ConfigClass = PfsParseConfig
-
     calibTypes = ["Bias", "Dark", "DetectorMap", "FiberTrace", "FiberFlat"]
-    
+
     def getInfo(self, filename):
         """Get information about the image from the filename and its contents
 
@@ -118,9 +128,9 @@ class PfsCalibsParseTask(CalibsParseTask, PfsParseTask):
         self.log.debug('interpreting filename <%s>' % filename)
 
         path, name = os.path.split(filename)
-        matches = re.search(r"^pfs(%s)-(\d{4}-\d{2}-\d{2})-(\d)-([brnm])(\d)\.fits$" % \
+        matches = re.search(r"^pfs(%s)-(\d{4}-\d{2}-\d{2})-(\d)-([brnm])(\d)\.fits$" %
                             ("|".join(self.calibTypes)), name)
-        
+
         calibDate = None                # one possible label for calibrations (deprecated!)
         visit0 = 0                      # another possible label;  the one in the datamodel
         if matches:
@@ -133,24 +143,22 @@ class PfsCalibsParseTask(CalibsParseTask, PfsParseTask):
 
         if matches is None:
             raise RuntimeError("Unable to interpret %s as a calibration file" % filename)
-        
+
         try:
             armNum = self.arms.index(arm) + 1
-        except ValueError:
+        except ValueError as exc:
             raise RuntimeError("found unknown filter \"%s\" in %s; expected one of %s" %
-                               (arm, filename, self.arms))
+                               (arm, filename, self.arms)) from exc
 
         spectrograph = int(spectrograph)
 
         if spectrograph < 1 or spectrograph > self.nSpectrograph + 1:
-            raise Exception('spectrograph (=%d) out of bounds 1..%d' % (spectrograph, self.nSpectrograph))
+            raise RuntimeError('spectrograph (=%d) out of bounds 1..%d' % (spectrograph, self.nSpectrograph))
 
         dataId = dict(spectrograph=spectrograph, arm=arm)
         ccd = PfsMapper.computeDetectorId(spectrograph, arm)
-        self.log.debug(
-            'visit0 = <%d>, spectrograph = <%d>, arm = <%s>, ccd = <%d>' %
-            (visit0, spectrograph, arm, ccd)
-        )
+        self.log.debug('visit0 = <%d>, spectrograph = <%d>, arm = <%s>, ccd = <%d>' %
+                       (visit0, spectrograph, arm, ccd))
 
         info = dict(visit0=visit0, arm=arm, filter=arm, spectrograph=spectrograph, ccd=ccd,
                     calibDate=calibDate)
@@ -160,4 +168,3 @@ class PfsCalibsParseTask(CalibsParseTask, PfsParseTask):
             info = self.getInfoFromMetadata(header, info=info)
 
         return info, [info]
-    
