@@ -11,6 +11,7 @@ class PfsParseConfig(ParseConfig):
     def setDefaults(self):
         ParseConfig.setDefaults(self)
         self.translators["field"] = "translate_field"
+        self.translators["slitOffset"] = "translate_slitOffset"
 
 class PfsParseTask(ParseTask):
     ConfigClass = PfsParseConfig
@@ -89,6 +90,19 @@ class PfsParseTask(ParseTask):
             return md.get(key)
         else:
             return 0x0
+
+    def translate_slitOffset(self, md):
+        """Get slitOffset from header metadata
+
+        We try mutliple header keywords before resorting to an assumed zero
+        offset.
+        """
+        for key in ("sim.slit.xoffset",  # From the simulator
+                    "W_FCA_DITHER"  # From real data at LAM
+                    ):
+            if md.exists(key):
+                return md.get(key)
+        return 0.0
 
 class PfsCalibsParseTask(CalibsParseTask, PfsParseTask):
     ConfigClass = PfsParseConfig

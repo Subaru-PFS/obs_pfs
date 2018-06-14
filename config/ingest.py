@@ -13,9 +13,11 @@ config.register.columns = {'site': 'text', #J: JHU, L: LAM, X: Subaru offline, I
                            'dataType': 'text',
                            'taiObs': 'text',
                            'pfsConfigId': 'int',
-                          }
+                           'slitOffset': 'double',  # Horizontal slit offset
+                           }
 config.register.unique = ['site', 'category', 'visit', 'filter', 'arm', 'spectrograph', 'pfsConfigId']
-config.register.visit = ['visit', 'field', 'filter', 'spectrograph', 'arm', 'dateObs', 'taiObs', 'pfsConfigId']
+config.register.visit = ['visit', 'field', 'filter', 'spectrograph', 'arm', 'dateObs', 'taiObs',
+                         'pfsConfigId', 'slitOffset']
 
 config.parse.translation = {'dataType': 'IMAGETYP',
                             'expTime': 'EXPTIME',
