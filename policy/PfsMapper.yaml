@@ -189,8 +189,8 @@ datasets:
     - raw
     - raw_visit
 
-  constructFiberTrace_config:
-    template: config/constructFiberTrace.py
+  fiberTrace_config:
+    template: config/fiberTrace.py
     python: pfs.drp.stella.constructFiberTraceTask.ConstructFiberTraceConfig
     persistable: Config
     storage: ConfigStorage
@@ -198,8 +198,8 @@ datasets:
     - raw
     - raw_visit
 
-  constructFiberFlat_config:
-    template: config/constructFiberFlat.py
+  fiberFlat_config:
+    template: config/fiberFlat.py
     python: pfs.drp.stella.constructFiberFlatTask.ConstructFiberFlatConfig
     persistable: Config
     storage: ConfigStorage
