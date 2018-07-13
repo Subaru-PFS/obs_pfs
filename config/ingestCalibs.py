@@ -10,15 +10,14 @@ config.register.columns = {'arm': 'text',
                            'validEnd': 'text',
                            }
 
-config.parse.translation = {'calibDate': 'calibDate',
-                            }
-
-config.parse.translators = {#'ccd': 'translate_ccd',
-                            #'filter': 'translate_filter',
-                            #'calibDate': 'translate_calibDate',
+config.parse.translators = {'arm': 'translate_arm',
+                            'ccd': 'translate_ccd',
+                            'spectrograph': 'translate_spectrograph',
+                            'calibDate': 'translate_calibDate',
+                            'visit0': 'translate_visit0',
                             }
 
 config.register.detector = ['arm', 'spectrograph']
 config.register.unique = ['arm', 'spectrograph', 'calibDate']
-config.register.tables = ['bias', 'dark', 'detectormap', 'flat', 'fibertrace'] # n.b. lower case
+config.register.tables = ['bias', 'dark', 'detectormap', 'flat', 'fibertrace']
 config.register.visit = ['calibDate', 'arm', 'spectrograph']

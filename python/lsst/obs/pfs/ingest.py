@@ -27,6 +27,8 @@ class PfsParseTask(ParseTask):
     def getInfo(self, filename):
         """Get information about the image from the filename and its contents
 
+        The information we want isn't in the headers, but in the filname.
+
         Parameters
         ----------
         filename : `str`
@@ -115,56 +117,27 @@ class PfsParseTask(ParseTask):
         return 0.0
 
 
-class PfsCalibsParseTask(CalibsParseTask, PfsParseTask):
+class PfsCalibsParseTask(CalibsParseTask):
     ConfigClass = PfsParseConfig
     calibTypes = ["Bias", "Dark", "DetectorMap", "FiberTrace", "FiberFlat"]
 
-    def getInfo(self, filename):
-        """Get information about the image from the filename and its contents
+    def _translateFromCalibId(self, field, md):
+        data = md.get("CALIB_ID")
+        match = re.search(".*%s=(\S+)" % field, data)
+        return match.groups()[0]
 
-        @param filename    Name of file to inspect
-        @return File properties; list of file properties for each extension
-        """
-        self.log.debug('interpreting filename <%s>' % filename)
+    def translate_ccd(self, md):
+        return int(self._translateFromCalibId("ccd", md))
 
-        path, name = os.path.split(filename)
-        matches = re.search(r"^pfs(%s)-(\d{4}-\d{2}-\d{2})-(\d)-([brnm])(\d)\.fits$" %
-                            ("|".join(self.calibTypes)), name)
+    def translate_arm(self, md):
+        return self._translateFromCalibId("arm", md)
 
-        calibDate = None                # one possible label for calibrations (deprecated!)
-        visit0 = 0                      # another possible label;  the one in the datamodel
-        if matches:
-            calibType, calibDate, _, arm, spectrograph = matches.groups()
-        else:
-            matches = re.search(r"^pfs(%s)-(\d{6})-([brnm])(\d)\.fits$" % ("|".join(self.calibTypes)), name)
-            if matches:
-                calibType, visit0, arm, spectrograph = matches.groups()
-                visit0 = int(visit0)
+    def translate_calibDate(self, md):
+        return self._translateFromCalibId("calibDate", md)
 
-        if matches is None:
-            raise RuntimeError("Unable to interpret %s as a calibration file" % filename)
+    def translate_spectrograph(self, md):
+        return int(self._translateFromCalibId("spectrograph", md))
 
-        try:
-            armNum = self.arms.index(arm) + 1
-        except ValueError as exc:
-            raise RuntimeError("found unknown filter \"%s\" in %s; expected one of %s" %
-                               (arm, filename, self.arms)) from exc
-
-        spectrograph = int(spectrograph)
-
-        if spectrograph < 1 or spectrograph > self.nSpectrograph + 1:
-            raise RuntimeError('spectrograph (=%d) out of bounds 1..%d' % (spectrograph, self.nSpectrograph))
-
-        dataId = dict(spectrograph=spectrograph, arm=arm)
-        ccd = PfsMapper.computeDetectorId(spectrograph, arm)
-        self.log.debug('visit0 = <%d>, spectrograph = <%d>, arm = <%s>, ccd = <%d>' %
-                       (visit0, spectrograph, arm, ccd))
-
-        info = dict(visit0=visit0, arm=arm, filter=arm, spectrograph=spectrograph, ccd=ccd,
-                    calibDate=calibDate)
-
-        if os.path.exists(filename):
-            header = afwImage.readMetadata(filename)
-            info = self.getInfoFromMetadata(header, info=info)
-
-        return info, [info]
+    def translate_visit0(self, md):
+        # We don't have a way of setting this yet; it's always zero
+        return 0
