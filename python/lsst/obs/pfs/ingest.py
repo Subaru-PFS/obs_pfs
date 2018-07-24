@@ -113,7 +113,8 @@ class PfsParseTask(ParseTask):
                     "W_FCA_DITHER"  # From real data at LAM
                     ):
             if md.exists(key):
-                return md.get(key)
+                value = md.get(key)
+                return value if isinstance(value, float) else 0.0
         return 0.0
 
 
