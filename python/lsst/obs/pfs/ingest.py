@@ -140,5 +140,7 @@ class PfsCalibsParseTask(CalibsParseTask):
         return int(self._translateFromCalibId("spectrograph", md))
 
     def translate_visit0(self, md):
-        # We don't have a way of setting this yet; it's always zero
-        return 0
+        try:
+            return int(self._translateFromCalibId("visit0", md))
+        except Exception:
+            return 0
