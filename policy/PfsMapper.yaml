@@ -64,7 +64,7 @@ calibrations:
     validStartName: validStart
     validEndName: validEnd
   flat:
-    template: 'FLAT/pfsFiberFlat-%(calibDate)s-0-%(arm)s%(spectrograph)1d.fits'
+    template: 'FLAT/pfsFiberFlat-%(calibDate)s-%(visit0)06d-%(arm)s%(spectrograph)1d.fits'
     python: lsst.afw.image.ExposureF
     persistable: ExposureF
     storage: FitsStorage
@@ -77,7 +77,7 @@ calibrations:
     validStartName: validStart
     validEndName: validEnd
   fibertrace:
-    template: 'FIBERTRACE/pfsFiberTrace-%(calibDate)s-0-%(arm)s%(spectrograph)1d.fits'
+    template: 'FIBERTRACE/pfsFiberTrace-%(calibDate)s-%(visit0)06d-%(arm)s%(spectrograph)1d.fits'
     python: pfs.drp.stella.FiberTraceSet
     persistable: FiberTraceSet
     storage: FitsCatalogStorage
