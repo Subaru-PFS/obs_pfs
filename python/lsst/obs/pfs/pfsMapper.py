@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-from builtins import str
 import os
 import numpy as np
 
@@ -83,21 +81,21 @@ class PfsMapper(CameraMapper):
         afwImageUtils.defineFilter(name="UNRECOGNISED", lambdaEff=0,
                                    alias=["NONE", "None", "Unrecognised", "UNRECOGNISED",
                                           "Unrecognized", "UNRECOGNIZED", "NOTSET",])
-        afwImageUtils.defineFilter(name='b', lambdaEff=477, alias=['blue','PFS-B'])
-        afwImageUtils.defineFilter(name='r', lambdaEff=623, alias=['red','PFS-R'])
-        afwImageUtils.defineFilter(name='n', lambdaEff=623, alias=['nearInfraRed','PFS-N'])
-        afwImageUtils.defineFilter(name='m', lambdaEff=775, alias=['mediumResolutionRed','PFS-M'])
+        afwImageUtils.defineFilter(name='b', lambdaEff=477, alias=['blue', 'PFS-B'])
+        afwImageUtils.defineFilter(name='r', lambdaEff=623, alias=['red', 'PFS-R'])
+        afwImageUtils.defineFilter(name='n', lambdaEff=623, alias=['nearInfraRed', 'PFS-N'])
+        afwImageUtils.defineFilter(name='m', lambdaEff=775, alias=['mediumResolutionRed', 'PFS-M'])
         #
         # self.filters is used elsewhere, and for now we'll set it
         #
         self.filters = {}
-        for f in [
-            "b",
-            "r",
-            "n",
-            "m",
-            "NONE",
-            "UNRECOGNISED"]:
+        for f in ["b",
+                  "r",
+                  "n",
+                  "m",
+                  "NONE",
+                  "UNRECOGNISED"
+                  ]:
             # Get the canonical name -- see #2113
             self.filters[f] = afwImage.Filter(afwImage.Filter(f).getId()).getName()
         self.defaultFilterName = "UNRECOGNISED"
@@ -108,7 +106,7 @@ class PfsMapper(CameraMapper):
         #
         # This shouldn't be the mapper's job at all; see #2797.
 
-        PfsMapper._nbit_id = 64# - (PfsMapper._nbit_tract + 2*PfsMapper._nbit_patch + PfsMapper._nbit_filter)
+        PfsMapper._nbit_id = 64
 
     def _makeCamera(self, policy, repositoryDir):
         """Make a camera (instance of lsst.afw.cameraGeom.Camera) describing the camera geometry
@@ -170,7 +168,7 @@ class PfsMapper(CameraMapper):
         md = exp.getMetadata()
         try:
             dataVersion = int(md.get('W_VERSIONS_FPGA'), 16)
-        except:
+        except Exception:
             dataVersion = 0
 
         if dataVersion <= 0x0070:
@@ -178,7 +176,7 @@ class PfsMapper(CameraMapper):
 
         return exp
 
-    def std_fibertrace(self, item, dataId): # needed to stop the butler generating a version
+    def std_fibertrace(self, item, dataId):  # needed to stop the butler generating a version
         return item
 
     def map_linearizer(self, dataId, write=False):
@@ -192,7 +190,6 @@ class PfsMapper(CameraMapper):
     def _extractDetectorName(self, dataId):
         arm = self._getRegistryValue(dataId, "arm")
         spectrograph = self._getRegistryValue(dataId, "spectrograph")
-        
         if arm == 'm':
             arm = 'r'
         return "%s%d" % (arm, spectrograph)
@@ -256,7 +253,7 @@ class PfsMapper(CameraMapper):
             except Exception as e:
                 msg = str(e)
                 if isinstance(e, IOError):
-                    msg = msg.replace(r"[Errno 2] ", "") # it isn't an error, just a warning
+                    msg = msg.replace(r"[Errno 2] ", "")  # it isn't an error, just a warning
             else:
                 return pfsConfig
 
@@ -322,6 +319,7 @@ class PfsMapper(CameraMapper):
     def std_detectormap(self, item, dataId):
         return item
 
+
 def assemble_pfsArm(dataId, componentInfo, cls):
     """Called by the butler to construct the composite type "pfsArm"
 
@@ -339,14 +337,16 @@ def assemble_pfsArm(dataId, componentInfo, cls):
         The assembled pfsArm
     """
 
-    pfsArm = componentInfo['pfsArm'].obj
+    pfsArm = componentInfo['spectra'].obj
     pfsArm.pfsConfig = componentInfo['pfsConfig'].obj
 
     return pfsArm
 
+
 def disassemble_pfsArm(dataId, obj, componentInfo):
     """Called by the butler to deconstruct the composite type "pfsArm"
     """
-    from pfs.drp.stella.datamodelIO import PfsArmIO
-    
-    componentInfo['pfsArm'].obj = PfsArmIO(obj._pfsArm)
+    from pfs.drp.stella.datamodelIO import PfsConfigIO
+
+    componentInfo['spectra'].obj = obj
+    componentInfo['pfsConfig'].obj = PfsConfigIO(obj.toPfsArm(dataId).pfsConfig)

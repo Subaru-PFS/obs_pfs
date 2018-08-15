@@ -32,9 +32,9 @@ exposures:
   raw:
     template: '%(dateObs)s/PF%(site)s%(category)s%(visit)06d%(arm)s%(spectrograph)1d.fits'
   postISRCCD:
-    template: 'postISRCCD/%(dateObs)s/v%(visit)07d/PF%(site)s%(category)s%(arm)s%(spectrograph)1d.fits'
+    template: 'postIsrCcd/%(dateObs)s/v%(visit)07d/postIsrCcd-%(site)s%(category)s%(visit)06d%(arm)s%(spectrograph)1d.fits'
   calexp:
-    template: 'calExp/%(dateObs)s/v%(visit)07d/PF%(site)s%(category)s%(arm)s%(spectrograph)1d.fits'
+    template: 'calExp/%(dateObs)s/v%(visit)07d/calExp-%(site)s%(category)s%(visit)06d%(arm)s%(spectrograph)1d.fits'
 
 calibrations:
   bias:
@@ -64,7 +64,7 @@ calibrations:
     validStartName: validStart
     validEndName: validEnd
   flat:
-    template: 'FLAT/pfsFiberFlat-%(calibDate)s-0-%(arm)s%(spectrograph)1d.fits'
+    template: 'FLAT/pfsFiberFlat-%(calibDate)s-%(visit0)06d-%(arm)s%(spectrograph)1d.fits'
     python: lsst.afw.image.ExposureF
     persistable: ExposureF
     storage: FitsStorage
@@ -77,8 +77,8 @@ calibrations:
     validStartName: validStart
     validEndName: validEnd
   fibertrace:
-    template: 'FIBERTRACE/pfsFiberTrace-%(calibDate)s-0-%(arm)s%(spectrograph)1d.fits'
-    python: pfs.drp.stella.datamodelIO.PfsFiberTraceIO
+    template: 'FIBERTRACE/pfsFiberTrace-%(calibDate)s-%(visit0)06d-%(arm)s%(spectrograph)1d.fits'
+    python: pfs.drp.stella.FiberTraceSet
     persistable: FiberTraceSet
     storage: FitsCatalogStorage
     level: Ccd
@@ -91,7 +91,7 @@ calibrations:
     validEndName: validEnd
   detectormap:
     template: 'DETECTORMAP/pfsDetectorMap-%(visit0)06d-%(arm)s%(spectrograph)1d.fits'
-    python: pfs.drp.stella.utils.DetectorMapIO
+    python: pfs.drp.stella.DetectorMap
     persistable: DetectorMap
     storage: FitsCatalogStorage
     level: Ccd
@@ -108,8 +108,8 @@ datasets:
 
   pfsArm:
     composite:
-      pfsArm:
-        datasetType: _pfsArm
+      spectra:
+        datasetType: spectra
       pfsConfig:
         inputOnly: true
         datasetType: pfsConfig
@@ -118,17 +118,17 @@ datasets:
 
   pfsConfig:
     template: 'pfsState/%(dateObs)s/pfsConfig-0x%(pfsConfigId)016x.fits'  # N.b. overridden by datamodel
-    python: pfs.drp.stella.datamodelIO.PfsConfigIO
+    python: pfs.drp.stella.PfsConfigIO
     persistable: PfsConfigIO
     storage: FitsCatalogStorage
     tables:
     - raw
     - raw_visit
 
-  _pfsArm:
+  spectra:
     template: 'pfsArm/%(dateObs)s/v%(visit)07d/pfsArm-%(visit)06d-%(arm)s%(spectrograph)d.fits'
-    python: pfs.drp.stella.datamodelIO.PfsArmIO
-    persistable: PfsArmIO
+    python: pfs.drp.stella.SpectrumSet
+    persistable: SpectrumSet
     storage: FitsCatalogStorage
     level: Ccd
     tables:
@@ -189,8 +189,8 @@ datasets:
     - raw
     - raw_visit
 
-  constructFiberTrace_config:
-    template: config/constructFiberTrace.py
+  fiberTrace_config:
+    template: config/fiberTrace.py
     python: pfs.drp.stella.constructFiberTraceTask.ConstructFiberTraceConfig
     persistable: Config
     storage: ConfigStorage
@@ -198,8 +198,8 @@ datasets:
     - raw
     - raw_visit
 
-  constructFiberFlat_config:
-    template: config/constructFiberFlat.py
+  fiberFlat_config:
+    template: config/fiberFlat.py
     python: pfs.drp.stella.constructFiberFlatTask.ConstructFiberFlatConfig
     persistable: Config
     storage: ConfigStorage
