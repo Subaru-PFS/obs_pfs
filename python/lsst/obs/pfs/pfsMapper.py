@@ -241,7 +241,7 @@ class PfsMapper(CameraMapper):
     def bypass_pfsConfig(self, datasetType, pythonType, location, dataId):
         from pfs.datamodel.pfsConfig import PfsConfig
 
-        pfsConfigId = dataId['pfsConfigId']
+        pfsConfigId = dataId.get('pfsConfigId', 0x0)
 
         for pathName in location.locationList:
             pathName = os.path.join(location.storage.root, pathName)
@@ -323,6 +323,12 @@ class PfsMapper(CameraMapper):
 def assemble_pfsArm(dataId, componentInfo, cls):
     """Called by the butler to construct the composite type "pfsArm"
 
+    This returns a `pfs.datamodel.PfsArm` instead of a
+    `pfs.drp.stella.SpectrumSet`, as that includes the ``pfsConfig``.
+    The result can be converted to a ``SpectrumSet`` by:
+
+        spectra = pfs.drp.stella.SpectrumSet.fromPfsArm(pfsArm)
+
     Parameters
     ----------
     dataId : `lsst.daf.persistence.dataId.DataId`
@@ -334,10 +340,10 @@ def assemble_pfsArm(dataId, componentInfo, cls):
 
     Returns
     -------
-        The assembled pfsArm
+    pfsArm : `pfs.datamodel.PfsArm`
+        The assembled pfsArm.
     """
-
-    pfsArm = componentInfo['spectra'].obj
+    pfsArm = componentInfo['spectra'].obj.toPfsArm(dataId)
     pfsArm.pfsConfig = componentInfo['pfsConfig'].obj
 
     return pfsArm
