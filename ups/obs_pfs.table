@@ -5,8 +5,6 @@ setupRequired(numpy)
 setupRequired(pex_config)
 setupRequired(pex_policy)
 setupRequired(pipe_base)
-setupRequired(pipe_drivers)
-setupRequired(pipe_tasks)
 setupRequired(sconsUtils)
 
 envPrepend(LD_LIBRARY_PATH, ${PRODUCT_DIR}/lib)
