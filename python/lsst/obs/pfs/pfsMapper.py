@@ -247,9 +247,8 @@ class PfsMapper(CameraMapper):
             pathName = os.path.join(location.storage.root, pathName)
             dirName = os.path.dirname(pathName)
 
-            pfsConfig = PfsConfig(pfsConfigId)
             try:
-                pfsConfig.read(dirName=dirName)
+                pfsConfig = PfsConfig.read(pfsConfigId, dirName=dirName)
             except Exception as e:
                 msg = str(e)
                 if isinstance(e, IOError):
@@ -263,7 +262,7 @@ class PfsMapper(CameraMapper):
             self.log.info("Creating dummy PfsConfig for pfsConfigId == 0x%x" % (pfsConfigId))
 
             from pfs.datamodel.pfsConfig import PfsConfig
-            return PfsConfig(pfsConfigId)
+            return makeDummyPfsConfig(0, pfsConfigId)
 
         raise RuntimeError("Unable to read pfsConfig for %s: %s" % (dataId.items(), e))
 
@@ -352,7 +351,28 @@ def assemble_pfsArm(dataId, componentInfo, cls):
 def disassemble_pfsArm(dataId, obj, componentInfo):
     """Called by the butler to deconstruct the composite type "pfsArm"
     """
-    from pfs.drp.stella.datamodelIO import PfsConfigIO
-
     componentInfo['spectra'].obj = obj
-    componentInfo['pfsConfig'].obj = PfsConfigIO(obj.toPfsArm(dataId).pfsConfig)
+    # Dummy PfsConfig; this has never worked well, and is in need of a redesign
+    componentInfo['pfsConfig'].obj = makeDummyPfsConfig(len(obj), expId=dataId["visit"])
+
+
+def makeDummyPfsConfig(numFibers, pfiDesignId=0x0, expId=0):
+    """Create a dummy PfsConfig
+
+    The current pipeline creates these out of thin air, whereas in reality
+    they will be provided for us along with the raw exposures; so this is
+    just a placeholder until we can make things more realistic.
+    """
+    from pfs.drp.stella.pfsConfigIO import PfsConfigIO
+
+    fiberId = np.arange(numFibers, dtype=int)
+    floats = np.zeros(numFibers, dtype=float)
+    idents = np.ones(numFibers, dtype=int)
+    patches = ["x"]*numFibers
+    mags = np.zeros((numFibers, 0), dtype=float)
+    filters = [[]]*numFibers
+    pairs = np.zeros((numFibers, 2), dtype=float)
+
+    # Dummy PfsConfig; this has never worked well, and is in need of a redesign
+    return PfsConfigIO(0x0, expId, 0.0, 0.0, fiberId, idents, patches, floats, floats,
+                       idents, idents, idents, mags, filters, pairs, pairs)
