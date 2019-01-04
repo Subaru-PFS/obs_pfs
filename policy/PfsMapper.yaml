@@ -30,11 +30,11 @@ defaultSubLevels:
 
 exposures:
   raw:
-    template: '%(dateObs)s/PF%(site)s%(category)s%(visit)06d%(arm)s%(spectrograph)1d.fits'
+    template: '%(dateObs)s/PF%(site)s%(category)s%(expId)06d%(arm)s%(spectrograph)1d.fits'
   postISRCCD:
-    template: 'postIsrCcd/%(dateObs)s/v%(visit)07d/postIsrCcd-%(site)s%(category)s%(visit)06d%(arm)s%(spectrograph)1d.fits'
+    template: 'postIsrCcd/%(dateObs)s/v%(expId)07d/postIsrCcd-%(site)s%(category)s%(expId)06d%(arm)s%(spectrograph)1d.fits'
   calexp:
-    template: 'calExp/%(dateObs)s/v%(visit)07d/calExp-%(site)s%(category)s%(visit)06d%(arm)s%(spectrograph)1d.fits'
+    template: 'calExp/%(dateObs)s/v%(expId)07d/calExp-%(site)s%(category)s%(expId)06d%(arm)s%(spectrograph)1d.fits'
 
 calibrations:
   bias:
@@ -107,17 +107,28 @@ calibrations:
 datasets:
 
   pfsArm:
-    composite:
-      spectra:
-        datasetType: spectra
-      pfsConfig:
-        inputOnly: true
-        datasetType: pfsConfig
-    assembler: lsst.obs.pfs.pfsMapper.assemble_pfsArm
-    disassembler: lsst.obs.pfs.pfsMapper.disassemble_pfsArm
+    template: 'pfsArm/%(dateObs)s/v%(expId)07d/pfsArm-%(expId)06d-%(arm)s%(spectrograph)d.fits'
+    python: pfs.datamodel.drp.PfsArm
+    persistable: PfsArm
+    storage: FitsCatalogStorage
+    level: Ccd
+    tables:
+    - raw
+    - raw_visit
+
+  pfsMerged:
+    template: 'pfsMerged/%(dateObs)s/v%(expId)07d/pfsMerged-%(expId)06d.fits'
+    python: pfs.datamodel.drp.PfsMerged
+    persistable: PfsMerged
+    storage: FitsCatalogStorage
+    level: Visit
+    tables:
+    - raw
+    - raw_visit
 
   pfsConfig:
-    template: 'pfsState/%(dateObs)s/pfsConfig-0x%(pfsConfigId)016x.fits'  # N.b. overridden by datamodel
+    # N.b. template is overridden by datamodel
+    template: 'pfsConfig/%(dateObs)s/pfsConfig-0x%(pfiDesignId)016x-%(expId)06d.fits'
     python: pfs.drp.stella.PfsConfigIO
     persistable: PfsConfigIO
     storage: FitsCatalogStorage
@@ -125,64 +136,58 @@ datasets:
     - raw
     - raw_visit
 
-  spectra:
-    template: 'pfsArm/%(dateObs)s/v%(visit)07d/pfsArm-%(visit)06d-%(arm)s%(spectrograph)d.fits'
-    python: pfs.drp.stella.SpectrumSet
-    persistable: SpectrumSet
+  sky2d:
+    template: 'sky2d/%(dateObs)s/v%(expId)07d/sky2d-%(expId)06d-%(arm)s%(spectrograph)d.fits'
+    python: pfs.drp.stella.subtractSky1d.SubtractSky1DSolution
+    persistable: SubtractSky1DSolution
     storage: FitsCatalogStorage
-    level: Ccd
     tables:
     - raw
     - raw_visit
 
-  arc_config:
-    template: config/arc.py
-    python: lsst.obs.pfs.constructArc.ConstructArcConfig
-    persistable: Config
-    storage: ConfigStorage
+  pfsReference:
+    template: 'pfsReference/%(catId)03d/%(tract)05d/pfsReference-%(catId)03d-%(tract)05d-%(patch)s-%(objId)08x.fits'
+    python: pfs.datamodel.drp.PfsReference
+    persistable: PfsReference
+    storage: FitsCatalogStorage
+    level: Visit
     tables:
     - raw
     - raw_visit
 
-  reduceArc_config:
-    template: config/reduceArc.py
-    python: pfs.drp.stella.reduceArcTask.ReduceArcConfig
-    persistable: Config
-    storage: ConfigStorage
+  fluxCal:
+    template: 'fluxCal/%(dateObs)s/v%(expId)07d/fluxCal-%(expId)06d-%(arm)s%(spectrograph)d.fits'
+    python: pfs.drp.stella.fitFocalPlane.ConstantFocalPlaneFunction
+    persistable: ConstantFocalPlaneFunction
+    storage: FitsCatalogStorage
     tables:
     - raw
     - raw_visit
 
-  reduceArcRefSpecTask_config:
-    template: config/reduceArcRefSpec.py
-    python: pfs.drp.stella.reduceArcRefSpecTask.ReduceArcRefSpecConfig
-    persistable: Config
-    storage: ConfigStorage
+  pfsObject:
+    template: 'pfsObject/%(catId)03d/%(tract)05d/%(patch)s/pfsObject-%(catId)03d-%(tract)05d-%(patch)s-%(objId)08x-%(expId)06d.fits'
+    python: pfs.datamodel.drp.PfsObject
+    persistable: PfsObject
+    storage: FitsCatalogStorage
+    level: Visit
     tables:
     - raw
     - raw_visit
 
-  flat_config:
-    template: config/flat.py
-    python: lsst.obs.pfs.detrends.PfsFlatCombineConfig
-    persistable: Config
-    storage: ConfigStorage
+  pfsCoadd:
+    template: 'pfsCoadd/%(catId)03d/%(tract)05d/%(patch)s/pfsCoadd-%(catId)03d-%(tract)05d-%(patch)s-%(objId)08x-%(numExp)03d-%(expHash)08x.fits'
+    python: pfs.datamodel.drp.PfsCoadd
+    persistable: PfsCoadd
+    storage: FitsCatalogStorage
+    level: Visit
     tables:
     - raw
     - raw_visit
 
-  createRefSpecTask_config:
-    template: config/createRefSpec.py
-    python: pfs.drp.stella.createRefSpec.CreateRefSpecConfig
-    persistable: Config
-    storage: ConfigStorage
-    tables:
-    - raw
-    - raw_visit
 
-  createDetGeomTask_config:
-    template: config/createDetGeom.py
-    python: pfs.drp.stella.createDetGeom.CreateDetGeomConfig
+  fiberFlat_config:
+    template: config/fiberFlat.py
+    python: pfs.drp.stella.constructFiberFlatTask.ConstructFiberFlatConfig
     persistable: Config
     storage: ConfigStorage
     tables:
@@ -198,27 +203,54 @@ datasets:
     - raw
     - raw_visit
 
-  fiberFlat_config:
-    template: config/fiberFlat.py
-    python: pfs.drp.stella.constructFiberFlatTask.ConstructFiberFlatConfig
+  reduceArc_config:
+    template: config/reduceArc.py
+    python: pfs.drp.stella.reduceArcTask.ReduceArcConfig
     persistable: Config
     storage: ConfigStorage
     tables:
     - raw
     - raw_visit
 
-  findAndTrace_config:
-    template: config/findAndTraceApertures.py
-    python: pfs.drp.stella.findAndTraceAperturesTask.FindAndTraceAperturesConfig
+  reduceExposure_config:
+    template: config/reduceExposure.py
+    python: pfs.drp.stella.reduceExposure.ReduceExposureConfig
     persistable: Config
     storage: ConfigStorage
     tables:
     - raw
     - raw_visit
 
-  createFlatFiberTraceProfile_config:
-    template: config/createFlatFiberTraceProfile.py
-    python: pfs.drp.stella.createFlatFiberTraceProfileTask.CreateFlatFiberTraceProfileConfig
+  mergeArms_config:
+    template: config/mergeArms.py
+    python: pfs.drp.stella.mergeArms.MergeArmsConfig
+    persistable: Config
+    storage: ConfigStorage
+    tables:
+    - raw
+    - raw_visit
+
+  calculateReferenceFlux_config:
+    template: config/calculateReferenceFlux.py
+    python: pfs.drp.stella.calculateReferenceFlux.CalculateReferenceFluxConfig
+    persistable: Config
+    storage: ConfigStorage
+    tables:
+    - raw
+    - raw_visit
+
+  fluxCalibrate_config:
+    template: config/fluxCalibrate.py
+    python: pfs.drp.stella.fluxCalibrate.FluxCalibrateConfig
+    persistable: Config
+    storage: ConfigStorage
+    tables:
+    - raw
+    - raw_visit
+
+  coaddSpectra_config:
+    template: config/coaddSpectra.py
+    python: pfs.drp.stella.coaddSpectra.CoaddSpectraConfig
     persistable: Config
     storage: ConfigStorage
     tables:

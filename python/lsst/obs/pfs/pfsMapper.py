@@ -73,7 +73,27 @@ class PfsMapper(CameraMapper):
             kwargs['calibRoot'] = os.path.join(kwargs['root'], 'CALIB')
 
         super(PfsMapper, self).__init__(policy, os.path.dirname(policyFile), **kwargs)
-        
+
+        # Ensure each dataset type of interest knows about the full range of keys available from the registry
+        keys = {'site': str,
+                'category': str,
+                'field': str,
+                'expId': int,
+                'visit': int,
+                'ccd': int,
+                'filter': str,
+                'arm': str,
+                'spectrograph': int,
+                'dateObs': str,
+                'expTime': float,
+                'dataType': str,
+                'taiObs': str,
+                'pfiDesignId': int,
+                'slitOffset': float,
+                }
+        for name in ("raw", "pfsArm", "pfsMerged"):
+            self.mappings[name].keyDict.update(keys)
+
         # The order of these defineFilter commands matters as their IDs are used to generate at least some
         # object IDs (e.g. on coadds) and changing the order will invalidate old objIDs
 
@@ -238,60 +258,6 @@ class PfsMapper(CameraMapper):
     def bypass_ccdExposureId(self, datasetType, pythonType, location, dataId):
         return self._computeCcdExposureId(dataId)
 
-    def bypass_pfsConfig(self, datasetType, pythonType, location, dataId):
-        from pfs.datamodel.pfsConfig import PfsConfig
-
-        pfsConfigId = dataId.get('pfsConfigId', 0x0)
-
-        for pathName in location.locationList:
-            pathName = os.path.join(location.storage.root, pathName)
-            dirName = os.path.dirname(pathName)
-
-            try:
-                pfsConfig = PfsConfig.read(pfsConfigId, dirName=dirName)
-            except Exception as e:
-                msg = str(e)
-                if isinstance(e, IOError):
-                    msg = msg.replace(r"[Errno 2] ", "")  # it isn't an error, just a warning
-            else:
-                return pfsConfig
-
-        if pfsConfigId == 0x0:
-            self.log.warn("%s" % (msg,))
-            self.log.debug("%s" % (dirName,))
-            self.log.info("Creating dummy PfsConfig for pfsConfigId == 0x%x" % (pfsConfigId))
-
-            from pfs.datamodel.pfsConfig import PfsConfig
-            return makeDummyPfsConfig(0, pfsConfigId)
-
-        raise RuntimeError("Unable to read pfsConfig for %s: %s" % (dataId.items(), e))
-
-    #
-    # This is disabled due to butler changes that mean it is silently ignored
-    # when the file requested doesn't exist.  Instead we do disgusting things
-    # parsing filenames in PfsArmIO.readFits
-    #
-    def XXXbypass_pfsArm(self, datasetType, pythonType, location, dataId):
-        from pfs.datamodel.pfsArm import PfsArm
-
-        for pathName in location.locationList:
-            pathName = os.path.join(location.storage.root, pathName)
-            dirName = os.path.dirname(pathName)
-
-            arm = self._getRegistryValue(dataId, "arm")
-            spectrograph = self._getRegistryValue(dataId, "spectrograph")
-            visit = self._getRegistryValue(dataId, "visit")
-
-            pfsArm = PfsArm(visit, spectrograph, arm)
-            try:
-                pfsArm.read(dirName=dirName, setPfsConfig=False)
-            except Exception as e:
-                pass
-            else:
-                return pfsArm
-
-        raise RuntimeError("Unable to read pfsArm for %s: %s" % (dataId.items(), e))
-
     def getDetectorId(self, dataId):
         return self._extractDetectorId(dataId)
 
@@ -317,62 +283,3 @@ class PfsMapper(CameraMapper):
 
     def std_detectormap(self, item, dataId):
         return item
-
-
-def assemble_pfsArm(dataId, componentInfo, cls):
-    """Called by the butler to construct the composite type "pfsArm"
-
-    This returns a `pfs.datamodel.PfsArm` instead of a
-    `pfs.drp.stella.SpectrumSet`, as that includes the ``pfsConfig``.
-    The result can be converted to a ``SpectrumSet`` by:
-
-        spectra = pfs.drp.stella.SpectrumSet.fromPfsArm(pfsArm)
-
-    Parameters
-    ----------
-    dataId : `lsst.daf.persistence.dataId.DataId`
-        the data ID
-    componentInfo : `dict`
-        dict containing the components, as defined by the composite definition in the mapper policy
-    cls : 'object'
-        unused
-
-    Returns
-    -------
-    pfsArm : `pfs.datamodel.PfsArm`
-        The assembled pfsArm.
-    """
-    pfsArm = componentInfo['spectra'].obj.toPfsArm(dataId)
-    pfsArm.pfsConfig = componentInfo['pfsConfig'].obj
-
-    return pfsArm
-
-
-def disassemble_pfsArm(dataId, obj, componentInfo):
-    """Called by the butler to deconstruct the composite type "pfsArm"
-    """
-    componentInfo['spectra'].obj = obj
-    # Dummy PfsConfig; this has never worked well, and is in need of a redesign
-    componentInfo['pfsConfig'].obj = makeDummyPfsConfig(len(obj), expId=dataId["visit"])
-
-
-def makeDummyPfsConfig(numFibers, pfiDesignId=0x0, expId=0):
-    """Create a dummy PfsConfig
-
-    The current pipeline creates these out of thin air, whereas in reality
-    they will be provided for us along with the raw exposures; so this is
-    just a placeholder until we can make things more realistic.
-    """
-    from pfs.drp.stella.pfsConfigIO import PfsConfigIO
-
-    fiberId = np.arange(numFibers, dtype=int)
-    floats = np.zeros(numFibers, dtype=float)
-    idents = np.ones(numFibers, dtype=int)
-    patches = ["x"]*numFibers
-    mags = np.zeros((numFibers, 0), dtype=float)
-    filters = [[]]*numFibers
-    pairs = np.zeros((numFibers, 2), dtype=float)
-
-    # Dummy PfsConfig; this has never worked well, and is in need of a redesign
-    return PfsConfigIO(0x0, expId, 0.0, 0.0, fiberId, idents, patches, floats, floats,
-                       idents, idents, idents, mags, filters, pairs, pairs)
