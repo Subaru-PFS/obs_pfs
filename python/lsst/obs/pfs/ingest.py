@@ -3,21 +3,25 @@ import re
 
 import lsst.afw.image as afwImage
 from lsst.obs.pfs.pfsMapper import PfsMapper
-from lsst.pipe.tasks.ingest import ParseTask, ParseConfig
+from lsst.pipe.tasks.ingest import ParseTask, ParseConfig, IngestTask, IngestConfig
 from lsst.pipe.tasks.ingestCalibs import CalibsParseTask
 
-__all__ = ["PfsParseConfig", "PfsParseTask"]
+from pfs.datamodel.pfsConfig import PfsConfig
+
+__all__ = ["PfsParseConfig", "PfsParseTask", "PfsIngestTask"]
 
 
 class PfsParseConfig(ParseConfig):
+    """Configuration for PfsParseTask"""
     def setDefaults(self):
         ParseConfig.setDefaults(self)
         self.translators["field"] = "translate_field"
-        self.translators["pfsConfigId"] = "translate_pfsConfigId"
+        self.translators["pfiDesignId"] = "translate_pfiDesignId"
         self.translators["slitOffset"] = "translate_slitOffset"
 
 
 class PfsParseTask(ParseTask):
+    """Parse a PFS FITS image to determine butler keyword-value pairs"""
     ConfigClass = PfsParseConfig
     nSpectrograph = 4  # Number of spectrographs
     arms = ['b', 'r', 'n', 'm']  # Possible spectrograph arm names
@@ -48,17 +52,17 @@ class PfsParseTask(ParseTask):
         matches = re.search(r"^PF(%s)(%s)-?(\d{6})(\d)(\d)\.fits$" % (self.sites, self.categories), name)
         if not matches:
             raise RuntimeError("Unable to interpret filename: %s" % filename)
-        site, category, visit, spectrograph, armNum = matches.groups()
+        site, category, expId, spectrograph, armNum = matches.groups()
 
         armNum = int(armNum)
         spectrograph = int(spectrograph)
-        visit = int(visit, base=10)
+        expId = int(expId, base=10)
 
         # spectrograph 2 was called 9 at JHU, at least in the early days, so if we find
         # a spectrograph 9 we re-assign its number to 2
         if spectrograph == 9:
             spectrograph = 2
-            self.log.info("Visit %06d has spectrograph == 9" % visit)
+            self.log.info("Visit %06d has spectrograph == 9" % expId)
 
         if spectrograph < 1 or spectrograph > self.nSpectrograph + 1:
             raise RuntimeError('spectrograph (=%d) out of bounds 1..%d' % (spectrograph, self.nSpectrograph))
@@ -69,11 +73,11 @@ class PfsParseTask(ParseTask):
             raise IndexError('armNum=%d out of bounds 1..%d' % (armNum, max(self.arms.keys()))) from exc
 
         ccd = PfsMapper.computeDetectorId(spectrograph, arm)
-        self.log.debug('site = <%s>, category = <%s>, visit = <%s>, spectrograph = <%d>, armNum = <%d>, '
+        self.log.debug('site = <%s>, category = <%s>, expId = <%s>, spectrograph = <%d>, armNum = <%d>, '
                        'arm = <%s>, ccd = <%d>' %
-                       (site, category, visit, spectrograph, armNum, arm, ccd))
+                       (site, category, expId, spectrograph, armNum, arm, ccd))
 
-        info = dict(site=site, category=category, visit=visit, filter=arm, arm=arm,
+        info = dict(site=site, category=category, expId=expId, visit=expId, filter=arm, arm=arm,
                     spectrograph=spectrograph, ccd=ccd)
 
         if os.path.exists(filename):
@@ -93,12 +97,12 @@ class PfsParseTask(ParseTask):
         self.log.debug('PfsParseTask.translate_field: field = %s' % field)
         return re.sub(r'\W', '_', field).upper()
 
-    def translate_pfsConfigId(self, md):
-        """Get 'pfsConfigId' from metadata
+    def translate_pfiDesignId(self, md):
+        """Get 'pfiDesignId' from metadata
 
         Fall back to the value to 0x0 if it's not present.
         """
-        key = "PFSCONFIGID"
+        key = "W_PFDSGN"
         if md.exists(key):
             return md.get(key)
         return 0x0
@@ -119,6 +123,7 @@ class PfsParseTask(ParseTask):
 
 
 class PfsCalibsParseTask(CalibsParseTask):
+    """Parse a PFS calib image for butler keyword-value pairs"""
     ConfigClass = PfsParseConfig
     calibTypes = ["Bias", "Dark", "DetectorMap", "FiberTrace", "FiberFlat"]
 
@@ -144,3 +149,94 @@ class PfsCalibsParseTask(CalibsParseTask):
             return int(self._translateFromCalibId("visit0", md))
         except Exception:
             return 0
+
+
+class PfsIngestConfig(IngestConfig):
+    """Configuration for PfsIngestTask"""
+    def setDefaults(self):
+        super().setDefaults()
+        self.parse.retarget(PfsParseTask)
+        self.register.columns = {'site': 'text',  # J: JHU, L: LAM, X: Subaru offline, I: IPMU, A: ASIAA,
+                                                  # S: Summit, P: Princeton, F: simulation (fake)
+                                 'category': 'text',  # A: science, B: NTR, C: Meterology, D: HG
+                                 'field': 'text',  # Observation name
+                                 'expId': 'int',  # Exposure identifier; better alias for "visit"
+                                 'visit': 'int',  # Required because hard-coded in LSST's CameraMapper
+                                 'ccd': 'int',  # [0-11]
+                                 'filter': 'text',  # b: blue, r: red, n: nir, m: medium resolution red
+                                 'arm': 'text',  # b: blue, r: red, n: nir, m: medium resolution red
+                                 'spectrograph': 'int',  # Spectrograph module: 1-4
+                                 'dateObs': 'text',  # Date of observation
+                                 'expTime': 'double',  # Exposure time
+                                 'dataType': 'text',  # Type of exposure
+                                 'taiObs': 'text',  # Time of observation
+                                 'pfiDesignId': 'int',  # Configuration of the top-end
+                                 'slitOffset': 'double',  # Horizontal slit offset
+                                 }
+        self.register.unique = ['site', 'category', 'expId', 'visit', 'filter', 'arm', 'spectrograph',
+                                'pfiDesignId']
+        self.register.visit = ['expId', 'visit', 'field', 'filter', 'spectrograph', 'arm', 'dateObs',
+                               'taiObs', 'pfiDesignId', 'slitOffset']
+
+        self.parse.translation = {'dataType': 'IMAGETYP',
+                                  'expTime': 'EXPTIME',
+                                  'dateObs': 'DATE-OBS',
+                                  'taiObs': 'DATE-OBS',
+                                  }
+        self.parse.defaults = {'ccdTemp': "0",  # Added in commissioning run 3
+                               }
+        self.parse.translators.update(field='translate_field',
+                                      dateObs='translate_date',
+                                      taiObs='translate_date')
+
+
+class PfsIngestTask(IngestTask):
+    """Ingest PFS images and configs into the data repository"""
+    ConfigClass = PfsIngestConfig
+
+    def ingestPfsConfig(self, dirName, fileInfo, args):
+        """Ingest a PfsConfig file
+
+        Parameters
+        ----------
+        dirName : `str`
+            Directory in which the file resides.
+        fileInfo : `dict`
+            Key-value pairs defining the file.
+        args : `argparse.Namespace`
+            Parsed command-line arguments.
+        """
+        fileName = PfsConfig.fileNameFormat % (fileInfo["pfiDesignId"], fileInfo["expId"])
+        infile = os.path.join(dirName, fileName)
+        outfile = args.butler.get("pfsConfig_filename", fileInfo)[0]
+        if not os.path.exists(outfile):
+            self.ingest(infile, outfile, mode=args.mode, dryrun=args.dryrun)
+
+    def runFile(self, infile, registry, args):
+        """Examine and ingest a single PFS image file
+
+        Also ingests the required PfsConfig file, which should be in the same
+        directory as the raw image file.
+
+        Parameters
+        ----------
+        infile : `str`
+            Name of file to process
+        registry : `lsst.pipe.tasks.ingest.RegistryContext` or `None`
+            Registry into which to record file info.
+        args : `argparse.Namespace`
+            Parsed command-line arguments.
+
+        Returns
+        -------
+        hduInfoList : `list` of `dict`
+            Information from each of the HDUs.
+        """
+        try:
+            hduInfoList = super().runFile(infile, registry, args)
+            self.ingestPfsConfig(os.path.dirname(infile), hduInfoList[0], args)
+        except Exception as exc:
+            import traceback
+            traceback.print_exc()
+            raise
+        return hduInfoList
