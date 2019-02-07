@@ -6,7 +6,7 @@ from lsst.obs.pfs.pfsMapper import PfsMapper
 from lsst.pipe.tasks.ingest import ParseTask, ParseConfig, IngestTask, IngestConfig
 from lsst.pipe.tasks.ingestCalibs import CalibsParseTask
 
-from pfs.datamodel.pfsConfig import PfsConfig
+from pfs.datamodel.pfsConfig import PfsConfig, PfiDesign
 
 __all__ = ["PfsParseConfig", "PfsParseTask", "PfsIngestTask"]
 
@@ -206,11 +206,33 @@ class PfsIngestTask(IngestTask):
         args : `argparse.Namespace`
             Parsed command-line arguments.
         """
-        fileName = PfsConfig.fileNameFormat % (fileInfo["pfiDesignId"], fileInfo["expId"])
-        infile = os.path.join(dirName, fileName)
         outfile = args.butler.get("pfsConfig_filename", fileInfo)[0]
-        if not os.path.exists(outfile):
+        if os.path.exists(outfile):
+            # Don't clobber one that got put there when we ingested a different spectrograph,arm
+            return
+
+        pfiDesignId = fileInfo["pfiDesignId"]
+        expId = fileInfo["expId"]
+        fileName = PfsConfig.fileNameFormat % (pfiDesignId, expId)
+        infile = os.path.join(dirName, fileName)
+        if os.path.exists(infile):
             self.ingest(infile, outfile, mode=args.mode, dryrun=args.dryrun)
+            return
+
+        # Check for a PfiDesign, and use that instead
+        designName = os.path.join(dirName, PfiDesign.fileNameFormat % (pfiDesignId,))
+        if not os.path.exists(designName):
+            raise RuntimeError("Unable to find PfsConfig or PfiDesign for pfiDesignId=0x%016x" %
+                               (pfiDesignId,))
+        design = PfiDesign.read(pfiDesignId, dirName)
+        keywords = ("pfiDesignId", "raBoresight", "decBoresight",
+                    "fiberId", "tract", "patch", "ra", "dec", "catId", "objId",
+                    "targetType", "fiberMag", "filterNames", "pfiNominal")
+        kwargs = {kk: getattr(design, kk) for kk in keywords}
+        kwargs["expId"] = expId
+        kwargs["pfiCenter"] = kwargs["pfiNominal"]
+        PfsConfig(**kwargs).write(dirName)
+        self.ingest(infile, outfile, mode=args.mode, dryrun=args.dryrun)
 
     def runFile(self, infile, registry, args):
         """Examine and ingest a single PFS image file
