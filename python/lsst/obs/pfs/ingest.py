@@ -151,48 +151,64 @@ class PfsCalibsParseTask(CalibsParseTask):
             return 0
 
 
+def setIngestConfig(config):
+    """Set ingest configurations for PFS
+
+    This is common code for ``PfsIngestConfig.setDefaults`` (used by
+    ``ingestPfsImages.py``) and for the configuration overrides for
+    ``ingestImages.py`` (in ``config/ingest.py``).
+
+    Parameters
+    ----------
+    config : `lsst.pipe.tasks.IngestConfig`
+        Configuration for ``IngestTask``.
+    """
+    config.parse.retarget(PfsParseTask)
+    config.register.columns = {'site': 'text',  # J: JHU, L: LAM, X: Subaru offline, I: IPMU, A: ASIAA,
+                                                # S: Summit, P: Princeton, F: simulation (fake)
+                               'category': 'text',  # A: science, B: NTR, C: Meterology, D: HG
+                               'field': 'text',  # Observation name
+                               'expId': 'int',  # Exposure identifier; better alias for "visit"
+                               'visit': 'int',  # Required because hard-coded in LSST's CameraMapper
+                               'ccd': 'int',  # [0-11]
+                               'filter': 'text',  # b: blue, r: red, n: nir, m: medium resolution red
+                               'arm': 'text',  # b: blue, r: red, n: nir, m: medium resolution red
+                               'spectrograph': 'int',  # Spectrograph module: 1-4
+                               'dateObs': 'text',  # Date of observation
+                               'expTime': 'double',  # Exposure time
+                               'dataType': 'text',  # Type of exposure
+                               'taiObs': 'text',  # Time of observation
+                               'pfiDesignId': 'int',  # Configuration of the top-end
+                               'slitOffset': 'double',  # Horizontal slit offset
+                               }
+    config.register.unique = ['site', 'category', 'expId', 'visit', 'filter', 'arm', 'spectrograph',
+                              'pfiDesignId']
+    config.register.visit = ['expId', 'visit', 'field', 'filter', 'spectrograph', 'arm', 'dateObs',
+                             'taiObs', 'pfiDesignId', 'slitOffset']
+
+    config.parse.translation = {'dataType': 'IMAGETYP',
+                                'expTime': 'EXPTIME',
+                                'dateObs': 'DATE-OBS',
+                                'taiObs': 'DATE-OBS',
+                                }
+    config.parse.defaults = {'ccdTemp': "0",  # Added in commissioning run 3
+                             }
+    config.parse.translators.update(field='translate_field',
+                                    dateObs='translate_date',
+                                    taiObs='translate_date')
+
+
 class PfsIngestConfig(IngestConfig):
     """Configuration for PfsIngestTask"""
     def setDefaults(self):
         super().setDefaults()
-        self.parse.retarget(PfsParseTask)
-        self.register.columns = {'site': 'text',  # J: JHU, L: LAM, X: Subaru offline, I: IPMU, A: ASIAA,
-                                                  # S: Summit, P: Princeton, F: simulation (fake)
-                                 'category': 'text',  # A: science, B: NTR, C: Meterology, D: HG
-                                 'field': 'text',  # Observation name
-                                 'expId': 'int',  # Exposure identifier; better alias for "visit"
-                                 'visit': 'int',  # Required because hard-coded in LSST's CameraMapper
-                                 'ccd': 'int',  # [0-11]
-                                 'filter': 'text',  # b: blue, r: red, n: nir, m: medium resolution red
-                                 'arm': 'text',  # b: blue, r: red, n: nir, m: medium resolution red
-                                 'spectrograph': 'int',  # Spectrograph module: 1-4
-                                 'dateObs': 'text',  # Date of observation
-                                 'expTime': 'double',  # Exposure time
-                                 'dataType': 'text',  # Type of exposure
-                                 'taiObs': 'text',  # Time of observation
-                                 'pfiDesignId': 'int',  # Configuration of the top-end
-                                 'slitOffset': 'double',  # Horizontal slit offset
-                                 }
-        self.register.unique = ['site', 'category', 'expId', 'visit', 'filter', 'arm', 'spectrograph',
-                                'pfiDesignId']
-        self.register.visit = ['expId', 'visit', 'field', 'filter', 'spectrograph', 'arm', 'dateObs',
-                               'taiObs', 'pfiDesignId', 'slitOffset']
-
-        self.parse.translation = {'dataType': 'IMAGETYP',
-                                  'expTime': 'EXPTIME',
-                                  'dateObs': 'DATE-OBS',
-                                  'taiObs': 'DATE-OBS',
-                                  }
-        self.parse.defaults = {'ccdTemp': "0",  # Added in commissioning run 3
-                               }
-        self.parse.translators.update(field='translate_field',
-                                      dateObs='translate_date',
-                                      taiObs='translate_date')
+        setIngestConfig(self)
 
 
 class PfsIngestTask(IngestTask):
     """Ingest PFS images and configs into the data repository"""
     ConfigClass = PfsIngestConfig
+    _DefaultName = "ingestPfs"
 
     def ingestPfsConfig(self, dirName, fileInfo, args):
         """Ingest a PfsConfig file
