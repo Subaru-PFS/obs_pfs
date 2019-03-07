@@ -187,8 +187,8 @@ datasets:
 
   fluxCal:
     template: 'fluxCal/%(dateObs)s/v%(expId)07d/fluxCal-%(expId)06d-%(arm)s%(spectrograph)d.fits'
-    python: pfs.drp.stella.fitFocalPlane.ConstantFocalPlaneFunction
-    persistable: ConstantFocalPlaneFunction
+    python: pfs.drp.stella.fitFocalPlane.FocalPlaneFunction
+    persistable: FocalPlaneFunction
     storage: FitsCatalogStorage
     tables:
     - raw
