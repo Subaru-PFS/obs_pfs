@@ -44,9 +44,15 @@ calibrations:
     storage: FitsStorage
     level: Ccd
     tables: bias
-    columns: taiObs
+    columns:
+    - arm
+    - spectrograph
+    - taiObs
     reference: raw_visit
-    refCols: visit
+    refCols:
+    - visit
+    - arm
+    - spectrograph
     validRange: true
     validStartName: validStart
     validEndName: validEnd
@@ -57,9 +63,15 @@ calibrations:
     storage: FitsStorage
     level: Ccd
     tables: dark
-    columns: taiObs
+    columns:
+    - arm
+    - spectrograph
+    - taiObs
     reference: raw_visit
-    refCols: visit
+    refCols:
+    - visit
+    - arm
+    - spectrograph
     validRange: true
     validStartName: validStart
     validEndName: validEnd
@@ -70,9 +82,15 @@ calibrations:
     storage: FitsStorage
     level: Ccd
     tables: flat
-    columns: taiObs
+    columns:
+    - arm
+    - spectrograph
+    - taiObs
     reference: raw_visit
-    refCols: visit
+    refCols:
+    - visit
+    - arm
+    - spectrograph
     validRange: true
     validStartName: validStart
     validEndName: validEnd
@@ -83,9 +101,15 @@ calibrations:
     storage: FitsCatalogStorage
     level: Ccd
     tables: fiberTrace
-    columns: taiObs
+    columns:
+    - arm
+    - spectrograph
+    - taiObs
     reference: raw_visit
-    refCols: visit
+    refCols:
+    - visit
+    - arm
+    - spectrograph
     validRange: true
     validStartName: validStart
     validEndName: validEnd
@@ -96,9 +120,15 @@ calibrations:
     storage: FitsCatalogStorage
     level: Ccd
     tables: detectorMap
-    columns: taiObs
+    columns:
+    - arm
+    - spectrograph
+    - taiObs
     reference: raw_visit
-    refCols: visit
+    refCols:
+    - visit
+    - arm
+    - spectrograph
     validRange: true
     validStartName: validStart
     validEndName: validEnd
@@ -157,8 +187,8 @@ datasets:
 
   fluxCal:
     template: 'fluxCal/%(dateObs)s/v%(expId)07d/fluxCal-%(expId)06d-%(arm)s%(spectrograph)d.fits'
-    python: pfs.drp.stella.fitFocalPlane.ConstantFocalPlaneFunction
-    persistable: ConstantFocalPlaneFunction
+    python: pfs.drp.stella.fitFocalPlane.FocalPlaneFunction
+    persistable: FocalPlaneFunction
     storage: FitsCatalogStorage
     tables:
     - raw
