@@ -158,7 +158,7 @@ datasets:
 
   pfsConfig:
     # N.b. template is overridden by datamodel
-    template: 'pfsConfig/%(dateObs)s/pfsConfig-0x%(pfiDesignId)016x-%(expId)06d.fits'
+    template: 'pfsConfig/%(dateObs)s/pfsConfig-0x%(pfsDesignId)016x-%(expId)06d.fits'
     python: pfs.drp.stella.PfsConfigIO
     persistable: PfsConfigIO
     storage: FitsCatalogStorage
