@@ -7,7 +7,7 @@ from lsst.pipe.tasks.ingest import ParseTask, ParseConfig, IngestTask, IngestCon
 from lsst.pipe.tasks.ingestCalibs import CalibsParseTask
 from lsst.pex.config import Field
 
-from pfs.datamodel.pfsConfig import PfsConfig, PfiDesign
+from pfs.datamodel.pfsConfig import PfsConfig, PfsDesign
 
 __all__ = ["PfsParseConfig", "PfsParseTask", "PfsIngestTask"]
 
@@ -19,7 +19,7 @@ class PfsParseConfig(ParseConfig):
     def setDefaults(self):
         ParseConfig.setDefaults(self)
         self.translators["field"] = "translate_field"
-        self.translators["pfiDesignId"] = "translate_pfiDesignId"
+        self.translators["pfsDesignId"] = "translate_pfsDesignId"
         self.translators["slitOffset"] = "translate_slitOffset"
 
 
@@ -100,8 +100,8 @@ class PfsParseTask(ParseTask):
         self.log.debug('PfsParseTask.translate_field: field = %s' % field)
         return re.sub(r'\W', '_', field).upper()
 
-    def translate_pfiDesignId(self, md):
-        """Get 'pfiDesignId' from metadata
+    def translate_pfsDesignId(self, md):
+        """Get 'pfsDesignId' from metadata
 
         Fall back to the value to 0x0 if it's not present.
         """
@@ -184,13 +184,13 @@ def setIngestConfig(config):
                                'expTime': 'double',  # Exposure time
                                'dataType': 'text',  # Type of exposure
                                'taiObs': 'text',  # Time of observation
-                               'pfiDesignId': 'int',  # Configuration of the top-end
+                               'pfsDesignId': 'int',  # Configuration of the top-end
                                'slitOffset': 'double',  # Horizontal slit offset
                                }
     config.register.unique = ['site', 'category', 'expId', 'visit', 'filter', 'arm', 'spectrograph',
-                              'pfiDesignId']
+                              'pfsDesignId']
     config.register.visit = ['expId', 'visit', 'field', 'filter', 'spectrograph', 'arm', 'dateObs',
-                             'taiObs', 'pfiDesignId', 'slitOffset']
+                             'taiObs', 'pfsDesignId', 'slitOffset']
 
     config.parse.translation = {'dataType': 'IMAGETYP',
                                 'expTime': 'EXPTIME',
@@ -245,21 +245,21 @@ class PfsIngestTask(IngestTask):
             # Don't clobber one that got put there when we ingested a different spectrograph,arm
             return
 
-        pfiDesignId = fileInfo["pfiDesignId"]
+        pfsDesignId = fileInfo["pfsDesignId"]
         expId = fileInfo["expId"]
-        fileName = PfsConfig.fileNameFormat % (pfiDesignId, expId)
+        fileName = PfsConfig.fileNameFormat % (pfsDesignId, expId)
         infile = os.path.join(dirName, fileName)
         if os.path.exists(infile):
             self.ingest(infile, outfile, mode=args.mode, dryrun=args.dryrun)
             return
 
-        # Check for a PfiDesign, and use that instead
-        designName = os.path.join(dirName, PfiDesign.fileNameFormat % (pfiDesignId,))
+        # Check for a PfsDesign, and use that instead
+        designName = os.path.join(dirName, PfsDesign.fileNameFormat % (pfsDesignId,))
         if not os.path.exists(designName):
-            raise RuntimeError("Unable to find PfsConfig or PfiDesign for pfiDesignId=0x%016x" %
-                               (pfiDesignId,))
-        design = PfiDesign.read(pfiDesignId, dirName)
-        keywords = ("pfiDesignId", "raBoresight", "decBoresight",
+            raise RuntimeError("Unable to find PfsConfig or PfsDesign for pfsDesignId=0x%016x" %
+                               (pfsDesignId,))
+        design = PfsDesign.read(pfsDesignId, dirName)
+        keywords = ("pfsDesignId", "raBoresight", "decBoresight",
                     "fiberId", "tract", "patch", "ra", "dec", "catId", "objId",
                     "targetType", "fiberMag", "filterNames", "pfiNominal")
         kwargs = {kk: getattr(design, kk) for kk in keywords}
