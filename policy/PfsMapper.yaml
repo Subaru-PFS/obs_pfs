@@ -30,11 +30,11 @@ defaultSubLevels:
 
 exposures:
   raw:
-    template: '%(dateObs)s/PF%(site)s%(category)s%(expId)06d%(arm)s%(spectrograph)1d.fits'
+    template: '%(dateObs)s/PF%(site)s%(category)s%(visit)06d%(arm)s%(spectrograph)1d.fits'
   postISRCCD:
-    template: 'postIsrCcd/%(dateObs)s/v%(expId)07d/postIsrCcd-%(site)s%(category)s%(expId)06d%(arm)s%(spectrograph)1d.fits'
+    template: 'postIsrCcd/%(dateObs)s/v%(visit)07d/postIsrCcd-%(site)s%(category)s%(visit)06d%(arm)s%(spectrograph)1d.fits'
   calexp:
-    template: 'calExp/%(dateObs)s/v%(expId)07d/calExp-%(site)s%(category)s%(expId)06d%(arm)s%(spectrograph)1d.fits'
+    template: 'calExp/%(dateObs)s/v%(visit)07d/calExp-%(site)s%(category)s%(visit)06d%(arm)s%(spectrograph)1d.fits'
 
 calibrations:
   bias:
@@ -137,7 +137,7 @@ calibrations:
 datasets:
 
   pfsArm:
-    template: 'pfsArm/%(dateObs)s/v%(expId)07d/pfsArm-%(expId)06d-%(arm)s%(spectrograph)d.fits'
+    template: 'pfsArm/%(dateObs)s/v%(visit)07d/pfsArm-%(visit)06d-%(arm)s%(spectrograph)d.fits'
     python: pfs.datamodel.drp.PfsArm
     persistable: PfsArm
     storage: FitsCatalogStorage
@@ -147,7 +147,7 @@ datasets:
     - raw_visit
 
   pfsMerged:
-    template: 'pfsMerged/%(dateObs)s/v%(expId)07d/pfsMerged-%(expId)06d.fits'
+    template: 'pfsMerged/%(dateObs)s/v%(visit)07d/pfsMerged-%(visit)06d.fits'
     python: pfs.datamodel.drp.PfsMerged
     persistable: PfsMerged
     storage: FitsCatalogStorage
@@ -158,7 +158,7 @@ datasets:
 
   pfsConfig:
     # N.b. template is overridden by datamodel
-    template: 'pfsConfig/%(dateObs)s/pfsConfig-0x%(pfsDesignId)016x-%(expId)06d.fits'
+    template: 'pfsConfig/%(dateObs)s/pfsConfig-0x%(pfsDesignId)016x-%(visit)06d.fits'
     python: pfs.drp.stella.PfsConfigIO
     persistable: PfsConfigIO
     storage: FitsCatalogStorage
@@ -167,7 +167,7 @@ datasets:
     - raw_visit
 
   sky2d:
-    template: 'sky2d/%(dateObs)s/v%(expId)07d/sky2d-%(expId)06d-%(arm)s%(spectrograph)d.fits'
+    template: 'sky2d/%(dateObs)s/v%(visit)07d/sky2d-%(visit)06d-%(arm)s%(spectrograph)d.fits'
     python: pfs.drp.stella.subtractSky1d.SubtractSky1DSolution
     persistable: SubtractSky1DSolution
     storage: FitsCatalogStorage
@@ -186,7 +186,7 @@ datasets:
     - raw_visit
 
   fluxCal:
-    template: 'fluxCal/%(dateObs)s/v%(expId)07d/fluxCal-%(expId)06d-%(arm)s%(spectrograph)d.fits'
+    template: 'fluxCal/%(dateObs)s/v%(visit)07d/fluxCal-%(visit)06d-%(arm)s%(spectrograph)d.fits'
     python: pfs.drp.stella.fitFocalPlane.FocalPlaneFunction
     persistable: FocalPlaneFunction
     storage: FitsCatalogStorage
@@ -195,7 +195,7 @@ datasets:
     - raw_visit
 
   pfsObject:
-    template: 'pfsObject/%(catId)03d/%(tract)05d/%(patch)s/pfsObject-%(catId)03d-%(tract)05d-%(patch)s-%(objId)08x-%(expId)06d.fits'
+    template: 'pfsObject/%(catId)03d/%(tract)05d/%(patch)s/pfsObject-%(catId)03d-%(tract)05d-%(patch)s-%(objId)08x-%(visit)06d.fits'
     python: pfs.datamodel.drp.PfsObject
     persistable: PfsObject
     storage: FitsCatalogStorage

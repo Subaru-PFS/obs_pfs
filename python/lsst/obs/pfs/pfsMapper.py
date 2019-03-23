@@ -78,7 +78,6 @@ class PfsMapper(CameraMapper):
         keys = {'site': str,
                 'category': str,
                 'field': str,
-                'expId': int,
                 'visit': int,
                 'ccd': int,
                 'filter': str,
