@@ -5,6 +5,7 @@ import lsst.afw.image as afwImage
 from lsst.obs.pfs.pfsMapper import PfsMapper
 from lsst.pipe.tasks.ingest import ParseTask, ParseConfig, IngestTask, IngestConfig
 from lsst.pipe.tasks.ingestCalibs import CalibsParseTask
+from lsst.pex.config import Field
 
 from pfs.datamodel.pfsConfig import PfsConfig, PfiDesign
 
@@ -13,6 +14,8 @@ __all__ = ["PfsParseConfig", "PfsParseTask", "PfsIngestTask"]
 
 class PfsParseConfig(ParseConfig):
     """Configuration for PfsParseTask"""
+    pfsDesignId = Field(dtype=int, default=0x0, doc="Default value for pfsDesignId")
+
     def setDefaults(self):
         ParseConfig.setDefaults(self)
         self.translators["field"] = "translate_field"
@@ -104,8 +107,11 @@ class PfsParseTask(ParseTask):
         """
         key = "W_PFDSGN"
         if md.exists(key):
-            return md.get(key)
-        return 0x0
+            value = md.get(key)
+            if isinstance(value, int):
+                return value
+        self.log.warn("No value set for pfsDesignId; using default (0x%016x)" % (self.config.pfsDesignId,))
+        return self.config.pfsDesignId
 
     def translate_slitOffset(self, md):
         """Get slitOffset from header metadata
