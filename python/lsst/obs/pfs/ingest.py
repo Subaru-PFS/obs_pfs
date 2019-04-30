@@ -3,7 +3,7 @@ import re
 
 import lsst.afw.image as afwImage
 from lsst.obs.pfs.pfsMapper import PfsMapper
-from lsst.pipe.tasks.ingest import ParseTask, ParseConfig, IngestTask, IngestConfig
+from lsst.pipe.tasks.ingest import ParseTask, ParseConfig, IngestTask, IngestConfig, IngestArgumentParser
 from lsst.pipe.tasks.ingestCalibs import CalibsParseTask
 from lsst.pex.config import Field
 
@@ -172,25 +172,25 @@ def setIngestConfig(config):
     config.parse.retarget(PfsParseTask)
     config.register.columns = {'site': 'text',  # J: JHU, L: LAM, X: Subaru offline, I: IPMU, A: ASIAA,
                                                 # S: Summit, P: Princeton, F: simulation (fake)
-                                'category': 'text',  # A: science, B: NTR, C: Meterology, D: HG
-                                'field': 'text',  # Observation name
-                                'expId': 'int',  # Exposure identifier; better alias for "visit"
-                                'visit': 'int',  # Required because hard-coded in LSST's CameraMapper
-                                'ccd': 'int',  # [0-11]
-                                'filter': 'text',  # b: blue, r: red, n: nir, m: medium resolution red
-                                'arm': 'text',  # b: blue, r: red, n: nir, m: medium resolution red
-                                'spectrograph': 'int',  # Spectrograph module: 1-4
-                                'dateObs': 'text',  # Date of observation
-                                'expTime': 'double',  # Exposure time
-                                'dataType': 'text',  # Type of exposure
-                                'taiObs': 'text',  # Time of observation
-                                'pfiDesignId': 'int',  # Configuration of the top-end
-                                'slitOffset': 'double',  # Horizontal slit offset
-                                }
+                               'category': 'text',  # A: science, B: NTR, C: Meterology, D: HG
+                               'field': 'text',  # Observation name
+                               'expId': 'int',  # Exposure identifier; better alias for "visit"
+                               'visit': 'int',  # Required because hard-coded in LSST's CameraMapper
+                               'ccd': 'int',  # [0-11]
+                               'filter': 'text',  # b: blue, r: red, n: nir, m: medium resolution red
+                               'arm': 'text',  # b: blue, r: red, n: nir, m: medium resolution red
+                               'spectrograph': 'int',  # Spectrograph module: 1-4
+                               'dateObs': 'text',  # Date of observation
+                               'expTime': 'double',  # Exposure time
+                               'dataType': 'text',  # Type of exposure
+                               'taiObs': 'text',  # Time of observation
+                               'pfiDesignId': 'int',  # Configuration of the top-end
+                               'slitOffset': 'double',  # Horizontal slit offset
+                               }
     config.register.unique = ['site', 'category', 'expId', 'visit', 'filter', 'arm', 'spectrograph',
-                            'pfiDesignId']
+                              'pfiDesignId']
     config.register.visit = ['expId', 'visit', 'field', 'filter', 'spectrograph', 'arm', 'dateObs',
-                            'taiObs', 'pfiDesignId', 'slitOffset']
+                             'taiObs', 'pfiDesignId', 'slitOffset']
 
     config.parse.translation = {'dataType': 'IMAGETYP',
                                 'expTime': 'EXPTIME',
@@ -198,10 +198,21 @@ def setIngestConfig(config):
                                 'taiObs': 'DATE-OBS',
                                 }
     config.parse.defaults = {'ccdTemp': "0",  # Added in commissioning run 3
-                            }
+                             }
     config.parse.translators.update(field='translate_field',
                                     dateObs='translate_date',
                                     taiObs='translate_date')
+
+
+class PfsIngestArgumentParser(IngestArgumentParser):
+    """ArgumentParser for PFS ingestion
+
+    Sets PFS-specific command-line arguments.
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.add_argument("--pfsConfigDir",
+                          help="Directory with pfsConfig/pfsDesign files (default: with images)")
 
 
 class PfsIngestConfig(IngestConfig):
@@ -214,6 +225,7 @@ class PfsIngestConfig(IngestConfig):
 class PfsIngestTask(IngestTask):
     """Ingest PFS images and configs into the data repository"""
     ConfigClass = PfsIngestConfig
+    ArgumentParser = PfsIngestArgumentParser
     _DefaultName = "ingestPfs"
 
     def ingestPfsConfig(self, dirName, fileInfo, args):
@@ -278,7 +290,8 @@ class PfsIngestTask(IngestTask):
         """
         try:
             hduInfoList = super().runFile(infile, registry, args)
-            self.ingestPfsConfig(os.path.dirname(infile), hduInfoList[0], args)
+            pfsConfigDir = args.pfsConfigDir if args.pfsConfigDir is not None else os.path.dirname(infile)
+            self.ingestPfsConfig(pfsConfigDir, hduInfoList[0], args)
         except Exception as exc:
             import traceback
             traceback.print_exc()
