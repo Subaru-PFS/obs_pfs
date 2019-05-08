@@ -194,6 +194,15 @@ datasets:
     - raw
     - raw_visit
 
+  WLInfo:
+    template: 'wlInfo/%(dateObs)s/v%(expId)07d/wlInfo-%(expId)06d-%(arm)s%(spectrograph)d.fits'
+    python: pfs.drp.stella.wavelengthStatistics.WavelengthSolutionInfo
+    persistable: WavelengthSolutionInfo
+    storage: FitsCatalogStorage
+    tables:
+    - raw
+    - raw_visit 
+
   pfsObject:
     template: 'pfsObject/%(catId)03d/%(tract)05d/%(patch)s/pfsObject-%(catId)03d-%(tract)05d-%(patch)s-%(objId)08x-%(expId)06d.fits'
     python: pfs.datamodel.drp.PfsObject
@@ -213,7 +222,6 @@ datasets:
     tables:
     - raw
     - raw_visit
-
 
   fiberFlat_config:
     template: config/fiberFlat.py
@@ -236,6 +244,15 @@ datasets:
   reduceArc_config:
     template: config/reduceArc.py
     python: pfs.drp.stella.reduceArcTask.ReduceArcConfig
+    persistable: Config
+    storage: ConfigStorage
+    tables:
+    - raw
+    - raw_visit
+
+  calcResolution_config:
+    template: config/calcResolution.py
+    python: pfs.drp.stella.calcResolutionTask.CalcResolutionConfig
     persistable: Config
     storage: ConfigStorage
     tables:
