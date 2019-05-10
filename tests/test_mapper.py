@@ -13,7 +13,7 @@ class MapperTestCase(lsst.utils.tests.TestCase):
 
     def setUp(self):
         self.mapper = PfsMapper(root=os.path.dirname(__file__))
-        self.expId = 12345
+        self.visit = 12345
         self.arms = [None, 'b', 'r', 'n', 'm']
         self.minArmNum = 1
         self.maxArmNum = 4
@@ -33,7 +33,7 @@ class MapperTestCase(lsst.utils.tests.TestCase):
         for armNum in np.arange(self.minArmNum, self.maxArmNum + 1, 1):
             for spectrograph in np.arange(self.minSpectrographNum, self.maxSpectrographNum + 1, 1):
                 arm = self.arms[armNum]
-                dataId = {'expId': self.expId, 'spectrograph': spectrograph, 'arm': arm}
+                dataId = {'visit': self.visit, 'spectrograph': spectrograph, 'arm': arm}
                 detectorId = self.mapper.getDetectorId(dataId)
                 if arm in ['b']:
                     self.assertTrue(detectorId in blues)

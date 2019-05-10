@@ -55,17 +55,17 @@ class PfsParseTask(ParseTask):
         matches = re.search(r"^PF(%s)(%s)-?(\d{6})(\d)(\d)\.fits$" % (self.sites, self.categories), name)
         if not matches:
             raise RuntimeError("Unable to interpret filename: %s" % filename)
-        site, category, expId, spectrograph, armNum = matches.groups()
+        site, category, visit, spectrograph, armNum = matches.groups()
 
         armNum = int(armNum)
         spectrograph = int(spectrograph)
-        expId = int(expId, base=10)
+        visit = int(visit, base=10)
 
         # spectrograph 2 was called 9 at JHU, at least in the early days, so if we find
         # a spectrograph 9 we re-assign its number to 2
         if spectrograph == 9:
             spectrograph = 2
-            self.log.info("Visit %06d has spectrograph == 9" % expId)
+            self.log.info("Visit %06d has spectrograph == 9" % visit)
 
         if spectrograph < 1 or spectrograph > self.nSpectrograph + 1:
             raise RuntimeError('spectrograph (=%d) out of bounds 1..%d' % (spectrograph, self.nSpectrograph))
@@ -76,11 +76,11 @@ class PfsParseTask(ParseTask):
             raise IndexError('armNum=%d out of bounds 1..%d' % (armNum, max(self.arms.keys()))) from exc
 
         ccd = PfsMapper.computeDetectorId(spectrograph, arm)
-        self.log.debug('site = <%s>, category = <%s>, expId = <%s>, spectrograph = <%d>, armNum = <%d>, '
+        self.log.debug('site = <%s>, category = <%s>, visit = <%s>, spectrograph = <%d>, armNum = <%d>, '
                        'arm = <%s>, ccd = <%d>' %
-                       (site, category, expId, spectrograph, armNum, arm, ccd))
+                       (site, category, visit, spectrograph, armNum, arm, ccd))
 
-        info = dict(site=site, category=category, expId=expId, visit=expId, filter=arm, arm=arm,
+        info = dict(site=site, category=category, visit=visit, filter=arm, arm=arm,
                     spectrograph=spectrograph, ccd=ccd)
 
         if os.path.exists(filename):
@@ -174,7 +174,6 @@ def setIngestConfig(config):
                                                 # S: Summit, P: Princeton, F: simulation (fake)
                                'category': 'text',  # A: science, B: NTR, C: Meterology, D: HG
                                'field': 'text',  # Observation name
-                               'expId': 'int',  # Exposure identifier; better alias for "visit"
                                'visit': 'int',  # Required because hard-coded in LSST's CameraMapper
                                'ccd': 'int',  # [0-11]
                                'filter': 'text',  # b: blue, r: red, n: nir, m: medium resolution red
@@ -187,9 +186,9 @@ def setIngestConfig(config):
                                'pfsDesignId': 'int',  # Configuration of the top-end
                                'slitOffset': 'double',  # Horizontal slit offset
                                }
-    config.register.unique = ['site', 'category', 'expId', 'visit', 'filter', 'arm', 'spectrograph',
+    config.register.unique = ['site', 'category', 'visit', 'filter', 'arm', 'spectrograph',
                               'pfsDesignId']
-    config.register.visit = ['expId', 'visit', 'field', 'filter', 'spectrograph', 'arm', 'dateObs',
+    config.register.visit = ['visit', 'field', 'filter', 'spectrograph', 'arm', 'dateObs',
                              'taiObs', 'pfsDesignId', 'slitOffset']
 
     config.parse.translation = {'dataType': 'IMAGETYP',
@@ -246,8 +245,8 @@ class PfsIngestTask(IngestTask):
             return
 
         pfsDesignId = fileInfo["pfsDesignId"]
-        expId = fileInfo["expId"]
-        fileName = PfsConfig.fileNameFormat % (pfsDesignId, expId)
+        visit = fileInfo["visit"]
+        fileName = PfsConfig.fileNameFormat % (pfsDesignId, visit)
         infile = os.path.join(dirName, fileName)
         if os.path.exists(infile):
             self.ingest(infile, outfile, mode=args.mode, dryrun=args.dryrun)
@@ -263,7 +262,7 @@ class PfsIngestTask(IngestTask):
                     "fiberId", "tract", "patch", "ra", "dec", "catId", "objId",
                     "targetType", "fiberMag", "filterNames", "pfiNominal")
         kwargs = {kk: getattr(design, kk) for kk in keywords}
-        kwargs["expId"] = expId
+        kwargs["visit"] = visit
         kwargs["pfiCenter"] = kwargs["pfiNominal"]
         PfsConfig(**kwargs).write(dirName)
         self.ingest(infile, outfile, mode=args.mode, dryrun=args.dryrun)
