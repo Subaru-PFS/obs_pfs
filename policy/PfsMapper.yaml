@@ -194,20 +194,20 @@ datasets:
     - raw
     - raw_visit
 
-  pfsObject:
-    template: 'pfsObject/%(catId)03d/%(tract)05d/%(patch)s/pfsObject-%(catId)03d-%(tract)05d-%(patch)s-%(objId)08x-%(expId)06d.fits'
-    python: pfs.datamodel.drp.PfsObject
-    persistable: PfsObject
+  pfsSingle:
+    template: 'pfsSingle/%(catId)03d/%(tract)05d/%(patch)s/pfsSingle-%(catId)03d-%(tract)05d-%(patch)s-%(objId)08x-%(expId)06d.fits'
+    python: pfs.datamodel.drp.PfsSingle
+    persistable: PfsSingle
     storage: FitsCatalogStorage
     level: Visit
     tables:
     - raw
     - raw_visit
 
-  pfsCoadd:
-    template: 'pfsCoadd/%(catId)03d/%(tract)05d/%(patch)s/pfsCoadd-%(catId)03d-%(tract)05d-%(patch)s-%(objId)08x-%(numExp)03d-%(expHash)08x.fits'
-    python: pfs.datamodel.drp.PfsCoadd
-    persistable: PfsCoadd
+  pfsObject:
+    template: 'pfsObject/%(catId)03d/%(tract)05d/%(patch)s/pfsObject-%(catId)03d-%(tract)05d-%(patch)s-%(objId)08x-%(numExp)03d-%(expHash)08x.fits'
+    python: pfs.datamodel.drp.PfsObject
+    persistable: PfsObject
     storage: FitsCatalogStorage
     level: Visit
     tables:
