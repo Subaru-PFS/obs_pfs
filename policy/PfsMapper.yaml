@@ -205,7 +205,7 @@ datasets:
     - raw_visit
 
   pfsObject:
-    template: 'pfsObject/%(catId)03d/%(tract)05d/%(patch)s/pfsObject-%(catId)03d-%(tract)05d-%(patch)s-%(objId)016x-%(numExp)03d-%(pfsVisitHash)016x.fits'
+    template: 'pfsObject/%(catId)03d/%(tract)05d/%(patch)s/pfsObject-%(catId)03d-%(tract)05d-%(patch)s-%(objId)016x-%(nVisit)03d-%(pfsVisitHash)016x.fits'
     python: pfs.datamodel.drp.PfsObject
     persistable: PfsObject
     storage: FitsCatalogStorage
