@@ -79,7 +79,6 @@ class PfsMapper(CameraMapper):
                 'category': str,
                 'field': str,
                 'visit': int,
-                'visit': int,
                 'ccd': int,
                 'filter': str,
                 'arm': str,
