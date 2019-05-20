@@ -88,7 +88,7 @@ class PfsMapper(CameraMapper):
                 'expTime': float,
                 'dataType': str,
                 'taiObs': str,
-                'pfiDesignId': int,
+                'pfsDesignId': int,
                 'slitOffset': float,
                 }
         for name in ("raw", "pfsArm", "pfsMerged"):
