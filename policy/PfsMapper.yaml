@@ -195,7 +195,7 @@ datasets:
     - raw_visit
 
   pfsSingle:
-    template: 'pfsSingle/%(catId)03d/%(tract)05d/%(patch)s/pfsSingle-%(catId)03d-%(tract)05d-%(patch)s-%(objId)08x-%(expId)06d.fits'
+    template: 'pfsSingle/%(catId)03d/%(tract)05d/%(patch)s/pfsSingle-%(catId)03d-%(tract)05d-%(patch)s-%(objId)016x-%(expId)06d.fits'
     python: pfs.datamodel.drp.PfsSingle
     persistable: PfsSingle
     storage: FitsCatalogStorage
@@ -205,7 +205,7 @@ datasets:
     - raw_visit
 
   pfsObject:
-    template: 'pfsObject/%(catId)03d/%(tract)05d/%(patch)s/pfsObject-%(catId)03d-%(tract)05d-%(patch)s-%(objId)08x-%(numExp)03d-%(expHash)08x.fits'
+    template: 'pfsObject/%(catId)03d/%(tract)05d/%(patch)s/pfsObject-%(catId)03d-%(tract)05d-%(patch)s-%(objId)016x-%(numExp)03d-%(expHash)08x.fits'
     python: pfs.datamodel.drp.PfsObject
     persistable: PfsObject
     storage: FitsCatalogStorage
