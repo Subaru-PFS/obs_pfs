@@ -184,19 +184,29 @@ def setIngestConfig(config):
                                'dataType': 'text',  # Type of exposure
                                'taiObs': 'text',  # Time of observation
                                'pfsDesignId': 'int',  # Configuration of the top-end
-                               'slitOffset': 'double',  # Horizontal slit offset
+                               'slitOffset': 'double',  # Horizontal slit offset; kept for backwards compat.
+                               'dither': 'double',  # Slit offset in spatial dimension
+                               'shift': 'double',  # Slit offset in spectral dimension
+                               'focus': 'double',  # Focus offset
                                }
     config.register.unique = ['site', 'category', 'visit', 'filter', 'arm', 'spectrograph',
                               'pfsDesignId']
     config.register.visit = ['visit', 'field', 'filter', 'spectrograph', 'arm', 'dateObs',
-                             'taiObs', 'pfsDesignId', 'slitOffset']
+                             'taiObs', 'pfsDesignId', 'slitOffset', 'dither', 'shift', 'focus']
 
     config.parse.translation = {'dataType': 'IMAGETYP',
                                 'expTime': 'EXPTIME',
                                 'dateObs': 'DATE-OBS',
                                 'taiObs': 'DATE-OBS',
+                                # Note that the xyz convention below is the hexapod; units are mm
+                                'dither': 'W_ENFCAZ',
+                                'shift': 'W_ENFCAY',
+                                'focus': 'W_ENFCAX',
                                 }
     config.parse.defaults = {'ccdTemp': "0",  # Added in commissioning run 3
+                             'dither': "0.0",
+                             'shift': "0.0",
+                             'focus': "0.0",
                              }
     config.parse.translators.update(field='translate_field',
                                     dateObs='translate_date',
