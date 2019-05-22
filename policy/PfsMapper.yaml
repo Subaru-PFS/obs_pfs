@@ -214,6 +214,16 @@ datasets:
     - raw
     - raw_visit
 
+  wlFitData:
+    template: 'wlFitData/%(dateObs)s/v%(visit)07d/wlFitData-%(visit)06d-%(arm)s%(spectrograph)d.fits'
+    python: pfs.drp.stella.calibrateWavelengthsTask.WavelengthFitData
+    persistable: WavelengthFitData
+    storage: FitsCatalogStorage
+    level: Visit
+    tables:
+    - raw
+    - raw_visit
+
 
   fiberFlat_config:
     template: config/fiberFlat.py
