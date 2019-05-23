@@ -78,7 +78,6 @@ class PfsMapper(CameraMapper):
         keys = {'site': str,
                 'category': str,
                 'field': str,
-                'expId': int,
                 'visit': int,
                 'ccd': int,
                 'filter': str,
@@ -88,7 +87,7 @@ class PfsMapper(CameraMapper):
                 'expTime': float,
                 'dataType': str,
                 'taiObs': str,
-                'pfiDesignId': int,
+                'pfsDesignId': int,
                 'slitOffset': float,
                 }
         for name in ("raw", "pfsArm", "pfsMerged"):

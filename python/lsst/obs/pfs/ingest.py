@@ -7,7 +7,7 @@ from lsst.pipe.tasks.ingest import ParseTask, ParseConfig, IngestTask, IngestCon
 from lsst.pipe.tasks.ingestCalibs import CalibsParseTask
 from lsst.pex.config import Field
 
-from pfs.datamodel.pfsConfig import PfsConfig, PfiDesign
+from pfs.datamodel.pfsConfig import PfsConfig, PfsDesign
 
 __all__ = ["PfsParseConfig", "PfsParseTask", "PfsIngestTask"]
 
@@ -19,7 +19,7 @@ class PfsParseConfig(ParseConfig):
     def setDefaults(self):
         ParseConfig.setDefaults(self)
         self.translators["field"] = "translate_field"
-        self.translators["pfiDesignId"] = "translate_pfiDesignId"
+        self.translators["pfsDesignId"] = "translate_pfsDesignId"
         self.translators["slitOffset"] = "translate_slitOffset"
 
 
@@ -55,17 +55,17 @@ class PfsParseTask(ParseTask):
         matches = re.search(r"^PF(%s)(%s)-?(\d{6})(\d)(\d)\.fits$" % (self.sites, self.categories), name)
         if not matches:
             raise RuntimeError("Unable to interpret filename: %s" % filename)
-        site, category, expId, spectrograph, armNum = matches.groups()
+        site, category, visit, spectrograph, armNum = matches.groups()
 
         armNum = int(armNum)
         spectrograph = int(spectrograph)
-        expId = int(expId, base=10)
+        visit = int(visit, base=10)
 
         # spectrograph 2 was called 9 at JHU, at least in the early days, so if we find
         # a spectrograph 9 we re-assign its number to 2
         if spectrograph == 9:
             spectrograph = 2
-            self.log.info("Visit %06d has spectrograph == 9" % expId)
+            self.log.info("Visit %06d has spectrograph == 9" % visit)
 
         if spectrograph < 1 or spectrograph > self.nSpectrograph + 1:
             raise RuntimeError('spectrograph (=%d) out of bounds 1..%d' % (spectrograph, self.nSpectrograph))
@@ -76,11 +76,11 @@ class PfsParseTask(ParseTask):
             raise IndexError('armNum=%d out of bounds 1..%d' % (armNum, max(self.arms.keys()))) from exc
 
         ccd = PfsMapper.computeDetectorId(spectrograph, arm)
-        self.log.debug('site = <%s>, category = <%s>, expId = <%s>, spectrograph = <%d>, armNum = <%d>, '
+        self.log.debug('site = <%s>, category = <%s>, visit = <%s>, spectrograph = <%d>, armNum = <%d>, '
                        'arm = <%s>, ccd = <%d>' %
-                       (site, category, expId, spectrograph, armNum, arm, ccd))
+                       (site, category, visit, spectrograph, armNum, arm, ccd))
 
-        info = dict(site=site, category=category, expId=expId, visit=expId, filter=arm, arm=arm,
+        info = dict(site=site, category=category, visit=visit, filter=arm, arm=arm,
                     spectrograph=spectrograph, ccd=ccd)
 
         if os.path.exists(filename):
@@ -100,8 +100,8 @@ class PfsParseTask(ParseTask):
         self.log.debug('PfsParseTask.translate_field: field = %s' % field)
         return re.sub(r'\W', '_', field).upper()
 
-    def translate_pfiDesignId(self, md):
-        """Get 'pfiDesignId' from metadata
+    def translate_pfsDesignId(self, md):
+        """Get 'pfsDesignId' from metadata
 
         Fall back to the value to 0x0 if it's not present.
         """
@@ -174,7 +174,6 @@ def setIngestConfig(config):
                                                 # S: Summit, P: Princeton, F: simulation (fake)
                                'category': 'text',  # A: science, B: NTR, C: Meterology, D: HG
                                'field': 'text',  # Observation name
-                               'expId': 'int',  # Exposure identifier; better alias for "visit"
                                'visit': 'int',  # Required because hard-coded in LSST's CameraMapper
                                'ccd': 'int',  # [0-11]
                                'filter': 'text',  # b: blue, r: red, n: nir, m: medium resolution red
@@ -184,13 +183,13 @@ def setIngestConfig(config):
                                'expTime': 'double',  # Exposure time
                                'dataType': 'text',  # Type of exposure
                                'taiObs': 'text',  # Time of observation
-                               'pfiDesignId': 'int',  # Configuration of the top-end
+                               'pfsDesignId': 'int',  # Configuration of the top-end
                                'slitOffset': 'double',  # Horizontal slit offset
                                }
-    config.register.unique = ['site', 'category', 'expId', 'visit', 'filter', 'arm', 'spectrograph',
-                              'pfiDesignId']
-    config.register.visit = ['expId', 'visit', 'field', 'filter', 'spectrograph', 'arm', 'dateObs',
-                             'taiObs', 'pfiDesignId', 'slitOffset']
+    config.register.unique = ['site', 'category', 'visit', 'filter', 'arm', 'spectrograph',
+                              'pfsDesignId']
+    config.register.visit = ['visit', 'field', 'filter', 'spectrograph', 'arm', 'dateObs',
+                             'taiObs', 'pfsDesignId', 'slitOffset']
 
     config.parse.translation = {'dataType': 'IMAGETYP',
                                 'expTime': 'EXPTIME',
@@ -245,25 +244,25 @@ class PfsIngestTask(IngestTask):
             # Don't clobber one that got put there when we ingested a different spectrograph,arm
             return
 
-        pfiDesignId = fileInfo["pfiDesignId"]
-        expId = fileInfo["expId"]
-        fileName = PfsConfig.fileNameFormat % (pfiDesignId, expId)
+        pfsDesignId = fileInfo["pfsDesignId"]
+        visit = fileInfo["visit"]
+        fileName = PfsConfig.fileNameFormat % (pfsDesignId, visit)
         infile = os.path.join(dirName, fileName)
         if os.path.exists(infile):
             self.ingest(infile, outfile, mode=args.mode, dryrun=args.dryrun)
             return
 
-        # Check for a PfiDesign, and use that instead
-        designName = os.path.join(dirName, PfiDesign.fileNameFormat % (pfiDesignId,))
+        # Check for a PfsDesign, and use that instead
+        designName = os.path.join(dirName, PfsDesign.fileNameFormat % (pfsDesignId,))
         if not os.path.exists(designName):
-            raise RuntimeError("Unable to find PfsConfig or PfiDesign for pfiDesignId=0x%016x" %
-                               (pfiDesignId,))
-        design = PfiDesign.read(pfiDesignId, dirName)
-        keywords = ("pfiDesignId", "raBoresight", "decBoresight",
+            raise RuntimeError("Unable to find PfsConfig or PfsDesign for pfsDesignId=0x%016x" %
+                               (pfsDesignId,))
+        design = PfsDesign.read(pfsDesignId, dirName)
+        keywords = ("pfsDesignId", "raBoresight", "decBoresight",
                     "fiberId", "tract", "patch", "ra", "dec", "catId", "objId",
                     "targetType", "fiberMag", "filterNames", "pfiNominal")
         kwargs = {kk: getattr(design, kk) for kk in keywords}
-        kwargs["expId"] = expId
+        kwargs["visit"] = visit
         kwargs["pfiCenter"] = kwargs["pfiNominal"]
         PfsConfig(**kwargs).write(dirName)
         self.ingest(infile, outfile, mode=args.mode, dryrun=args.dryrun)
