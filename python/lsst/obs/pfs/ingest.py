@@ -262,7 +262,7 @@ class PfsIngestTask(IngestTask):
                     "fiberId", "tract", "patch", "ra", "dec", "catId", "objId",
                     "targetType", "fiberMag", "filterNames", "pfiNominal")
         kwargs = {kk: getattr(design, kk) for kk in keywords}
-        kwargs["visit"] = visit
+        kwargs["visit0"] = visit
         kwargs["pfiCenter"] = kwargs["pfiNominal"]
         PfsConfig(**kwargs).write(dirName)
         self.ingest(infile, outfile, mode=args.mode, dryrun=args.dryrun)
