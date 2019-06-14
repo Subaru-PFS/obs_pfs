@@ -35,6 +35,8 @@ exposures:
     template: 'postIsrCcd/%(dateObs)s/v%(visit)07d/postIsrCcd-%(site)s%(category)s%(visit)06d%(arm)s%(spectrograph)1d.fits'
   calexp:
     template: 'calExp/%(dateObs)s/v%(visit)07d/calExp-%(site)s%(category)s%(visit)06d%(arm)s%(spectrograph)1d.fits'
+  icExp:
+    template: 'output/icExp-%(visit)07d-%(spectrograph)03d.fits'
 
 calibrations:
   bias:
@@ -316,3 +318,10 @@ datasets:
     tables:
     - raw
     - raw_visit
+
+  icSrc:
+    template: 'output/ICSRC-%(visit)07d-%(spectrograph)03d.fits'
+
+  icExpBackground:
+    template: 'output/ICEXPBKGD-%(visit)07d-%(spectrograph)03d.fits'
+ 

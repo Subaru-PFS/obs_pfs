@@ -282,3 +282,19 @@ class PfsMapper(CameraMapper):
 
     def std_detectormap(self, item, dataId):
         return item
+
+    def _computeCcdExposureId(self, dataId):
+        """Compute the 64-bit (long) identifier for a CCD exposure.
+        @param dataId (dict) Data identifier with visit, ccd
+        """
+        pathId = self._transformId(dataId)
+        visit = pathId['visit']
+        spectrograph = pathId['spectrograph']
+        return visit*200 + spectrograph
+
+    def bypass_ccdExposureId(self, datasetType, pythonType, location, dataId):
+        return self._computeCcdExposureId(dataId)
+
+    def bypass_ccdExposureId_bits(self, datasetType, pythonType, location,dataId):
+        """How many bits are required for the maximum exposure ID"""
+        return 32  # just a guess, but this leaves plenty of space for sources
