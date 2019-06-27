@@ -6,6 +6,7 @@
 #  1   Not visible
 #  2   Blend; don't use
 #  3   Unreliable when processing sim data (PIPE2D-314)
+#  4   Commonly has large residuals (PIPE2D-436)
 #
 # Coverage: 340nm .. 1400nm
 #
@@ -448,7 +449,7 @@
  845.43        0*            HgI   0
  846.64         0            HgI   0
  849.33         4            HgI   0
- 850.79         6            HgI   0
+ 850.79         6            HgI   4
  851.33         5            HgI   0
  851.58         4            HgI   0
  854.12         3            HgI   0
@@ -465,7 +466,7 @@
  875.43         7            HgI   0
  876.05        10            HgI   0
  876.54        10            HgI   0
- 877.55        10            HgI   0
+ 877.55        10            HgI   4
  878.08         7            HgI   0
  878.61        10            HgI   0
  879.87         0            HgI   0
@@ -814,7 +815,7 @@
    716.0812       15  ArI   0
    720.8966       70  ArI   0
    726.7174       15  ArI   0
-   727.2667        7  ArI   0
+   727.2667        7  ArI   4
    727.4940     2000  ArI   0
    731.3731       35  ArI   0
    731.8021       25  ArI   0
@@ -836,7 +837,7 @@
    795.0362    20000  ArI   0
    800.8359    20000  ArI   0
    801.6990    25000  ArI   0
-   805.5523        7  ArI   0
+   805.5523        7  ArI   4
    810.5921    20000  ArI   0
    811.7542    35000  ArI   0
    826.6794    10000  ArI   0
