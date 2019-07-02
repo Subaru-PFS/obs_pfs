@@ -286,3 +286,12 @@ datasets:
     tables:
     - raw
     - raw_visit
+
+  bootstrap_config:
+    template: config/bootstrap.py
+    python: pfs.drp.stella.bootstrap.BootstrapConfig
+    persistable: Config
+    storage: ConfigStorage
+    tables:
+    - raw
+    - raw_visit
