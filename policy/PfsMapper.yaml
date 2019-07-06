@@ -176,7 +176,7 @@ datasets:
     - raw_visit
 
   pfsReference:
-    template: 'pfsReference/%(catId)03d/%(tract)05d/pfsReference-%(catId)03d-%(tract)05d-%(patch)s-%(objId)08x.fits'
+    template: 'pfsReference/%(catId)03d/%(tract)05d/pfsReference-%(catId)03d-%(tract)05d-%(patch)s-%(objId)016x.fits'
     python: pfs.datamodel.drp.PfsReference
     persistable: PfsReference
     storage: FitsCatalogStorage
