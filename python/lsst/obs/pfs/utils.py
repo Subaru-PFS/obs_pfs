@@ -2,6 +2,7 @@
 Utilities for working with PFS data
 """
 
+
 def getLampElements(md):
     """Return a list of the elements found in the lamps that are on
 
@@ -9,18 +10,16 @@ def getLampElements(md):
     """
 
     md = md.toDict()
-    elements = []
-    for lamp in ['Ne', 'HgAr', 'Xe']:
-        if md.get('W_AIT_SRC_%s' % (lamp,), False):
-            if lamp == 'HgAr':
-                elements.append('Ar')
-                elements.append('Hg')
-            elif lamp == 'HgCd':
-                elements.append('Cd')
-                elements.append('Hg')
-                # the carrier gas is argon
-                elements.append('Ar')
-            else:
-                elements.append(lamp)
-
-    return elements
+    menu = {
+        # Modern "short" headers
+        "W_AITNEO": ["Ne"],
+        "W_AITXEN": ["Xe"],
+        "W_AITHGA": ["Hg", "Ar"],
+        "W_AITKRY": ["Kr"],
+        "W_AITARG": ["Ar"],
+        # Old "long" headers (2017)
+        "W_AIT_SRC_Ne": ["Ne"],
+        "W_AIT_SRC_HgAr": ["Hg", "Ar"],
+        "W_AIT_SRC_Xe": ["Xe"],
+    }
+    return sum((menu[key] for key in menu if md.get(key, False)), [])
