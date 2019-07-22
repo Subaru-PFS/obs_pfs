@@ -1,0 +1,4 @@
+PFLA*.fits:
+  - action: addCard
+    name: W_SITE
+    value: LAM

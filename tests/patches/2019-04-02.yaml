@@ -1,0 +1,78 @@
+# Apply to all files which match.
+PFLA0149*1[0-9].fits:
+  - action: modifyCard
+    name: W_PFDSGN
+    newValue: 0x010001000
+    addIfMissing: true
+    comment: TEST- should be 268439552
+
+  - action: modifyCard
+    name: W_MOD1
+    newValue: 1
+    addIfMissing: true
+    comment: TEST- should be 1
+
+  - action: modifyCard
+    name: W_MOD2
+    newValue: 1234567890
+    addIfMissing: true
+    comment: TEST- should be 2
+
+  - action: modifyCard
+    name: W_MOD2
+    newValue: 2
+    onlyIfValueIs: 1234567890
+
+  - action: modifyCard
+    name: W_MOD2
+    newValue: 4
+    unlessValueIs: 2
+
+  - action: modifyCard
+    name: W_MOD3
+    newValue: 4
+    addIfMissing: true
+
+  - action: modifyCard
+    name: W_MOD3
+    newValue: 3
+    onlyIfValueIs: 4
+    comment: TEST- should be 3
+
+  - action: modifyCard
+    name: W_MOD3
+    newValue: 99
+    onlyIfValueIs: 4
+    comment: TEST- must not fire
+
+# This matches both sets
+PFLA01499111.fits:
+  - action: modifyCard
+    name: W_PFDSGN
+    newValue: 123456789
+    addIfMissing: true
+    comment: TEST- should be 123456789
+
+  - action: addCard
+    name: W_LONGIN
+    value: 18446744073709551615
+    comment: "TEST- Impossible: 2^64-1, 18446744073709551615"
+
+  - action: addCard
+    name: W_ADDED
+    value: 1234.567
+    comment: TEST- An added test card
+
+  - action: addCard
+    name: W_VISIT
+    value: 1234
+    comment: TEST- A hacked up existing card
+    overwriteExisting: true
+
+  - action: deleteCard
+    name: W_XTMP4
+
+# Try one-liner versions. Unfortunately, the top-level of a YAML file
+# is a dictionary, so we cannot make simple unix-y text files.
+PFLA01499912.fits: [{action: addCard, name: W_HACK2, value: 1234.567, comment: TEST- An added test card},
+                    {action: deleteCard, name: W_XTMP5}]
