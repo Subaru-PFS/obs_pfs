@@ -6,6 +6,7 @@ from lsst.obs.pfs.pfsMapper import PfsMapper
 from lsst.pipe.tasks.ingest import ParseTask, ParseConfig, IngestTask, IngestConfig, IngestArgumentParser
 from lsst.pipe.tasks.ingestCalibs import CalibsParseTask
 from lsst.pex.config import Field
+from lsst.obs.pfs.utils import getLamps
 
 from pfs.datamodel.pfsConfig import PfsConfig, PfsDesign
 
@@ -127,6 +128,10 @@ class PfsParseTask(ParseTask):
                 return value if isinstance(value, float) else 0.0
         return 0.0
 
+    def translate_lamps(self, md):
+        """Get lamps from header metadata"""
+        return ",".join(sorted(getLamps(md.toDict())))
+
 
 class PfsCalibsParseTask(CalibsParseTask):
     """Parse a PFS calib image for butler keyword-value pairs"""
@@ -184,23 +189,44 @@ def setIngestConfig(config):
                                'dataType': 'text',  # Type of exposure
                                'taiObs': 'text',  # Time of observation
                                'pfsDesignId': 'int',  # Configuration of the top-end
-                               'slitOffset': 'double',  # Horizontal slit offset
+                               'slitOffset': 'double',  # Horizontal slit offset; kept for backwards compat.
+                               'dither': 'double',  # Slit offset in spatial dimension
+                               'shift': 'double',  # Slit offset in spectral dimension
+                               'focus': 'double',  # Focus offset
+                               'lamps': 'text',  # Lamps that are lit
+                               'attenuator': 'double',  # Attenuator setting
+                               'photodiode': 'double',  # Photodiode reading (cd/m^2)
                                }
     config.register.unique = ['site', 'category', 'visit', 'filter', 'arm', 'spectrograph',
                               'pfsDesignId']
     config.register.visit = ['visit', 'field', 'filter', 'spectrograph', 'arm', 'dateObs',
-                             'taiObs', 'pfsDesignId', 'slitOffset']
+                             'taiObs', 'pfsDesignId', 'slitOffset', 'dither', 'shift', 'focus',
+                             'lamps', 'attenuator', 'photodiode',
+                             ]
 
     config.parse.translation = {'dataType': 'IMAGETYP',
                                 'expTime': 'EXPTIME',
                                 'dateObs': 'DATE-OBS',
                                 'taiObs': 'DATE-OBS',
+                                # Note that the xyz convention below is the hexapod; units are mm
+                                'dither': 'W_ENFCAZ',
+                                'shift': 'W_ENFCAY',
+                                'focus': 'W_ENFCAX',
+                                'attenuator': 'W_AITATT',
+                                'photodiode': 'W_AITPHO',
                                 }
     config.parse.defaults = {'ccdTemp': "0",  # Added in commissioning run 3
+                             'dither': "0.0",
+                             'shift': "0.0",
+                             'focus': "0.0",
+                             'attenuator': "-1.0",
+                             'photodiode': "-1.0",
                              }
     config.parse.translators.update(field='translate_field',
                                     dateObs='translate_date',
-                                    taiObs='translate_date')
+                                    taiObs='translate_date',
+                                    lamps='translate_lamps',
+                                    )
 
 
 class PfsIngestArgumentParser(IngestArgumentParser):
