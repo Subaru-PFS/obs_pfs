@@ -22,6 +22,9 @@ class PfsParseConfig(ParseConfig):
         self.translators["field"] = "translate_field"
         self.translators["pfsDesignId"] = "translate_pfsDesignId"
         self.translators["slitOffset"] = "translate_slitOffset"
+        self.translators["lamps"] = "translate_lamps"
+        self.translators["dateObs"] = "translate_date"
+        self.translators["taiObs"] = "translate_date"
 
 
 class PfsParseTask(ParseTask):
@@ -222,11 +225,6 @@ def setIngestConfig(config):
                              'attenuator': "-1.0",
                              'photodiode': "-1.0",
                              }
-    config.parse.translators.update(field='translate_field',
-                                    dateObs='translate_date',
-                                    taiObs='translate_date',
-                                    lamps='translate_lamps',
-                                    )
 
 
 class PfsIngestArgumentParser(IngestArgumentParser):
