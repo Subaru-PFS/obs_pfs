@@ -8,6 +8,7 @@ import lsst.afw.math as afwMath
 from lsst.daf.persistence import Policy
 import lsst.utils as utils
 import lsst.obs.base.yamlCamera as yamlCamera
+from .translator import PfsTranslator
 
 
 class PfsRawVisitInfo(MakeRawVisitInfo):
@@ -62,7 +63,7 @@ class PfsMapper(CameraMapper):
     _cameraName = "pfs"
     yamlFileList = ("PfsMapper.yaml",)  # list of yaml files to load, keeping the first occurrence
     MakeRawVisitInfoClass = PfsRawVisitInfo
-    translatorClass = None  # XXX to be set in the future
+    translatorClass = PfsTranslator
     
     def __init__(self, **kwargs):
         policyFile = Policy.defaultPolicyFile("obs_pfs", "PfsMapper.yaml", "policy")
