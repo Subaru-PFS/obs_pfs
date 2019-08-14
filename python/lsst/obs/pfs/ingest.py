@@ -1,6 +1,8 @@
 import os
 import re
 
+from astro_metadata_translator import fix_header
+
 import lsst.afw.image as afwImage
 from lsst.obs.pfs.pfsMapper import PfsMapper
 from lsst.pipe.tasks.ingest import ParseTask, ParseConfig, IngestTask, IngestConfig, IngestArgumentParser
@@ -9,6 +11,7 @@ from lsst.pex.config import Field
 from lsst.obs.pfs.utils import getLamps
 
 from pfs.datamodel.pfsConfig import PfsConfig, PfsDesign
+from .translator import PfsTranslator
 
 __all__ = ["PfsParseConfig", "PfsParseTask", "PfsIngestTask"]
 
@@ -89,6 +92,16 @@ class PfsParseTask(ParseTask):
 
         if os.path.exists(filename):
             header = afwImage.readMetadata(filename)
+
+            # Patch the header
+            original = header.toOrderedDict()
+            fixed = header.toOrderedDict()
+            fix_header(fixed, translator_class=PfsTranslator, filename=filename)
+            for kk, vv in fixed.items():
+                if kk in original and vv == original[kk]:
+                    continue
+                header.set(kk, vv)
+
             info = self.getInfoFromMetadata(header, info=info)
         return info, [info]
 
