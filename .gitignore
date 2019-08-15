@@ -1,17 +1,13 @@
 *.pyc
 
-pfs/camera/bak/*
-pfs/camera/config/*
 pfs/defects/defectRegistry.sqlite3
 python/lsst/obs/pfs/version.py
 ups/obs_pfs.cfgc
-ups/obs_pfs.table.12.0
 .sconf_temp
 .sconsign.dblite
 config.log
-logfile
-pfs/SConscript.old
-pfs/lineLists/refCdHgKrNeXe_red_temp.fits
 bin
 tests/.tests
 .cache
+.coverage
+.pytest_cache
