@@ -76,7 +76,7 @@ calibrations:
     validStartName: validStart
     validEndName: validEnd
   flat:
-    template: 'FLAT/pfsFiberFlat-%(calibDate)s-%(visit0)06d-%(arm)s%(spectrograph)1d.fits'
+    template: 'FLAT/pfsFlat-%(calibDate)s-%(visit0)06d-%(arm)s%(spectrograph)1d.fits'
     python: lsst.afw.image.ExposureF
     persistable: ExposureF
     storage: FitsStorage
