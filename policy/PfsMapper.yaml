@@ -167,7 +167,7 @@ datasets:
     - raw_visit
 
   sky2d:
-    template: 'sky2d/%(dateObs)s/v%(visit)07d/sky2d-%(visit)06d-%(arm)s%(spectrograph)d.fits'
+    template: 'pfsSky/%(dateObs)s/v%(visit)07d/pfsSky-%(visit)06d-%(arm)s%(spectrograph)d.fits'
     python: pfs.drp.stella.subtractSky1d.SubtractSky1DSolution
     persistable: SubtractSky1DSolution
     storage: FitsCatalogStorage
