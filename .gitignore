@@ -15,3 +15,5 @@ pfs/lineLists/refCdHgKrNeXe_red_temp.fits
 bin
 tests/.tests
 .cache
+.coverage
+.pytest_cache
