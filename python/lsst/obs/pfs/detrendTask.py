@@ -19,7 +19,7 @@ class DetrendTask(CmdLineTask):
         self.makeSubtask("isr")
         self.makeSubtask("repair")
 
-    def run(self, dataRef):
+    def runDataRef(self, dataRef):
         exposure = self.isr.runDataRef(dataRef).exposure  # Should do ISR and CCD assembly
 
         if self.config.doRepair:

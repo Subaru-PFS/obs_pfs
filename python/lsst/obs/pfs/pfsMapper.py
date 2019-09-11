@@ -5,8 +5,10 @@ from lsst.obs.base import CameraMapper, MakeRawVisitInfo
 import lsst.afw.image.utils as afwImageUtils
 import lsst.afw.image as afwImage
 import lsst.afw.math as afwMath
-from lsst.obs.pfs.pfsCamera import PfsCamera
 from lsst.daf.persistence import Policy
+import lsst.utils as utils
+import lsst.obs.base.yamlCamera as yamlCamera
+from .translator import PfsTranslator
 
 
 class PfsRawVisitInfo(MakeRawVisitInfo):
@@ -58,8 +60,10 @@ class PfsRawVisitInfo(MakeRawVisitInfo):
 class PfsMapper(CameraMapper):
     """Provides abstract-physical mapping for PFS data"""
     packageName = "obs_pfs"
-
+    _cameraName = "pfs"
+    yamlFileList = ("PfsMapper.yaml",)  # list of yaml files to load, keeping the first occurrence
     MakeRawVisitInfoClass = PfsRawVisitInfo
+    translatorClass = PfsTranslator
     
     def __init__(self, **kwargs):
         policyFile = Policy.defaultPolicyFile("obs_pfs", "PfsMapper.yaml", "policy")
@@ -127,10 +131,22 @@ class PfsMapper(CameraMapper):
 
         PfsMapper._nbit_id = 64
 
-    def _makeCamera(self, policy, repositoryDir):
-        """Make a camera (instance of lsst.afw.cameraGeom.Camera) describing the camera geometry
+    @classmethod
+    def _makeCamera(cls, policy=None, repositoryDir=None, cameraYamlFile=None):
+        """Make a camera  describing the camera geometry.
+
+        policy : ignored
+        repositoryDir : ignored
+        cameraYamlFile : `str`
+           The full path to a yaml file to be passed to `yamlCamera.makeCamera`
+
+        Returns
+        -------
+        camera : `lsst.afw.cameraGeom.Camera`
+            Camera geometry.
         """
-        return PfsCamera()
+        yamlFile = os.path.join(utils.getPackageDir(cls.packageName), "pfs", "camera", "camera.yaml")
+        return yamlCamera.makeCamera(yamlFile)
 
     @staticmethod
     def _flipChipsLR(exp, wcs, dataId, dims=None):
