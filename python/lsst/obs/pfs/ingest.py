@@ -1,8 +1,6 @@
 import os
 import re
 
-from astro_metadata_translator import fix_header
-
 import lsst.afw.image as afwImage
 from lsst.obs.pfs.pfsMapper import PfsMapper
 from lsst.pipe.tasks.ingest import ParseTask, ParseConfig, IngestTask, IngestConfig, IngestArgumentParser
@@ -11,7 +9,6 @@ from lsst.pex.config import Field
 from lsst.obs.pfs.utils import getLamps
 
 from pfs.datamodel.pfsConfig import PfsConfig, PfsDesign
-from .translator import PfsTranslator
 
 __all__ = ["PfsParseConfig", "PfsParseTask", "PfsIngestTask"]
 
@@ -25,9 +22,6 @@ class PfsParseConfig(ParseConfig):
         self.translators["field"] = "translate_field"
         self.translators["pfsDesignId"] = "translate_pfsDesignId"
         self.translators["slitOffset"] = "translate_slitOffset"
-        self.translators["lamps"] = "translate_lamps"
-        self.translators["dateObs"] = "translate_date"
-        self.translators["taiObs"] = "translate_date"
 
 
 class PfsParseTask(ParseTask):
@@ -92,16 +86,6 @@ class PfsParseTask(ParseTask):
 
         if os.path.exists(filename):
             header = afwImage.readMetadata(filename)
-
-            # Patch the header
-            original = header.toOrderedDict()
-            fixed = header.toOrderedDict()
-            fix_header(fixed, translator_class=PfsTranslator, filename=filename)
-            for kk, vv in fixed.items():
-                if kk in original and vv == original[kk]:
-                    continue
-                header.set(kk, vv)
-
             info = self.getInfoFromMetadata(header, info=info)
         return info, [info]
 
@@ -238,6 +222,11 @@ def setIngestConfig(config):
                              'attenuator': "-1.0",
                              'photodiode': "-1.0",
                              }
+    config.parse.translators.update(field='translate_field',
+                                    dateObs='translate_date',
+                                    taiObs='translate_date',
+                                    lamps='translate_lamps',
+                                    )
 
 
 class PfsIngestArgumentParser(IngestArgumentParser):

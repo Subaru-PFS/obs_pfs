@@ -5,7 +5,7 @@ import os.path
 import re
 
 import numpy
-import astropy.io.fits as pyfits
+import pyfits
 
 import lsst.log as log
 from lsst.obs.pfs import PfsMapper

@@ -23,14 +23,7 @@
 
 name : "PFS"
 plateScale : 1.0                        # plate scale; not well defined for a spectrograph
-
-# Provide transformations *from* the nativeSys *to* the specified system (e.g. FieldAngle)
-transforms :
-  nativeSys : FocalPlane
-  FieldAngle :
-    transformType : radial
-    coeffs :        [0.0, 1.0, 0.0]     # radial distortion coefficients (c_0 + c_1 r + c_2 r^2 + ...)
-
+radialCoeffs : [0.0, 1.0, 0.0, 0.0]     # radial distortion coefficients (c_0 + c_1 r + c_2 r^2 + ...)
 
 #
 # A single amplifier ("segment" to the camera team)
