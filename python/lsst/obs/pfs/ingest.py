@@ -105,6 +105,46 @@ class PfsParseTask(ParseTask):
             info = self.getInfoFromMetadata(header, info=info)
         return info, [info]
 
+    def getInfoFromMetadata(self, md, info=None):
+        """Attempt to pull the desired information out of the header
+
+        This is done through two mechanisms:
+        * translation: a property is set directly from the relevant header keyword
+        * translator: a property is set with the result of calling a method
+
+        The translator methods receive the header metadata and should return the
+        appropriate value, or None if the value cannot be determined.
+
+        This method has been copied from LSST's pipe_tasks in order to fix a
+        bug in LSST 18.1.0 (PIPE2D-458).
+
+        @param md      FITS header
+        @param info    File properties, to be supplemented
+        @return info
+        """
+        if info is None:
+            info = {}
+        for p, h in self.config.translation.items():
+            value = md.get(h, None)
+            if value is not None:
+                if isinstance(value, str):
+                    value = value.strip()
+                info[p] = value
+            elif p in self.config.defaults:
+                info[p] = self.config.defaults[p]
+            else:
+                self.log.warn("Unable to find value for %s (derived from %s)" % (p, h))
+        for p, t in self.config.translators.items():
+            func = getattr(self, t)
+            try:
+                value = func(md)
+            except Exception as e:
+                self.log.warn("%s failed to translate %s: %s", t, p, e)
+                value = None
+            if value is not None:
+                info[p] = value
+        return info
+
     def translate_field(self, md):
         """Get 'field' from IMAGETYP
 
