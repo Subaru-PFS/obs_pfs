@@ -106,7 +106,7 @@ calibrations:
     - arm
     - spectrograph
     - taiObs
-    reference: raw_visit
+    reference: raw
     refCols:
     - visit
     - arm
@@ -125,7 +125,7 @@ calibrations:
     - arm
     - spectrograph
     - taiObs
-    reference: raw_visit
+    reference: raw
     refCols:
     - visit
     - arm
@@ -145,7 +145,6 @@ datasets:
     level: Ccd
     tables:
     - raw
-    - raw_visit
 
   pfsMerged:
     template: 'pfsMerged/%(dateObs)s/v%(visit)06d/pfsMerged-%(visit)06d.fits'
