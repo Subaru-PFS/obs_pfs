@@ -33,6 +33,7 @@ exposures:
     template: '%(dateObs)s/PF%(site)s%(category)s%(visit)06d%(arm)s%(spectrograph)1d.fits'
   postISRCCD:
     template: 'postIsrCcd/%(dateObs)s/v%(visit)06d/postIsrCcd-%(site)s%(category)s%(visit)06d%(arm)s%(spectrograph)1d.fits'
+#    recipe: noCompression
   calexp:
     template: 'calExp/%(dateObs)s/v%(visit)06d/calExp-%(site)s%(category)s%(visit)06d%(arm)s%(spectrograph)1d.fits'
 
@@ -105,7 +106,7 @@ calibrations:
     - arm
     - spectrograph
     - taiObs
-    reference: raw_visit
+    reference: raw
     refCols:
     - visit
     - arm
@@ -124,7 +125,7 @@ calibrations:
     - arm
     - spectrograph
     - taiObs
-    reference: raw_visit
+    reference: raw
     refCols:
     - visit
     - arm
@@ -144,7 +145,6 @@ datasets:
     level: Ccd
     tables:
     - raw
-    - raw_visit
 
   pfsMerged:
     template: 'pfsMerged/%(dateObs)s/v%(visit)06d/pfsMerged-%(visit)06d.fits'

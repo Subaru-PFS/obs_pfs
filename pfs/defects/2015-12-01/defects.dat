@@ -4,5 +4,3 @@
 # Convert to a fits table using getDefectFits.py;  this is done for you by running scons
 #
 #CCD x0    y0    width height
-# Dead amps
-r1    0  0     1   1
