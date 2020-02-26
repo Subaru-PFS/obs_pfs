@@ -12,6 +12,7 @@ from lsst.obs.pfs import PfsMapper
 
 Defect = collections.namedtuple('Defect', ['x0', 'y0', 'width', 'height'])
 
+
 def genDefectFits(source, targetDir, verbose):
     logLevel = log.FATAL
     if verbose:
@@ -39,10 +40,10 @@ def genDefectFits(source, targetDir, verbose):
 
     f = open(source, "r")
     for line in f:
-        line = re.sub("\#.*", "", line).strip()
+        line = re.sub(r"\#.*", "", line).strip()
         if len(line) == 0:
             continue
-        ccd, x0, y0, width, height = re.split("\s+", line)
+        ccd, x0, y0, width, height = re.split(r"\s+", line)
         if ccd not in ccds:
             raise RuntimeError("Unrecognised ccd: %s" % ccd)
         if ccd not in defects:
@@ -66,7 +67,8 @@ def genDefectFits(source, targetDir, verbose):
 
         table.header['NAME'] = ccd
         name = os.path.join(targetDir, "defects_%s.fits" % ccd)
-        logger.info("Writing %d defects from CCD %s (%s) to %s" % (table.header['NAXIS2'], ccd, ccds[ccd], name))
+        logger.info("Writing %d defects from CCD %s (%s) to %s" % (table.header['NAXIS2'],
+                    ccd, ccds[ccd], name))
         if os.path.exists(name):
             if args.force:
                 os.unlink(name)
@@ -75,6 +77,7 @@ def genDefectFits(source, targetDir, verbose):
                 continue
 
         table.writeto(name)
+
 
 if __name__ == "__main__":
     import argparse

@@ -11,3 +11,4 @@ tests/.tests
 .cache
 .coverage
 .pytest_cache
+pytest_session.txt

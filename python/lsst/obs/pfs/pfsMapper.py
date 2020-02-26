@@ -52,7 +52,6 @@ class PfsRawVisitInfo(MakeRawVisitInfo):
             (except TIMESYS, because it may apply to more than one other keyword).
         @param[in] exposureTime  exposure time (sec)
         """
-        
         dateObs = self.popIsoDate(md, "DATE-OBS")
         return self.offsetDate(dateObs, 0.5*exposureTime)
 
@@ -64,15 +63,15 @@ class PfsMapper(CameraMapper):
     yamlFileList = ("PfsMapper.yaml",)  # list of yaml files to load, keeping the first occurrence
     MakeRawVisitInfoClass = PfsRawVisitInfo
     translatorClass = PfsTranslator
-    
+
     def __init__(self, **kwargs):
         policyFile = Policy.defaultPolicyFile("obs_pfs", "PfsMapper.yaml", "policy")
         policy = Policy(policyFile)
         if not kwargs.get('root', None):
-            try:
-                kwargs['root'] = os.path.join(os.environ.get('PFS_DATA_DIR'), 'PFS')
-            except:
+            pfsDataDir = os.environ.get('PFS_DATA_DIR')
+            if pfsDataDir is None:
                 raise RuntimeError("Either $PFS_DATA_DIR or root= must be specified")
+            kwargs['root'] = os.path.join(pfsDataDir, 'PFS')
         if not kwargs.get('calibRoot', None):
             kwargs['calibRoot'] = os.path.join(kwargs['root'], 'CALIB')
 
@@ -103,7 +102,7 @@ class PfsMapper(CameraMapper):
         afwImageUtils.resetFilters()
         afwImageUtils.defineFilter(name="UNRECOGNISED", lambdaEff=0,
                                    alias=["NONE", "None", "Unrecognised", "UNRECOGNISED",
-                                          "Unrecognized", "UNRECOGNIZED", "NOTSET",])
+                                          "Unrecognized", "UNRECOGNIZED", "NOTSET", ])
         afwImageUtils.defineFilter(name='b', lambdaEff=477, alias=['blue', 'PFS-B'])
         afwImageUtils.defineFilter(name='r', lambdaEff=623, alias=['red', 'PFS-R'])
         afwImageUtils.defineFilter(name='n', lambdaEff=623, alias=['nearInfraRed', 'PFS-N'])
