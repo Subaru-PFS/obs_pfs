@@ -11,6 +11,7 @@ import sqlite3 as sqlite
 
 import lsst.log as log
 
+
 def main(root, validityDays):
     logger = log.Log.getLogger("genCalibRegistry")
 
@@ -70,7 +71,7 @@ def main(root, validityDays):
                                                                row.calibDate + validity]) for row in rows])
             dates = valids.keys()
             numDates = len(dates)
-            midpoints = [ t1 + (t2 - t1)//2 for t1, t2 in zip(dates[:numDates-1], dates[1:]) ]
+            midpoints = [t1 + (t2 - t1)//2 for t1, t2 in zip(dates[:numDates-1], dates[1:])]
             for i, (date, midpoint) in enumerate(zip(dates[:numDates-1], midpoints)):
                 if valids[date][1] > midpoint:
                     nextDate = dates[i+1]
@@ -90,6 +91,7 @@ def main(root, validityDays):
 
     conn.commit()
     conn.close()
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

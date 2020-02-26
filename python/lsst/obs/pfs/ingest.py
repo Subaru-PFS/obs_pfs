@@ -196,7 +196,7 @@ class PfsCalibsParseTask(CalibsParseTask):
 
     def _translateFromCalibId(self, field, md):
         data = md.get("CALIB_ID")
-        match = re.search(".*%s=(\S+)" % field, data)
+        match = re.search(r".*%s=(\S+)" % field, data)
         return match.groups()[0]
 
     def translate_ccd(self, md):
@@ -368,7 +368,7 @@ class PfsIngestTask(IngestTask):
             hduInfoList = super().runFile(infile, registry, args)
             pfsConfigDir = args.pfsConfigDir if args.pfsConfigDir is not None else os.path.dirname(infile)
             self.ingestPfsConfig(pfsConfigDir, hduInfoList[0], args)
-        except Exception as exc:
+        except Exception:
             import traceback
             traceback.print_exc()
             raise

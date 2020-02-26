@@ -1,5 +1,6 @@
 from lsst.pipe.drivers.constructCalibs import CalibConfig, CalibTask
 
+
 class PfsFlatCombineConfig(CalibConfig):
     """Configuration for flat construction.
 
@@ -7,6 +8,7 @@ class PfsFlatCombineConfig(CalibConfig):
     subclassed for distinction.
     """
     pass
+
 
 class PfsFlatCombineTask(CalibTask):
     ConfigClass = PfsFlatCombineConfig

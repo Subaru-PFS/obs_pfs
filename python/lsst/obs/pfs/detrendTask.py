@@ -1,14 +1,14 @@
-import math
-import lsst.meas.algorithms as measAlg
 from lsst.ip.isr import IsrTask
 from lsst.pipe.tasks.repair import RepairTask
 from lsst.pex.config import Config, ConfigurableField, Field
 from lsst.pipe.base import CmdLineTask
 
+
 class DetrendConfig(Config):
     isr = ConfigurableField(target=IsrTask, doc="Instrumental signature removal")
     doRepair = Field(dtype=bool, default=True, doc="Repair artifacts?")
     repair = ConfigurableField(target=RepairTask, doc="Task to repair artifacts")
+
 
 class DetrendTask(CmdLineTask):
     _DefaultName = "detrend"
@@ -28,7 +28,6 @@ class DetrendTask(CmdLineTask):
             #
             modelPsfConfig = self.config.repair.interp.modelPsf
             psf = modelPsfConfig.apply()
-            
             exposure.setPsf(psf)
             #
             # Do the work
@@ -39,7 +38,9 @@ class DetrendTask(CmdLineTask):
 
     def _getConfigName(self):
         return None
+
     def _getMetadataName(self):
         return None
+
     def _getEupsVersionsName(self):
         return None

@@ -37,21 +37,21 @@ class PfsTranslator(SubaruTranslator):
     """Constant mappings"""
 
     _trivial_map = {
-                    # Existing
-                    "dark_time": ("DARKTIME", dict(unit=u.s)),
-                    "detector_group": "SPECNUM",  # Spectrograph
-                    "detector_name": "ARM",
-                    "exposure_time": ("EXPTIME", dict(unit=u.s)),
-                    "object": "IMAGETYP",  # XXX to be updated; hopefully to OBJECT
-                    "observation_type": "IMAGETYP",
-                    "physical_filter": "ARM",
-                    # Guesses for what we will use in the future
-                    "boresight_airmass": ("AIRMASS", dict(default=np.nan)),
-                    "pressure": ("OUT-PRS", dict(unit=u.hPa, default=np.nan)),
-                    "relative_humidity": ("OUT-HUM", dict(default=np.nan)),
-                    "science_program": ("PROP-ID", dict(default=0)),
-                    "temperature": ("OUT-TMP", dict(unit=u.K, default=np.nan)),
-                    }
+        # Existing
+        "dark_time": ("DARKTIME", dict(unit=u.s)),
+        "detector_group": "SPECNUM",  # Spectrograph
+        "detector_name": "ARM",
+        "exposure_time": ("EXPTIME", dict(unit=u.s)),
+        "object": "IMAGETYP",  # XXX to be updated; hopefully to OBJECT
+        "observation_type": "IMAGETYP",
+        "physical_filter": "ARM",
+        # Guesses for what we will use in the future
+        "boresight_airmass": ("AIRMASS", dict(default=np.nan)),
+        "pressure": ("OUT-PRS", dict(unit=u.hPa, default=np.nan)),
+        "relative_humidity": ("OUT-HUM", dict(default=np.nan)),
+        "science_program": ("PROP-ID", dict(default=0)),
+        "temperature": ("OUT-TMP", dict(unit=u.K, default=np.nan)),
+    }
     """One-to-one mappings"""
 
     _armToIndex = {"blue": 1,
