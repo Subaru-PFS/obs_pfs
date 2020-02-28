@@ -139,7 +139,7 @@ datasets:
 
   pfsArm:
     template: 'pfsArm/%(dateObs)s/v%(visit)06d/pfsArm-%(visit)06d-%(arm)s%(spectrograph)d.fits'
-    python: pfs.datamodel.drp.PfsArm
+    python: pfs.drp.stella.PfsArm
     persistable: PfsArm
     storage: FitsCatalogStorage
     level: Ccd
@@ -148,7 +148,7 @@ datasets:
 
   pfsMerged:
     template: 'pfsMerged/%(dateObs)s/v%(visit)06d/pfsMerged-%(visit)06d.fits'
-    python: pfs.datamodel.drp.PfsMerged
+    python: pfs.drp.stella.PfsMerged
     persistable: PfsMerged
     storage: FitsCatalogStorage
     level: Visit
@@ -187,7 +187,7 @@ datasets:
 
   pfsReference:
     template: 'pfsReference/%(catId)03d/%(tract)05d/pfsReference-%(catId)03d-%(tract)05d-%(patch)s-%(objId)08x.fits'
-    python: pfs.datamodel.drp.PfsReference
+    python: pfs.drp.stella.PfsReference
     persistable: PfsReference
     storage: FitsCatalogStorage
     level: Visit
@@ -206,7 +206,7 @@ datasets:
 
   pfsSingle:
     template: 'pfsSingle/%(catId)03d/%(tract)05d/%(patch)s/pfsSingle-%(catId)03d-%(tract)05d-%(patch)s-%(objId)016x-%(visit)06d.fits'
-    python: pfs.datamodel.drp.PfsSingle
+    python: pfs.drp.stella.PfsSingle
     persistable: PfsSingle
     storage: FitsCatalogStorage
     level: Visit
@@ -216,7 +216,7 @@ datasets:
 
   pfsObject:
     template: 'pfsObject/%(catId)03d/%(tract)05d/%(patch)s/pfsObject-%(catId)03d-%(tract)05d-%(patch)s-%(objId)016x-%(nVisit)03d-0x%(pfsVisitHash)016x.fits'
-    python: pfs.datamodel.drp.PfsObject
+    python: pfs.drp.stella.PfsObject
     persistable: PfsObject
     storage: FitsCatalogStorage
     level: Visit
