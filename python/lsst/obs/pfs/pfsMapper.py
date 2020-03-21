@@ -1,6 +1,8 @@
 import os
 import numpy as np
 
+from astro_metadata_translator import fix_header
+
 from lsst.obs.base import CameraMapper, MakeRawVisitInfo
 import lsst.afw.image.utils as afwImageUtils
 import lsst.afw.image as afwImage
@@ -187,7 +189,10 @@ class PfsMapper(CameraMapper):
     def std_raw(self, item, dataId):
         """Fixup raw image problems.
 
-        1. Fix an early ADC bug.
+        1. Apply header patches. This should be done by the CameraMapper base
+        class, but it isn't yet (DM-23959).
+
+        2. Fix an early ADC bug.
 
         Since this is almost certainly an FPGA bug, I'll base the
         decision on the FPGA version number. As of 2016-12-01 the
@@ -200,6 +205,7 @@ class PfsMapper(CameraMapper):
         exp = super(PfsMapper, self).std_raw(item, dataId)
 
         md = exp.getMetadata()
+        fix_header(md, translator_class=PfsTranslator)
         try:
             dataVersion = int(md.get('W_VERSIONS_FPGA'), 16)
         except Exception:
