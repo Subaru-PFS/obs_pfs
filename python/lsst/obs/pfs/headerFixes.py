@@ -53,7 +53,7 @@ class HeaderFixDatabase:
 
         This is the official list of header fixes to apply.
         """
-        pass
+        self.add(range(17244, 17298), W_XHP2FR=0)  # Fix duplicate no-value (DM-23928)
 
 
 if __name__ == "__main__":
