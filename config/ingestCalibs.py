@@ -19,5 +19,5 @@ config.parse.translators = {'arm': 'translate_arm',
 
 config.register.detector = ['arm', 'spectrograph']
 config.register.unique = ['arm', 'spectrograph', 'calibDate']
-config.register.tables = ['bias', 'dark', 'detectormap', 'flat', 'fibertrace']
+config.register.tables = ['bias', 'dark', 'detectorMap', 'flat', 'fiberTrace']
 config.register.visit = ['calibDate', 'arm', 'spectrograph']

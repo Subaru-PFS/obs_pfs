@@ -216,7 +216,18 @@ class PfsMapper(CameraMapper):
 
         return exp
 
-    def std_fibertrace(self, item, dataId):  # needed to stop the butler generating a version
+    def std_fiberTrace(self, item, dataId):
+        """Disable standardization for fiberTrace
+
+        Because it is not an Exposure.
+        """
+        return item
+
+    def std_detectorMap(self, item, dataId):
+        """Disable standardization for detectorMap
+
+        Because it is not an Exposure.
+        """
         return item
 
     def map_linearizer(self, dataId, write=False):
@@ -300,6 +311,3 @@ class PfsMapper(CameraMapper):
             except IndexError:
                 raise RuntimeError("Unable to lookup %s in \"%s\" registry for dataId %s" %
                                    (k, dataType, dataId))
-
-    def std_detectormap(self, item, dataId):
-        return item
