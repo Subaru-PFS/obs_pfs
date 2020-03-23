@@ -335,13 +335,7 @@ class PfsIngestTask(IngestTask):
             raise RuntimeError("Unable to find PfsConfig or PfsDesign for pfsDesignId=0x%016x" %
                                (pfsDesignId,))
         design = PfsDesign.read(pfsDesignId, dirName)
-        keywords = ("pfsDesignId", "raBoresight", "decBoresight",
-                    "fiberId", "tract", "patch", "ra", "dec", "catId", "objId",
-                    "targetType", "fiberMag", "filterNames", "pfiNominal")
-        kwargs = {kk: getattr(design, kk) for kk in keywords}
-        kwargs["visit0"] = visit
-        kwargs["pfiCenter"] = kwargs["pfiNominal"]
-        PfsConfig(**kwargs).write(dirName)
+        PfsConfig.fromPfsDesign(design, visit, design.pfiNominal).write(dirName)
         self.ingest(infile, outfile, mode=args.mode, dryrun=args.dryrun)
 
     def runFile(self, infile, registry, args):
