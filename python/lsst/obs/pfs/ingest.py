@@ -8,6 +8,7 @@ from lsst.obs.pfs.pfsMapper import PfsMapper
 from lsst.pipe.tasks.ingest import ParseTask, ParseConfig, IngestTask, IngestConfig, IngestArgumentParser
 from lsst.pipe.tasks.ingestCalibs import CalibsParseTask
 from lsst.pex.config import Field
+from lsst.afw.fits import readMetadata
 from lsst.obs.pfs.utils import getLamps
 
 from pfs.datamodel.pfsConfig import PfsConfig, PfsDesign
@@ -192,7 +193,27 @@ class PfsParseTask(ParseTask):
 class PfsCalibsParseTask(CalibsParseTask):
     """Parse a PFS calib image for butler keyword-value pairs"""
     ConfigClass = PfsParseConfig
-    calibTypes = ["Bias", "Dark", "DetectorMap", "FiberTrace", "FiberFlat"]
+
+    def getCalibType(self, filename):
+        """Return the calibration dataset type
+
+        We inspect the OBSTYPE header.
+
+        Parameters
+        ----------
+        filename : `str`
+            Input filename.
+
+        Returns
+        -------
+        calibType : `str`
+            Calibration dataset type.
+        """
+        md = readMetadata(filename, self.config.hdu)
+        if not md.exists("OBSTYPE"):
+            raise RuntimeError("Unable to find the required header keyword OBSTYPE in %s, hdu %d" %
+                               (filename, self.config.hdu))
+        return md.getScalar("OBSTYPE").strip()
 
     def _translateFromCalibId(self, field, md):
         data = md.get("CALIB_ID")
