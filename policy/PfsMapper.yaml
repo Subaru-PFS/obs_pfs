@@ -95,7 +95,7 @@ calibrations:
     validRange: true
     validStartName: validStart
     validEndName: validEnd
-  fibertrace:
+  fiberTrace:
     template: 'FIBERTRACE/pfsFiberTrace-%(calibDate)s-%(visit0)06d-%(arm)s%(spectrograph)1d.fits'
     python: pfs.drp.stella.FiberTraceSet
     persistable: FiberTraceSet
@@ -114,7 +114,7 @@ calibrations:
     validRange: true
     validStartName: validStart
     validEndName: validEnd
-  detectormap:
+  detectorMap:
     template: 'DETECTORMAP/pfsDetectorMap-%(visit0)06d-%(arm)s%(spectrograph)1d.fits'
     python: pfs.drp.stella.DetectorMap
     persistable: DetectorMap
