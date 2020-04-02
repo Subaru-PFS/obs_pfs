@@ -234,6 +234,16 @@ datasets:
     - raw
     - raw_visit
 
+  lsf:
+    template: 'lsf/%(dateObs)s/v%(visit)06d/lsf-%(visit)06d-%(arm)s%(spectrograph)d.pickle'
+    python: dict
+    persistable: ignored
+    storage: PickleStorage
+    level: Ccd
+    tables:
+    - raw
+    - raw_visit
+
 
   fiberFlat_config:
     template: config/fiberFlat.py
