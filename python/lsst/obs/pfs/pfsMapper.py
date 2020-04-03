@@ -216,6 +216,27 @@ class PfsMapper(CameraMapper):
 
         return exp
 
+    def std_raw_md(self, item, dataId):
+        """Fixup raw header metadata problems.
+
+        This should be done by the CameraMapper base class, but it isn't yet (DM-23959).
+
+        Parameters
+        ----------
+        item : `lsst.daf.base.PropertyList`
+            The raw metadata to be fixed
+
+        dataId : `dict`
+            Dataset identifier
+
+        Returns
+        -------
+        item : `lsst.daf.base.PropertyList`
+            The modified raw metadata.
+        """
+        fix_header(item, translator_class=PfsTranslator)
+        return item
+
     def std_fiberTrace(self, item, dataId):
         """Disable standardization for fiberTrace
 
