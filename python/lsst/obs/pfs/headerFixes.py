@@ -53,7 +53,12 @@ class HeaderFixDatabase:
 
         This is the official list of header fixes to apply.
         """
-        self.add(range(17244, 17298), W_XHP2FR=0)  # Fix duplicate no-value (DM-23928)
+        # Fix duplicate no-value (DM-23928)
+        self.add(range(17244, 17298), W_XHP2FR=0)
+
+        # For Subaru exposures taken during Dec 2019, exposures
+        # labelled as Neon were actually Krypton
+        self.add(list(range(423, 442)) + [43, 54, 60], W_AITNEO=False, W_AITKRY=True)
 
 
 if __name__ == "__main__":
