@@ -200,8 +200,22 @@ class PfsMapper(CameraMapper):
         does not exist.
 
         See _shiftAmpPixels() for the implementation.
-        """
 
+        Parameters
+        ----------
+        item : image-like object
+            Can be any of lsst.afw.image.Exposure,
+            lsst.afw.image.DecoratedImage, lsst.afw.image.Image
+            or lsst.afw.image.MaskedImage
+            the image-like object whose header information needs to be patched.
+        dataId : `dict`
+            Dataset identifier
+
+        Returns
+        -------
+        item : image-like object
+            the input object with patched header information.
+        """
         exp = super(PfsMapper, self).std_raw(item, dataId)
 
         md = exp.getMetadata()
