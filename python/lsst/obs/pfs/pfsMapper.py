@@ -200,8 +200,22 @@ class PfsMapper(CameraMapper):
         does not exist.
 
         See _shiftAmpPixels() for the implementation.
-        """
 
+        Parameters
+        ----------
+        item : image-like object
+            Can be any of lsst.afw.image.Exposure,
+            lsst.afw.image.DecoratedImage, lsst.afw.image.Image
+            or lsst.afw.image.MaskedImage
+            the image-like object whose header information needs to be patched.
+        dataId : `dict`
+            Dataset identifier
+
+        Returns
+        -------
+        item : image-like object
+            the input object with patched header information.
+        """
         exp = super(PfsMapper, self).std_raw(item, dataId)
 
         md = exp.getMetadata()
@@ -215,6 +229,27 @@ class PfsMapper(CameraMapper):
             self._shiftAmpPixels(exp)
 
         return exp
+
+    def std_raw_md(self, item, dataId):
+        """Fixup raw header metadata problems.
+
+        This should be done by the CameraMapper base class, but it isn't yet (DM-23959).
+
+        Parameters
+        ----------
+        item : `lsst.daf.base.PropertyList`
+            The raw metadata to be fixed
+
+        dataId : `dict`
+            Dataset identifier
+
+        Returns
+        -------
+        item : `lsst.daf.base.PropertyList`
+            The modified raw metadata.
+        """
+        fix_header(item, translator_class=PfsTranslator)
+        return item
 
     def std_fiberTrace(self, item, dataId):
         """Disable standardization for fiberTrace
