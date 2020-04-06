@@ -6,6 +6,7 @@ from astro_metadata_translator import fix_header
 import lsst.afw.image as afwImage
 from lsst.obs.pfs.pfsMapper import PfsMapper
 from lsst.pipe.tasks.ingest import ParseTask, ParseConfig, IngestTask, IngestConfig, IngestArgumentParser
+from lsst.pipe.tasks.ingestCalibs import IngestCalibsTask
 from lsst.pipe.tasks.ingestCalibs import CalibsParseTask
 from lsst.pex.config import Field
 from lsst.afw.fits import readMetadata
@@ -14,7 +15,7 @@ from lsst.obs.pfs.utils import getLamps
 from pfs.datamodel.pfsConfig import PfsConfig, PfsDesign
 from .translator import PfsTranslator
 
-__all__ = ["PfsParseConfig", "PfsParseTask", "PfsIngestTask"]
+__all__ = ["PfsParseConfig", "PfsParseTask", "PfsIngestTask", "PfsIngestCalibsTask"]
 
 
 class PfsParseConfig(ParseConfig):
@@ -388,3 +389,77 @@ class PfsIngestTask(IngestTask):
             traceback.print_exc()
             raise
         return hduInfoList
+
+
+class PfsIngestCalibsTask(IngestCalibsTask):
+    def runFile(self, infile, registry, args):
+        """Examine and ingest a single file
+
+        Parameters
+        ----------
+        infile : `str`
+            Name of file to process.
+        registry : `sqlite3.Connection`
+            Registry database connection.
+        args : `argparse.Namespace`
+            Parsed command-line arguments.
+
+        Returns
+        -------
+        calibType : `str`
+            Calibration type (e.g., bias, dark, flat), or None.
+        hduInfoList : `list` of `dict`
+            Parsed information from FITS HDUs, or None.
+        """
+        fileInfo, hduInfoList = self.parse.getInfo(infile)
+        if args.calibType is None:
+            calibType = self.parse.getCalibType(infile)
+        else:
+            calibType = args.calibType
+        if calibType not in self.register.config.tables:
+            self.log.warn(str("Skipped adding %s of observation type '%s' to registry "
+                              "(must be one of %s)" %
+                              (infile, calibType, ", ".join(self.register.config.tables))))
+            return None, None
+        if args.mode != 'skip':
+            outfile = self.parse.getDestination(args.butler, fileInfo, infile)
+            ingested = self.ingest(infile, outfile, mode=args.mode, dryrun=args.dryrun)
+            if not ingested:
+                self.log.warn(str("Failed to ingest %s of observation type '%s'" %
+                              (infile, calibType)))
+                return None, None
+
+        if self.register.check(registry, fileInfo, table=calibType):
+            if args.ignoreIngested:
+                return None, None
+            self.log.warn("%s: already ingested: %s" % (infile, fileInfo))
+
+        # If we have a bias/dark/flat for 'r' or 'm' arm, ingest the alternate: the pixels are identical
+        assert len(hduInfoList) == 1
+        hduInfo = hduInfoList[0]
+        if calibType in ("bias", "dark", "flat") and hduInfo["arm"] in ("r", "m"):
+            copy = hduInfo.copy()
+            copy["arm"] = "r" if copy["arm"] == "m" else "m"
+            hduInfoList.append(copy)
+            copyFile = self.parse.getDestination(args.butler, copy, infile)
+            self.ingest(outfile, copyFile, mode="copy" if args.mode == "move" else args.mode,
+                        dryrun=args.dryrun)
+
+        return calibType, hduInfoList
+
+    def run(self, args):
+        """Ingest all specified files and add them to the registry"""
+        calibRoot = args.calib if args.calib is not None else args.output
+        filenameList = self.expandFiles(args.files)
+        with self.register.openRegistry(calibRoot, create=args.create, dryrun=args.dryrun) as registry:
+            for infile in filenameList:
+                calibType, hduInfoList = self.runFile(infile, registry, args)
+                if hduInfoList is None:
+                    continue
+                for info in hduInfoList:
+                    self.register.addRow(registry, info, dryrun=args.dryrun,
+                                         create=args.create, table=calibType)
+            if not args.dryrun:
+                self.register.updateValidityRanges(registry, args.validity)
+            else:
+                self.log.info("Would update validity ranges here, but dryrun")
