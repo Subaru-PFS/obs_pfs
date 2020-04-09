@@ -54,7 +54,9 @@ class HeaderFixDatabase:
         This is the official list of header fixes to apply.
         """
         # Fix duplicate no-value (DM-23928)
-        self.add(range(17244, 17298), W_XHP2FR=0)
+        # Undefined values occurred in LAM data
+        # between 2019-05-03 and 2019-06-14
+        self.add(range(16804, 20961), W_XHP2FR=0)
 
         # For Subaru exposures taken during Dec 2019, exposures
         # labelled as Neon were actually Krypton
