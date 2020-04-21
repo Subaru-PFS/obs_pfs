@@ -95,7 +95,7 @@ class PfsMapper(CameraMapper):
                 'pfsDesignId': int,
                 'slitOffset': float,
                 }
-        for name in ("raw", "pfsArm", "wlFitData", "pfsMerged"):
+        for name in ("raw", "pfsArm", "wlFitData"):
             self.mappings[name].keyDict.update(keys)
 
         # The order of these defineFilter commands matters as their IDs are used to generate at least some
