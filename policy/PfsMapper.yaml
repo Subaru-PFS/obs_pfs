@@ -196,10 +196,11 @@ datasets:
     - raw_visit
 
   fluxCal:
-    template: 'fluxCal/%(dateObs)s/v%(visit)06d/fluxCal-%(visit)06d-%(arm)s%(spectrograph)d.fits'
+    template: 'fluxCal/%(dateObs)s/v%(visit)06d/fluxCal-%(visit)06d.fits'
     python: pfs.drp.stella.fitFocalPlane.FocalPlaneFunction
     persistable: FocalPlaneFunction
     storage: FitsCatalogStorage
+    level: Visit
     tables:
     - raw
     - raw_visit
