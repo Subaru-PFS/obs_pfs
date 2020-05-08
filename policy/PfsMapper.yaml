@@ -159,8 +159,8 @@ datasets:
   pfsConfig:
     # N.b. template is overridden by datamodel
     template: 'pfsConfig/%(dateObs)s/pfsConfig-0x%(pfsDesignId)016x-%(visit)06d.fits'
-    python: pfs.drp.stella.PfsConfigIO
-    persistable: PfsConfigIO
+    python: pfs.drp.stella.PfsConfig
+    persistable: PfsConfig
     storage: FitsCatalogStorage
     tables:
     - raw
@@ -196,10 +196,11 @@ datasets:
     - raw_visit
 
   fluxCal:
-    template: 'fluxCal/%(dateObs)s/v%(visit)06d/fluxCal-%(visit)06d-%(arm)s%(spectrograph)d.fits'
+    template: 'fluxCal/%(dateObs)s/v%(visit)06d/fluxCal-%(visit)06d.fits'
     python: pfs.drp.stella.fitFocalPlane.FocalPlaneFunction
     persistable: FocalPlaneFunction
     storage: FitsCatalogStorage
+    level: Visit
     tables:
     - raw
     - raw_visit

@@ -141,6 +141,10 @@ CCDs : &CCDs
                 ixy : [7, 0]
                 gain : 1.26
                 readNoise : 4.181415
+    m1 :  # m1 is actually r1
+        <<: *CCD
+        id : 3
+
     b1 :                                # Spectrograph 1, blue arm
         << : *Detector
         detectorType : 1                # b CCD
@@ -181,3 +185,7 @@ CCDs : &CCDs
                 <<: *A7
                 gain : 1.26
                 readNoise : 6
+
+    n1 :    # Infrared arm currently only exists in sims, and is a CCD.
+        <<: *CCD
+        id : 2
