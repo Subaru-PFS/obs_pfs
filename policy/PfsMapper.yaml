@@ -133,6 +133,24 @@ calibrations:
     validRange: true
     validStartName: validStart
     validEndName: validEnd
+  bias_camera:
+    template: 'BIAS-overview/pfsBiasOverview-%(calibDate)s-%(visit0)06d.fits'
+    persistable: ExposureF
+    python: lsst.afw.image.ExposureF
+    storage: FitsStorage
+    level: None
+  dark_camera:
+    template: 'DARK-overview/pfsDarkOverview-%(calibDate)s-%(visit0)06d.fits'
+    persistable: ExposureF
+    python: lsst.afw.image.ExposureF
+    storage: FitsStorage
+    level: None
+  flat_camera:
+    template: 'FLAT-overview/pfsFlatOverview-%(calibDate)s-%(visit0)06d.fits'
+    persistable: ExposureF
+    python: lsst.afw.image.ExposureF
+    storage: FitsStorage
+    level: None
 
 
 datasets:
