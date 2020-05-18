@@ -1,5 +1,6 @@
 import os
 import re
+from functools import partialmethod
 
 from astro_metadata_translator import fix_header
 
@@ -30,6 +31,11 @@ class PfsParseConfig(ParseConfig):
         self.translators["lamps"] = "translate_lamps"
         self.translators["dateObs"] = "translate_date"
         self.translators["taiObs"] = "translate_date"
+        self.translators["dither"] = "translate_dither"
+        self.translators["shift"] = "translate_shift"
+        self.translators["focus"] = "translate_focus"
+        self.translators["attenuator"] = "translate_attenuator"
+        self.translators["photodiode"] = "translate_photodiode"
 
 
 class PfsParseTask(ParseTask):
@@ -190,6 +196,46 @@ class PfsParseTask(ParseTask):
         """Get lamps from header metadata"""
         return ",".join(sorted(getLamps(md.toDict())))
 
+    def getNumeric(self, md, keyword, default=0.0):
+        """Get a numerical value from a header which may be a string
+
+        Casting these to numeric types results in an exception, so we set them
+        to a default value.
+
+        Parameters
+        ----------
+        md : `lsst.daf.base.PropertyList`
+            The FITS header.
+        keyword : `str`
+            Header keyword from which to get the value.
+        default : numeric
+            Value to use if the header keyword isn't present, or the value is
+            not a numeric type.
+
+        Returns
+        -------
+        value : numeric
+            Value of interest.
+        """
+        if not md.exists(keyword):
+            return default
+        value = md.get(keyword)
+        try:
+            return float(value)
+        except Exception:
+            return default
+
+
+# Set up multiple columns to be populated using the "getNumeric" method
+for column, keyword, default in (('dither', 'W_ENFCAZ', -9999),
+                                 ('shift', 'W_ENFCAY', -9999),
+                                 ('focus', 'W_ENFCAX', -9999),
+                                 ('attenuator', 'W_AITATT', -9999),
+                                 ('photodiode', 'W_AITPHO', -9999),
+                                 ):
+    setattr(PfsParseTask, "translate_" + column,
+            partialmethod(PfsParseTask.getNumeric, keyword=keyword, default=default))
+
 
 class PfsCalibsParseTask(CalibsParseTask):
     """Parse a PFS calib image for butler keyword-value pairs"""
@@ -286,19 +332,8 @@ def setIngestConfig(config):
                                 'expTime': 'EXPTIME',
                                 'dateObs': 'DATE-OBS',
                                 'taiObs': 'DATE-OBS',
-                                # Note that the xyz convention below is the hexapod; units are mm
-                                'dither': 'W_ENFCAZ',
-                                'shift': 'W_ENFCAY',
-                                'focus': 'W_ENFCAX',
-                                'attenuator': 'W_AITATT',
-                                'photodiode': 'W_AITPHO',
                                 }
     config.parse.defaults = {'ccdTemp': "0",  # Added in commissioning run 3
-                             'dither': "0.0",
-                             'shift': "0.0",
-                             'focus': "0.0",
-                             'attenuator': "-1.0",
-                             'photodiode': "-1.0",
                              }
 
 
