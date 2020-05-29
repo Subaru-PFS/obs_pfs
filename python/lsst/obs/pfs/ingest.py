@@ -26,6 +26,7 @@ class PfsParseConfig(ParseConfig):
     def setDefaults(self):
         ParseConfig.setDefaults(self)
         self.translators["field"] = "translate_field"
+        self.translators["dataType"] = "translate_dataType"
         self.translators["pfsDesignId"] = "translate_pfsDesignId"
         self.translators["slitOffset"] = "translate_slitOffset"
         self.translators["lamps"] = "translate_lamps"
@@ -154,15 +155,39 @@ class PfsParseTask(ParseTask):
         return info
 
     def translate_field(self, md):
-        """Get 'field' from IMAGETYP
+        """Get 'field' from metadata
 
-        This is temporary, until an OBJECT (or similar) header can be provided,
-        but it's better than setting everything to the same thing.
+        Get a potentially useful value from typical header keywords. As PFS
+        evolves, the header keyword with the value we want changes (IMAGETYP
+        for engineering at LAM, DATA-TYP for engineering at Subaru, and then
+        OBJECT when we get on the sky).
         """
-        field = md.get("IMAGETYP").strip()
-        if field in ("#", ""):
+        for key in ("OBJECT", "DATA-TYP", "IMAGETYP"):
+            if not md.exists(key):
+                continue
+            field = md.get(key).strip()
+            if field not in ("#", "##NODATA##", ""):
+                break
+        else:
             field = "UNKNOWN"
         self.log.debug('PfsParseTask.translate_field: field = %s' % field)
+        return re.sub(r'\W', '_', field).upper()
+
+    def translate_dataType(self, md):
+        """Get 'dataType' from metadata
+
+        Get a value from typical header keywords. As PFS evolves, the header
+        keyword with the value we want changes (IMAGETYP for engineering at LAM,
+        DATA-TYP for engineering and on the sky at Subaru.
+        """
+        for key in ("DATA-TYP", "IMAGETYP"):
+            if not md.exists(key):
+                continue
+            field = md.get(key).strip()
+            if field not in ("#", "##NODATA##", ""):
+                break
+        else:
+            field = "UNKNOWN"
         return re.sub(r'\W', '_', field).upper()
 
     def translate_pfsDesignId(self, md):
@@ -328,8 +353,7 @@ def setIngestConfig(config):
                              'lamps', 'attenuator', 'photodiode',
                              ]
 
-    config.parse.translation = {'dataType': 'IMAGETYP',
-                                'expTime': 'EXPTIME',
+    config.parse.translation = {'expTime': 'EXPTIME',
                                 'dateObs': 'DATE-OBS',
                                 'taiObs': 'DATE-OBS',
                                 }
