@@ -441,6 +441,8 @@ class PfsIngestTask(IngestTask):
         """
         try:
             hduInfoList = super().runFile(infile, registry, args)
+            if hduInfoList is None:
+                return None
             pfsConfigDir = args.pfsConfigDir if args.pfsConfigDir is not None else os.path.dirname(infile)
             self.ingestPfsConfig(pfsConfigDir, hduInfoList[0], args)
         except Exception:
