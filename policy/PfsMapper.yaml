@@ -116,8 +116,8 @@ calibrations:
     validEndName: validEnd
   detectorMap:
     template: 'DETECTORMAP/pfsDetectorMap-%(visit0)06d-%(arm)s%(spectrograph)1d.fits'
-    python: pfs.drp.stella.DetectorMap
-    persistable: DetectorMap
+    python: pfs.drp.stella.BaseDetectorMap
+    persistable: BaseDetectorMap
     storage: FitsCatalogStorage
     level: Ccd
     tables: detectorMap
