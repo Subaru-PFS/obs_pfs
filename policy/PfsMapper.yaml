@@ -295,7 +295,7 @@ datasets:
 
   reduceArc_config:
     template: config/reduceArc.py
-    python: pfs.drp.stella.reduceArcTask.ReduceArcConfig
+    python: pfs.drp.stella.reduceArc.ReduceArcConfig
     persistable: Config
     storage: ConfigStorage
     tables:
