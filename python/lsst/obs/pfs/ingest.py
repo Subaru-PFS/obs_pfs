@@ -1,14 +1,18 @@
 import os
 import re
 from functools import partialmethod
+import datetime
+import dateutil.parser
+import collections
 
 from astro_metadata_translator import fix_header
 
 import lsst.afw.image as afwImage
 from lsst.obs.pfs.pfsMapper import PfsMapper
 from lsst.pipe.tasks.ingest import ParseTask, ParseConfig, IngestTask, IngestConfig, IngestArgumentParser
-from lsst.pipe.tasks.ingestCalibs import IngestCalibsTask
-from lsst.pipe.tasks.ingestCalibs import CalibsParseTask
+from lsst.pipe.tasks.ingest import RegisterTask
+from lsst.pipe.tasks.ingestCalibs import IngestCalibsTask, IngestCalibsConfig
+from lsst.pipe.tasks.ingestCalibs import CalibsParseTask, CalibsRegisterTask
 from lsst.pex.config import Field
 from lsst.afw.fits import readMetadata
 from lsst.obs.pfs.utils import getLamps
@@ -31,12 +35,12 @@ class PfsParseConfig(ParseConfig):
         self.translators["slitOffset"] = "translate_slitOffset"
         self.translators["lamps"] = "translate_lamps"
         self.translators["dateObs"] = "translate_date"
-        self.translators["taiObs"] = "translate_date"
         self.translators["dither"] = "translate_dither"
         self.translators["shift"] = "translate_shift"
         self.translators["focus"] = "translate_focus"
         self.translators["attenuator"] = "translate_attenuator"
         self.translators["photodiode"] = "translate_photodiode"
+        self.translators["taiObs"] = "translate_datetime"
 
 
 class PfsParseTask(ParseTask):
@@ -250,6 +254,27 @@ class PfsParseTask(ParseTask):
         except Exception:
             return default
 
+    def translate_datetime(self, md):
+        """Get an ISO-formatted date+time
+
+        Sometimes the time is included in DATE-OBS, sometimes it isn't.
+
+        Parameters
+        ----------
+        md : `lsst.daf.base.PropertyList`
+            Metadata from the header.
+
+        Returns
+        -------
+        datetime : `str`
+            ISO-formatted date+time.
+        """
+        dateObs = md.get("DATE-OBS")
+        if "T" in dateObs:
+            return dateObs
+        time = md.get("UT")
+        return f"{dateObs}T{time}"
+
 
 # Set up multiple columns to be populated using the "getNumeric" method
 for column, keyword, default in (('dither', 'W_ENFCAZ', -9999),
@@ -301,6 +326,25 @@ class PfsCalibsParseTask(CalibsParseTask):
     def translate_calibDate(self, md):
         return self._translateFromCalibId("calibDate", md)
 
+    def translate_calibTime(self, md):
+        """Get time of calibration frame from metadata
+
+        Parameters
+        ----------
+        md : `lsst.daf.base.PropertyList`
+            Metadata from header.
+
+        Returns
+        -------
+        calibTime : `str`
+            Time of calibration frame.
+        """
+        try:
+            return self._translateFromCalibId("calibTime", md)
+        except Exception:
+            calibDate = self._translateFromCalibId("calibDate", md)
+            return calibDate[:calibDate.find("T")] if "T" in calibDate else calibDate
+
     def translate_spectrograph(self, md):
         return int(self._translateFromCalibId("spectrograph", md))
 
@@ -309,6 +353,27 @@ class PfsCalibsParseTask(CalibsParseTask):
             return int(self._translateFromCalibId("visit0", md))
         except Exception:
             return 0
+
+
+class PfsRegisterTask(RegisterTask):
+    def addVisits(self, conn, dryrun=False, table=None):
+        """Generate the visits table (typically 'raw_visits') from the
+        file table (typically 'raw').
+
+        @param conn    Database connection
+        @param table   Name of table in database
+        """
+        if table is None:
+            table = self.config.table
+        sql = f"INSERT INTO {table}_visit SELECT * FROM (SELECT "
+        sql += ",".join(self.config.visit)
+        sql += f" FROM {table} GROUP BY visit HAVING ROWID = MIN(ROWID)) AS vv1"  # Take first row as standard
+        sql += " WHERE NOT EXISTS "
+        sql += f"(SELECT vv2.visit FROM {table}_visit AS vv2 WHERE vv1.visit = vv2.visit)"
+        if dryrun:
+            print("Would execute: %s" % sql)
+        else:
+            conn.cursor().execute(sql)
 
 
 def setIngestConfig(config):
@@ -324,6 +389,7 @@ def setIngestConfig(config):
         Configuration to set.
     """
     config.parse.retarget(PfsParseTask)
+    config.register.retarget(PfsRegisterTask)
     config.register.columns = {'site': 'text',  # J: JHU, L: LAM, X: Subaru offline, I: IPMU, A: ASIAA,
                                                 # S: Summit, P: Princeton, F: simulation (fake)
                                'category': 'text',  # A: science, B: NTR, C: Meterology, D: HG
@@ -333,10 +399,10 @@ def setIngestConfig(config):
                                'filter': 'text',  # b: blue, r: red, n: nir, m: medium resolution red
                                'arm': 'text',  # b: blue, r: red, n: nir, m: medium resolution red
                                'spectrograph': 'int',  # Spectrograph module: 1-4
-                               'dateObs': 'text',  # Date of observation
+                               'dateObs': 'text',  # Date of observation; used for filenames
                                'expTime': 'double',  # Exposure time
                                'dataType': 'text',  # Type of exposure
-                               'taiObs': 'text',  # Time of observation
+                               'taiObs': 'text',  # Date+time of observation; used for finding calibs
                                'pfsDesignId': 'int',  # Configuration of the top-end
                                'slitOffset': 'double',  # Horizontal slit offset; kept for backwards compat.
                                'dither': 'double',  # Slit offset in spatial dimension
@@ -348,13 +414,12 @@ def setIngestConfig(config):
                                }
     config.register.unique = ['site', 'category', 'visit', 'filter', 'arm', 'spectrograph',
                               'pfsDesignId']
-    config.register.visit = ['visit', 'field', 'filter', 'spectrograph', 'arm', 'dateObs',
-                             'taiObs', 'pfsDesignId', 'slitOffset', 'dither', 'shift', 'focus',
+    config.register.visit = ['visit', 'field', 'dateObs', 'taiObs', 'pfsDesignId',
+                             'slitOffset', 'dither', 'shift', 'focus',
                              'lamps', 'attenuator', 'photodiode',
                              ]
 
     config.parse.translation = {'expTime': 'EXPTIME',
-                                'dateObs': 'DATE-OBS',
                                 'taiObs': 'DATE-OBS',
                                 }
     config.parse.defaults = {'ccdTemp': "0",  # Added in commissioning run 3
@@ -452,7 +517,16 @@ class PfsIngestTask(IngestTask):
         return hduInfoList
 
 
+class PfsIngestCalibsConfig(IngestCalibsConfig):
+    """Configuration for PfsIngestCalibsTask"""
+    def setDefaults(self):
+        super().setDefaults()
+        self.register.retarget(PfsCalibsRegisterTask)
+
+
 class PfsIngestCalibsTask(IngestCalibsTask):
+    ConfigClass = PfsIngestCalibsConfig
+
     def runFile(self, infile, registry, args):
         """Examine and ingest a single file
 
@@ -524,3 +598,74 @@ class PfsIngestCalibsTask(IngestCalibsTask):
                 self.register.updateValidityRanges(registry, args.validity)
             else:
                 self.log.info("Would update validity ranges here, but dryrun")
+
+
+def _convertToDate(dateString):
+    """Convert a string into a date object"""
+    return dateutil.parser.parse(dateString)
+
+
+class PfsCalibsRegisterTask(CalibsRegisterTask):
+    def fixSubsetValidity(self, conn, table, detectorData, validity):
+        """Update the validity ranges among selected rows in the registry.
+
+        For defects and qe_curve, the products are valid from their start date until
+        they are superseded by subsequent defect data.
+        For other calibration products, the validity ranges are checked and
+        if there are overlaps, a midpoint is used to fix the overlaps,
+        so that the calibration data with whose date is nearest the date
+        of the observation is used.
+
+        @param conn: Database connection
+        @param table: Name of table to be selected
+        @param detectorData: Values identifying a detector (from columns in self.config.detector)
+        @param validity: Validity range (days)
+        """
+        columns = ", ".join([self.config.calibDate, self.config.validStart, self.config.validEnd])
+        sql = "SELECT id, %s FROM %s" % (columns, table)
+        sql += " WHERE " + " AND ".join(col + "=?" for col in self.config.detector)
+        sql += " ORDER BY " + self.config.calibDate
+        cursor = conn.cursor()
+        cursor.execute(sql, detectorData)
+        rows = cursor.fetchall()
+
+        try:
+            valids = collections.OrderedDict([(_convertToDate(row[self.config.calibDate]), [None, None]) for
+                                              row in rows])
+        except Exception:
+            det = " ".join("%s=%s" % (k, v) for k, v in zip(self.config.detector, detectorData))
+            # Sqlite returns unicode strings, which cannot be passed through SWIG.
+            self.log.warn(str("Skipped setting the validity overlaps for %s %s: missing calibration dates" %
+                              (table, det)))
+            return
+        dates = list(valids.keys())
+        if table in self.config.validityUntilSuperseded:
+            # A calib is valid until it is superseded
+            for thisDate, nextDate in zip(dates[:-1], dates[1:]):
+                valids[thisDate][0] = thisDate
+                valids[thisDate][1] = nextDate - datetime.timedelta(microseconds=1)
+            valids[dates[-1]][0] = dates[-1]
+            valids[dates[-1]][1] = _convertToDate("2037-12-31")  # End of UNIX time
+        else:
+            # A calib is valid within the validity range (in days) specified.
+            for dd in dates:
+                valids[dd] = [dd - datetime.timedelta(validity), dd + datetime.timedelta(validity)]
+            # Fix the dates so that they do not overlap, which can cause the butler to find a
+            # non-unique calib.
+            midpoints = [t1 + (t2 - t1)//2 for t1, t2 in zip(dates[:-1], dates[1:])]
+            for i, (date, midpoint) in enumerate(zip(dates[:-1], midpoints)):
+                if valids[date][1] > midpoint:
+                    nextDate = dates[i + 1]
+                    valids[nextDate][0] = midpoint + datetime.timedelta(microseconds=1)
+                    valids[date][1] = midpoint
+            del midpoints
+        del dates
+        # Update the validity data in the registry
+        for row in rows:
+            calibDate = _convertToDate(row[self.config.calibDate])
+            validStart = valids[calibDate][0].isoformat()
+            validEnd = valids[calibDate][1].isoformat()
+            sql = "UPDATE %s" % table
+            sql += " SET %s=?, %s=?" % (self.config.validStart, self.config.validEnd)
+            sql += " WHERE id=?"
+            conn.execute(sql, (validStart, validEnd, row["id"]))
