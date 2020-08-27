@@ -204,7 +204,7 @@ datasets:
     - raw_visit
 
   pfsReference:
-    template: 'pfsReference/%(catId)03d/%(tract)05d/pfsReference-%(catId)03d-%(tract)05d-%(patch)s-%(objId)08x.fits'
+    template: 'pfsReference/%(catId)05d/%(tract)05d/pfsReference-%(catId)05d-%(tract)05d-%(patch)s-%(objId)08x.fits'
     python: pfs.drp.stella.PfsReference
     persistable: PfsReference
     storage: FitsCatalogStorage
@@ -224,7 +224,7 @@ datasets:
     - raw_visit
 
   pfsSingle:
-    template: 'pfsSingle/%(catId)03d/%(tract)05d/%(patch)s/pfsSingle-%(catId)03d-%(tract)05d-%(patch)s-%(objId)016x-%(visit)06d.fits'
+    template: 'pfsSingle/%(catId)05d/%(tract)05d/%(patch)s/pfsSingle-%(catId)05d-%(tract)05d-%(patch)s-%(objId)016x-%(visit)06d.fits'
     python: pfs.drp.stella.PfsSingle
     persistable: PfsSingle
     storage: FitsCatalogStorage
@@ -234,7 +234,7 @@ datasets:
     - raw_visit
 
   pfsObject:
-    template: 'pfsObject/%(catId)03d/%(tract)05d/%(patch)s/pfsObject-%(catId)03d-%(tract)05d-%(patch)s-%(objId)016x-%(nVisit)03d-0x%(pfsVisitHash)016x.fits'
+    template: 'pfsObject/%(catId)05d/%(tract)05d/%(patch)s/pfsObject-%(catId)05d-%(tract)05d-%(patch)s-%(objId)016x-%(nVisit)03d-0x%(pfsVisitHash)016x.fits'
     python: pfs.drp.stella.PfsObject
     persistable: PfsObject
     storage: FitsCatalogStorage
