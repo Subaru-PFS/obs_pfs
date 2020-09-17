@@ -21,6 +21,6 @@ config.parse.translators = {'arm': 'translate_arm',
 
 config.register.detector = ['arm', 'spectrograph']
 config.register.unique = ['arm', 'spectrograph', 'calibTime']
-config.register.tables = ['bias', 'dark', 'detectorMap', 'flat', 'fiberTrace']
+config.register.tables = ['bias', 'dark', 'detectorMap', 'flat', 'fiberProfiles']
 config.register.visit = ['calibDate', 'arm', 'spectrograph']
 config.register.calibDate = "calibTime"  # date+time, for intra-day resolution
