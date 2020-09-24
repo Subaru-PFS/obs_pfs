@@ -28,7 +28,7 @@ class PfsRawVisitInfo(MakeRawVisitInfo):
         @param[in,out] argdict  a dict of arguments
         """
         super(PfsRawVisitInfo, self).setArgDict(md, argDict)
-        argDict["darkTime"] = self.popFloat(md, "DARKTIME")
+        argDict["darkTime"] = self.popFloat(md, "DARKTIME") if "DARKTIME" in md else np.nan
         #
         # Done setting argDict; check values now that all the header keywords have been consumed
         #
