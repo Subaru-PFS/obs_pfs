@@ -243,7 +243,7 @@ datasets:
     - raw
     - raw_visit
 
-  wlFitData:
+  wlFitData:  # Deprecated in PIPE2D-358, August 2020
     template: 'wlFitData/%(dateObs)s/v%(visit)06d/wlFitData-%(visit)06d-%(arm)s%(spectrograph)d.fits'
     python: pfs.drp.stella.calibrateWavelengthsTask.WavelengthFitData
     persistable: WavelengthFitData
@@ -252,6 +252,17 @@ datasets:
     tables:
     - raw
     - raw_visit
+
+  arcLines:
+    template: 'arcLines/%(dateObs)s/v%(visit)06d/arcLines-%(visit)06d-%(arm)s%(spectrograph)d.fits'
+    python: pfs.drp.stella.arcLine.ArcLineSet
+    persistable: ArcLineSet
+    storage: FitsCatalogStorage
+    level: Visit
+    tables:
+    - raw
+    - raw_visit
+
 
   lsf:
     template: 'lsf/%(dateObs)s/v%(visit)06d/lsf-%(visit)06d-%(arm)s%(spectrograph)d.pickle'
@@ -284,7 +295,7 @@ datasets:
 
   reduceArc_config:
     template: config/reduceArc.py
-    python: pfs.drp.stella.reduceArcTask.ReduceArcConfig
+    python: pfs.drp.stella.reduceArc.ReduceArcConfig
     persistable: Config
     storage: ConfigStorage
     tables:
