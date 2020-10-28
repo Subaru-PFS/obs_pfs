@@ -250,7 +250,7 @@ datasets:
     python: pfs.drp.stella.arcLine.ArcLineSet
     persistable: ArcLineSet
     storage: FitsCatalogStorage
-    level: Visit
+    level: Ccd
     tables:
     - raw
 
