@@ -371,7 +371,7 @@ class PfsRegisterTask(RegisterTask):
         sql += " WHERE NOT EXISTS "
         sql += f"(SELECT vv2.visit FROM {table}_visit AS vv2 WHERE vv1.visit = vv2.visit)"
         if dryrun:
-            print("Would execute: %s" % sql)
+            self.log.fatal("Would execute: %s", sql)
         else:
             conn.cursor().execute(sql)
 
@@ -592,8 +592,11 @@ class PfsIngestCalibsTask(IngestCalibsTask):
                 if hduInfoList is None:
                     continue
                 for info in hduInfoList:
-                    self.register.addRow(registry, info, dryrun=args.dryrun,
-                                         create=args.create, table=calibType)
+                    if self.register.check(registry, info, table=calibType):
+                        self.register.updateRow(registry, info, dryrun=args.dryrun, table=calibType)
+                    else:
+                        self.register.addRow(registry, info, dryrun=args.dryrun,
+                                             create=args.create, table=calibType)
             if not args.dryrun:
                 self.register.updateValidityRanges(registry, args.validity)
             else:
@@ -606,6 +609,38 @@ def _convertToDate(dateString):
 
 
 class PfsCalibsRegisterTask(CalibsRegisterTask):
+    def updateRow(self, conn, info, table, dryrun=False):
+        """Update a row in the table
+
+        Parameters
+        ----------
+        conn : `sqlite3.Connection`
+            Database connection.
+        info : `dict` [`str`: POD]
+            File properties to record in database.
+        table : `str`
+            Name of table in database.
+        dryrun : `bool`
+            Pretend only?
+        """
+        if table is None:
+            table = self.config.table
+
+        columns = set([col for col in self.config.columns if col in info])
+        columns.difference_update(set(self.config.unique))
+        values = []
+        sql = f"UPDATE {table} SET "
+        sql += ", ".join(["%s=%s" % (col, self.placeHolder) for col in columns])
+        values += [info[col] for col in columns]
+        sql += " WHERE "
+        sql += " AND ".join(["%s=%s" % (col, self.placeHolder) for col in self.config.unique])
+        values += [info[col] for col in self.config.unique]
+
+        if dryrun:
+            self.log.fatal("Would execute: '%s' with %s", sql, ",".join([str(value) for value in values]))
+        else:
+            conn.cursor().execute(sql, values)
+
     def fixSubsetValidity(self, conn, table, detectorData, validity):
         """Update the validity ranges among selected rows in the registry.
 
