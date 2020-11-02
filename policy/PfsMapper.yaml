@@ -95,13 +95,13 @@ calibrations:
     validRange: true
     validStartName: validStart
     validEndName: validEnd
-  fiberTrace:
-    template: 'FIBERTRACE/pfsFiberTrace-%(calibDate)s-%(visit0)06d-%(arm)s%(spectrograph)1d.fits'
-    python: pfs.drp.stella.FiberTraceSet
-    persistable: FiberTraceSet
+  fiberProfiles:
+    template: 'FIBERPROFILES/pfsFiberProfiles-%(calibDate)s-%(visit0)06d-%(arm)s%(spectrograph)1d.fits'
+    python: pfs.drp.stella.FiberProfileSet
+    persistable: FiberProfileSet
     storage: FitsCatalogStorage
     level: Ccd
-    tables: fiberTrace
+    tables: fiberProfiles
     columns:
     - arm
     - spectrograph
@@ -284,9 +284,9 @@ datasets:
     - raw
     - raw_visit
 
-  fiberTrace_config:
-    template: config/fiberTrace.py
-    python: pfs.drp.stella.constructFiberTraceTask.ConstructFiberTraceConfig
+  fiberProfiles_config:
+    template: config/fiberProfiles.py
+    python: pfs.drp.stella.constructFiberProfilesTask.ConstructFiberProfilesConfig
     persistable: Config
     storage: ConfigStorage
     tables:

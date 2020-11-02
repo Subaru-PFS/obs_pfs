@@ -251,8 +251,8 @@ class PfsMapper(CameraMapper):
         fix_header(item, translator_class=PfsTranslator)
         return item
 
-    def std_fiberTrace(self, item, dataId):
-        """Disable standardization for fiberTrace
+    def std_fiberProfiles(self, item, dataId):
+        """Disable standardization for fiberProfiles
 
         Because it is not an Exposure.
         """
