@@ -182,7 +182,6 @@ datasets:
     storage: FitsCatalogStorage
     tables:
     - raw
-    - raw_visit
 
   sky1d:
     template: 'sky1d/%(dateObs)s/v%(visit)07d/sky1d-%(visit)06d.fits'
@@ -191,7 +190,6 @@ datasets:
     storage: FitsCatalogStorage
     tables:
     - raw
-    - raw_visit
 
 
   sky2d:
@@ -201,7 +199,6 @@ datasets:
     storage: FitsCatalogStorage
     tables:
     - raw
-    - raw_visit
 
   pfsReference:
     template: 'pfsReference/%(catId)05d/%(tract)05d/pfsReference-%(catId)05d-%(tract)05d-%(patch)s-%(objId)08x.fits'
@@ -211,7 +208,6 @@ datasets:
     level: Visit
     tables:
     - raw
-    - raw_visit
 
   fluxCal:
     template: 'fluxCal/%(dateObs)s/v%(visit)06d/fluxCal-%(visit)06d.fits'
@@ -221,7 +217,6 @@ datasets:
     level: Visit
     tables:
     - raw
-    - raw_visit
 
   pfsSingle:
     template: 'pfsSingle/%(catId)05d/%(tract)05d/%(patch)s/pfsSingle-%(catId)05d-%(tract)05d-%(patch)s-%(objId)016x-%(visit)06d.fits'
@@ -231,7 +226,6 @@ datasets:
     level: Visit
     tables:
     - raw
-    - raw_visit
 
   pfsObject:
     template: 'pfsObject/%(catId)05d/%(tract)05d/%(patch)s/pfsObject-%(catId)05d-%(tract)05d-%(patch)s-%(objId)016x-%(nVisit)03d-0x%(pfsVisitHash)016x.fits'
@@ -241,7 +235,6 @@ datasets:
     level: Visit
     tables:
     - raw
-    - raw_visit
 
   wlFitData:  # Deprecated in PIPE2D-358, August 2020
     template: 'wlFitData/%(dateObs)s/v%(visit)06d/wlFitData-%(visit)06d-%(arm)s%(spectrograph)d.fits'
@@ -251,18 +244,15 @@ datasets:
     level: Visit
     tables:
     - raw
-    - raw_visit
 
   arcLines:
     template: 'arcLines/%(dateObs)s/v%(visit)06d/arcLines-%(visit)06d-%(arm)s%(spectrograph)d.fits'
     python: pfs.drp.stella.arcLine.ArcLineSet
     persistable: ArcLineSet
     storage: FitsCatalogStorage
-    level: Visit
+    level: Ccd
     tables:
     - raw
-    - raw_visit
-
 
   lsf:
     template: 'lsf/%(dateObs)s/v%(visit)06d/lsf-%(visit)06d-%(arm)s%(spectrograph)d.pickle'
@@ -272,7 +262,6 @@ datasets:
     level: Ccd
     tables:
     - raw
-    - raw_visit
 
 
   fiberFlat_config:
@@ -282,7 +271,6 @@ datasets:
     storage: ConfigStorage
     tables:
     - raw
-    - raw_visit
 
   fiberProfiles_config:
     template: config/fiberProfiles.py
@@ -291,7 +279,6 @@ datasets:
     storage: ConfigStorage
     tables:
     - raw
-    - raw_visit
 
   reduceArc_config:
     template: config/reduceArc.py
@@ -300,7 +287,6 @@ datasets:
     storage: ConfigStorage
     tables:
     - raw
-    - raw_visit
 
   reduceExposure_config:
     template: config/reduceExposure.py
@@ -309,7 +295,6 @@ datasets:
     storage: ConfigStorage
     tables:
     - raw
-    - raw_visit
 
   mergeArms_config:
     template: config/mergeArms.py
@@ -318,7 +303,6 @@ datasets:
     storage: ConfigStorage
     tables:
     - raw
-    - raw_visit
 
   calculateReferenceFlux_config:
     template: config/calculateReferenceFlux.py
@@ -327,7 +311,6 @@ datasets:
     storage: ConfigStorage
     tables:
     - raw
-    - raw_visit
 
   fluxCalibrate_config:
     template: config/fluxCalibrate.py
@@ -336,7 +319,6 @@ datasets:
     storage: ConfigStorage
     tables:
     - raw
-    - raw_visit
 
   coaddSpectra_config:
     template: config/coaddSpectra.py
@@ -345,7 +327,6 @@ datasets:
     storage: ConfigStorage
     tables:
     - raw
-    - raw_visit
 
   bootstrap_config:
     template: config/bootstrap.py
@@ -354,4 +335,3 @@ datasets:
     storage: ConfigStorage
     tables:
     - raw
-    - raw_visit
