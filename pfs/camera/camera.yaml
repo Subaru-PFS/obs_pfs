@@ -93,7 +93,7 @@ CCDs : &CCDs
     r1 : &CCD                           # Spectrograph 1, red arm
         << : *Detector
         detectorType : 0                # r CCD
-        id : 0
+        id : 1
         serial : Hamamatsu r1
         offset : [-93.1, 0.0]           # mm
         crosstalk : [
@@ -167,7 +167,7 @@ CCDs : &CCDs
     b1 :                                # Spectrograph 1, blue arm
         << : *Detector
         detectorType : 1                # b CCD
-        id : 1
+        id : 0
         serial : Hamamatsu b1
         offset : [-93.1, -65.1]         # mm
 
@@ -209,3 +209,54 @@ CCDs : &CCDs
         <<: *CCD
         id : 2
         offset : [-93.1, 65.1]           # mm
+
+    b2:
+      <<: *CCD
+      id: 4
+      offset : [-28.0, -65.1]         # mm
+    r2:
+      <<: *CCD
+      id: 5
+      offset : [-28.0, 0.0]           # mm
+    n2:
+      <<: *CCD
+      id: 6
+      offset : [-28.0, 65.1]           # mm
+    m2:
+      <<: *CCD
+      id: 7
+      offset : [-28.0, 130.2]         # mm
+
+    b3:
+      <<: *CCD
+      id: 8
+      offset : [37.1, -65.1]         # mm
+    r3:
+      <<: *CCD
+      id: 9
+      offset : [37.1, 0.0]           # mm
+    n3:
+      <<: *CCD
+      id: 10
+      offset : [37.1, 65.1]           # mm
+    m3:
+      <<: *CCD
+      id: 11
+      offset : [37.1, 130.2]         # mm
+
+    b4:
+      <<: *CCD
+      id: 12
+      offset : [102.2, -65.1]         # mm
+    r4:
+      <<: *CCD
+      id: 13
+      offset : [102.2, 0.0]           # mm
+    n4:
+      <<: *CCD
+      id: 14
+      offset : [102.2, 65.1]           # mm
+    m4:
+      <<: *CCD
+      id: 15
+      offset : [102.2, 130.2]         # mm
