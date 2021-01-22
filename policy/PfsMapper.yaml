@@ -254,12 +254,39 @@ datasets:
     tables:
     - raw
 
-  lsf:
-    template: 'lsf/%(dateObs)s/v%(visit)06d/lsf-%(visit)06d-%(arm)s%(spectrograph)d.pickle'
+  pfsArmLsf:
+    template: 'pfsArm/%(dateObs)s/v%(visit)06d/pfsArmLsf-%(visit)06d-%(arm)s%(spectrograph)d.pickle'
     python: dict
     persistable: ignored
     storage: PickleStorage
     level: Ccd
+    tables:
+    - raw
+
+  pfsMergedLsf:
+    template: 'pfsMerged/%(dateObs)s/v%(visit)06d/pfsMergedLsf-%(visit)06d.pickle'
+    python: dict
+    persistable: ignored
+    storage: PickleStorage
+    level: Visit
+    tables:
+    - raw
+
+  pfsSingleLsf:
+    template: 'pfsSingle/%(catId)05d/%(tract)05d/%(patch)s/pfsSingleLsf-%(catId)05d-%(tract)05d-%(patch)s-%(objId)016x-%(visit)06d.pickle'
+    python: dict
+    persistable: ignored
+    storage: PickleStorage
+    level: Visit
+    tables:
+    - raw
+
+  pfsObjectLsf:
+    template: 'pfsObject/%(catId)05d/%(tract)05d/%(patch)s/pfsObjectLsf-%(catId)05d-%(tract)05d-%(patch)s-%(objId)016x-%(nVisit)03d-0x%(pfsVisitHash)016x.pickle'
+    python: dict
+    persistable: ignored
+    storage: PickleStorage
+    level: Visit
     tables:
     - raw
 
