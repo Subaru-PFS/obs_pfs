@@ -49,7 +49,7 @@ calibrations:
     - arm
     - spectrograph
     - taiObs
-    reference: raw_visit
+    reference: raw
     refCols:
     - visit
     - arm
@@ -68,7 +68,7 @@ calibrations:
     - arm
     - spectrograph
     - taiObs
-    reference: raw_visit
+    reference: raw
     refCols:
     - visit
     - arm
@@ -87,7 +87,7 @@ calibrations:
     - arm
     - spectrograph
     - taiObs
-    reference: raw_visit
+    reference: raw
     refCols:
     - visit
     - arm
@@ -172,7 +172,6 @@ datasets:
     level: Visit
     tables:
     - raw
-    - raw_visit
 
   pfsConfig:
     # N.b. template is overridden by datamodel
