@@ -223,9 +223,9 @@ class PfsMapper(CameraMapper):
         try:
             dataVersion = int(md.get('W_VERSIONS_FPGA'), 16)
         except Exception:
-            dataVersion = 0
+            dataVersion = None
 
-        if dataVersion <= 0x0070:
+        if dataVersion is not None and dataVersion <= 0x0070:
             self._shiftAmpPixels(exp)
 
         return exp
