@@ -346,3 +346,47 @@ class PfsMapper(CameraMapper):
             except IndexError:
                 raise RuntimeError("Unable to lookup %s in \"%s\" registry for dataId %s" %
                                    (k, dataType, dataId))
+
+    def _defectLookup(self, dataId, dateKey='taiObs'):
+        """Find the defects for a given CCD.
+
+        This is copied from LSST 18.1.0, but using the "raw" table instead of
+        "raw_visit", because PFS doesn't use the raw_visit table.
+
+        Parameters
+        ----------
+        dataId : `dict`
+            Dataset identifier.
+
+        Returns
+        -------
+        path : `str`
+            Path to the defects file or None if not available.
+        """
+        if self.defectRegistry is None:
+            return None
+        if self.registry is None:
+            raise RuntimeError("No registry for defect lookup")
+
+        ccdKey, ccdVal = self._getCcdKeyVal(dataId)
+
+        dataIdForLookup = {'visit': dataId['visit']}
+        # .lookup will fail in a posix registry because there is no template to provide.
+        rows = self.registry.lookup((dateKey), ('raw'), dataIdForLookup)
+        if len(rows) == 0:
+            return None
+        assert len(rows) == 1
+        dayObs = rows[0][0]
+
+        # Lookup the defects for this CCD serial number that are valid at the exposure midpoint.
+        rows = self.defectRegistry.executeQuery(("path",), ("defect",),
+                                                [(ccdKey, "?")],
+                                                ("DATETIME(?)", "DATETIME(validStart)", "DATETIME(validEnd)"),
+                                                (ccdVal, dayObs))
+        if not rows or len(rows) == 0:
+            return None
+        if len(rows) == 1:
+            return os.path.join(self.defectPath, rows[0][0])
+        else:
+            raise RuntimeError("Querying for defects (%s, %s) returns %d files: %s" %
+                               (ccdVal, dayObs, len(rows), ", ".join([_[0] for _ in rows])))
