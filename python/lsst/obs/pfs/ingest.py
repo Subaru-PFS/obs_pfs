@@ -1,5 +1,6 @@
 import os
 import re
+import shutil
 import sqlite3
 from functools import partialmethod
 import datetime
@@ -555,6 +556,74 @@ class PfsIngestTask(IngestTask):
         design = PfsDesign.read(pfsDesignId, dirName)
         PfsConfig.fromPfsDesign(design, visit, design.pfiNominal).write(dirName)
         self.ingest(infile, outfile, mode=args.mode, dryrun=args.dryrun)
+
+    def ingest(self, infile, outfile, mode="move", dryrun=False):
+        """Ingest a file into the image repository.
+
+        This is copied from LSST 18.1.0, with the addition of commit
+        ``7d27e3e8694b5f62b6ae8ef1ae6a7ad35f2829ee`` to detect when we are
+        re-linking the same file.
+
+        Parameters
+        ----------
+        infile : `str`
+            Name of input file.
+        outfile : `str`
+            Name of output file (file in repository).
+        mode : `str`
+            Mode of ingest (copy/link/move/skip).
+        dryrun : `bool`
+            Only report what would occur, rather than actually doing anything?
+
+        Returns
+        -------
+        success : `bool`
+            Whether the file was successfully ingested.
+        """
+        if mode == "skip":
+            return True
+        if dryrun:
+            self.log.info("Would %s from %s to %s" % (mode, infile, outfile))
+            return True
+        try:
+            outdir = os.path.dirname(outfile)
+            if not os.path.isdir(outdir):
+                try:
+                    os.makedirs(outdir)
+                except OSError:
+                    # Silently ignore mkdir failures due to race conditions
+                    if not os.path.isdir(outdir):
+                        raise
+            if os.path.lexists(outfile):
+                if self.config.clobber:
+                    os.unlink(outfile)
+                else:
+                    raise RuntimeError("File %s already exists; consider --config clobber=True" % outfile)
+
+            if mode == "copy":
+                lsst.pipe.tasks.ingest.assertCanCopy(infile, outfile)
+                shutil.copyfile(infile, outfile)
+            elif mode == "link":
+                if os.path.exists(outfile):
+                    if os.path.samefile(infile, outfile):
+                        self.log.debug("Already linked %s to %s: ignoring" % (infile, outfile))
+                    else:
+                        self.log.warn("%s already has a file at the target location (%s): ignoring "
+                                      "(set clobber=True to overwrite)" % (infile, outfile))
+                    return False
+                os.symlink(os.path.abspath(infile), outfile)
+            elif mode == "move":
+                lsst.pipe.tasks.ingestassertCanCopy(infile, outfile)
+                os.rename(infile, outfile)
+            else:
+                raise AssertionError("Unknown mode: %s" % mode)
+            self.log.info("%s --<%s>--> %s" % (infile, mode, outfile))
+        except Exception as e:
+            self.log.warn("Failed to %s %s to %s: %s" % (mode, infile, outfile, e))
+            if not self.config.allowError:
+                raise
+            return False
+        return True
 
     def runFile(self, infile, registry, args):
         """Examine and ingest a single PFS image file
