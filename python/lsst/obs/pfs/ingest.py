@@ -360,20 +360,11 @@ class PfsRegisterTask(RegisterTask):
         """Generate the visits table (typically 'raw_visits') from the
         file table (typically 'raw').
 
-        @param conn    Database connection
-        @param table   Name of table in database
+        We disable this method for PFS, since we don't use the visits table,
+        and creation of the visits table is expensive because it attempts to
+        insert all rows, not just those that have most recently been ingested.
         """
-        if table is None:
-            table = self.config.table
-        sql = f"INSERT INTO {table}_visit SELECT * FROM (SELECT "
-        sql += ",".join(self.config.visit)
-        sql += f" FROM {table} GROUP BY visit HAVING ROWID = MIN(ROWID)) AS vv1"  # Take first row as standard
-        sql += " WHERE NOT EXISTS "
-        sql += f"(SELECT vv2.visit FROM {table}_visit AS vv2 WHERE vv1.visit = vv2.visit)"
-        if dryrun:
-            self.log.fatal("Would execute: %s", sql)
-        else:
-            conn.cursor().execute(sql)
+        pass
 
 
 def setIngestConfig(config):
