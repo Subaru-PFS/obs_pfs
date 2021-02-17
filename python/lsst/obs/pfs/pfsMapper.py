@@ -370,7 +370,7 @@ class PfsMapper(CameraMapper):
 
         ccdKey, ccdVal = self._getCcdKeyVal(dataId)
 
-        dataIdForLookup = {'visit': dataId['visit']}
+        dataIdForLookup = dict(visit=dataId["visit"], arm=dataId["arm"])
         # .lookup will fail in a posix registry because there is no template to provide.
         rows = self.registry.lookup((dateKey), ('raw'), dataIdForLookup)
         if len(rows) == 0:
