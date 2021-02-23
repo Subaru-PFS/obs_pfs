@@ -18,7 +18,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
+import numpy as np
+import numpy.linalg
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.daf.persistence.butlerExceptions import NoResults
@@ -29,6 +30,29 @@ from lsst.ip.isr import RunIsrTask, RunIsrConfig
 ___all__ = ["IsrTask", "IsrTaskConfig", "RunIsrTask", "RunIsrConfig"]
 
 
+class BrokenShutterConfig(pexConfig.Config):
+    """Configuration parameters for working around a broken shutter
+    """
+    useAnalytic = pexConfig.Field(dtype=bool, default=False,
+                                  doc="Use an analytic correction")
+    window = pexConfig.Field(dtype=int, default=1,
+                             doc="Number of frames +- to search for a bias")
+
+    causalWindow = pexConfig.Field(dtype=bool, default=True,
+                                   doc="Only search for later biases?")
+
+    t_wipe = pexConfig.Field(dtype=float, default=5.3,
+                             doc="Time taken to wipe the CCD (s)")
+    t_read = pexConfig.Field(dtype=float, default=31.5,
+                             doc="Time taken to read the CCD (s)")
+    t_stare = pexConfig.Field(dtype=float, default=2.9,
+                              doc="Time during readout when charge isn't being clocked CCD (s)")
+
+    def validate(self):
+        super().validate()
+        if self.window > 1 and self.useAnalytic:
+            raise ValueError(f"You may not specify both (window == {self.window}) > 1 and useAnalytic")
+
 class PfsIsrTaskConfig(ipIsr.IsrTaskConfig):
     """Configuration parameters for PFS's IsrTask.
 
@@ -36,6 +60,10 @@ class PfsIsrTaskConfig(ipIsr.IsrTaskConfig):
     """
     doBrokenRedShutter = pexConfig.Field(dtype=bool, default=False,
                                          doc="Attempt to correct for a broken red shutter?")
+
+    brokenRedShutter = pexConfig.ConfigField(
+        dtype=BrokenShutterConfig, doc="Broken shutter related configuration options."
+    )
 
     def validate(self):
         super().validate()
@@ -107,37 +135,92 @@ class PfsIsrTask(ipIsr.IsrTask):
         result = self.run(ccdExposure, camera=camera, **isrData.getDict())
 
         if self.config.doBrokenRedShutter and sensorRef.dataId["arm"] == 'r':
-            #
-            # If we're using the `r` arm subtract the next image if it's a bias
-            #
-            # If the source of photons is stable, this corrects for the extra
-            # light accumulated during CCD wipe and readout
-            #
-            # Don't fix a bias; this is especially important as if we do, it'll lead
-            # to an attempt to correct the bias we're using for the shutter correction
-            #
-            # N.b. we can't rely on the sensorRef.dataId because we adjusted the visit number
-            md = sensorRef.get("raw_md")
-            if md.get('DATA-TYP', "").upper() != "BIAS":
-                sensorRef.dataId["visit"] += 1
+            if self.config.doBrokenRedShutter and self.config.brokenRedShutter.useAnalytic:
+                #
+                # Build a model which generates the as-readout data R given
+                # the (unknown) true signal S, with integration time t_exp:
+                #    R_i = S_i + (t_wipe*<S> + t_stare*S_i + t_read*S_blue,i)/t_exp
+                # where the second term gives the photons resulting from reading
+                # the chip with the shutter open, and S_blue are the photons bluer
+                # than S_i (i.e. sum_0^i S_i)
+                #
+                # We write this as R = S + kern@S, or
+                #  S = (1 + kern)^{-1} R
+                #
+                # N.b. we could cache ikern as it only depends on the exposure time
+                # and the config parameters giving times
+                #
+                t_exp = result.exposure.getInfo().getVisitInfo().getExposureTime()
+                t_wipe = self.config.brokenRedShutter.t_wipe
+                t_read = self.config.brokenRedShutter.t_read
+                t_stare = self.config.brokenRedShutter.t_stare
 
-                exp2 = None
-                try:
-                    md = sensorRef.get("raw_md")
-                    if md.get('DATA-TYP', "").upper() == "BIAS":
-                        self.log.info("Reading visit %d for broken red shutter correction",
-                                      sensorRef.dataId["visit"])
+                N = result.exposure.getHeight()
+                kern = np.zeros((N, N))
+                kern += t_wipe/N
+                kern += t_read/N*np.tri(N, k=-1)
+                np.fill_diagonal(kern, t_stare)
+                kern /= t_exp
 
-                        exp2 = self.runDataRef(sensorRef).exposure
-                except NoResults as e:
-                    self.log.warn("Unable to read next frame for broken red shutter correction %s",
-                                  sensorRef.dataId)
-                else:
-                    sensorRef.dataId["visit"] -= 1
+                np.fill_diagonal(kern, 1 + kern.diagonal()) # i.e. add 1 to the diagonal
+                ikern = np.linalg.inv(kern)
 
-                if exp2:
-                    self.log.info("Correcting for broken red shutter")
-                    result.exposure.maskedImage -= exp2.maskedImage
+                self.log.info("Correcting for broken red shutter analytically")
+                result.exposure.image.array[:] = ikern@result.exposure.image.array
+            else:
+                #
+                # If we're using the `r` arm subtract a neighbouring image if it's a bias
+                #
+                # If the source of photons is stable, this corrects for the extra
+                # light accumulated during CCD wipe and readout
+                #
+                # We search for the bias in a window around the visit v0 in order
+                #   v0 + 1, v0 - 1, v0 + 2, v0 - 2, ...
+                # (if brokenRedShutter.causalWindow is True, only use v0 + 1, v0 + 2, ...)
+                #
+                # Don't fix a bias; this is especially important as if we do, it'll lead
+                # to an attempt to correct the bias we're using for the shutter correction
+                #
+                # N.b. we can't rely on the sensorRef.dataId because we adjusted the visit number
+                # before possibly calling this routine recursively to fetch the desired bias
+                md = sensorRef.get("raw_md")
+                if md.get('DATA-TYP', "").upper() != "BIAS":
+                    dataId = dict(arm = sensorRef.dataId["arm"],
+                                  filter = sensorRef.dataId["arm"], # yes, this is necessary
+                                  spectrograph = sensorRef.dataId["spectrograph"])
+                    dataId0 = sensorRef.dataId
+
+                    for dv in sum([[i, -i] for i in range(1, self.config.brokenRedShutter.window + 1)], []):
+                        if self.config.brokenRedShutter.causalWindow and dv < 0:
+                            continue
+
+                        exp2 = None
+                        try:
+                            sensorRef.dataId = dataId
+                            dataId["visit"] = dataId0["visit"] + dv + 10000
+
+                            md = sensorRef.get("raw_md")
+                            if md.get('DATA-TYP', "").upper() == "BIAS":
+                                self.log.info("Reading visit %d for broken red shutter correction",
+                                              sensorRef.dataId["visit"])
+
+                                exp2 = self.runDataRef(sensorRef).exposure
+                        except NoResults as e:
+                            print("RHL", e)
+                            self.log.warn("Unable to read visit %(visit)d %(arm)s%(spectrograph)d "
+                                          "for broken red shutter correction %s", sensorRef.dataId)
+                        else:
+                            sensorRef.dataId = dataId0
+
+                        if exp2:
+                            self.log.info("Correcting for broken red shutter using visit %d", dataId["visit"])
+                            result.exposure.maskedImage -= exp2.maskedImage
+
+                            break
+
+                    if exp2 is None:
+                        self.log.warn("Unable to find bias frame for broken red shutter correction %s",
+                                      sensorRef.dataId)
 
         if self.config.doWrite:
             sensorRef.put(result.exposure, "postISRCCD")
