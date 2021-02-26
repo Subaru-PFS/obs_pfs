@@ -1,13 +1,10 @@
 # PFS configuration for lsst.pipe.tasks.RepairTask
 # 'config' is a lsst.pipe.tasks.RepairConfig
 
-# This CR tuning comes from looking at simulated r1 images w/o scattering.
+# This CR tuning comes from looking at SuNSS b/r data
 #
-config.interp.modelPsf.defaultFwhm = 1.75
-config.cosmicray.cond3_fac = 30
+config.interp.modelPsf.defaultFwhm = 3
 config.cosmicray.nCrPixelMax = 5000000
-config.cosmicray.minSigma = 10.0
-config.cosmicray.min_DN = 500.0
 
 # Interpolation needs more work. In the meanwhile do not hide what is there
 # when it is likely to matter or to be confusing.
