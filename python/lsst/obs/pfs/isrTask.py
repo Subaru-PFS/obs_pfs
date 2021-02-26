@@ -25,9 +25,9 @@ import lsst.pipe.base as pipeBase
 from lsst.daf.persistence.butlerExceptions import NoResults
 
 import lsst.ip.isr as ipIsr
-from lsst.ip.isr import RunIsrTask, RunIsrConfig
+from lsst.ip.isr import isrQa
 
-___all__ = ["IsrTask", "IsrTaskConfig", "RunIsrTask", "RunIsrConfig"]
+___all__ = ["IsrTask", "IsrTaskConfig"]
 
 
 class BrokenShutterConfig(pexConfig.Config):
@@ -52,6 +52,7 @@ class BrokenShutterConfig(pexConfig.Config):
         super().validate()
         if self.window > 1 and self.useAnalytic:
             raise ValueError(f"You may not specify both (window == {self.window}) > 1 and useAnalytic")
+
 
 class PfsIsrTaskConfig(ipIsr.IsrTaskConfig):
     """Configuration parameters for PFS's IsrTask.
@@ -162,7 +163,7 @@ class PfsIsrTask(ipIsr.IsrTask):
                 np.fill_diagonal(kern, t_stare)
                 kern /= t_exp
 
-                np.fill_diagonal(kern, 1 + kern.diagonal()) # i.e. add 1 to the diagonal
+                np.fill_diagonal(kern, 1 + kern.diagonal())  # i.e. add 1 to the diagonal
                 ikern = np.linalg.inv(kern)
 
                 self.log.info("Correcting for broken red shutter analytically")
@@ -185,9 +186,9 @@ class PfsIsrTask(ipIsr.IsrTask):
                 # before possibly calling this routine recursively to fetch the desired bias
                 md = sensorRef.get("raw_md")
                 if md.get('DATA-TYP', "").upper() != "BIAS":
-                    dataId = dict(arm = sensorRef.dataId["arm"],
-                                  filter = sensorRef.dataId["arm"], # yes, this is necessary
-                                  spectrograph = sensorRef.dataId["spectrograph"])
+                    dataId = dict(arm=sensorRef.dataId["arm"],
+                                  filter=sensorRef.dataId["arm"],  # yes, this is necessary
+                                  spectrograph=sensorRef.dataId["spectrograph"])
                     dataId0 = sensorRef.dataId
 
                     for dv in sum([[i, -i] for i in range(1, self.config.brokenRedShutter.window + 1)], []):
