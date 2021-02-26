@@ -16,9 +16,13 @@
 # [5]* as [5], but merged close doublets with identical intensities that we wouldn't
 #      split at a resolution of 10000.0
 #
-   520.30540     10.000  NI         0 # [4]
+# Additional comments
+# [2020-02-26]: 
+#    * Removed NI 5200 line data 
+#        - doesn't seem to match recent SuNSS observations (visit 45864).
+#
    557.88870    100.000  OI         0 # [4]
-   588.15832    800.000  NaI        0 # [4]
+   589.15832    800.000  NaI        0 # [4]
    589.75581    400.000  NaI        0 # [4]
 #  613.82390      0.126  OH         0 # [5]
 #  613.82650      0.126  OH         0 # [5]
