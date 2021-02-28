@@ -198,7 +198,7 @@ class PfsIsrTask(ipIsr.IsrTask):
                         exp2 = None
                         try:
                             sensorRef.dataId = dataId
-                            dataId["visit"] = dataId0["visit"] + dv + 10000
+                            dataId["visit"] = dataId0["visit"] + dv
 
                             md = sensorRef.get("raw_md")
                             if md.get('DATA-TYP', "").upper() == "BIAS":
@@ -207,10 +207,10 @@ class PfsIsrTask(ipIsr.IsrTask):
 
                                 exp2 = self.runDataRef(sensorRef).exposure
                         except NoResults as e:
-                            print("RHL", e)
-                            self.log.warn("Unable to read visit %(visit)d %(arm)s%(spectrograph)d "
-                                          "for broken red shutter correction %s", sensorRef.dataId)
-                        else:
+                            self.log.warn("Unable to read %d %s%d for broken red shutter correction: %s",
+                                          sensorRef.dataId["visit"], sensorRef.dataId["arm"],
+                                          sensorRef.dataId["spectrograph"], e)
+                        finally:
                             sensorRef.dataId = dataId0
 
                         if exp2:
