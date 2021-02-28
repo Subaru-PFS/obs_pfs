@@ -149,25 +149,29 @@ class PfsIsrTask(ipIsr.IsrTask):
                 #  S = (1 + kern)^{-1} R
                 #
                 # N.b. we could cache ikern as it only depends on the exposure time
-                # and the config parameters giving times
+                # and the config parameters specifying times for the readout phases
                 #
                 t_exp = result.exposure.getInfo().getVisitInfo().getExposureTime()
                 t_wipe = self.config.brokenRedShutter.t_wipe
                 t_read = self.config.brokenRedShutter.t_read
                 t_stare = self.config.brokenRedShutter.t_stare
 
-                N = result.exposure.getHeight()
-                kern = np.zeros((N, N))
-                kern += t_wipe/N*(1 - np.tri(N, k=1))
-                kern += t_read/N*np.tri(N, k=-1)
-                np.fill_diagonal(kern, t_stare)
-                kern /= t_exp
+                if t_exp == 0:          # we can't correct a bias
+                    self.log.debug("Not correcting bias for broken red shutter analytically")
+                else:
+                    N = result.exposure.getHeight()
+                    kern = np.zeros((N, N))
+                    kern += t_wipe/N*(1 - np.tri(N, k=1))  # i.e. upper tri
+                    kern += t_read/N*np.tri(N, k=-1)
+                    np.fill_diagonal(kern, t_stare)
+                    kern /= t_exp
 
-                np.fill_diagonal(kern, 1 + kern.diagonal())  # i.e. add 1 to the diagonal
-                ikern = np.linalg.inv(kern)
+                    np.fill_diagonal(kern, 1 + kern.diagonal())  # i.e. add 1 to the diagonal
+                    ikern = np.linalg.inv(kern)
 
-                self.log.info("Correcting for broken red shutter analytically")
-                result.exposure.image.array[:] = ikern@result.exposure.image.array
+                    self.log.info("Correcting for broken red shutter analytically")
+                    result.exposure.image.array[:] = ikern@result.exposure.image.array
+                    result.exposure.variance.array[:] = (ikern**2)@result.exposure.variance.array
             else:
                 #
                 # If we're using the `r` arm subtract a neighbouring image if it's a bias
