@@ -41,11 +41,11 @@ class BrokenShutterConfig(pexConfig.Config):
     causalWindow = pexConfig.Field(dtype=bool, default=True,
                                    doc="Only search for later biases?")
 
-    t_wipe = pexConfig.Field(dtype=float, default=5.3,
+    t_wipe = pexConfig.Field(dtype=float, default=5.23,
                              doc="Time taken to wipe the CCD (s)")
-    t_read = pexConfig.Field(dtype=float, default=31.5,
+    t_read = pexConfig.Field(dtype=float, default=36.79,
                              doc="Time taken to read the CCD (s)")
-    t_stare = pexConfig.Field(dtype=float, default=2.9,
+    t_stare = pexConfig.Field(dtype=float, default=3.06,
                               doc="Time during readout when charge isn't being clocked CCD (s)")
 
     def validate(self):
@@ -140,34 +140,38 @@ class PfsIsrTask(ipIsr.IsrTask):
                 #
                 # Build a model which generates the as-readout data R given
                 # the (unknown) true signal S, with integration time t_exp:
-                #    R_i = S_i + (t_wipe*<S> + t_stare*S_i + t_read*S_blue,i)/t_exp
+                #    R_i = S_i + (t_wipe*S_red + t_stare*S_i + t_read*S_blue,i)/t_exp
                 # where the second term gives the photons resulting from reading
-                # the chip with the shutter open, and S_blue are the photons bluer
-                # than S_i (i.e. sum_0^i S_i)
+                # the chip with the shutter open, and S_blue/red are the photons bluer (redder)
+                # than S_i (i.e. sum_0^i S_i and sum_i^N-1 S_i)
                 #
                 # We write this as R = S + kern@S, or
                 #  S = (1 + kern)^{-1} R
                 #
                 # N.b. we could cache ikern as it only depends on the exposure time
-                # and the config parameters giving times
+                # and the config parameters specifying times for the readout phases
                 #
                 t_exp = result.exposure.getInfo().getVisitInfo().getExposureTime()
                 t_wipe = self.config.brokenRedShutter.t_wipe
                 t_read = self.config.brokenRedShutter.t_read
                 t_stare = self.config.brokenRedShutter.t_stare
 
-                N = result.exposure.getHeight()
-                kern = np.zeros((N, N))
-                kern += t_wipe/N
-                kern += t_read/N*np.tri(N, k=-1)
-                np.fill_diagonal(kern, t_stare)
-                kern /= t_exp
+                if t_exp == 0:          # we can't correct a bias
+                    self.log.debug("Not correcting bias for broken red shutter analytically")
+                else:
+                    N = result.exposure.getHeight()
+                    kern = np.zeros((N, N))
+                    kern += t_wipe/N*(1 - np.tri(N, k=1))  # i.e. upper tri
+                    kern += t_read/N*np.tri(N, k=-1)
+                    np.fill_diagonal(kern, t_stare)
+                    kern /= t_exp
 
-                np.fill_diagonal(kern, 1 + kern.diagonal())  # i.e. add 1 to the diagonal
-                ikern = np.linalg.inv(kern)
+                    np.fill_diagonal(kern, 1 + kern.diagonal())  # i.e. add 1 to the diagonal
+                    ikern = np.linalg.inv(kern)
 
-                self.log.info("Correcting for broken red shutter analytically")
-                result.exposure.image.array[:] = ikern@result.exposure.image.array
+                    self.log.info("Correcting for broken red shutter analytically")
+                    result.exposure.image.array[:] = ikern@result.exposure.image.array
+                    result.exposure.variance.array[:] = (ikern**2)@result.exposure.variance.array
             else:
                 #
                 # If we're using the `r` arm subtract a neighbouring image if it's a bias
