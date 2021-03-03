@@ -6,7 +6,7 @@
 #  1   Not visible
 #  2   Blend; don't use
 #  3   Unreliable when processing sim data (PIPE2D-314)
-#  4   Commonly has large residuals (PIPE2D-436)
+#  4   Commonly has large residuals (PIPE2D-436 and PIPE2D-753)
 #  5   Commonly has large residuals (NeI, sims blue arm; PIPE2D-391)
 #
 # Coverage: 340nm .. 1400nm
