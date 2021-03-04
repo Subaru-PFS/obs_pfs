@@ -6,4 +6,5 @@ config.reduceExposure.isr.retarget(PfsIsrTask)
 
 config.reduceExposure.load(os.path.join(getPackageDir("obs_pfs"), "config", "reduceExposure.py"))
 
-config.reduceExposure.doOffsetDetectorMap = True
+config.reduceExposure.doOffsetDetectorMap = False
+
