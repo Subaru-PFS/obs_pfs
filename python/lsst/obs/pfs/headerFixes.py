@@ -62,6 +62,9 @@ class HeaderFixDatabase:
         # labelled as Neon were actually Krypton
         self.add(list(range(423, 442)) + [43, 54, 60], W_AITNEO=False, W_AITKRY=True)
 
+        # Early SuNSS observations without the proper pfsDesignId
+        self.add(range(45752, 45853), W_PFDSGN=0xdeadbeef)
+
 
 if __name__ == "__main__":
     from argparse import ArgumentParser
