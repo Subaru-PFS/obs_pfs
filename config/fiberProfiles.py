@@ -10,3 +10,8 @@ config.repair.load(os.path.join(getPackageDir("obs_pfs"), "config", "repair.py")
 
 config.profiles.mask.append("BAD_FLAT")
 config.profiles.centerFit.order = 9
+
+# Disabled blind find. 
+# DetectorMap should be used to determine fiber positions
+# by default.
+config.profiles.doBlindFind = False
