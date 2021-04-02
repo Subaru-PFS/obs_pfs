@@ -20,6 +20,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import numpy as np
 import numpy.linalg
+import lsst.log
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.daf.persistence.butlerExceptions import NoResults
@@ -83,12 +84,26 @@ class PfsIsrTaskConfig(ipIsr.IsrTaskConfig):
 class BrokenShutterKernelCache:
     __cache = {}
     __maxsize = 0
+    log = lsst.log.getLogger("BrokenShutterKernelCache")
 
     def __init__(self, maxsize=0):
         self.setCacheSize(maxsize)
 
     @classmethod
-    def compute(cls, kern, t_exp):
+    def compute(cls, mat, t_exp):
+        """Compute and cache a new kernel
+
+        Kernels are cached and looked up by ``int(t_exp + 0.5)``
+
+        Parameters:
+           mat : `np.array`
+             The matrix to be inverted to give a new kernel
+           t_exp : `float`
+             The exposure time associated with `mat`
+
+        Return:
+           The new kernel
+        """
         key = int(t_exp + 0.5)
         if key not in cls.__cache:
             if cls.__maxsize > 0 and len(cls.__cache) >= cls.__maxsize:  # need to delete an old kernel
@@ -100,11 +115,11 @@ class BrokenShutterKernelCache:
                         n_min = v[1]
 
                 if k_min is not None:
-                    print(f"Clearing cached kernel for {k_min}")
+                    cls.log.info(f"Clearing cached kernel for key {k_min}")
                     del cls.__cache[k_min]
 
-            print(f"Computing ikern for {key} ({t_exp}s)")
-            ikern = np.linalg.inv(kern)
+            cls.log.info(f"Computing ikern for key {key} ({t_exp}s)")
+            ikern = np.linalg.inv(mat)
             cls.__cache[key] = [ikern, 0]
 
         cls.__cache[key][1] += 1
@@ -112,6 +127,19 @@ class BrokenShutterKernelCache:
 
     @classmethod
     def setCacheSize(cls, maxsize):
+        """Set the maximum number of cached kernels
+
+        N.b. Kernels are not freed until you next
+        compute a new one that doesn't fit in the cache;
+        see also clear()
+
+        Parameters:
+        maxsize : `int`
+           The maximum number of saved kernels
+
+        Returns:
+           The old value of maxsize
+        """
         old = cls.__maxsize
         cls.__maxsize = maxsize
 
@@ -119,10 +147,13 @@ class BrokenShutterKernelCache:
 
     @classmethod
     def clear(cls):
+        """Empty the cache"""
         cls.__cache = {}
 
     @classmethod
     def show(cls):
+        """Print some statistics about the cache"""
+        print("BrokenShutterKernelCache:")
         print(f"Cache size: {'unlimited' if cls.__maxsize <= 0 else cls.__maxsize}")
         print("key   nUsed")
         for k, c in cls.__cache.items():
