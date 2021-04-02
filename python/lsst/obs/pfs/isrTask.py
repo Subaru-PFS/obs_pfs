@@ -20,6 +20,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import numpy as np
 import numpy.linalg
+import lsst.log
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.daf.persistence.butlerExceptions import NoResults
@@ -40,6 +41,11 @@ class BrokenShutterConfig(pexConfig.Config):
 
     causalWindow = pexConfig.Field(dtype=bool, default=True,
                                    doc="Only search for later biases?")
+
+    doCacheCorrections = pexConfig.Field(dtype=bool, default=False,
+                                         doc="Use a cache of analytic correction matrices?")
+    cacheSize = pexConfig.Field(dtype=int, default=3,
+                                doc="Number of analytic correction matrices to cache")
 
     t_wipe = pexConfig.Field(dtype=float, default=5.23,
                              doc="Time taken to wipe the CCD (s)")
@@ -68,6 +74,96 @@ class PfsIsrTaskConfig(ipIsr.IsrTaskConfig):
 
     def validate(self):
         super().validate()
+        if not self.doSaturationInterpolation and "SAT" in self.maskListToInterpolate:  # fixed on LSST master
+            self.maskListToInterpolate.remove("SAT")
+#
+# Code to handle the broken shutter matrix matrix inverse cache
+#
+
+
+class BrokenShutterKernelCache:
+    __cache = {}
+    __maxsize = 0
+    log = lsst.log.getLogger("BrokenShutterKernelCache")
+
+    def __init__(self, maxsize=0):
+        self.setCacheSize(maxsize)
+
+    @classmethod
+    def compute(cls, mat, t_exp):
+        """Compute and cache a new kernel
+
+        Kernels are cached and looked up by ``int(t_exp + 0.5)``
+
+        Parameters:
+           mat : `np.array`
+             The matrix to be inverted to give a new kernel
+           t_exp : `float`
+             The exposure time associated with `mat`
+
+        Return:
+           The new kernel
+        """
+        key = int(t_exp + 0.5)
+        if key not in cls.__cache:
+            if cls.__maxsize > 0 and len(cls.__cache) >= cls.__maxsize:  # need to delete an old kernel
+                k_min = None                                            # the least popular kernel
+                n_min = 0
+                for k, v in cls.__cache.items():
+                    if k_min is None or v[1] < n_min:
+                        k_min = k
+                        n_min = v[1]
+
+                if k_min is not None:
+                    cls.log.info(f"Clearing cached kernel for key {k_min}")
+                    del cls.__cache[k_min]
+
+            cls.log.info(f"Computing ikern for key {key} ({t_exp}s)")
+            ikern = np.linalg.inv(mat)
+            cls.__cache[key] = [ikern, 0]
+
+        cls.__cache[key][1] += 1
+        return cls.__cache[key][0]
+
+    @classmethod
+    def setCacheSize(cls, maxsize):
+        """Set the maximum number of cached kernels
+
+        N.b. Kernels are not freed until you next
+        compute a new one that doesn't fit in the cache;
+        see also clear()
+
+        Parameters:
+        maxsize : `int`
+           The maximum number of saved kernels
+
+        Returns:
+           The old value of maxsize
+        """
+        old = cls.__maxsize
+        cls.__maxsize = maxsize
+
+        return old
+
+    @classmethod
+    def clear(cls):
+        """Empty the cache"""
+        cls.__cache = {}
+
+    @classmethod
+    def show(cls):
+        """Print some statistics about the cache"""
+        print("BrokenShutterKernelCache:")
+        print(f"Cache size: {'unlimited' if cls.__maxsize <= 0 else cls.__maxsize}")
+        print("key   nUsed")
+        for k, c in cls.__cache.items():
+            print(f"{k:4}  {c[1]}")
+
+
+try:
+    brokenShutterKernelCache
+except NameError:
+    brokenShutterKernelCache = BrokenShutterKernelCache()
 
 
 class PfsIsrTask(ipIsr.IsrTask):
@@ -136,43 +232,7 @@ class PfsIsrTask(ipIsr.IsrTask):
         result = self.run(ccdExposure, camera=camera, **isrData.getDict())
 
         if self.config.doBrokenRedShutter and sensorRef.dataId["arm"] == 'r':
-            if self.config.doBrokenRedShutter and self.config.brokenRedShutter.useAnalytic:
-                #
-                # Build a model which generates the as-readout data R given
-                # the (unknown) true signal S, with integration time t_exp:
-                #    R_i = S_i + (t_wipe*S_red + t_stare*S_i + t_read*S_blue,i)/t_exp
-                # where the second term gives the photons resulting from reading
-                # the chip with the shutter open, and S_blue/red are the photons bluer (redder)
-                # than S_i (i.e. sum_0^i S_i and sum_i^N-1 S_i)
-                #
-                # We write this as R = S + kern@S, or
-                #  S = (1 + kern)^{-1} R
-                #
-                # N.b. we could cache ikern as it only depends on the exposure time
-                # and the config parameters specifying times for the readout phases
-                #
-                t_exp = result.exposure.getInfo().getVisitInfo().getExposureTime()
-                t_wipe = self.config.brokenRedShutter.t_wipe
-                t_read = self.config.brokenRedShutter.t_read
-                t_stare = self.config.brokenRedShutter.t_stare
-
-                if t_exp == 0:          # we can't correct a bias
-                    self.log.debug("Not correcting bias for broken red shutter analytically")
-                else:
-                    N = result.exposure.getHeight()
-                    kern = np.zeros((N, N))
-                    kern += t_wipe/N*(1 - np.tri(N, k=1))  # i.e. upper tri
-                    kern += t_read/N*np.tri(N, k=-1)
-                    np.fill_diagonal(kern, t_stare)
-                    kern /= t_exp
-
-                    np.fill_diagonal(kern, 1 + kern.diagonal())  # i.e. add 1 to the diagonal
-                    ikern = np.linalg.inv(kern)
-
-                    self.log.info("Correcting for broken red shutter analytically")
-                    result.exposure.image.array[:] = ikern@result.exposure.image.array
-                    result.exposure.variance.array[:] = (ikern**2)@result.exposure.variance.array
-            else:
+            if not self.config.brokenRedShutter.useAnalytic:
                 #
                 # If we're using the `r` arm subtract a neighbouring image if it's a bias
                 #
@@ -237,3 +297,53 @@ class PfsIsrTask(ipIsr.IsrTask):
             isrQa.writeThumbnail(sensorRef, result.flattenedThumb, "flattenedThumb")
 
         return result
+
+    def run(self, exposure, *args, **kwargs):
+        results = super().run(exposure, *args, **kwargs)
+        exposure = results.exposure
+
+        if exposure.getInfo().getFilter().getName() == 'r' and \
+           self.config.doBrokenRedShutter and self.config.brokenRedShutter.useAnalytic:
+            #
+            # Build a model which generates the as-readout data R given
+            # the (unknown) true signal S, with integration time t_exp:
+            #    R_i = S_i + (t_wipe*S_red + t_stare*S_i + t_read*S_blue,i)/t_exp
+            # where the second term gives the photons resulting from reading
+            # the chip with the shutter open, and S_blue/red are the photons bluer (redder)
+            # than S_i (i.e. sum_0^i S_i and sum_i^N-1 S_i)
+            #
+            # We write this as R = S + kern@S, or
+            #  S = (1 + kern)^{-1} R
+            #
+            # N.b. we could cache ikern as it only depends on the exposure time
+            # and the config parameters specifying times for the readout phases
+            #
+            t_exp = exposure.getInfo().getVisitInfo().getExposureTime()
+            t_wipe = self.config.brokenRedShutter.t_wipe
+            t_read = self.config.brokenRedShutter.t_read
+            t_stare = self.config.brokenRedShutter.t_stare
+
+            if t_exp == 0:          # we can't correct a bias
+                self.log.debug("Not correcting bias for broken red shutter analytically")
+            else:
+                brokenShutterKernelCache.setCacheSize(self.config.brokenRedShutter.cacheSize)
+
+                N = exposure.getHeight()
+                kern = np.zeros((N, N))
+                kern += t_wipe/N*(1 - np.tri(N, k=1))  # i.e. upper tri
+                kern += t_read/N*np.tri(N, k=-1)
+                np.fill_diagonal(kern, t_stare)
+                kern /= t_exp
+
+                np.fill_diagonal(kern, 1 + kern.diagonal())  # i.e. add 1 to the diagonal
+
+                ikern = brokenShutterKernelCache.compute(kern, t_exp)
+
+                if not self.config.brokenRedShutter.doCacheCorrections:
+                    brokenShutterKernelCache.clear()
+
+                self.log.info("Correcting for broken red shutter analytically")
+                exposure.image.array[:] = ikern@exposure.image.array
+                exposure.variance.array[:] = (ikern**2)@exposure.variance.array
+
+        return results
