@@ -25,6 +25,7 @@ import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.daf.persistence.butlerExceptions import NoResults
 
+import lsst.afw.math as afwMath
 import lsst.ip.isr as ipIsr
 from lsst.ip.isr import isrQa
 
@@ -34,6 +35,16 @@ ___all__ = ["IsrTask", "IsrTaskConfig"]
 class BrokenShutterConfig(pexConfig.Config):
     """Configuration parameters for working around a broken shutter
     """
+    brokenShutterList = pexConfig.ListField(dtype=str, default=["r1"],
+                                            doc="List of cameras with broken shutters (e.g. ['r1'])")
+
+    checkParallelOverscan = pexConfig.Field(dtype=bool, default=False,
+                                            doc="Use parallel overscan to guess if the shutter is broken?")
+    maximumAllowedParallelOverscanFraction = \
+        pexConfig.Field(dtype=float, default=0.01,
+                        doc="Largest permitted fraction of flux seen "
+                        "in parallel overscan if shutter's working")
+
     useAnalytic = pexConfig.Field(dtype=bool, default=False,
                                   doc="Use an analytic correction")
     window = pexConfig.Field(dtype=int, default=1,
@@ -231,7 +242,8 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         result = self.run(ccdExposure, camera=camera, **isrData.getDict())
 
-        if self.config.doBrokenRedShutter and sensorRef.dataId["arm"] == 'r':
+        if self.config.doBrokenRedShutter and \
+           ccdExposure.getDetector().getName() in self.config.brokenRedShutter.brokenShutterList:
             if not self.config.brokenRedShutter.useAnalytic:
                 #
                 # If we're using the `r` arm subtract a neighbouring image if it's a bias
@@ -299,11 +311,38 @@ class PfsIsrTask(ipIsr.IsrTask):
         return result
 
     def run(self, exposure, *args, **kwargs):
+        doBrokenRedShutter = self.config.doBrokenRedShutter and \
+            exposure.getDetector().getName() in self.config.brokenRedShutter.brokenShutterList
+
+        if doBrokenRedShutter and self.config.brokenRedShutter.checkParallelOverscan:
+            excessPOscan = []
+            meanFlux = []
+            for amp in exposure.getDetector():
+                # N.b. MEANCLIP is broken for U16 data
+                data = afwMath.makeStatistics(exposure[amp.getRawDataBBox()].convertF().image,
+                                              afwMath.MEANCLIP).getValue()
+                pOscan = afwMath.makeStatistics(exposure[amp.getRawVerticalOverscanBBox()].image,
+                                                afwMath.MEDIAN).getValue()
+                sOscan = afwMath.makeStatistics(exposure[amp.getRawHorizontalOverscanBBox()].image,
+                                                afwMath.MEDIAN).getValue()
+
+                meanFlux.append(data)
+                excessPOscan.append(pOscan - sOscan)
+
+            flux = np.mean(meanFlux)
+            excess = np.mean(excessPOscan)
+            if excess <= self.config.brokenRedShutter.maximumAllowedParallelOverscanFraction*flux:
+                doBrokenRedShutter = False
+
+            self.log.info("Checking parallel overscan: %g %s %g*%g %s",
+                          excess, (">" if doBrokenRedShutter else "<="),
+                          self.config.brokenRedShutter.maximumAllowedParallelOverscanFraction, flux,
+                          ("" if doBrokenRedShutter else "; assuming not broken"))
+
         results = super().run(exposure, *args, **kwargs)
         exposure = results.exposure
 
-        if exposure.getInfo().getFilter().getName() == 'r' and \
-           self.config.doBrokenRedShutter and self.config.brokenRedShutter.useAnalytic:
+        if doBrokenRedShutter and self.config.brokenRedShutter.useAnalytic:
             #
             # Build a model which generates the as-readout data R given
             # the (unknown) true signal S, with integration time t_exp:
