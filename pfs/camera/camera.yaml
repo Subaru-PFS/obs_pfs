@@ -49,7 +49,7 @@ AMP : &AMP
     rawSerialPrescanBBox    : [[0,   48], [8,      4176]] # serial prescan (we could use the first 48 too)
     rawSerialOverscanBBox   : [[520, 48], [32,     4176]] # serial overscan
     rawParallelPrescanBBox  : [[0,    1], [0,         0]] # pixels digitised before first parallel transfer
-    rawParallelOverscanBBox : [[8, 4224], [0,        76]] # parallel overscan
+    rawParallelOverscanBBox : [[8, 4224], [512,      76]] # parallel overscan
 
     saturation : 65535                  # saturation level, DN XXX Should this be in electrons?
 
