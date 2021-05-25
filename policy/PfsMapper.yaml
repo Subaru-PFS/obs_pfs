@@ -182,6 +182,14 @@ datasets:
     tables:
     - raw
 
+  detectorMap_used:  # DetectorMap used in processing the data (adjusted from original calib)
+    template: 'DETECTORMAP/pfsDetectorMap-%(visit)06d-%(arm)s%(spectrograph)1d.fits'
+    python: pfs.drp.stella.DetectorMap
+    persistable: DetectorMap
+    storage: FitsCatalogStorage
+    tables:
+    - raw
+
   sky1d:
     template: 'sky1d/%(dateObs)s/v%(visit)07d/sky1d-%(visit)06d.fits'
     python: pfs.drp.stella.fitFocalPlane.FocalPlaneFunction
@@ -189,7 +197,6 @@ datasets:
     storage: FitsCatalogStorage
     tables:
     - raw
-
 
   sky2d:
     template: 'pfsSky/%(dateObs)s/v%(visit)06d/pfsSky-%(visit)06d-%(arm)s%(spectrograph)d.fits'
