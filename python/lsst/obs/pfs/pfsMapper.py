@@ -390,3 +390,30 @@ class PfsMapper(CameraMapper):
         else:
             raise RuntimeError("Querying for defects (%s, %s) returns %d files: %s" %
                                (ccdVal, dayObs, len(rows), ", ".join([_[0] for _ in rows])))
+
+    def _setFilter(self, mapping, item, dataId):
+        """Set the filter object in an Exposure.  If the Exposure had a FILTER
+        keyword, this was already processed during load.  But if it didn't,
+        use the filter from the registry.
+
+        Parameters
+        ----------
+        mapping : `lsst.obs.base.Mapping`
+            Where to get the filter from.
+        item : `lsst.afw.image.Exposure`
+            Exposure to set the filter in.
+        dataId : `dict`
+            Dataset identifier.
+        """
+        if not (isinstance(item, afwImage.ExposureU) or isinstance(item, afwImage.ExposureI) or
+                isinstance(item, afwImage.ExposureF) or isinstance(item, afwImage.ExposureD)):
+            return
+
+        if item.getFilter().getId() != afwImage.Filter.UNKNOWN:
+            return
+
+        actualId = mapping.need(["arm"], dataId)
+        filterName = actualId["arm"]
+        if self.filters is not None and filterName in self.filters:
+            filterName = self.filters[filterName]
+        item.setFilter(afwImage.Filter(filterName))
