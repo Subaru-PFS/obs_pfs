@@ -6,6 +6,7 @@ setupRequired(pex_config)
 setupRequired(pex_policy)
 setupRequired(pipe_base)
 setupRequired(sconsUtils)
+setupRequired(pfs_utils)
 
 envPrepend(LD_LIBRARY_PATH, ${PRODUCT_DIR}/lib)
 envPrepend(DYLD_LIBRARY_PATH, ${PRODUCT_DIR}/lib)

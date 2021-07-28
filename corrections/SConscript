@@ -15,5 +15,5 @@ python = f"{libpath} python"
 
 obsPfs = lsst.sconsUtils.env.ProductDir('obs_pfs')
 
-command = f"{python} {obsPfs}/python/lsst/obs/pfs/headerFixes.py {obsPfs}/corrections"
-env.AlwaysBuild(env.Command("corrections", lsst.sconsUtils.targets["python"], command))
+command = f"{python} {obsPfs}/bin/createHeaderFixes.py {obsPfs}/corrections"
+env.AlwaysBuild(env.Command("corrections", lsst.sconsUtils.targets["shebang"], command))
