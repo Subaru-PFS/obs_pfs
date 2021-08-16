@@ -1,4 +1,5 @@
 import os
+import re
 import numpy as np
 
 from astro_metadata_translator import fix_header
@@ -6,7 +7,7 @@ from astro_metadata_translator import fix_header
 from lsst.obs.base import CameraMapper, MakeRawVisitInfo
 import lsst.afw.image as afwImage
 import lsst.afw.math as afwMath
-from lsst.daf.persistence import Policy
+from lsst.daf.persistence import LogicalLocation, Policy
 import lsst.utils as utils
 import lsst.obs.base.yamlCamera as yamlCamera
 from lsst.obs.base import FilterDefinition, FilterDefinitionCollection
@@ -172,6 +173,85 @@ class PfsMapper(CameraMapper):
             ampPixels[:-1] = ampPixels[1:]
 
             imArr[yslice, xslice] = ampPixels.reshape(ampshape)
+
+    @staticmethod
+    def lookupHdu(imType, read, md=None):
+        """Return the appropriate HDU
+
+        Parameters
+        ----------
+        imType: `str`
+            IMAGE or REF
+        read: `int`
+            The desired read of the device (1-indexed)
+        md: `lsst.daf.base.PropertyList`
+            Header from file (optional)
+            Used to validate read, and handle extra reset HDUs if present
+        """
+
+        if md:
+            nread = md.get("W_H4NRED")
+
+            if nread is not None and not (1 <= read <= nread):
+                raise RuntimeError(f"The read must be in the range 1..{nread}; saw {read}")
+
+        hdu = 2*read - 1 + dict(IMAGE=0, REF=1)[imType]
+
+        return hdu
+
+    def bypass_raw(self, datasetType, pythonType, butlerLocation, dataId):
+        if dataId['arm'] in "bmr":
+            raise IOError("Please ignore this bypass function for [bmr] data")
+
+        def readData(datasetType, butlerLocation, dataId, hdu=1, getMetadata=False):
+            additionalData = butlerLocation.getAdditionalData()
+            locationString = butlerLocation.getLocations()[0]
+            locStringWithRoot = os.path.join(butlerLocation.getStorage().root, locationString)
+            logLoc = LogicalLocation(locStringWithRoot, additionalData)
+            # test for existence of file, ignoring trailing [...]
+            # because that can specify the HDU or other information
+            filePath = re.sub(r"(\.fits(.[a-zA-Z0-9]+)?)(\[.+\])$", r"\1", logLoc.locString())
+
+            if not os.path.exists(filePath):  # handle reruns
+                cfg = butlerLocation.storage.getRepositoryCfg(butlerLocation.storage.root)
+                for p in cfg.parents:
+                    nfilePath = os.path.join(p.root, locationString)
+                    if os.path.exists(nfilePath):
+                        filePath = nfilePath
+                        break
+
+            if not os.path.exists(filePath):
+                raise RuntimeError("No such FITS file: " + logLoc.locString())
+
+            if getMetadata:
+                return afwImage.readMetadata(filePath, hdu=0)
+
+            filePath += f"[{hdu}]"
+            return afwImage.DecoratedImageF(filePath, hdu=hdu)
+
+        md = readData(datasetType, butlerLocation, dataId, getMetadata=True)
+        nread = md.get("W_H4NRED")
+        #
+        # Process the data using CDS
+        #
+        data = {}
+        reads = np.arange(1, nread+1)
+        for read in [reads[0], reads[-1]]:
+            hdu = 2*read - 1
+            data[read] = readData(datasetType, butlerLocation, dataId, hdu=hdu)
+            assert data[read].getMetadata()["EXTNAME"] == f"IMAGE_{read}"
+
+            ref = readData(datasetType, butlerLocation, dataId, hdu=hdu + 1)
+            assert ref.getMetadata()["EXTNAME"] == f"REF_{read}"
+
+            im = data[read].image
+            im -= ref.image
+            del im
+
+        im = data[reads[-1]].image              # data[hdu].image -= data[0].image doesn't work
+        im -= data[reads[0]].image
+
+        return data[reads[-1]]
 
     def std_raw(self, item, dataId):
         """Fixup raw image problems.
