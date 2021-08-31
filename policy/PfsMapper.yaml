@@ -191,8 +191,8 @@ datasets:
     - raw
 
   sky1d:
-    template: 'sky1d/%(dateObs)s/v%(visit)07d/sky1d-%(visit)06d.fits'
-    python: pfs.drp.stella.fitFocalPlane.FocalPlaneFunction
+    template: 'sky1d/%(dateObs)s/v%(visit)07d/sky1d-%(visit)06d-%(arm)s.fits'
+    python: pfs.drp.stella.focalPlaneFunction.FocalPlaneFunction
     persistable: FocalPlaneFunction
     storage: FitsCatalogStorage
     tables:
@@ -200,7 +200,7 @@ datasets:
 
   sky2d:
     template: 'pfsSky/%(dateObs)s/v%(visit)06d/pfsSky-%(visit)06d-%(arm)s%(spectrograph)d.fits'
-    python: pfs.drp.stella.fitFocalPlane.FocalPlaneFunction
+    python: pfs.drp.stella.focalPlaneFunction.FocalPlaneFunction
     persistable: FocalPlaneFunction
     storage: FitsCatalogStorage
     tables:
@@ -217,7 +217,7 @@ datasets:
 
   fluxCal:
     template: 'fluxCal/%(dateObs)s/v%(visit)06d/fluxCal-%(visit)06d.fits'
-    python: pfs.drp.stella.fitFocalPlane.FocalPlaneFunction
+    python: pfs.drp.stella.focalPlaneFunction.FocalPlaneFunction
     persistable: FocalPlaneFunction
     storage: FitsCatalogStorage
     level: Visit
