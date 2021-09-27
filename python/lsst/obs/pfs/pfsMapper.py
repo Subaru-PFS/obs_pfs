@@ -218,8 +218,9 @@ class PfsMapper(CameraMapper):
         """
         exp = super(PfsMapper, self).std_raw(item, dataId)
 
+        filename = self.map("raw_filename", dataId).getLocations()[0]
         md = exp.getMetadata()
-        fix_header(md, translator_class=PfsTranslator)
+        fix_header(md, translator_class=PfsTranslator, filename=filename)
         try:
             dataVersion = int(md.get('W_VERSIONS_FPGA'), 16)
         except Exception:
@@ -248,7 +249,8 @@ class PfsMapper(CameraMapper):
         item : `lsst.daf.base.PropertyList`
             The modified raw metadata.
         """
-        fix_header(item, translator_class=PfsTranslator)
+        filename = self.map("raw_filename", dataId).getLocations()[0]
+        fix_header(item, translator_class=PfsTranslator, filename=filename)
         return item
 
     def std_fiberProfiles(self, item, dataId):
