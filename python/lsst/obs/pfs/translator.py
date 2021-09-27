@@ -61,8 +61,7 @@ class PfsTranslator(SubaruTranslator):
 
     def __init__(self, header, filename=None):
         super().__init__(header, filename=filename)
-        if filename is not None:
-            self._parsedData = self.parseFilename()
+        self._parsedData = self.parseFilename() if filename is not None else None
 
     @classmethod
     def can_translate(cls, header, filename=None):
@@ -93,11 +92,17 @@ class PfsTranslator(SubaruTranslator):
             raise ValueError("No filename to parse")
         sites = '[JLXIASPF]'  # Possible site names
         categories = '[ABCDS]'  # Possible category names
-        matches = re.search(r"^PF(%s)(%s)-?(\d{6})(\d)(\d)\.fits$" % (sites, categories),
-                            os.path.basename(self.filename))
+        basename = os.path.basename(self.filename)
+        matches = re.search(r"^PF(%s)(%s)-?(\d{6})([brnm1-4])([1-4])\.fits" % (sites, categories), basename)
         if not matches:
             raise ValueError("Unable to interpret filename: %s" % (self.filename,))
-        site, category, visit, spectrograph, arm = matches.groups()
+        site, category, visit, first, second = matches.groups()
+        if first in "brnm":
+            arm = dict(b=1, r=2, n=3, m=4)[first]
+            spectrograph = second
+        else:
+            spectrograph = first
+            arm = second
         return SimpleNamespace(site=site, category=category, visit=int(visit),
                                spectrograph=int(spectrograph), arm=int(arm))
 
