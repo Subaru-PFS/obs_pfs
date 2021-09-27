@@ -31,7 +31,6 @@ class PfsTranslator(SubaruTranslator):
 
     _const_map = {"boresight_rotation_angle": "unknown",
                   "boresight_rotation_coord": "unknown",
-                  "instrument": "PFS",
                   "telescope": "Subaru",
                   }
     """Constant mappings"""
@@ -162,6 +161,12 @@ class PfsTranslator(SubaruTranslator):
     @cache_translation
     def to_visit_id(self):
         return self.to_observation_id()
+
+    @cache_translation
+    def to_instrument(self):
+        if self._parsedData is None:
+            self._parsedData = self.parseFilename(self.filename)
+        return "PFS" if self._parsedData.site == "S" else f"PFS-{self._parsedData.site}"
 
     def search_paths(self):
         """Search paths to use when searching for header fix up correction
