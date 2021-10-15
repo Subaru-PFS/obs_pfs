@@ -206,6 +206,14 @@ datasets:
     tables:
     - raw
 
+  apCorr:
+    template: 'apCorr/%(dateObs)s/v%(visit)06d/apCorr-%(visit)06d-%(arm)s%(spectrograph)d.fits'
+    python: pfs.drp.stella.focalPlaneFunction.FocalPlaneFunction
+    persistable: FocalPlaneFunction
+    storage: FitsCatalogStorage
+    tables:
+    - raw
+
   pfsReference:
     template: 'pfsReference/%(catId)05d/%(tract)05d/pfsReference-%(catId)05d-%(tract)05d-%(patch)s-%(objId)08x.fits'
     python: pfs.drp.stella.PfsReference
