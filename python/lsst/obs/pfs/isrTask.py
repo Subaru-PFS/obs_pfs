@@ -27,6 +27,7 @@ from lsst.daf.persistence.butlerExceptions import NoResults
 
 import lsst.afw.math as afwMath
 import lsst.ip.isr as ipIsr
+from lsst.ip.isr.assembleCcdTask import AssembleCcdTask
 from lsst.ip.isr import isrQa
 
 ___all__ = ["IsrTask", "IsrTaskConfig"]
@@ -71,6 +72,33 @@ class BrokenShutterConfig(pexConfig.Config):
             raise ValueError(f"You may not specify both (window == {self.window}) > 1 and useAnalytic")
 
 
+class PfsAssembleCcdTask(AssembleCcdTask):
+    def assembleCcd(self, exposure):
+        """Assemble CCD and mask pixels with value of zero
+
+        Pixels with value of zero were intentionally not read out, and only
+        exist in the data as padding. We have masked them as NO_DATA
+        (PfsIsrTask.maskAmplifier), and here we adjust the value after
+        overscan subtraction. The value at the end of ISR will still be slightly
+        negative due to bias- and dark-subtraction, but at least it won't be
+        negative thousands.
+
+        exposure : `lsst.afw.image.Exposure`
+            Raw exposure containing all amplifiers and their overscans.
+
+        Returns
+        -------
+        exposure : `lsst.afw.image.Exposure`
+            Assembled exposure.
+        """
+        exposure = super().assembleCcd(exposure)
+        noData = (exposure.mask.array & exposure.mask.getPlaneBitMask("NO_DATA")) != 0
+        if np.any(noData):
+            exposure.image.array[noData] = 0.0
+            self.log.info("Flagging %d zero pixels", noData.sum())
+        return exposure
+
+
 class PfsIsrTaskConfig(ipIsr.IsrTaskConfig):
     """Configuration parameters for PFS's IsrTask.
 
@@ -82,6 +110,10 @@ class PfsIsrTaskConfig(ipIsr.IsrTaskConfig):
     brokenRedShutter = pexConfig.ConfigField(
         dtype=BrokenShutterConfig, doc="Broken shutter related configuration options."
     )
+
+    def setDefaults(self):
+        super().setDefaults()
+        self.assembleCcd.retarget(PfsAssembleCcdTask)
 
     def validate(self):
         super().validate()
@@ -386,3 +418,35 @@ class PfsIsrTask(ipIsr.IsrTask):
                 exposure.variance.array[:] = (ikern**2)@exposure.variance.array
 
         return results
+
+    def maskAmplifier(self, exposure, amp, defects):
+        """Mask bad pixels in amplifier
+
+        This PFS override masks pixels with a value of zero. These pixels have
+        not really been read out, and only exist in order to pad the image.
+        This needs to be done before overscan subtraction, so that the empty
+        rows aren't used to measure the overscan.
+
+        Parameters
+        ----------
+        exposure : `lsst.afw.image.Exposure`
+            Raw exposure.
+        amp : `lsst.afw.cameraGeom.Amplifier`
+            Amplifier information.
+        defects : `lsst.meas.algorithms.Defects`
+            List of defects.
+
+        Returns
+        -------
+        badAmp : `bool`
+            Whether the entire amplifier is covered by defects.
+        """
+        badAmp = super().maskAmplifier(exposure, amp, defects)
+        ampExp = exposure[amp.getRawBBox()]
+        zeroData = ampExp.image.array == 0
+        if np.any(zeroData):
+            # Overscan subtraction only respects SAT
+            # NO_DATA signals to our post-assembleCcd code to remove the values
+            ampExp.mask.array[zeroData] |= ampExp.mask.getPlaneBitMask(["SAT", "NO_DATA"])
+
+        return badAmp
