@@ -23,6 +23,7 @@ def getLamps(md):
         "W_AITHGA": "HgAr",
         "W_AITKRY": "Kr",
         "W_AITARG": "Ar",
+        "W_AITHGC": "HgCd",
         "W_AITQTH": "Quartz",
         "W_AITDEU": "D",
         # Old "long" headers (2017)
@@ -48,6 +49,7 @@ def getLampElements(md):
         "W_AITHGA": ["Hg", "Ar"],
         "W_AITKRY": ["Kr"],
         "W_AITARG": ["Ar"],
+        "W_AITHGC": ["Hg", "Cd", "Ar"],
         # Old "long" headers (2017)
         "W_AIT_SRC_Ne": ["Ne"],
         "W_AIT_SRC_HgAr": ["Hg", "Ar"],
