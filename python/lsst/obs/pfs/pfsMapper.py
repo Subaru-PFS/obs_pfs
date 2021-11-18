@@ -33,7 +33,13 @@ class PfsRawVisitInfo(MakeRawVisitInfo):
         #
         # Done setting argDict; check values now that all the header keywords have been consumed
         #
-        argDict["darkTime"] = self.getDarkTime(argDict)
+        try:
+            argDict["darkTime"] = self.getDarkTime(argDict)
+        except RuntimeError:
+            if "REF" in md.get("EXTNAME", ""):
+                pass
+            else:
+                raise
 
     def getDarkTime(self, argDict):
         """Retrieve the dark time from an argDict, waiting to be passed to the VisitInfo ctor"""
@@ -247,6 +253,9 @@ class PfsMapper(CameraMapper):
             im = data[read].image
             im -= ref.image
             del im
+
+        im = data[reads[0]].image.array
+        im[im > 30000] = np.NaN
 
         im = data[reads[-1]].image              # data[hdu].image -= data[0].image doesn't work
         im -= data[reads[0]].image
