@@ -110,15 +110,20 @@ class PfsIsrTaskConfig(ipIsr.IsrTaskConfig):
     brokenRedShutter = pexConfig.ConfigField(
         dtype=BrokenShutterConfig, doc="Broken shutter related configuration options."
     )
+    windowed = pexConfig.Field(dtype=bool, default=False,
+                               doc="Reduction of windowed data, for real-time acquisition? Implies "
+                               "overscanFitType=MEDIAN")
 
     def setDefaults(self):
         super().setDefaults()
         self.assembleCcd.retarget(PfsAssembleCcdTask)
 
     def validate(self):
-        super().validate()
+        if self.windowed:
+            self.overscanFitType = "MEDIAN"
         if not self.doSaturationInterpolation and "SAT" in self.maskListToInterpolate:  # fixed on LSST master
             self.maskListToInterpolate.remove("SAT")
+        super().validate()
 #
 # Code to handle the broken shutter matrix matrix inverse cache
 #
