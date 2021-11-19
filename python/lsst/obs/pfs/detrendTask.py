@@ -8,6 +8,14 @@ class DetrendConfig(Config):
     isr = ConfigurableField(target=IsrTask, doc="Instrumental signature removal")
     doRepair = Field(dtype=bool, default=True, doc="Repair artifacts?")
     repair = ConfigurableField(target=RepairTask, doc="Task to repair artifacts")
+    windowed = Field(dtype=bool, default=False,
+                     doc="Reduction of windowed data, for real-time acquisition? Implies "
+                     "overscanFitType=MEDIAN")
+
+    def validate(self):
+        if self.windowed:
+            self.isr.windowed = True
+        super().validate()
 
 
 class DetrendTask(CmdLineTask):
