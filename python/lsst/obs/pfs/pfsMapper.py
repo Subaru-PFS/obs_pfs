@@ -253,6 +253,17 @@ class PfsMapper(CameraMapper):
         fix_header(item, translator_class=PfsTranslator, filename=filename)
         return item
 
+    def std_rawAG(self, item, dataId):
+        raw = afwImage.makeExposure(afwImage.makeMaskedImage(item.getImage()))
+        raw.setMetadata(item.getMetadata())
+
+        raw.setDetector(self._makeCamera()[f"AG{dataId['hdu']}"])
+
+        vi = afwImage.visitInfo.VisitInfo(raw.getMetadata())
+        raw.getInfo().setVisitInfo(vi)
+
+        return raw
+
     def std_fiberProfiles(self, item, dataId):
         """Disable standardization for fiberProfiles
 

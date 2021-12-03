@@ -77,6 +77,63 @@ Detector : &Detector
 
     amplifiers : {}
 #
+# Now the guide cameras
+#
+# A single amplifier
+#
+AG_AMP0 : &AG_AMP0
+    # trimmed
+    hdu : 1                             # Only one HDU in the file
+
+    flipXY :     [False, False]
+    perAmpData : False                  # is the amp data split across multiple HDUs/Files?
+
+    #                         [[x0,  y0], [xSize, ySize]]
+    rawBBox                 : [[0,    0], [536,    1033]] # total size of one amp's raw data
+
+    rawDataBBox             : [[24,   9], [512,    1024]] # data region in raw data
+    rawSerialPrescanBBox    : [[0,    0], [8,      1033]] # serial prescan
+    rawSerialOverscanBBox   : [[8,    0], [14,     1033]] # serial overscan
+    rawParallelPrescanBBox  : [[0,    1], [0,         0]] # pixels digitised before first parallel transfer
+    rawParallelOverscanBBox : [[0,    0], [536,       8]] # parallel overscan
+
+    saturation : 65535                  # saturation level, DN XXX Should this be in electrons?
+
+    # Linearity correction is still under discussion, so this is a placeholder.
+    linearityType : PROPORTIONAL
+    linearityThreshold : 0
+    linearityMax : 65535                # == saturation
+    linearityCoeffs : [0, 65535]        # == [linearityThreshold, linearityMax]
+
+AG_AMP1 : &AG_AMP1
+    << : *AG_AMP0
+    #                         [[x0,  y0], [xSize, ySize]]
+    rawBBox                 : [[0,    0], [536,    1033]] # total size of one amp's raw data
+
+    rawDataBBox             : [[0,  9], [512,    1024]] # data region in raw data
+    rawSerialPrescanBBox    : [[528, 0], [8,      1033]] # serial prescan
+    rawSerialOverscanBBox   : [[514,    0], [14,     1033]] # serial overscan
+    rawParallelPrescanBBox  : [[0,    1], [0,         0]] # pixels digitised before first parallel transfer
+    rawParallelOverscanBBox : [[0,    0], [536,       8]] # parallel overscan
+
+#
+# A single detector;
+#
+AG_Detector : &AG_Detector
+    detectorType : 4                    # AG CCD
+    refpos : [536, 516.5]               # centre of chip
+    offset : [.nan, .nan]
+    #      [[x0,y0], [   x1,  y1]]
+    bbox : [[0,  0], [1023, 1023]]      # total bbox of trimmed detector
+    pixelSize : [0.015, 0.015]          # in mm (unknown)
+    transformDict : {nativeSys : 'Pixels', transforms : None}
+    transposeDetector : False
+    pitch : 0.0                         # (degrees)
+    yaw : 0.0                           # rotation in plane of camera (degrees)
+    roll : 0.0                          # (degrees)
+
+    amplifiers : {}
+#
 # Define our specific devices
 #
 # All the cameras present in this file.  Each camera is a Pair of Hamamatsu Detectors with 2*4 amplifiers
@@ -260,3 +317,101 @@ CCDs : &CCDs
       <<: *CCD
       id: 15
       offset : [102.2, 130.2]         # mm
+    #
+    # Now the autoguiders
+    #
+    AG1 :
+        << : *AG_Detector
+        id : 101
+        serial : AG 1
+        offset : [-93.1, 0.0]           # mm
+
+        amplifiers:
+            "0": &AG_A0
+                <<: *AG_AMP0
+                ixy : [0, 0]
+                readCorner : LL
+                gain :  1.015
+                readNoise : 1
+
+            "1": &AG_A1
+                <<: *AG_AMP1
+                ixy : [1, 0]
+                readCorner : LR
+                gain : 0.985
+                readNoise : 1
+
+    AG2 :
+        << : *AG_Detector
+        id : 102
+        serial : AG 2
+        offset : [-93.1, 0.0]           # mm
+
+        amplifiers:
+            "0":
+                <<: *AG_A0
+                gain :  1.024
+
+            "1":
+                <<: *AG_A1
+                gain : 0.976
+
+    AG3 :
+        << : *AG_Detector
+        id : 103
+        serial : AG 3
+        offset : [-93.1, 0.0]           # mm
+
+        amplifiers:
+            "0":
+                <<: *AG_A0
+                gain : 0.931
+
+            "1":
+                <<: *AG_A1
+                gain : 1.069
+
+    AG4 :
+        << : *AG_Detector
+        id : 104
+        serial : AG 4
+        offset : [-93.1, 0.0]           # mm
+
+        amplifiers:
+            "0":
+                <<: *AG_A0
+                gain : 1.002
+
+            "1":
+                <<: *AG_A1
+                gain : 0.998
+
+    AG5 :
+        << : *AG_Detector
+        id : 105
+        serial : AG 5
+        offset : [-93.1, 0.0]           # mm
+
+        amplifiers:
+            "0":
+                <<: *AG_A0
+                gain : 0.985
+
+            "1":
+                <<: *AG_A1
+                gain : 1.015
+
+    AG6 :
+        << : *AG_Detector
+        id : 106
+        serial : AG 6
+        offset : [-93.1, 0.0]           # mm
+
+        amplifiers:
+            "0":
+                <<: *AG_A0
+                gain : 0.994
+
+            "1":
+                <<: *AG_A1
+                gain : 1.006
