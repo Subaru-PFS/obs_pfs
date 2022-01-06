@@ -32,11 +32,11 @@ def getLamps(md):
         "W_AIT_SRC_Xe": "Xe",
         "W_AIT_SRC_Qth": "Quartz",
     }
-    return set([menu[key] for key in menu if md.get(key, False)])
+    return {menu[key] for key in menu if md.get(key, False)}
 
 
 def getLampElements(md):
-    """Return a list of the elements found in the lamps that are on
+    """Return a set of the elements found in the lamps that are on
 
     @param md: dafBase.PropertyList containing the header
     """
@@ -55,4 +55,5 @@ def getLampElements(md):
         "W_AIT_SRC_HgAr": ["Hg", "Ar"],
         "W_AIT_SRC_Xe": ["Xe"],
     }
-    return sum((menu[key] for key in menu if md.get(key, False)), [])
+    elements = [menu[key] for key in menu if md.get(key, False)]
+    return {el for sublist in elements for el in sublist}
