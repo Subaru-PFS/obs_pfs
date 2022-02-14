@@ -37,6 +37,16 @@ exposures:
   calexp:
     template: 'calExp/%(dateObs)s/v%(visit)06d/calExp-%(site)s%(category)s%(visit)06d%(arm)s%(spectrograph)1d.fits'
 
+  guider:
+    description: "A raw autoguider image."
+    template: '%(dateObs)s/PF%(site)s%(category)s%(visit)06d%(sequence)02d.fits[%(hdu)d]'
+    persistable: DecoratedImageU
+    storage: FitsStorage
+    python: lsst.afw.image.DecoratedImageU
+    level: Ccd
+    tables: raw
+
+
 calibrations:
   bias:
     template: 'BIAS/pfsBias-%(calibDate)s-%(visit0)06d-%(arm)s%(spectrograph)1d.fits'

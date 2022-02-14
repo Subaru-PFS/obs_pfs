@@ -121,31 +121,48 @@ class PfsParseTask(ParseTask):
             raise RuntimeError("Unable to interpret filename: %s" % filename)
         site, category, visit, spectrograph, armNum = matches.groups()
 
-        armNum = int(armNum)
-        spectrograph = int(spectrograph)
-        visit = int(visit, base=10)
+        info = dict(site=site, category=category, visit=int(visit, base=10))
 
-        # spectrograph 2 was called 9 at JHU, at least in the early days, so if we find
-        # a spectrograph 9 we re-assign its number to 2
-        if spectrograph == 9:
-            spectrograph = 2
-            self.log.info("Visit %06d has spectrograph == 9" % visit)
+        if category == "A":
+            # Spectrograph
+            armNum = int(armNum)
+            spectrograph = int(spectrograph)
 
-        if spectrograph < 1 or spectrograph > self.nSpectrograph + 1:
-            raise RuntimeError('spectrograph (=%d) out of bounds 1..%d' % (spectrograph, self.nSpectrograph))
+            # spectrograph 2 was called 9 at JHU, at least in the early days, so if we find
+            # a spectrograph 9 we re-assign its number to 2
+            if spectrograph == 9:
+                spectrograph = 2
+                self.log.info("Visit %06d has spectrograph == 9" % visit)
 
-        try:
-            arm = self.arms[armNum - 1]   # 1-indexed
-        except IndexError as exc:
-            raise IndexError('armNum=%d out of bounds 1..%d' % (armNum, max(self.arms.keys()))) from exc
+            if spectrograph < 1 or spectrograph > self.nSpectrograph + 1:
+                raise RuntimeError('spectrograph (=%d) out of bounds 1..%d' %
+                                   (spectrograph, self.nSpectrograph))
 
-        ccd = PfsMapper.computeDetectorId(spectrograph, arm)
-        self.log.debug('site = <%s>, category = <%s>, visit = <%s>, spectrograph = <%d>, armNum = <%d>, '
-                       'arm = <%s>, ccd = <%d>' %
-                       (site, category, visit, spectrograph, armNum, arm, ccd))
+            try:
+                arm = self.arms[armNum - 1]   # 1-indexed
+            except IndexError as exc:
+                raise IndexError('armNum=%d out of bounds 1..%d' % (armNum, max(self.arms.keys()))) from exc
 
-        info = dict(site=site, category=category, visit=visit, filter=arm, arm=arm,
-                    spectrograph=spectrograph, ccd=ccd)
+            ccd = PfsMapper.computeDetectorId(spectrograph, arm)
+            self.log.debug('site = <%s>, category = <%s>, visit = <%s>, spectrograph = <%d>, armNum = <%d>, '
+                           'arm = <%s>, ccd = <%d>' %
+                           (site, category, visit, spectrograph, armNum, arm, ccd))
+
+            info["filter"] = arm
+            info["arm"] = arm
+            info["spectrograph"] = spectrograph
+            info["ccd"] = ccd
+        elif category == "D":
+            # Guider
+            info["sequence"] = 10*int(spectrograph) + int(armNum)
+            # Necessary dummy values
+            info["filter"] = "NONE"
+            info["arm"] = "x"
+            info["ccd"] = 0
+            info["spectrograph"] = 0
+            info["hdu"] = 0
+        else:
+            raise RuntimeError(f"Unrecognised file category ({category}) for file {filename}")
 
         if os.path.exists(filename):
             header = afwImage.readMetadata(filename)
@@ -201,6 +218,34 @@ class PfsParseTask(ParseTask):
             if value is not None:
                 info[p] = value
         return info
+
+    def getDestination(self, butler, info, filename):
+        """Get destination for the file
+
+        Parameters
+        ----------
+        butler : `lsst.daf.persistence.Butler`
+            Data butler.
+        info : `dict`
+            Data identifier keyword-value pairs.
+        filename : `str`
+            Input filename.
+
+        Returns
+        -------
+        destination : `str`
+            Destination filename.
+        """
+        category = info["category"]
+        dataset = {"A": "raw",
+                   "D": "guider",
+                   }[category]
+        raw = butler.get(dataset + "_filename", info)[0]
+        # Ensure filename is devoid of cfitsio directions about HDUs
+        c = raw.find("[")
+        if c > 0:
+            raw = raw[:c]
+        return raw
 
     def translate_field(self, md):
         """Get 'field' from metadata
@@ -313,11 +358,38 @@ class PfsParseTask(ParseTask):
         datetime : `str`
             ISO-formatted date+time.
         """
+        if "DATE-OBS" not in md and "DATE" in md:
+            # Early guider data
+            return md.get("DATE")
         dateObs = md.get("DATE-OBS")
         if "T" in dateObs:
             return dateObs
         time = md.get("UT")
         return f"{dateObs}T{time}"
+
+    def translate_date(self, md):
+        """Convert a full DATE-OBS to a mere date
+
+        Parameters
+        ----------
+        md : `lsst.daf.base.PropertyList`
+            Metadata from the header.
+
+        Returns
+        -------
+        datetime : `str`
+            ISO-formatted date+time.
+        """
+        if "DATE-OBS" in md:
+            date = md.getScalar("DATE-OBS").strip()
+        elif "DATE" in md:
+            date = md.getScalar("DATE").strip()
+        else:
+            raise RuntimeError("Unable to find DATE-OBS or DATE keyword in header")
+        c = date.find("T")
+        if c > 0:
+            date = date[:c]
+        return date
 
 
 # Set up multiple columns to be populated using the "getNumeric" method
@@ -493,7 +565,6 @@ def setIngestConfig(config):
                              ]
 
     config.parse.translation = {'expTime': 'EXPTIME',
-                                'taiObs': 'DATE-OBS',
                                 }
     config.parse.defaults = {'ccdTemp': "0",  # Added in commissioning run 3
                              }
@@ -650,7 +721,8 @@ class PfsIngestTask(IngestTask):
             if hduInfoList is None:
                 return None
             pfsConfigDir = args.pfsConfigDir if args.pfsConfigDir is not None else os.path.dirname(infile)
-            self.ingestPfsConfig(pfsConfigDir, hduInfoList[0], args)
+            if hduInfoList[0]["category"] == "A":
+                self.ingestPfsConfig(pfsConfigDir, hduInfoList[0], args)
         except Exception:
             import traceback
             traceback.print_exc()
