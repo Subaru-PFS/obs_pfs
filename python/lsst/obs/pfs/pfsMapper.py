@@ -253,11 +253,31 @@ class PfsMapper(CameraMapper):
         fix_header(item, translator_class=PfsTranslator, filename=filename)
         return item
 
-    def std_rawAG(self, item, dataId):
-        raw = afwImage.makeExposure(afwImage.makeMaskedImage(item.getImage()))
-        raw.setMetadata(item.getMetadata())
+    def std_guider(self, item, dataId):
+        """Standardize guider image
 
-        raw.setDetector(self._makeCamera()[f"AG{dataId['hdu']}"])
+        Guider images reside within a PFSD multi-extension FITS file, which
+        contains multiple exposures taken with each of six autoguider cameras.
+        Each exposure is in its own HDU.
+        """
+        md = item.getMetadata()
+        raw = afwImage.makeExposure(afwImage.makeMaskedImage(item.getImage()))
+        raw.setMetadata(md)
+
+        camera = self._makeCamera()
+        hdu = dataId["hdu"]  # HDU number; the first data HDU is 1
+        guideCam = ((hdu - 1) % 6) + 1
+
+        # The only identifying information we currently have for an HDU is the
+        # EXTNAME header; not sure how this will work when we have multiple
+        # exposures per guider camera, but hopefully the following will help
+        # guard against a mismatch between the data and user expectations.
+        extName = md.get("EXTNAME").strip()
+        if extName != f"CAM{guideCam}":
+            raise RuntimeError(f"Mismatch between assumed camera number ({guideCam}) and header ({extName})")
+
+        detector = camera[f"AG{guideCam}"]
+        raw.setDetector(detector)
 
         vi = afwImage.visitInfo.VisitInfo(raw.getMetadata())
         raw.getInfo().setVisitInfo(vi)

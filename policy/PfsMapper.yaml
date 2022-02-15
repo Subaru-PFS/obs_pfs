@@ -31,14 +31,6 @@ defaultSubLevels:
 exposures:
   raw:
     template: '%(dateObs)s/PF%(site)s%(category)s%(visit)06d%(arm)s%(spectrograph)1d.fits'
-  rawAG:
-    description: "A single ramp or reference image directly from the H4RG's data acquisition system."
-    persistable: DecoratedImageF
-    storage: FitsStorage
-    python: lsst.afw.image.DecoratedImageF
-    level: Ccd
-    tables: raw
-    template: '%(dateObs)s/PF%(site)sD%(visit)06d%(arm)s%(spectrograph)1d.fits[%(hdu)s]'
   postISRCCD:
     template: 'postIsrCcd/%(dateObs)s/v%(visit)06d/postIsrCcd-%(site)s%(category)s%(visit)06d%(arm)s%(spectrograph)1d.fits'
 #    recipe: noCompression
