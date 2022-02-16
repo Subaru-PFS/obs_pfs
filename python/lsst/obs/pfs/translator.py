@@ -93,18 +93,25 @@ class PfsTranslator(SubaruTranslator):
         sites = '[JLXIASPF]'  # Possible site names
         categories = '[ABCDS]'  # Possible category names
         basename = os.path.basename(self.filename)
-        matches = re.search(r"^PF(%s)(%s)-?(\d{6})([brnm1-4])([1-4])\.fits" % (sites, categories), basename)
+        matches = re.search(r"^PF(%s)(%s)-?(\d{6})([brnm0-9])([0-9])\.fits" % (sites, categories), basename)
         if not matches:
             raise ValueError("Unable to interpret filename: %s" % (self.filename,))
         site, category, visit, first, second = matches.groups()
-        if first in "brnm":
-            arm = dict(b=1, r=2, n=3, m=4)[first]
-            spectrograph = second
-        else:
-            spectrograph = first
-            arm = second
-        return SimpleNamespace(site=site, category=category, visit=int(visit),
-                               spectrograph=int(spectrograph), arm=int(arm))
+        visit = int(visit)
+        if category == "A":  # spectrograph
+            if first in "brnm":
+                arm = dict(b=1, r=2, n=3, m=4)[first]
+                spectrograph = int(second)
+            else:
+                spectrograph = int(first)
+                arm = int(second)
+            if spectrograph < 1 or spectrograph > 4:
+                raise RuntimeError(f"Unrecognised spectrograph ({spectrograph}) for base name {basename}")
+            return SimpleNamespace(site=site, category=category, visit=visit,
+                                   spectrograph=spectrograph, arm=arm)
+        elif category == "D":  # guider
+            sequence = 10*int(first) + int(second)
+            return SimpleNamespace(site=site, category=category, visit=visit, sequence=sequence)
 
     @cache_translation
     def to_altaz_begin(self):
