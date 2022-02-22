@@ -4,7 +4,6 @@ import numpy as np
 from astro_metadata_translator import fix_header
 
 from lsst.obs.base import CameraMapper, MakeRawVisitInfo
-import lsst.afw.image.utils as afwImageUtils
 import lsst.afw.image as afwImage
 import lsst.afw.math as afwMath
 from lsst.daf.persistence import Policy
@@ -98,38 +97,11 @@ class PfsMapper(CameraMapper):
         for name in ("raw", "pfsArm", "wlFitData", "arcLines"):
             self.mappings[name].keyDict.update(keys)
 
-        # The order of these defineFilter commands matters as their IDs are used to generate at least some
-        # object IDs (e.g. on coadds) and changing the order will invalidate old objIDs
-
-        afwImageUtils.resetFilters()
-        afwImageUtils.defineFilter(name="UNRECOGNISED", lambdaEff=0,
-                                   alias=["NONE", "None", "Unrecognised", "UNRECOGNISED",
-                                          "Unrecognized", "UNRECOGNIZED", "NOTSET", ])
-        afwImageUtils.defineFilter(name='b', lambdaEff=477, alias=['blue', 'PFS-B'])
-        afwImageUtils.defineFilter(name='r', lambdaEff=623, alias=['red', 'PFS-R'])
-        afwImageUtils.defineFilter(name='n', lambdaEff=623, alias=['nearInfraRed', 'PFS-N'])
-        afwImageUtils.defineFilter(name='m', lambdaEff=775, alias=['mediumResolutionRed', 'PFS-M'])
-        #
-        # self.filters is used elsewhere, and for now we'll set it
-        #
-        self.filters = {}
-        for f in ["b",
-                  "r",
-                  "n",
-                  "m",
-                  "NONE",
-                  "UNRECOGNISED"
-                  ]:
-            # Get the canonical name -- see #2113
-            self.filters[f] = afwImage.Filter(afwImage.Filter(f).getId()).getName()
-        self.defaultFilterName = "UNRECOGNISED"
-
         #
         # The number of bits allocated for fields in object IDs, appropriate for
         # the default-configured Rings skymap.
         #
         # This shouldn't be the mapper's job at all; see #2797.
-
         PfsMapper._nbit_id = 64
 
     @classmethod
