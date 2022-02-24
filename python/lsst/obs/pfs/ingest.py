@@ -9,10 +9,9 @@ import collections
 
 from astro_metadata_translator import fix_header
 
-import lsst.afw.image as afwImage
 from lsst.obs.pfs.pfsMapper import PfsMapper
 from lsst.pipe.tasks.ingest import ParseTask, ParseConfig, IngestTask, IngestConfig, IngestArgumentParser
-from lsst.pipe.tasks.ingest import RegisterTask
+from lsst.pipe.tasks.ingest import RegisterTask, IngestError
 from lsst.pipe.tasks.ingestCalibs import IngestCalibsTask, IngestCalibsConfig
 from lsst.pipe.tasks.ingestCalibs import CalibsParseTask, CalibsRegisterTask
 from lsst.pex.config import Field
@@ -165,7 +164,7 @@ class PfsParseTask(ParseTask):
             raise RuntimeError(f"Unrecognised file category ({category}) for file {filename}")
 
         if os.path.exists(filename):
-            header = afwImage.readMetadata(filename)
+            header = readMetadata(filename)
 
             # Patch the header
             original = header.toOrderedDict()
@@ -696,7 +695,7 @@ class PfsIngestTask(IngestTask):
             return False
         return True
 
-    def runFile(self, infile, registry, args):
+    def runFile(self, infile, registry, args, pos):
         """Examine and ingest a single PFS image file
 
         Also ingests the required PfsConfig file, which should be in the same
@@ -710,24 +709,49 @@ class PfsIngestTask(IngestTask):
             Registry into which to record file info.
         args : `argparse.Namespace`
             Parsed command-line arguments.
+        pos : `int`
+            Position number of this file in the input list.
 
         Returns
         -------
         hduInfoList : `list` of `dict`
-            Information from each of the HDUs.
+            Information from each of the HDUs to be ingested.
         """
+        if self.isBadFile(infile, args.badFile):
+            self.log.info("Skipping declared bad file %s", infile)
+            return None
         try:
-            hduInfoList = super().runFile(infile, registry, args)
-            if hduInfoList is None:
+            fileInfo, hduInfoList = self.parse.getInfo(infile)
+        except Exception as e:
+            if not self.config.allowError:
+                raise RuntimeError(f"Error parsing {infile}") from e
+            self.log.warning("Error parsing %s (%s); skipping", infile, e)
+            return None
+        if self.isBadId(fileInfo, args.badId.idList):
+            self.log.info("Skipping declared bad file %s: %s", infile, fileInfo)
+            return None
+        if registry is not None and self.register.check(registry, fileInfo):
+            if args.ignoreIngested:
                 return None
+            self.log.warning("%s: already ingested: %s", infile, fileInfo)
+        outfile = self.parse.getDestination(args.butler, fileInfo, infile)
+        if not self.ingest(infile, outfile, mode=args.mode, dryrun=args.dryrun):
+            return None
+        if hduInfoList is None:
+            return None
+        if registry is None:
+            return hduInfoList
+        for info in hduInfoList:
+            try:
+                self.register.addRow(registry, info, dryrun=args.dryrun, create=args.create)
+            except Exception as exc:
+                raise IngestError(f"Failed to register file {infile}", infile, pos) from exc
+
+        if hduInfoList[0]["category"] == "A":
             pfsConfigDir = args.pfsConfigDir if args.pfsConfigDir is not None else os.path.dirname(infile)
-            if hduInfoList[0]["category"] == "A":
-                self.ingestPfsConfig(pfsConfigDir, hduInfoList[0], args)
-        except Exception:
-            import traceback
-            traceback.print_exc()
-            raise
-        return hduInfoList
+            self.ingestPfsConfig(pfsConfigDir, hduInfoList[0], args)
+
+        return None  # No further registration should be performed
 
 
 class PfsIngestCalibsConfig(IngestCalibsConfig):
@@ -760,7 +784,7 @@ class PfsIngestCalibsTask(IngestCalibsTask):
             Parsed information from FITS HDUs, or None.
         """
         fileInfo, hduInfoList = self.parse.getInfo(infile)
-        if args.calibType is None:
+        if args.calib is None:
             calibType = self.parse.getCalibType(infile)
         else:
             calibType = args.calibType
