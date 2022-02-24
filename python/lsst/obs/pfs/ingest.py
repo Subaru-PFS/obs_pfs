@@ -784,10 +784,7 @@ class PfsIngestCalibsTask(IngestCalibsTask):
             Parsed information from FITS HDUs, or None.
         """
         fileInfo, hduInfoList = self.parse.getInfo(infile)
-        if args.calib is None:
-            calibType = self.parse.getCalibType(infile)
-        else:
-            calibType = args.calibType
+        calibType = self.parse.getCalibType(infile)
         if calibType not in self.register.config.tables:
             self.log.warn(str("Skipped adding %s of observation type '%s' to registry "
                               "(must be one of %s)" %
