@@ -210,8 +210,8 @@ datasets:
 
   sky2d:
     template: 'pfsSky/%(dateObs)s/v%(visit)06d/pfsSky-%(visit)06d-%(arm)s%(spectrograph)d.fits'
-    python: pfs.drp.stella.focalPlaneFunction.FocalPlaneFunction
-    persistable: FocalPlaneFunction
+    python: pfs.drp.stella.subtractSky2d.SkyModel
+    persistable: SkyModel
     storage: FitsCatalogStorage
     tables:
     - raw
