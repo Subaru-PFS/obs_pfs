@@ -233,6 +233,15 @@ datasets:
     tables:
     - raw
 
+  pfsFluxReference:
+    template: 'pfsFluxReference/%(dateObs)s/v%(visit)06d/pfsFluxReference-%(visit)06d.fits'
+    python: pfs.drp.stella.PfsFluxReference
+    persistable: PfsFluxReference
+    storage: FitsCatalogStorage
+    level: Visit
+    tables:
+    - raw
+
   fluxCal:
     template: 'fluxCal/%(dateObs)s/v%(visit)06d/fluxCal-%(visit)06d.fits'
     python: pfs.drp.stella.focalPlaneFunction.FocalPlaneFunction
@@ -358,6 +367,14 @@ datasets:
   calculateReferenceFlux_config:
     template: config/calculateReferenceFlux.py
     python: pfs.drp.stella.calculateReferenceFlux.CalculateReferenceFluxConfig
+    persistable: Config
+    storage: ConfigStorage
+    tables:
+    - raw
+
+  fitPfsFluxReference_config:
+    template: config/fitPfsFluxReference.py
+    python: pfs.drp.stella.fitPfsFluxReference.FitPfsFluxReferenceConfig
     persistable: Config
     storage: ConfigStorage
     tables:
