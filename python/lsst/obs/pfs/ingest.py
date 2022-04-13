@@ -894,6 +894,7 @@ class PfsCalibsRegisterTask(CalibsRegisterTask):
                 valids[thisDate][1] = nextDate - datetime.timedelta(microseconds=1)
             valids[dates[-1]][0] = dates[-1]
             valids[dates[-1]][1] = _convertToDate("2037-12-31")  # End of UNIX time
+            valids[dates[0]][0] = _convertToDate("1970-01-01")  # Start of UNIX time
         else:
             # A calib is valid within the validity range (in days) specified.
             for dd in dates:
