@@ -388,6 +388,14 @@ datasets:
     tables:
     - raw
 
+  fitFluxCal_config:
+    template: config/fitFluxCal.py
+    python: pfs.drp.stella.fitFluxCal.FitFluxCalConfig
+    persistable: Config
+    storage: ConfigStorage
+    tables:
+    - raw
+
   coaddSpectra_config:
     template: config/coaddSpectra.py
     python: pfs.drp.stella.coaddSpectra.CoaddSpectraConfig
