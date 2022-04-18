@@ -30,16 +30,6 @@ class PfsRawVisitInfo(MakeRawVisitInfo):
         """
         super(PfsRawVisitInfo, self).setArgDict(md, argDict)
         argDict["darkTime"] = self.popFloat(md, "DARKTIME") if "DARKTIME" in md else np.nan
-        #
-        # Done setting argDict; check values now that all the header keywords have been consumed
-        #
-        try:
-            argDict["darkTime"] = self.getDarkTime(argDict)
-        except RuntimeError:
-            if "REF" in md.get("EXTNAME", ""):
-                pass
-            else:
-                raise
 
     def getDarkTime(self, argDict):
         """Retrieve the dark time from an argDict, waiting to be passed to the VisitInfo ctor"""
@@ -181,15 +171,15 @@ class PfsMapper(CameraMapper):
             imArr[yslice, xslice] = ampPixels.reshape(ampshape)
 
     @staticmethod
-    def lookupHdu(imType, read, md=None):
+    def lookupHdu(read, imType="IMAGE", md=None):
         """Return the appropriate HDU
 
         Parameters
         ----------
-        imType: `str`
-            IMAGE or REF
         read: `int`
             The desired read of the device (1-indexed)
+        imType: `str`
+            IMAGE or REF
         md: `lsst.daf.base.PropertyList`
             Header from file (optional)
             Used to validate read, and handle extra reset HDUs if present
@@ -241,26 +231,40 @@ class PfsMapper(CameraMapper):
         # Process the data using CDS
         #
         data = {}
-        reads = np.arange(1, nread+1)
-        for read in [reads[0], reads[-1]]:
-            hdu = 2*read - 1
-            data[read] = readData(datasetType, butlerLocation, dataId, hdu=hdu)
-            assert data[read].getMetadata()["EXTNAME"] == f"IMAGE_{read}"
+        hdus = 2*np.array([1, nread]) - 1
+        if "hdu" in dataId:
+            hdu = dataId["hdu"]
+            read = (hdu + 1)//2         # which read up the ramp do we want?
+            if read > nread:
+                raise RuntimeError(f"Requested read {read} (HDU {hdu}) is greater than W_H4NRED == {nread}")
+
+            hdus[-1] = hdu
+
+        if hdus[-1]%2 == 0:
+            raise RuntimeError(f"HDU {hdus[-1]} is a reference HDU")
+
+        for hdu in hdus:
+            read = (hdu + 1)//2         # which read up the ramp do we want?
+            data[hdu] = readData(datasetType, butlerLocation, dataId, hdu=hdu)
+            assert data[hdu].getMetadata()["EXTNAME"] == f"IMAGE_{read}"
 
             ref = readData(datasetType, butlerLocation, dataId, hdu=hdu + 1)
             assert ref.getMetadata()["EXTNAME"] == f"REF_{read}"
 
-            im = data[read].image
+            im = data[hdu].image
             im -= ref.image
             del im
 
-        im = data[reads[0]].image.array
+        im = data[hdus[0]].image.array
         im[im > 30000] = np.NaN
 
-        im = data[reads[-1]].image              # data[hdu].image -= data[0].image doesn't work
-        im -= data[reads[0]].image
+        if hdus[0] == hdus[-1]:         # we can't use CDS
+            self.log.warn("You are processing a single frame; not carrying out CDS")
+        else:
+            im = data[hdus[-1]].image              # data[hdu].image -= data[0].image doesn't work
+            im -= data[hdus[0]].image
 
-        return data[reads[-1]]
+        return data[hdus[-1]]
 
     def std_raw(self, item, dataId):
         """Fixup raw image problems.
