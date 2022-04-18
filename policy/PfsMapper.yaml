@@ -235,7 +235,7 @@ datasets:
 
   pfsFluxReference:
     template: 'pfsFluxReference/%(dateObs)s/v%(visit)06d/pfsFluxReference-%(visit)06d.fits'
-    python: pfs.drp.stella.PfsFluxReference
+    python: pfs.datamodel.pfsFluxReference.PfsFluxReference
     persistable: PfsFluxReference
     storage: FitsCatalogStorage
     level: Visit
