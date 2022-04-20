@@ -1,5 +1,6 @@
 from lsst.obs.pfs.ingest import PfsCalibsParseTask
 config.parse.retarget(PfsCalibsParseTask)
+config.register.validityUntilSuperseded = ['bias', 'dark', 'detectorMap', 'flat', 'fiberProfiles', 'defects']
 
 config.register.columns = {'arm': 'text',
                            'ccd': 'int',
