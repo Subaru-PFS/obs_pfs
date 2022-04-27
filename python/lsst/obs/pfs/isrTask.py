@@ -345,20 +345,20 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         return result
 
-    def run(self, exposure, *args, **kwargs):
+    def run(self, ccdExposure, **kwargs):
         doBrokenRedShutter = self.config.doBrokenRedShutter and \
-            exposure.getDetector().getName() in self.config.brokenRedShutter.brokenShutterList
+            ccdExposure.getDetector().getName() in self.config.brokenRedShutter.brokenShutterList
 
         if doBrokenRedShutter and self.config.brokenRedShutter.checkParallelOverscan:
             excessPOscan = []
             meanFlux = []
-            for amp in exposure.getDetector():
+            for amp in ccdExposure.getDetector():
                 # N.b. MEANCLIP is broken for U16 data
-                data = afwMath.makeStatistics(exposure[amp.getRawDataBBox()].convertF().image,
+                data = afwMath.makeStatistics(ccdExposure[amp.getRawDataBBox()].convertF().image,
                                               afwMath.MEANCLIP).getValue()
-                pOscan = afwMath.makeStatistics(exposure[amp.getRawVerticalOverscanBBox()].image,
+                pOscan = afwMath.makeStatistics(ccdExposure[amp.getRawVerticalOverscanBBox()].image,
                                                 afwMath.MEDIAN).getValue()
-                sOscan = afwMath.makeStatistics(exposure[amp.getRawHorizontalOverscanBBox()].image,
+                sOscan = afwMath.makeStatistics(ccdExposure[amp.getRawHorizontalOverscanBBox()].image,
                                                 afwMath.MEDIAN).getValue()
 
                 meanFlux.append(data)
@@ -374,7 +374,7 @@ class PfsIsrTask(ipIsr.IsrTask):
                           self.config.brokenRedShutter.maximumAllowedParallelOverscanFraction, flux,
                           ("" if doBrokenRedShutter else "; assuming not broken"))
 
-        results = super().run(exposure, *args, **kwargs)
+        results = super().run(ccdExposure, **kwargs)
         exposure = results.exposure
 
         if doBrokenRedShutter and self.config.brokenRedShutter.useAnalytic:
