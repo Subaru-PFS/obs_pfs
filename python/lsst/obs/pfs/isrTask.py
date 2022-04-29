@@ -22,13 +22,13 @@ import numpy as np
 import numpy.linalg
 import lsst.log
 import lsst.pex.config as pexConfig
-import lsst.pipe.base as pipeBase
 from lsst.daf.persistence.butlerExceptions import NoResults
 
 import lsst.afw.math as afwMath
 import lsst.ip.isr as ipIsr
 from lsst.ip.isr.assembleCcdTask import AssembleCcdTask
 from lsst.ip.isr import isrQa
+from lsst.utils.timer import timeMethod
 
 ___all__ = ["IsrTask", "IsrTaskConfig"]
 
@@ -235,7 +235,7 @@ class PfsIsrTask(ipIsr.IsrTask):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    @pipeBase.timeMethod
+    @timeMethod
     def runDataRef(self, sensorRef):
         """Perform instrument signature removal on a ButlerDataRef of a Sensor.
 
