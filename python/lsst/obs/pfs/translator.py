@@ -103,7 +103,7 @@ class PfsTranslator(SubaruTranslator):
         # Neven writes:
         # > by comparing `DATE-OBS` for exposures with different `EXPTIME`, I am
         # > concluding that `DATE-OBS` refers to the end of the exposure
-        value = self.to_datetime_end() - self._header["EXPTIME"]
+        value = self.to_datetime_end() - self._header["EXPTIME"]*u.second
         self._used_these_cards("EXPTIME")
         return value
 
