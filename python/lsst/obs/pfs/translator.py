@@ -46,7 +46,6 @@ class PfsTranslator(SubaruTranslator):
         "detector_serial": "DETECTOR",
         "object": "IMAGETYP",  # XXX to be updated; hopefully to OBJECT
         "ext_spectrograph": "W_SPMOD",
-        "ext_arm": "W_ARM",
         "ext_pfs_design_id": "W_PFDSGN",
         "ext_dither": "W_ENFCAZ",
         "ext_shift": "W_ENFCAY",
@@ -115,16 +114,14 @@ class PfsTranslator(SubaruTranslator):
 
     @cache_translation
     def to_detector_name(self):
-        arm = self._header["W_ARM"]
+        arm = self.to_ext_arm()
         spectrograph = self._header["W_SPMOD"]
-        self._used_these_cards("W_ARM", "W_SPMOD")
-        return "brnm"[arm] + str(spectrograph)
+        self._used_these_cards("W_SPMOD")
+        return arm + str(spectrograph)
 
     @cache_translation
     def to_physical_filter(self):
-        arm = self._header["W_ARM"]
-        self._used_these_cards("W_ARM")
-        return "brnm"[arm]
+        return self.to_ext_arm()
 
     @cache_translation
     def to_detector_exposure_id(self):
@@ -164,3 +161,9 @@ class PfsTranslator(SubaruTranslator):
     @cache_translation
     def to_ext_lamps(self):
         return ",".join(sorted(getLamps(self._header)))
+
+    @cache_translation
+    def to_ext_arm(self):
+        armNum = self._header["W_ARM"]
+        self._used_these_cards("W_ARM")
+        return {1: "b", 2: "r", 3: "n", 4: "m"}[armNum]
