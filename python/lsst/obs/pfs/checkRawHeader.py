@@ -60,6 +60,7 @@ def checkRawHeader(filename: str, allowFix: bool = False):
     These keywords include:
     - ``TELESCOP``: Telescope
     - ``INSTRUME``: Instrument
+    - ``DETECTOR``: Detector
     - ``W_VISIT``: PFS exposure visit number
     - ``W_ARM``: Spectrograph arm 1=b, 2=r, 3=n, 4=medRed
     - ``W_SPMOD``: Spectrograph module. 1-4 at Subaru
@@ -90,6 +91,8 @@ def checkRawHeader(filename: str, allowFix: bool = False):
                                      "PFS DAQ site: S=Subaru, J=JHU L=LAM, F=sim", allowFix)
             modified |= checkKeyword(header, "W_VISIT", data.exposure, "PFS exposure visit number", allowFix)
             if data.category != "D":
+                modified |= checkKeyword(header, "DETECTOR", f"{data.arm}{data.spectrograph}",
+                                         "Name of the detector", allowFix)
                 modified |= checkKeyword(header, "W_ARM", data.armNum,
                                          "Spectrograph arm: 1=b, 2=r, 3=n, 4=medRed", allowFix)
                 modified |= checkKeyword(header, "W_SPMOD", data.spectrograph, "Spectrograph module: 1-4",
