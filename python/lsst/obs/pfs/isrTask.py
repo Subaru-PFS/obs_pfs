@@ -453,3 +453,15 @@ class PfsIsrTask(ipIsr.IsrTask):
             ampExp.mask.array[zeroData] |= ampExp.mask.getPlaneBitMask(["SAT", "NO_DATA"])
 
         return badAmp
+
+    def roughZeroPoint(self, exposure):
+        """Set an approximate magnitude zero point for the exposure.
+
+        We disable this for PFS, since we don't use zero-points.
+
+        Parameters
+        ----------
+        exposure : `lsst.afw.image.Exposure`
+            Exposure to process.
+        """
+        pass
