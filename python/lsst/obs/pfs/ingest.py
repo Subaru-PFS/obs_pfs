@@ -890,9 +890,9 @@ class PfsCalibsRegisterTask(CalibsRegisterTask):
         if table in self.config.validityUntilSuperseded:
             # A calib is valid until it is superseded
             for thisDate, nextDate in zip(dates[:-1], dates[1:]):
-                valids[thisDate][0] = thisDate
-                valids[thisDate][1] = nextDate - datetime.timedelta(microseconds=1)
-            valids[dates[-1]][0] = dates[-1]
+                valids[thisDate][0] = thisDate - datetime.timedelta(microseconds=1)
+                valids[thisDate][1] = nextDate - datetime.timedelta(microseconds=2)
+            valids[dates[-1]][0] = dates[-1] - datetime.timedelta(microseconds=1)
             valids[dates[-1]][1] = _convertToDate("2037-12-31")  # End of UNIX time
             valids[dates[0]][0] = _convertToDate("1970-01-01")  # Start of UNIX time
         else:
