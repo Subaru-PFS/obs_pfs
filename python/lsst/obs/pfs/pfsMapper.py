@@ -378,3 +378,50 @@ class PfsMapper(CameraMapper):
             The exposure to get data from, and attach the SkyWcs to.
         """
         pass
+
+    def _standardizeExposure(
+        self, mapping, item, dataId, filter=True, trimmed=True, setVisitInfo=True, setExposureId=False
+    ):
+        """Default standardization function for images.
+
+        This sets the Detector from the camera geometry
+        and optionally set the Filter. In both cases this saves
+        having to persist some data in each exposure (or image).
+
+        This PFS override forces ``filter=False``, since we don't have filters
+        and don't use them.
+
+        Parameters
+        ----------
+        mapping : `lsst.obs.base.Mapping`
+            Where to get the values from.
+        item : image-like object
+            Can be any of lsst.afw.image.Exposure,
+            lsst.afw.image.DecoratedImage, lsst.afw.image.Image
+            or lsst.afw.image.MaskedImage
+
+        dataId : `dict`
+            Dataset identifier
+        filter : `bool`
+            Set filter? Ignored if item is already an exposure
+        trimmed : `bool`
+            Should detector be marked as trimmed?
+        setVisitInfo : `bool`
+            Should Exposure have its VisitInfo filled out from the metadata?
+        setExposureId : `bool`
+            Should Exposure have its exposure ID filled out from the data ID?
+
+        Returns
+        -------
+        `lsst.afw.image.Exposure`
+            The standardized Exposure.
+        """
+        return super()._standardizeExposure(
+            mapping,
+            item,
+            dataId,
+            filter=False,
+            trimmed=trimmed,
+            setVisitInfo=setVisitInfo,
+            setExposureId=setExposureId
+        )
