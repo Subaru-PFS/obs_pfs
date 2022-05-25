@@ -4,12 +4,12 @@ import numpy as np
 from astro_metadata_translator import fix_header
 
 from lsst.obs.base import CameraMapper, MakeRawVisitInfo
-import lsst.afw.image.utils as afwImageUtils
 import lsst.afw.image as afwImage
 import lsst.afw.math as afwMath
 from lsst.daf.persistence import Policy
 import lsst.utils as utils
 import lsst.obs.base.yamlCamera as yamlCamera
+from lsst.obs.base import FilterDefinition, FilterDefinitionCollection
 from .translator import PfsTranslator
 
 
@@ -58,6 +58,14 @@ class PfsRawVisitInfo(MakeRawVisitInfo):
         return self.offsetDate(dateObs, 0.5*exposureTime)
 
 
+pfsFilterDefinitions = FilterDefinitionCollection(
+    FilterDefinition(band="b", physical_filter="b", lambdaEff=500),
+    FilterDefinition(band="r", physical_filter="r", lambdaEff=800),
+    FilterDefinition(band="m", physical_filter="m", lambdaEff=800),
+    FilterDefinition(band="n", physical_filter="n", lambdaEff=1100),
+)
+
+
 class PfsMapper(CameraMapper):
     """Provides abstract-physical mapping for PFS data"""
     packageName = "obs_pfs"
@@ -65,6 +73,8 @@ class PfsMapper(CameraMapper):
     yamlFileList = ("PfsMapper.yaml",)  # list of yaml files to load, keeping the first occurrence
     MakeRawVisitInfoClass = PfsRawVisitInfo
     translatorClass = PfsTranslator
+    filterDefinitions = pfsFilterDefinitions
+    _gen3instrument = "lsst.obs.pfs.PrimeFocusSpectrograph"
 
     def __init__(self, **kwargs):
         policyFile = Policy.defaultPolicyFile("obs_pfs", "PfsMapper.yaml", "policy")
@@ -98,39 +108,16 @@ class PfsMapper(CameraMapper):
         for name in ("raw", "pfsArm", "wlFitData", "arcLines"):
             self.mappings[name].keyDict.update(keys)
 
-        # The order of these defineFilter commands matters as their IDs are used to generate at least some
-        # object IDs (e.g. on coadds) and changing the order will invalidate old objIDs
-
-        afwImageUtils.resetFilters()
-        afwImageUtils.defineFilter(name="UNRECOGNISED", lambdaEff=0,
-                                   alias=["NONE", "None", "Unrecognised", "UNRECOGNISED",
-                                          "Unrecognized", "UNRECOGNIZED", "NOTSET", ])
-        afwImageUtils.defineFilter(name='b', lambdaEff=477, alias=['blue', 'PFS-B'])
-        afwImageUtils.defineFilter(name='r', lambdaEff=623, alias=['red', 'PFS-R'])
-        afwImageUtils.defineFilter(name='n', lambdaEff=623, alias=['nearInfraRed', 'PFS-N'])
-        afwImageUtils.defineFilter(name='m', lambdaEff=775, alias=['mediumResolutionRed', 'PFS-M'])
-        #
-        # self.filters is used elsewhere, and for now we'll set it
-        #
-        self.filters = {}
-        for f in ["b",
-                  "r",
-                  "n",
-                  "m",
-                  "NONE",
-                  "UNRECOGNISED"
-                  ]:
-            # Get the canonical name -- see #2113
-            self.filters[f] = afwImage.Filter(afwImage.Filter(f).getId()).getName()
-        self.defaultFilterName = "UNRECOGNISED"
-
         #
         # The number of bits allocated for fields in object IDs, appropriate for
         # the default-configured Rings skymap.
         #
         # This shouldn't be the mapper's job at all; see #2797.
-
         PfsMapper._nbit_id = 64
+
+    @classmethod
+    def addFilters(cls):
+        pfsFilterDefinitions.defineFilters()
 
     @classmethod
     def _makeCamera(cls, policy=None, repositoryDir=None, cameraYamlFile=None):
@@ -380,73 +367,14 @@ class PfsMapper(CameraMapper):
                 raise RuntimeError("Unable to lookup %s in \"%s\" registry for dataId %s" %
                                    (k, dataType, dataId))
 
-    def _defectLookup(self, dataId, dateKey='taiObs'):
-        """Find the defects for a given CCD.
+    def _createInitialSkyWcs(self, exposure):
+        """Create a SkyWcs from the boresight and camera geometry.
 
-        This is copied from LSST 18.1.0, but using the "raw" table instead of
-        "raw_visit", because PFS doesn't use the raw_visit table.
-
-        Parameters
-        ----------
-        dataId : `dict`
-            Dataset identifier.
-
-        Returns
-        -------
-        path : `str`
-            Path to the defects file or None if not available.
-        """
-        if self.defectRegistry is None:
-            return None
-        if self.registry is None:
-            raise RuntimeError("No registry for defect lookup")
-
-        ccdKey, ccdVal = self._getCcdKeyVal(dataId)
-
-        dataIdForLookup = dict(visit=dataId["visit"], arm=dataId["arm"])
-        # .lookup will fail in a posix registry because there is no template to provide.
-        rows = self.registry.lookup((dateKey), ('raw'), dataIdForLookup)
-        if len(rows) == 0:
-            return None
-        assert len(rows) == 1
-        dayObs = rows[0][0]
-
-        # Lookup the defects for this CCD serial number that are valid at the exposure midpoint.
-        rows = self.defectRegistry.executeQuery(("path",), ("defect",),
-                                                [(ccdKey, "?")],
-                                                ("DATETIME(?)", "DATETIME(validStart)", "DATETIME(validEnd)"),
-                                                (ccdVal, dayObs))
-        if not rows or len(rows) == 0:
-            return None
-        if len(rows) == 1:
-            return os.path.join(self.defectPath, rows[0][0])
-        else:
-            raise RuntimeError("Querying for defects (%s, %s) returns %d files: %s" %
-                               (ccdVal, dayObs, len(rows), ", ".join([_[0] for _ in rows])))
-
-    def _setFilter(self, mapping, item, dataId):
-        """Set the filter object in an Exposure.  If the Exposure had a FILTER
-        keyword, this was already processed during load.  But if it didn't,
-        use the filter from the registry.
+        PFS doesn't have a suitable `SkyWcs`, so this is disabled.
 
         Parameters
         ----------
-        mapping : `lsst.obs.base.Mapping`
-            Where to get the filter from.
-        item : `lsst.afw.image.Exposure`
-            Exposure to set the filter in.
-        dataId : `dict`
-            Dataset identifier.
+        exposure : `lsst.afw.image.Exposure`
+            The exposure to get data from, and attach the SkyWcs to.
         """
-        if not (isinstance(item, afwImage.ExposureU) or isinstance(item, afwImage.ExposureI) or
-                isinstance(item, afwImage.ExposureF) or isinstance(item, afwImage.ExposureD)):
-            return
-
-        if item.getFilter().getId() != afwImage.Filter.UNKNOWN:
-            return
-
-        actualId = mapping.need(["arm"], dataId)
-        filterName = actualId["arm"]
-        if self.filters is not None and filterName in self.filters:
-            filterName = self.filters[filterName]
-        item.setFilter(afwImage.Filter(filterName))
+        pass

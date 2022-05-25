@@ -338,8 +338,6 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         if self.config.doWrite:
             sensorRef.put(result.exposure, "postISRCCD")
-            if result.preInterpolatedExposure is not None:
-                sensorRef.put(result.preInterpolatedExposure, "postISRCCD_uninterpolated")
         if result.ossThumb is not None:
             isrQa.writeThumbnail(sensorRef, result.ossThumb, "ossThumb")
         if result.flattenedThumb is not None:
