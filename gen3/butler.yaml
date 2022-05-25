@@ -1,0 +1,66 @@
+datastore:
+  root: <butlerRoot>
+  formatters:
+    # Override the default Exposure formatter
+    DecoratedImageU: lsst.obs.pfs.formatters.PfsFitsExposureFormatter
+    Exposure: lsst.obs.pfs.formatters.PfsFitsExposureFormatter
+    ExposureF: lsst.obs.pfs.formatters.PfsFitsExposureFormatter
+    ExposureI: lsst.obs.pfs.formatters.PfsFitsExposureFormatter
+
+    # PFS-specific dataset types
+    PfsConfig: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+    FiberProfileSet: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+    FiberTraceSet: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+    DetectorMap: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+    PfsArm: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+    PfsMerged: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+    PfsFluxReference: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+    PfsSingle: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+    PfsObject: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+    PfsTargetSpectra: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+    SkyModel: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+    FocalPlaneFunction: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+    ArcLineSet: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+    LsfDict: lsst.daf.butler.formatters.pickle.PickleFormatter
+    Lsf: lsst.daf.butler.formatters.pickle.PickleFormatter
+    NevenPsf: lsst.daf.butler.formatters.pickle.PickleFormatter
+  templates:
+    instrument+detector+dither: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{dither:?}_{detector.full_name:?}_{run}"
+    instrument+detector+pfs_design_id: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{detector.full_name:?}_{pfs_design_id:?}_{run}"
+    instrument+exposure+arm:  "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{exposure:?}_{arm:?}_{run}"
+
+registry:
+  db: sqlite:///<butlerRoot>/gen3.sqlite3
+storageClasses:
+  PfsConfig:
+    pytype: pfs.drp.stella.datamodel.PfsConfig
+  FiberProfileSet:
+    pytype: pfs.drp.stella.FiberProfileSet
+  FiberTraceSet:
+    pytype: pfs.drp.stella.FiberTraceSet
+  DetectorMap:
+    pytype: pfs.drp.stella.DetectorMap
+  PfsArm:
+    pytype: pfs.drp.stella.datamodel.PfsArm
+  PfsMerged:
+    pytype: pfs.drp.stella.datamodel.PfsMerged
+  PfsFluxReference:
+    pytype: pfs.datamodel.pfsFluxReference.PfsFluxReference
+  PfsSingle:
+    pytype: pfs.drp.stella.datamodel.PfsSingle
+  PfsObject:
+    pytype: pfs.drp.stella.datamodel.PfsObject
+  PfsTargetSpectra:
+    pytype: pfs.drp.stella.datamodel.pfsTargetSpectra.PfsTargetSpectra
+  SkyModel:
+    pytype: pfs.drp.stella.sky2d.SkyModel
+  FocalPlaneFunction:
+    pytype: pfs.drp.stella.focalPlaneFunction.FocalPlaneFunction
+  ArcLineSet:
+    pytype: pfs.drp.stella.arcLine.ArcLineSet
+  LsfDict:
+    pytype: pfs.drp.stella.lsf.LsfDict
+  Lsf:
+    pytype: pfs.drp.stella.lsf.Lsf
+  NevenPsf:
+    pytype: pfs.drp.stella.NevenPsfContinued.NevenPsf

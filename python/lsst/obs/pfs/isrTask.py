@@ -22,13 +22,13 @@ import numpy as np
 import numpy.linalg
 import lsst.log
 import lsst.pex.config as pexConfig
-import lsst.pipe.base as pipeBase
 from lsst.daf.persistence.butlerExceptions import NoResults
 
 import lsst.afw.math as afwMath
 import lsst.ip.isr as ipIsr
 from lsst.ip.isr.assembleCcdTask import AssembleCcdTask
 from lsst.ip.isr import isrQa
+from lsst.utils.timer import timeMethod
 
 ___all__ = ["IsrTask", "IsrTaskConfig"]
 
@@ -235,7 +235,7 @@ class PfsIsrTask(ipIsr.IsrTask):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    @pipeBase.timeMethod
+    @timeMethod
     def runDataRef(self, sensorRef):
         """Perform instrument signature removal on a ButlerDataRef of a Sensor.
 
@@ -345,20 +345,20 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         return result
 
-    def run(self, exposure, *args, **kwargs):
+    def run(self, ccdExposure, **kwargs):
         doBrokenRedShutter = self.config.doBrokenRedShutter and \
-            exposure.getDetector().getName() in self.config.brokenRedShutter.brokenShutterList
+            ccdExposure.getDetector().getName() in self.config.brokenRedShutter.brokenShutterList
 
         if doBrokenRedShutter and self.config.brokenRedShutter.checkParallelOverscan:
             excessPOscan = []
             meanFlux = []
-            for amp in exposure.getDetector():
+            for amp in ccdExposure.getDetector():
                 # N.b. MEANCLIP is broken for U16 data
-                data = afwMath.makeStatistics(exposure[amp.getRawDataBBox()].convertF().image,
+                data = afwMath.makeStatistics(ccdExposure[amp.getRawDataBBox()].convertF().image,
                                               afwMath.MEANCLIP).getValue()
-                pOscan = afwMath.makeStatistics(exposure[amp.getRawVerticalOverscanBBox()].image,
+                pOscan = afwMath.makeStatistics(ccdExposure[amp.getRawVerticalOverscanBBox()].image,
                                                 afwMath.MEDIAN).getValue()
-                sOscan = afwMath.makeStatistics(exposure[amp.getRawHorizontalOverscanBBox()].image,
+                sOscan = afwMath.makeStatistics(ccdExposure[amp.getRawHorizontalOverscanBBox()].image,
                                                 afwMath.MEDIAN).getValue()
 
                 meanFlux.append(data)
@@ -374,7 +374,7 @@ class PfsIsrTask(ipIsr.IsrTask):
                           self.config.brokenRedShutter.maximumAllowedParallelOverscanFraction, flux,
                           ("" if doBrokenRedShutter else "; assuming not broken"))
 
-        results = super().run(exposure, *args, **kwargs)
+        results = super().run(ccdExposure, **kwargs)
         exposure = results.exposure
 
         if doBrokenRedShutter and self.config.brokenRedShutter.useAnalytic:
@@ -453,3 +453,15 @@ class PfsIsrTask(ipIsr.IsrTask):
             ampExp.mask.array[zeroData] |= ampExp.mask.getPlaneBitMask(["SAT", "NO_DATA"])
 
         return badAmp
+
+    def roughZeroPoint(self, exposure):
+        """Set an approximate magnitude zero point for the exposure.
+
+        We disable this for PFS, since we don't use zero-points.
+
+        Parameters
+        ----------
+        exposure : `lsst.afw.image.Exposure`
+            Exposure to process.
+        """
+        pass

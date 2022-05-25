@@ -18,60 +18,48 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Gen3 Butler registry declarations for Prime Focus Spectrograph.
+"""Gen3 Butler registry declarations for Prime Focus Spectrograph."""
 
-This is a bare-bones placeholder, copied from obs_subaru and pared down.
-It is not yet fully functional.
-"""
-
-__all__ = ("PrimeFocusSpectrograph",)
+__all__ = ("PrimeFocusSpectrograph", "PfsSimulator", "PfsDevelopment")
 
 import os
 
-from functools import lru_cache
+from typing import List
 
 from lsst.utils import getPackageDir
-from lsst.afw.cameraGeom import makeCameraFromPath, CameraConfig
-from lsst.obs.base import FitsRawFormatterBase
-from lsst.daf.butler.core.utils import getFullTypeName
+from lsst.daf.butler import Registry
+from lsst.utils.introspection import get_full_type_name
 from lsst.obs.base import Instrument
 from lsst.obs.base.gen2to3 import TranslatorFactory, PhysicalFilterToBandKeyHandler
+from lsst.daf.butler import DatasetType
 from .pfsMapper import pfsFilterDefinitions
-from .translator import PfsTranslator
-
-
-class PrimeFocusSpectrographRawFormatter(FitsRawFormatterBase):
-    """Gen3 Butler Formatters for PFS raw data.
-    """
-    translatorClass = PfsTranslator
-    filterDefinitions = pfsFilterDefinitions
-
-    def getDetector(self, id):
-        return PrimeFocusSpectrograph().getCamera()[id]
+from .formatters import PfsRawFormatter, PfsSimulatorRawFormatter, PfsDevelopmentRawFormatter
+from .loadCamera import loadCamera
 
 
 class PrimeFocusSpectrograph(Instrument):
-    """Gen3 Butler specialization class for Subaru's Prime Focus Spectrograph.
-    """
+    """Gen3 Butler specialization class for Subaru's Prime Focus Spectrograph."""
 
     policyName = "pfs"
     obsDataPackage = "drp_pfs_data"
     filterDefinitions = pfsFilterDefinitions
+    pfsCategory = None
+    standardCuratedDatasetTypes = frozenset(["defects"])
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         packageDir = getPackageDir("obs_pfs")
-        self.configPaths = [os.path.join(packageDir, "config"),
-                            os.path.join(packageDir, "config", self.policyName)]
+        self.configPaths = [os.path.join(packageDir, "config")]
 
     @classmethod
-    def getName(cls):
+    def getName(cls) -> str:
         # Docstring inherited from Instrument.getName
-        return "PFS"
+        return "PFS" + (f"-{cls.pfsCategory}" if cls.pfsCategory is not None else "")
 
-    def register(self, registry, update=False):
+    def register(self, registry: Registry, update: bool = False) -> None:
         # Docstring inherited from Instrument.register
         camera = self.getCamera()
+        instrument = self.getName()
         # The maximum values below make Gen3's ObservationDataIdPacker produce
         # outputs that match Gen2's ccdExposureId.
         obsMax = 21474800
@@ -79,50 +67,145 @@ class PrimeFocusSpectrograph(Instrument):
             registry.syncDimensionData(
                 "instrument",
                 {
-                    "name": self.getName(),
-                    "detector_max": 10,
+                    "name": instrument,
+                    "detector_max": 20,
                     "visit_max": obsMax,
                     "exposure_max": obsMax,
-                    "class_name": getFullTypeName(self),
+                    "class_name": get_full_type_name(self),
                 },
-                update=update
+                update=update,
             )
+            for spectrograph in (
+                0,
+                1,
+                2,
+                3,
+                4,
+            ):  # 0 means not really a spectrograph (e.g., guiders)
+                registry.syncDimensionData(
+                    "spectrograph",
+                    dict(instrument=instrument, num=spectrograph),
+                    update=update,
+                )
+            for arm in "brnmx":
+                registry.syncDimensionData(
+                    "arm", dict(instrument=instrument, name=arm), update=update
+                )
+
             for detector in camera:
+                name = detector.getName()
+                isGuider = name.startswith("AG")
+                if isGuider:
+                    spectrograph = 0
+                    arm = "x"
+                else:
+                    arm, spectrograph = name
+                    spectrograph = int(spectrograph)
+
                 registry.syncDimensionData(
                     "detector",
                     {
-                        "instrument": self.getName(),
+                        "instrument": instrument,
+                        "spectrograph": spectrograph,
+                        "arm": arm,
                         "id": detector.getId(),
-                        "full_name": detector.getName(),
+                        "full_name": name,
+                        "raft": "guider" if isGuider else name[-1],
+                        "name_in_raft": name[-1] if isGuider else name[0],
+                        "purpose": "guider" if isGuider else "science",
                     },
-                    update=update
+                    update=update,
                 )
             self._registerFilters(registry, update=update)
 
+        # Register types for datasets that will be ingested into the datastore.
+        # Other types will be defined by the pipelines.
+        self.registerDatasetType(
+            registry,
+            "pfsConfig",
+            (
+                "instrument",
+                "exposure",
+            ),
+            "PfsConfig",
+        )
+        self.registerDatasetType(
+            registry, "detectorMap_bootstrap", ("instrument", "detector"), "DetectorMap"
+        )
+
+    def registerDatasetType(
+        self,
+        registry: Registry,
+        name: str,
+        dimensions: List[str],
+        storageClass: str,
+        isCalibration: bool = False,
+    ):
+        """Register a datasetType
+
+        Parameters
+        ----------
+        registry : `Registry`
+            Butler datastore registry.
+        name : `str`
+            Name of the dataset type to register.
+        dimensions : list of `str`
+            Relevant dimensions for the dataset type.
+        storageClass : `str`
+            Name of the storage class for the dataset type.
+        isCalibration : `bool`, optional
+            Is this dataset type a calibration?
+
+        Returns
+        -------
+        datasetType : `lsst.daf.butler.DatasetType`
+            Dataset type.
+        """
+        datasetType = DatasetType(
+            name,
+            dimensions,
+            storageClass,
+            universe=registry.dimensions,
+            isCalibration=isCalibration,
+        )
+        registry.registerDatasetType(datasetType)
+        return datasetType
+
     def getRawFormatter(self, dataId):
         # Docstring inherited from Instrument.getRawFormatter
-        raise NotImplementedError("This method has not been implemented")
+        return {
+            None: PfsRawFormatter,
+            "S": PfsRawFormatter,
+            "F": PfsSimulatorRawFormatter,
+            "L": PfsDevelopmentRawFormatter,
+        }[self.pfsCategory]
 
     def getCamera(self):
-        """Retrieve the cameraGeom representation of HSC.
+        """Retrieve the cameraGeom representation
 
         This is a temporary API that should go away once obs_ packages have
         a standardized approach to writing versioned cameras to a Gen3 repo.
         """
-        path = os.path.join(getPackageDir("obs_pfs"), self.policyName, "camera")
-        return self._getCameraFromPath(path)
+        return loadCamera(self.pfsCategory)
 
-    @staticmethod
-    @lru_cache()
-    def _getCameraFromPath(path):
-        """Return the camera geometry given solely the path to the location
-        of that definition."""
-        config = CameraConfig()
-        config.load(os.path.join(path, "camera.py"))
-        return makeCameraFromPath(
-            cameraConfig=config,
-            ampInfoPath=path,
-            shortNameFunc=lambda name: name.replace(" ", "_"),
+    @classmethod
+    def _getSpecificCuratedCalibrationPath(cls, datasetTypeName):
+        """Return the path of the curated calibration directory.
+
+        Parameters
+        ----------
+        datasetTypeName : `str`
+            The name of the standard dataset type to find.
+
+        Returns
+        -------
+        path : `str`
+            The path to the standard curated data directory.  `None` if the
+            dataset type is not found or the obs data package is not
+            available.
+        """
+        return os.path.join(
+            cls.getObsDataPackageDir(), "curated", cls.policyName, datasetTypeName
         )
 
     def makeDataIdTranslatorFactory(self) -> TranslatorFactory:
@@ -131,6 +214,22 @@ class PrimeFocusSpectrograph(Instrument):
         factory.addGenericInstrumentRules(self.getName())
         # Translate Gen2 `filter` to band if it hasn't been consumed
         # yet and gen2keys includes tract.
-        factory.addRule(PhysicalFilterToBandKeyHandler(self.filterDefinitions),
-                        instrument=self.getName(), gen2keys=("filter", "tract"), consume=("filter",))
+        factory.addRule(
+            PhysicalFilterToBandKeyHandler(self.filterDefinitions),
+            instrument=self.getName(),
+            gen2keys=("filter", "tract"),
+            consume=("filter",),
+        )
         return factory
+
+
+class PfsSimulator(PrimeFocusSpectrograph):
+    """Instrument used for PFS simulator data"""
+
+    pfsCategory = "F"
+
+
+class PfsDevelopment(PrimeFocusSpectrograph):
+    """Instrument used for PFS development data from LAM"""
+
+    pfsCategory = "L"
