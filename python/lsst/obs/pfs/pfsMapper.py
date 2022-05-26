@@ -5,61 +5,19 @@ import numpy as np
 from astro_metadata_translator import fix_header
 
 from lsst.geom import BoxI, PointI, ExtentI
-from lsst.obs.base import CameraMapper, MakeRawVisitInfo
+from lsst.obs.base import CameraMapper
 import lsst.afw.image as afwImage
 from lsst.afw.fits import FitsError, readMetadata
 import lsst.afw.math as afwMath
 from lsst.daf.persistence import LogicalLocation, Policy
 import lsst.utils as utils
 import lsst.obs.base.yamlCamera as yamlCamera
-from lsst.obs.base import FilterDefinition, FilterDefinitionCollection
+from lsst.obs.base import FilterDefinition, FilterDefinitionCollection, MakeRawVisitInfoViaObsInfo
 from .translator import PfsTranslator
 
 
-class PfsRawVisitInfo(MakeRawVisitInfo):
-    def setArgDict(self, md, argDict):
-        """Fill an argument dict with arguments for makeVisitInfo and pop associated metadata
-
-        Subclasses are expected to override this method, though the override
-        may wish to call this default implementation, which:
-        - sets exposureTime from "EXPTIME"
-        - sets date by calling getDateAvg
-
-        @param[in,out] md  metadata, as an lsst.daf.base.PropertyList or PropertySet;
-            items that are used are stripped from the metadata
-            (except TIMESYS, because it may apply to more than one other keyword).
-        @param[in,out] argdict  a dict of arguments
-        """
-        super(PfsRawVisitInfo, self).setArgDict(md, argDict)
-        argDict["darkTime"] = self.popFloat(md, "DARKTIME") if "DARKTIME" in md else np.nan
-        #
-        # Done setting argDict; check values now that all the header keywords have been consumed
-        #
-        argDict["darkTime"] = self.getDarkTime(argDict)
-        argDict["id"] = argDict["exposureId"]
-
-    def getDarkTime(self, argDict):
-        """Retrieve the dark time from an argDict, waiting to be passed to the VisitInfo ctor"""
-        darkTime = argDict.get("darkTime", float("NaN"))
-        if np.isfinite(darkTime):
-            return darkTime
-
-        self.log.info("darkTime is NaN/Inf; using exposureTime")
-        exposureTime = argDict.get("exposureTime", np.nan)
-        if not np.isfinite(exposureTime):
-            raise RuntimeError("Tried to substitute exposureTime for darkTime but it is also Nan/Inf")
-
-        return exposureTime
-
-    def getDateAvg(self, md, exposureTime):
-        """Return date at the middle of the exposure
-        @param[in,out] md  metadata, as an lsst.daf.base.PropertyList or PropertySet;
-            items that are used are stripped from the metadata
-            (except TIMESYS, because it may apply to more than one other keyword).
-        @param[in] exposureTime  exposure time (sec)
-        """
-        dateObs = self.popIsoDate(md, "DATE-OBS")
-        return self.offsetDate(dateObs, 0.5*exposureTime)
+class PfsRawVisitInfo(MakeRawVisitInfoViaObsInfo):
+    metadataTranslator = PfsTranslator
 
 
 pfsFilterDefinitions = FilterDefinitionCollection(
