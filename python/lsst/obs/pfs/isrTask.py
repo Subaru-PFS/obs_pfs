@@ -83,6 +83,11 @@ class PfsAssembleCcdTask(AssembleCcdTask):
         negative due to bias- and dark-subtraction, but at least it won't be
         negative thousands.
 
+        We multiply each amplifier by the gain, so all data is in units of
+        electrons. This is safe because CCD assembly is performed after
+        saturation detection (where the units must be ADU), and we will reset
+        the gain to unity so any subsequent operation will be satisfied.
+
         exposure : `lsst.afw.image.Exposure`
             Raw exposure containing all amplifiers and their overscans.
 
@@ -96,6 +101,17 @@ class PfsAssembleCcdTask(AssembleCcdTask):
         if np.any(noData):
             exposure.image.array[noData] = 0.0
             self.log.info("Flagging %d zero pixels", noData.sum())
+
+        # Convert to electrons
+        for amp in exposure.getDetector():
+            ampImage = exposure.maskedImage[amp.getBBox()]
+            ampImage *= amp.getGain()
+        # Reset gain to unity
+        detector = exposure.getDetector().rebuild()
+        for amp in detector:
+            amp.setGain(1.0)
+        exposure.setDetector(detector.finish())
+
         return exposure
 
 
@@ -117,6 +133,7 @@ class PfsIsrTaskConfig(ipIsr.IsrTaskConfig):
     def setDefaults(self):
         super().setDefaults()
         self.assembleCcd.retarget(PfsAssembleCcdTask)
+        self.doApplyGains = False
 
     def validate(self):
         if self.windowed:
@@ -124,6 +141,9 @@ class PfsIsrTaskConfig(ipIsr.IsrTaskConfig):
         if not self.doSaturationInterpolation and "SAT" in self.maskListToInterpolate:  # fixed on LSST master
             self.maskListToInterpolate.remove("SAT")
         super().validate()
+        if self.doApplyGains:
+            raise RuntimeError("doApplyGains must be False: gains are applied automatically.")
+
 #
 # Code to handle the broken shutter matrix matrix inverse cache
 #
