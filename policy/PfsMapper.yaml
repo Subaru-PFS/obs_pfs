@@ -65,7 +65,7 @@ calibrations:
     python: lsst.ip.isr.Defects
     refCols:
     - visit
-    reference: raw_visit
+    reference: raw
     storage: FitsStorage
     tables: defects
     template: defects/%(calibDate)s/defects-%(calibDate)s-%(ccd)02d.fits
