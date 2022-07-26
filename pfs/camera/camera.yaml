@@ -218,8 +218,7 @@ CCDs : &CCDs
                 readNoise : 4.181415
     m1 :  # m1 is actually r1
         <<: *CCD
-        id : 3
-        offset : [-93.1, 130.2]         # mm
+        id : -1
 
     b1 :                                # Spectrograph 1, blue arm
         << : *Detector
@@ -262,61 +261,103 @@ CCDs : &CCDs
                 gain : 1.26
                 readNoise : 6
 
-    n1 :    # Infrared arm currently only exists in sims, and is a CCD.
+    n1 : &n1
         <<: *CCD
         id : 2
+        serial : "TBD"
         offset : [-93.1, 65.1]           # mm
+
+        amplifiers:                     # really only 1 amplifier (well, really 16M amplifiers but treat as 1)
+            "0":
+                <<: *A0
+                gain : 1.00             # will be multiplied by W_H4GAIN
+                readNoise : 10
+            "1":
+                <<: *A1
+                gain : 1.00
+                readNoise : 10
+            "2":
+                <<: *A2
+                gain : 1.00
+                readNoise : 10
+            "3":
+                <<: *A3
+                gain : 1.00
+                readNoise : 10
+            "4":
+                <<: *A4
+                gain : 1.00
+                readNoise : 10
+            "5":
+                <<: *A5
+                gain : 1.00
+                readNoise : 10
+            "6":
+                <<: *A6
+                gain : 1.00
+                readNoise : 10
+            "7":
+                <<: *A7
+                gain : 1.00
+                readNoise : 10
 
     b2:
       <<: *CCD
-      id: 4
+      id: 3
+      serial : Hamamatsu b2
       offset : [-28.0, -65.1]         # mm
-    r2:
+    r2: &r2
       <<: *CCD
-      id: 5
+      id: 4
+      serial : Hamamatsu r2
       offset : [-28.0, 0.0]           # mm
     n2:
-      <<: *CCD
-      id: 6
+      <<: *n1
+      id: 5
+      serial : "18660"
       offset : [-28.0, 65.1]           # mm
-    m2:
-      <<: *CCD
-      id: 7
-      offset : [-28.0, 130.2]         # mm
+    m2:                                # == r2
+      <<: *r2
+      id: -4
 
     b3:
       <<: *CCD
-      id: 8
+      id: 6
+      serial : Hamamatsu b3
       offset : [37.1, -65.1]         # mm
-    r3:
+    r3: &r3
       <<: *CCD
-      id: 9
+      id: 7
+      serial : Hamamatsu r3
       offset : [37.1, 0.0]           # mm
     n3:
-      <<: *CCD
-      id: 10
+      <<: *n1
+      id: 8
+      serial : "18315"
       offset : [37.1, 65.1]           # mm
     m3:
-      <<: *CCD
-      id: 11
+      <<: *r3
+      id: -7                            # == r3
       offset : [37.1, 130.2]         # mm
 
     b4:
       <<: *CCD
-      id: 12
+      id: 9
+      serial : Hamamatsu b4
       offset : [102.2, -65.1]         # mm
-    r4:
+    r4: &r4
       <<: *CCD
-      id: 13
+      id: 10
+      serial : Hamamatsu r4
       offset : [102.2, 0.0]           # mm
     n4:
-      <<: *CCD
-      id: 14
+      <<: *n1
+      id: 11
+      serial : "TBD"
       offset : [102.2, 65.1]           # mm
     m4:
-      <<: *CCD
-      id: 15
-      offset : [102.2, 130.2]         # mm
+      <<: *r4
+      id: -10
     #
     # Now the autoguiders
     #
