@@ -81,7 +81,7 @@ class PfsParseTask(ParseTask):
 
         info = dict(site=site, category=category, visit=int(visit, base=10))
 
-        if category == "A":
+        if category in ("A", "B"):
             # Spectrograph
             armNum = int(armNum)
             spectrograph = int(spectrograph)
@@ -196,6 +196,7 @@ class PfsParseTask(ParseTask):
         """
         category = info["category"]
         dataset = {"A": "raw",
+                   "B": "raw",
                    "D": "guider",
                    }[category]
         raw = butler.get(dataset + "_filename", info)[0]
