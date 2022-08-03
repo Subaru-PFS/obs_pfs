@@ -339,11 +339,15 @@ class PfsMapper(CameraMapper):
 
         if np.nanmean(exp.variance.array) == 0: # variance isn't set
             gain = exp.getDetector()[0].getGain()
-            gain *= md["W_H4GAIN"]
-            var = exp.image.array/gain
-            var *= 2                        # CDS
-        
-            exp.variance.array = var
+
+            if exp.getFilterLabel().physicalLabel == 'n':
+                gain *= md["W_H4GAIN"]
+                var = exp.image.array/gain
+                var *= 2                        # CDS
+            else:
+                var = exp.image.array/gain
+
+            exp.variance.array[:] = var
 
         return exp
 
