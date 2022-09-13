@@ -1,7 +1,6 @@
 import os
 import re
 import shutil
-import sqlite3
 from functools import partialmethod
 import datetime
 import dateutil.parser
@@ -23,47 +22,6 @@ from pfs.datamodel.pfsConfig import PfsConfig, PfsDesign
 from .translator import PfsTranslator
 
 __all__ = ["PfsParseConfig", "PfsParseTask", "PfsIngestTask", "PfsIngestCalibsTask"]
-
-
-class RegistryContext:
-    """Context manager to provide a registry
-
-    This implementation, to be monkey-patched over the original, removes the
-    use of a temporary registry. This was originally done to allow the registry
-    to be used while ingest is running, but is no longer necessary, and now it
-    gets in the way of holding onto the registry (e.g., a butler in a
-    long-running process doesn't see the latest ingestion).
-
-    Parameters
-    ----------
-    registryName : `str`
-        Name of registry file.
-    createTableFunc : callable
-        Function to create tables.
-    forceCreateTables : `bool`
-        Force the (re-)creation of tables?
-    permissions : `int`
-        Permissions to set on database file.
-    """
-    def __init__(self, registryName, createTableFunc, forceCreateTables, permissions):
-        """Construct a context manager"""
-        haveTable = os.path.exists(registryName)
-        self.conn = sqlite3.connect(registryName)
-        os.chmod(registryName, permissions)
-        if not haveTable or forceCreateTables:
-            createTableFunc(self.conn)
-
-    def __enter__(self):
-        """Provide the 'as' value"""
-        return self.conn
-
-    def __exit__(self, excType, excValue, traceback):
-        self.conn.commit()
-        self.conn.close()
-        return False  # Don't suppress any exceptions
-
-
-lsst.pipe.tasks.ingest.RegistryContext = RegistryContext
 
 
 class PfsParseConfig(ParseConfig):
