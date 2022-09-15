@@ -1,7 +1,6 @@
 import os
 import re
 import shutil
-import sqlite3
 from functools import partialmethod
 import datetime
 import dateutil.parser
@@ -14,7 +13,8 @@ from lsst.pipe.tasks.ingest import ParseTask, ParseConfig, IngestTask, IngestCon
 from lsst.pipe.tasks.ingest import RegisterTask, IngestError
 from lsst.pipe.tasks.ingestCalibs import IngestCalibsTask, IngestCalibsConfig
 from lsst.pipe.tasks.ingestCalibs import CalibsParseTask, CalibsRegisterTask
-from lsst.pex.config import Field
+from lsst.pipe.tasks.ingestPgsql import PgsqlRegisterTask
+from lsst.pex.config import Field, ConfigurableField
 from lsst.afw.fits import readMetadata
 from lsst.obs.pfs.utils import getLamps
 import lsst.pipe.tasks.ingest
@@ -22,48 +22,7 @@ import lsst.pipe.tasks.ingest
 from pfs.datamodel.pfsConfig import PfsConfig, PfsDesign
 from .translator import PfsTranslator
 
-__all__ = ["PfsParseConfig", "PfsParseTask", "PfsIngestTask", "PfsIngestCalibsTask"]
-
-
-class RegistryContext:
-    """Context manager to provide a registry
-
-    This implementation, to be monkey-patched over the original, removes the
-    use of a temporary registry. This was originally done to allow the registry
-    to be used while ingest is running, but is no longer necessary, and now it
-    gets in the way of holding onto the registry (e.g., a butler in a
-    long-running process doesn't see the latest ingestion).
-
-    Parameters
-    ----------
-    registryName : `str`
-        Name of registry file.
-    createTableFunc : callable
-        Function to create tables.
-    forceCreateTables : `bool`
-        Force the (re-)creation of tables?
-    permissions : `int`
-        Permissions to set on database file.
-    """
-    def __init__(self, registryName, createTableFunc, forceCreateTables, permissions):
-        """Construct a context manager"""
-        haveTable = os.path.exists(registryName)
-        self.conn = sqlite3.connect(registryName)
-        os.chmod(registryName, permissions)
-        if not haveTable or forceCreateTables:
-            createTableFunc(self.conn)
-
-    def __enter__(self):
-        """Provide the 'as' value"""
-        return self.conn
-
-    def __exit__(self, excType, excValue, traceback):
-        self.conn.commit()
-        self.conn.close()
-        return False  # Don't suppress any exceptions
-
-
-lsst.pipe.tasks.ingest.RegistryContext = RegistryContext
+__all__ = ["PfsParseConfig", "PfsParseTask", "PfsIngestTask", "PfsIngestCalibsTask", "PfsPgsqlIngestTask"]
 
 
 class PfsParseConfig(ParseConfig):
@@ -471,44 +430,6 @@ class PfsCalibsParseTask(CalibsParseTask):
 
 
 class PfsRegisterTask(RegisterTask):
-    def addRow(self, conn, info, dryrun=False, create=False, table=None):
-        """Add a row to the file table (typically 'raw').
-
-        This is a copy from LSST 18.1.0, with the addition from commit
-        ``b19a9d99e098d40d9a771986a210a6f5e0d70e6d``, to modify the database
-        directly (rather than a copy).
-
-        Parameters
-        ----------
-        conn : context manager
-            Database connection.
-        info : `dict`
-            File properties to add to database.
-        dryrun : `bool`
-            Whether to actually write to the database?
-        create : `bool`
-            Whether to create teh database table? (Apparently unused here.)
-        table : `str`
-            Name of table in database.
-        """
-        if table is None:
-            table = self.config.table
-        sql = "INSERT INTO %s (%s) SELECT " % (table, ",".join(self.config.columns))
-        sql += ",".join([self.placeHolder] * len(self.config.columns))
-        values = [self.typemap[tt](info[col]) for col, tt in self.config.columns.items()]
-
-        if self.config.ignore:
-            sql += " WHERE NOT EXISTS (SELECT 1 FROM %s WHERE " % table
-            sql += " AND ".join(["%s=%s" % (col, self.placeHolder) for col in self.config.unique])
-            sql += ")"
-            values += [info[col] for col in self.config.unique]
-
-        if dryrun:
-            print("Would execute: '%s' with %s" % (sql, ",".join([str(value) for value in values])))
-        else:
-            with conn:
-                conn.cursor().execute(sql, values)
-
     def addVisits(self, conn, dryrun=False, table=None):
         """Generate the visits table (typically 'raw_visits') from the
         file table (typically 'raw').
@@ -520,7 +441,7 @@ class PfsRegisterTask(RegisterTask):
         pass
 
 
-def setIngestConfig(config):
+def setIngestConfig(config, retarget=True):
     """Set the configuration for ingestion
 
     This has been factored out so it can be used from
@@ -531,9 +452,14 @@ def setIngestConfig(config):
     ----------
     config : subclass of `lsst.pipe.tasks.IngestConfig`
         Configuration to set.
+    retarget : `bool`, optional
+        Perform the retargeting? This should be disabled if the ``config`` is
+        already set up to use the appropriate ``parse`` and ``register`` tasks
+        (e.g., because it was subclassed over overridden).
     """
-    config.parse.retarget(PfsParseTask)
-    config.register.retarget(PfsRegisterTask)
+    if retarget:
+        config.parse.retarget(PfsParseTask)
+        config.register.retarget(PfsRegisterTask)
     config.register.columns = {'site': 'text',  # J: JHU, L: LAM, X: Subaru offline, I: IPMU, A: ASIAA,
                                                 # S: Summit, P: Princeton, F: simulation (fake)
                                'category': 'text',  # A: science, B: NTR, C: Meterology, D: HG
@@ -582,9 +508,12 @@ class PfsIngestArgumentParser(IngestArgumentParser):
 
 class PfsIngestConfig(IngestConfig):
     """Configuration for PfsIngestTask"""
+    parse = ConfigurableField(target=PfsParseTask, doc="Parse the input headers")
+    register = ConfigurableField(target=PfsRegisterTask, doc="Add the file to the registry")
+
     def setDefaults(self):
         super().setDefaults()
-        setIngestConfig(self)
+        setIngestConfig(self, False)
 
 
 class PfsIngestTask(IngestTask):
@@ -752,6 +681,32 @@ class PfsIngestTask(IngestTask):
             self.ingestPfsConfig(pfsConfigDir, hduInfoList[0], args)
 
         return None  # No further registration should be performed
+
+
+class PfsPgsqlRegisterTask(PgsqlRegisterTask):
+    def addVisits(self, conn, dryrun=False, table=None):
+        """Generate the visits table (typically 'raw_visits') from the
+        file table (typically 'raw').
+
+        We disable this method for PFS, since we don't use the visits table,
+        and creation of the visits table is expensive because it attempts to
+        insert all rows, not just those that have most recently been ingested.
+        """
+        pass
+
+
+class PfsPgsqlIngestConfig(PfsIngestConfig):
+    """Configuration for PfsPgsqlIngestTask"""
+    parse = ConfigurableField(target=PfsParseTask, doc="Parse the input headers")
+    register = ConfigurableField(target=PfsPgsqlRegisterTask, doc="Add the file to the registry")
+
+    def setDefaults(self):
+        super().setDefaults()
+        setIngestConfig(self, False)
+
+
+class PfsPgsqlIngestTask(PfsIngestTask):
+    ConfigClass = PfsPgsqlIngestConfig
 
 
 class PfsIngestCalibsConfig(IngestCalibsConfig):
