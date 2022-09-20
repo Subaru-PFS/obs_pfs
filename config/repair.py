@@ -3,7 +3,7 @@
 
 # This CR tuning comes from looking at SuNSS b/r data
 #
-config.interp.modelPsf.defaultFwhm = 3
+config.interp.modelPsf.defaultFwhm = 1.5
 config.cosmicray.nCrPixelMax = 5000000
 
 # Interpolation needs more work. In the meanwhile do not hide what is there
