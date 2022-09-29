@@ -430,15 +430,42 @@ class PfsCalibsParseTask(CalibsParseTask):
 
 
 class PfsRegisterTask(RegisterTask):
-    def addVisits(self, conn, dryrun=False, table=None):
-        """Generate the visits table (typically 'raw_visits') from the
-        file table (typically 'raw').
+    def addRow(self, conn, info, dryrun=False, create=False, table=None):
+        """Add a row to the file table (typically 'raw').
 
-        We disable this method for PFS, since we don't use the visits table,
-        and creation of the visits table is expensive because it attempts to
-        insert all rows, not just those that have most recently been ingested.
+        This override of the LSST implementation removes the visit table
+        because PFS doesn't use the visits table, and its creation can be
+        expensive. Furthermore, the LSST implementation hard-codes the
+        "OR IGNORE" part of the SQL, which doesn't work for PostgreSQL.
+
+        Parameters
+        ----------
+        conn : `sqlite3.Connection`
+            Database connection.
+        info : `dict`
+            File properties to add to database.
+        dryrun : `bool`, optional
+            Simulate what would happen?
+        create : `bool`, optional
+            Create a table if it doesn't exist? This parameter appears to be
+            vestigial.
+        table : `str`, optional
+            Name of table.
         """
-        pass
+        with conn:
+            if table is None:
+                table = self.config.table
+            ignoreClause = ""
+            if self.config.ignore:
+                ignoreClause = " OR IGNORE"
+            sql = "INSERT%s INTO %s (%s) VALUES (" % (ignoreClause, table, ",".join(self.config.columns))
+            sql += ",".join([self.placeHolder] * len(self.config.columns)) + ")"
+            values = [self.typemap[tt](info[col]) for col, tt in self.config.columns.items()]
+
+            if dryrun:
+                print("Would execute: '%s' with %s" % (sql, ",".join([str(value) for value in values])))
+            else:
+                conn.cursor().execute(sql, values)
 
 
 def setIngestConfig(config, retarget=True):
@@ -684,15 +711,39 @@ class PfsIngestTask(IngestTask):
 
 
 class PfsPgsqlRegisterTask(PgsqlRegisterTask):
-    def addVisits(self, conn, dryrun=False, table=None):
-        """Generate the visits table (typically 'raw_visits') from the
-        file table (typically 'raw').
+    def addRow(self, conn, info, dryrun=False, create=False, table=None):
+        """Add a row to the file table (typically 'raw').
 
-        We disable this method for PFS, since we don't use the visits table,
-        and creation of the visits table is expensive because it attempts to
-        insert all rows, not just those that have most recently been ingested.
+        This override of the LSST implementation removes the visit table
+        because PFS doesn't use the visits table, and its creation can be
+        expensive. Furthermore, the LSST implementation hard-codes the
+        "OR IGNORE" part of the SQL, which doesn't work for PostgreSQL.
+
+        Parameters
+        ----------
+        conn : `sqlite3.Connection`
+            Database connection.
+        info : `dict`
+            File properties to add to database.
+        dryrun : `bool`, optional
+            Simulate what would happen?
+        create : `bool`, optional
+            Create a table if it doesn't exist? This parameter appears to be
+            vestigial.
+        table : `str`, optional
+            Name of table.
         """
-        pass
+        with conn:
+            if table is None:
+                table = self.config.table
+            sql = "INSERT INTO %s (%s) VALUES (" % (table, ",".join(self.config.columns))
+            sql += ",".join([self.placeHolder] * len(self.config.columns)) + ")"
+            values = [self.typemap[tt](info[col]) for col, tt in self.config.columns.items()]
+
+            if dryrun:
+                print("Would execute: '%s' with %s" % (sql, ",".join([str(value) for value in values])))
+            else:
+                conn.cursor().execute(sql, values)
 
 
 class PfsPgsqlIngestConfig(PfsIngestConfig):
