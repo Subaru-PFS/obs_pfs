@@ -31,7 +31,7 @@ class PfsRawVisitInfo(MakeRawVisitInfo):
         @param[in,out] argdict  a dict of arguments
         """
         super(PfsRawVisitInfo, self).setArgDict(md, argDict)
-        argDict["darkTime"] = self.popFloat(md, "DARKTIME") if "DARKTIME" in md else np.nan
+        argDict["darkTime"] = self.getDarkTime(argDict)
 
     def getDarkTime(self, argDict):
         """Retrieve the dark time from an argDict, waiting to be passed to the VisitInfo ctor"""
