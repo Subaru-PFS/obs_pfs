@@ -505,9 +505,9 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         ipcmodel = np.zeros_like(ipcarr, dtype=np.float32)
 
-        ipcmodel[1:, :]  += ipc_cy*ipcarr[:-1, :]
+        ipcmodel[1:, :] += ipc_cy*ipcarr[:-1, :]
         ipcmodel[:-1, :] += ipc_cy*ipcarr[1:, :]
-        ipcmodel[:, 1:]  += ipc_cx*ipcarr[:, :-1]
+        ipcmodel[:, 1:] += ipc_cx*ipcarr[:, :-1]
         ipcmodel[:, :-1] += ipc_cx*ipcarr[:, 1:]
 
         exposure.image.array[:, :] -= ipcmodel
@@ -518,7 +518,6 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         exposure.mask.array[ipcmodel != 0] |= exposure.mask.getPlaneBitMask("IPC")
 
-    
     def maskAmplifier(self, exposure, amp, defects):
         """Mask bad pixels in amplifier
 

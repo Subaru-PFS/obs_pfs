@@ -243,9 +243,9 @@ class PfsMapper(CameraMapper):
 
         md = readData(datasetType, butlerLocation, dataId, getMetadata=True)
         nread = md.get("W_H4NRED")
-        hasResetFrame = md["W_4FMTVR"] >= 3 # extra IMG/REF HDUs for the initial reset frame
+        hasResetFrame = md["W_4FMTVR"] >= 3   # extra IMG/REF HDUs for the initial reset frame
 
-        hdu_img0 = 2 if hasResetFrame else 0 # hdu for first real read
+        hdu_img0 = 2 if hasResetFrame else 0   # hdu for first real read
         #
         # Process the data using CDS
         #
@@ -284,7 +284,7 @@ class PfsMapper(CameraMapper):
             del im
 
         im = data[hdus[0]].image.array
-        #im[im > 30000] = np.NaN
+        #  im[im > 30000] = np.NaN
 
         if hdus[0] == hdus[-1]:         # we can't use CDS
             self.log.warn("You are processing a single frame; not carrying out CDS")
@@ -292,7 +292,7 @@ class PfsMapper(CameraMapper):
             im = data[hdus[-1]].image              # data[hdu].image -= data[0].image doesn't work
             im -= data[hdus[0]].image
 
-        return data[hdus[-1]] 
+        return data[hdus[-1]]
 
     def std_raw(self, item, dataId):
         """Fixup raw image problems.
@@ -337,7 +337,7 @@ class PfsMapper(CameraMapper):
         if dataVersion is not None and dataVersion <= 0x0070:
             self._shiftAmpPixels(exp)
 
-        if np.nanmean(exp.variance.array) == 0: # variance isn't set
+        if np.nanmean(exp.variance.array) == 0:   # variance isn't set
             gain = exp.getDetector()[0].getGain()
 
             if exp.getFilterLabel().physicalLabel == 'n':
@@ -559,8 +559,7 @@ class PfsMapper(CameraMapper):
                 filter=False,
                 trimmed=trimmed,
                 setVisitInfo=setVisitInfo,
-                setExposureId=setExposureId
-                )
+                setExposureId=setExposureId)
 
         if item.getFilterLabel() is not None:
             return item
