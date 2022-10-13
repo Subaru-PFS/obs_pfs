@@ -58,6 +58,33 @@ AMP : &AMP
     linearityThreshold : 0
     linearityMax : 65535                # == saturation
     linearityCoeffs : [0, 65535]        # == [linearityThreshold, linearityMax]
+#
+# H4RG "amp", actually the entire Chip
+#
+H4RG : &H4RG
+    hdu : 1                             # Only one HDU in the file
+
+    ixy : [0, 0]
+    readCorner : LL
+    flipXY :     [False, False]
+    perAmpData : False                  # is the amp data split across multiple HDUs/Files?
+
+    #                         [[x0,  y0], [xSize, ySize]]
+    rawBBox                 : [[0,    0], [4096,   4096]] # total size of raw data
+
+    rawDataBBox             : [[0,    0], [4096,   4096]] # data region in raw data
+    rawSerialPrescanBBox    : [[0,    0], [0,         0]] # serial prescan (we could use the first 48 too)
+    rawSerialOverscanBBox   : [[0,    0], [0,         0]] # serial overscan
+    rawParallelPrescanBBox  : [[0,    0], [0,         0]] # pixels digitised before first parallel transfer
+    rawParallelOverscanBBox : [[0,    0], [0,         0]] # parallel overscan
+
+    saturation : 65535                  # saturation level, DN XXX Should this be in electrons?
+
+    # Linearity correction is still under discussion, so this is a placeholder.
+    linearityType : PROPORTIONAL
+    linearityThreshold : 0
+    linearityMax : 65535                # == saturation
+    linearityCoeffs : [0, 65535]        # == [linearityThreshold, linearityMax]
 
 #
 # A single detector;  each optical detector is a Pair of Hamamatsu CCDs with 2*4 amplifiers
@@ -262,43 +289,17 @@ CCDs : &CCDs
                 readNoise : 6
 
     n1 : &n1
-        <<: *CCD
+        << : *Detector
+
+        detectorType : 2                # H4RG
         id : 2
         serial : "TBD"
-        offset : [-93.1, 65.1]           # mm
+        offset : [-93.1, 65.1]          # mm
 
-        amplifiers:                     # really only 1 amplifier (well, really 16M amplifiers but treat as 1)
+        amplifiers:                     # only 1 amplifier (well, really 16M amplifiers but treated as 1)
             "0":
-                <<: *A0
+                <<: *H4RG
                 gain : 1.00             # will be multiplied by W_H4GAIN
-                readNoise : 10
-            "1":
-                <<: *A1
-                gain : 1.00
-                readNoise : 10
-            "2":
-                <<: *A2
-                gain : 1.00
-                readNoise : 10
-            "3":
-                <<: *A3
-                gain : 1.00
-                readNoise : 10
-            "4":
-                <<: *A4
-                gain : 1.00
-                readNoise : 10
-            "5":
-                <<: *A5
-                gain : 1.00
-                readNoise : 10
-            "6":
-                <<: *A6
-                gain : 1.00
-                readNoise : 10
-            "7":
-                <<: *A7
-                gain : 1.00
                 readNoise : 10
 
     b2:
