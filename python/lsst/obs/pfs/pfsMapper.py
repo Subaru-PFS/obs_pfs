@@ -7,7 +7,7 @@ from astro_metadata_translator import fix_header
 from lsst.geom import BoxI, PointI, ExtentI
 from lsst.obs.base import CameraMapper, MakeRawVisitInfo
 import lsst.afw.image as afwImage
-from lsst.afw.fits import FitsError
+from lsst.afw.fits import FitsError, readMetadata
 import lsst.afw.math as afwMath
 from lsst.daf.persistence import LogicalLocation, Policy
 import lsst.utils as utils
@@ -178,14 +178,16 @@ class PfsMapper(CameraMapper):
 
     @staticmethod
     def lookupHdu(read, imType="IMAGE", md=None):
-        """Return the appropriate HDU
+        """Return the appropriate HDU in the PSFB file
+
+        E.g. im = butler.get("pfsb", dataId, hdu=lookupHdu("IMAGE", 10))
 
         Parameters
         ----------
         read: `int`
             The desired read of the device (1-indexed)
         imType: `str`
-            IMAGE or REF
+            Must be IMAGE or REF (case insensitive)
         md: `lsst.daf.base.PropertyList`
             Header from file (optional)
             Used to validate read, and handle extra reset HDUs if present
@@ -197,18 +199,24 @@ class PfsMapper(CameraMapper):
             if nread is not None and not (1 <= read <= nread):
                 raise RuntimeError(f"The read must be in the range 1..{nread}; saw {read}")
 
-        hdu = 2*read - 1 + dict(IMAGE=0, REF=1)[imType]
+        hdu = 2*read - 1 + dict(IMAGE=0, REF=1)[imType.upper()]
 
         return hdu
 
     def bypass_datasetExists_raw(self, datasetType, pythonType, butlerLocation, dataId):
+        """Gen2 magic to support bypass_raw"""
         return self.bypass_raw(datasetType, pythonType, butlerLocation, dataId, checkExistence=True)
 
     def bypass_raw(self, datasetType, pythonType, butlerLocation, dataId, checkExistence=False):
+        """Gen2 butler magic to handle reading "raw" H4RG files, which are CDS estimates not simple reads
+
+        No effect on reading CCD (bmr) data
+        """
         if dataId['arm'] in "bmr":
-            raise IOError("Please ignore this bypass function for [bmr] data")
+            raise IOError("Please ignore this bypass function for [bmr] data")  # exception => ignore
 
         def readData(datasetType, butlerLocation, dataId, hdu=1, getMetadata=False, checkExistence=False):
+            """Internal routine to read or check for data"""
             additionalData = butlerLocation.getAdditionalData()
             locationString = butlerLocation.getLocations()[0]
             locStringWithRoot = os.path.join(butlerLocation.getStorage().root, locationString)
@@ -232,8 +240,10 @@ class PfsMapper(CameraMapper):
                 raise RuntimeError("No such FITS file: " + logLoc.locString())
 
             if getMetadata:
-                from lsst.afw.fits import readMetadata
-                return readMetadata(filePath, hdu=0)
+                metadata = readMetadata(filePath, hdu=0)
+                fix_header(metadata, translator_class=PfsTranslator, filename=filePath)  # modified in-place
+
+                return metadata
 
             if additionalData.get("llcX"):  # we were asked for a subimage
                 bbox = BoxI(PointI(additionalData["llcX"], additionalData["llcY"]),
@@ -273,7 +283,10 @@ class PfsMapper(CameraMapper):
             except FitsError as e:
                 self.log.warn("Unable to read IMAGE_%d (hdu %d): %s", read, hdu + hdu_img0, e)
                 continue
-            assert data[hdu].getMetadata()["EXTNAME"] == f"IMAGE_{read}"
+
+            extname = data[hdu].getMetadata()["EXTNAME"]
+            if extname != f"IMAGE_{read}":
+                raise RuntimeError(f'Expected to see EXTNAME = IMAGE_{read}; saw {extname}')
 
             try:
                 ref = readData(datasetType, butlerLocation, dataId, hdu=hdu + hdu_img0 + 1)
@@ -281,14 +294,15 @@ class PfsMapper(CameraMapper):
                 self.log.warn("Unable to read REF_%d (hdu %d): %s", read, hdu + hdu_img0 + 1, e)
                 continue
 
-            assert ref.getMetadata()["EXTNAME"] == f"REF_{read}"
+            extname = ref.getMetadata()["EXTNAME"]
+            if extname != f"REF_{read}":
+                raise RuntimeError(f'Expected to see EXTNAME = REF_{read}; saw {extname}')
 
             im = data[hdu].image
             im -= ref.image
             del im
 
         im = data[hdus[0]].image.array
-        #  im[im > 30000] = np.NaN
 
         if hdus[0] == hdus[-1]:         # we can't use CDS
             self.log.warn("You are processing a single frame; not carrying out CDS")

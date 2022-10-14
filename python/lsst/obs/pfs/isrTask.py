@@ -133,6 +133,8 @@ class PfsIsrTaskConfig(ipIsr.IsrTaskConfig):
                                "overscanFitType=MEDIAN")
 
     doIPC = pexConfig.Field(dtype=bool, default=False, doc="Correct for IPC?")
+    # these numbers are a hand-tuned guess by RHL.  They will be replaced by spatially-resolved
+    # measurements from Eddie Berger any day now. PIPE2D-1071
     ipcCoeffs = pexConfig.ListField(dtype=float, default=[13e-3, 6e-3], doc="IPC coefficients in x and y")
 
     def setDefaults(self):
@@ -249,14 +251,7 @@ class PfsIsrTask(ipIsr.IsrTask):
     the effects of a broken red-arm shutter on a PFS spectrograph
     methods have been split into subtasks that can be redirected
     appropriately.
-
-    Parameters
-    ----------
-    kwargs : `dict`, optional
-        Keyword arguments passed on to the Task constructor. None used at this time.
     """
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
     @timeMethod
     def runDataRef(self, sensorRef):
@@ -368,7 +363,37 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         return result
 
-    def run(self, ccdExposure, **kwargs):
+    def run(self, exposure, **kwargs):
+        """Perform instrument signature removal on an exposure.
+
+        Parameters:
+           exposure : `afwImage.Exposure`
+             The raw data to be processed
+           kwargs : `dict`
+             Dict of extra parameters, e.g. combined bias
+
+        Return:
+           result : `lsst.pipe.base.Struct`
+              Result struct;  see `lsst.ip.isr.isrTask.run`
+        """
+        if exposure.getFilterLabel().bandLabel == 'n':  # treat H4RGs specially
+            return self.runH4RG(exposure, **kwargs)
+        else:
+            return self.runCCD(exposure, **kwargs)
+
+    def runCCD(self, ccdExposure, **kwargs):
+        """Perform instrument signature removal on a CCD exposure.
+
+        Parameters:
+           exposure : `afwImage.Exposure`
+             The raw data to be processed
+           kwargs : `dict`
+             Dict of extra parameters, e.g. combined bias
+
+        Return:
+           result : `lsst.pipe.base.Struct`
+              Result struct;  see `lsst.ip.isr.isrTask.run`
+        """
         if ccdExposure.getFilterLabel().bandLabel == 'n':  # treat H4RGs specially
             return self.runH4RG(ccdExposure, **kwargs)
 
@@ -458,6 +483,8 @@ class PfsIsrTask(ipIsr.IsrTask):
             exposure is modified by this method.
         defects : `lsst.ip.isr.Defects`, optional
             List of defects.
+        kwargs : `dict` other keyword arguments specifying e.g. combined biases
+            N.b. no values are currently valid
         Returns
         -------
         result : `lsst.pipe.base.Struct`
@@ -492,7 +519,8 @@ class PfsIsrTask(ipIsr.IsrTask):
                                ossThumb=None,
                                )
 
-    def correctIPC(self, exposure, defects, ipcCoeffs):
+    @staticmethod
+    def correctIPC(exposure, defects, ipcCoeffs):
         ipc_cx, ipc_cy = ipcCoeffs
 
         ipc = exposure.maskedImage.clone()
