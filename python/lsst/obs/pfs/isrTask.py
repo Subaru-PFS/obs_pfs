@@ -363,11 +363,11 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         return result
 
-    def run(self, exposure, **kwargs):
+    def run(self, ccdExposure, **kwargs):
         """Perform instrument signature removal on an exposure.
 
         Parameters:
-           exposure : `afwImage.Exposure`
+           ccdExposure : `afwImage.Exposure`
              The raw data to be processed
            kwargs : `dict`
              Dict of extra parameters, e.g. combined bias
@@ -376,6 +376,8 @@ class PfsIsrTask(ipIsr.IsrTask):
            result : `lsst.pipe.base.Struct`
               Result struct;  see `lsst.ip.isr.isrTask.run`
         """
+        exposure = ccdExposure                         # argument must be called "ccdExposure"; PIPE2D-1093
+
         if exposure.getFilterLabel().bandLabel == 'n':  # treat H4RGs specially
             return self.runH4RG(exposure, **kwargs)
         else:
