@@ -295,6 +295,7 @@ CCDs : &CCDs
         id : 2
         serial : "TBD"
         offset : [-93.1, 65.1]          # mm
+        yaw : 270.0                     # rotation in plane of camera (degrees)
 
         amplifiers:                     # only 1 amplifier (well, really 16M amplifiers but treated as 1)
             "0":

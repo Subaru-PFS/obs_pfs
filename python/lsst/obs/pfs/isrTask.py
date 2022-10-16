@@ -515,6 +515,10 @@ class PfsIsrTask(ipIsr.IsrTask):
         if self.config.doDefect:
             super().maskAndInterpolateDefects(exposure, defects)
 
+        nQuarter = exposure.getDetector().getOrientation().getNQuarter()
+        if nQuarter != 0:
+            exposure.maskedImage = afwMath.rotateImageBy90(exposure.maskedImage, nQuarter)
+
         return pipeBase.Struct(exposure=exposure,
                                outputExposure=exposure,  # is this needed? Cargo culted from ip_isr isrTask.py
                                flattenedThumb=None,
