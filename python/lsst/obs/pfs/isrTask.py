@@ -24,11 +24,13 @@ import lsst.log
 import lsst.pex.config as pexConfig
 from lsst.daf.persistence.butlerExceptions import NoResults
 
+import lsst.afw.display as afwDisplay
 import lsst.afw.math as afwMath
 import lsst.ip.isr as ipIsr
 from lsst.ip.isr.assembleCcdTask import AssembleCcdTask
 from lsst.ip.isr import isrQa
 from lsst.utils.timer import timeMethod
+import lsst.pipe.base as pipeBase
 
 ___all__ = ["IsrTask", "IsrTaskConfig"]
 
@@ -129,6 +131,11 @@ class PfsIsrTaskConfig(ipIsr.IsrTaskConfig):
     windowed = pexConfig.Field(dtype=bool, default=False,
                                doc="Reduction of windowed data, for real-time acquisition? Implies "
                                "overscanFitType=MEDIAN")
+
+    doIPC = pexConfig.Field(dtype=bool, default=False, doc="Correct for IPC?")
+    # these numbers are a hand-tuned guess by RHL.  They will be replaced by spatially-resolved
+    # measurements from Eddie Berger any day now. PIPE2D-1071
+    ipcCoeffs = pexConfig.ListField(dtype=float, default=[13e-3, 6e-3], doc="IPC coefficients in x and y")
 
     def setDefaults(self):
         super().setDefaults()
@@ -235,25 +242,16 @@ except NameError:
 
 
 class PfsIsrTask(ipIsr.IsrTask):
+    ConfigClass = PfsIsrTaskConfig
+    _DefaultName = "isr"
+
     """Apply common instrument signature correction algorithms to a raw frame.
 
     We run the vanilla ISR, with the exception of optionally correcting for
     the effects of a broken red-arm shutter on a PFS spectrograph
     methods have been split into subtasks that can be redirected
     appropriately.
-
-    Parameters
-    ----------
-    args : `list`
-        Positional arguments passed to the Task constructor. None used at this time.
-    kwargs : `dict`, optional
-        Keyword arguments passed on to the Task constructor. None used at this time.
     """
-    ConfigClass = PfsIsrTaskConfig
-    _DefaultName = "isr"
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
     @timeMethod
     def runDataRef(self, sensorRef):
@@ -366,6 +364,41 @@ class PfsIsrTask(ipIsr.IsrTask):
         return result
 
     def run(self, ccdExposure, **kwargs):
+        """Perform instrument signature removal on an exposure.
+
+        Parameters:
+           ccdExposure : `afwImage.Exposure`
+             The raw data to be processed
+           kwargs : `dict`
+             Dict of extra parameters, e.g. combined bias
+
+        Return:
+           result : `lsst.pipe.base.Struct`
+              Result struct;  see `lsst.ip.isr.isrTask.run`
+        """
+        exposure = ccdExposure                         # argument must be called "ccdExposure"; PIPE2D-1093
+
+        if exposure.getFilterLabel().bandLabel == 'n':  # treat H4RGs specially
+            return self.runH4RG(exposure, **kwargs)
+        else:
+            return self.runCCD(exposure, **kwargs)
+
+    def runCCD(self, ccdExposure, **kwargs):
+        """Perform instrument signature removal on a CCD exposure.
+
+        Parameters:
+           exposure : `afwImage.Exposure`
+             The raw data to be processed
+           kwargs : `dict`
+             Dict of extra parameters, e.g. combined bias
+
+        Return:
+           result : `lsst.pipe.base.Struct`
+              Result struct;  see `lsst.ip.isr.isrTask.run`
+        """
+        if ccdExposure.getFilterLabel().bandLabel == 'n':  # treat H4RGs specially
+            return self.runH4RG(ccdExposure, **kwargs)
+
         doBrokenRedShutter = self.config.doBrokenRedShutter and \
             ccdExposure.getDetector().getName() in self.config.brokenRedShutter.brokenShutterList
 
@@ -442,6 +475,79 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         return results
 
+    def runH4RG(self, exposure, defects=None, **kwargs):
+        """Specialist instrument signature removal for H4RG detectors
+
+        Parameters
+        ----------
+        exposure : `lsst.afw.image.Exposure`
+            The raw exposure that is to be run through ISR.  The
+            exposure is modified by this method.
+        defects : `lsst.ip.isr.Defects`, optional
+            List of defects.
+        kwargs : `dict` other keyword arguments specifying e.g. combined biases
+            N.b. no values are currently valid
+        Returns
+        -------
+        result : `lsst.pipe.base.Struct`
+            Result struct with component:
+            - ``exposure`` : `afw.image.Exposure`
+                The fully ISR corrected exposure.
+            - ``outputExposure`` : `afw.image.Exposure`
+                An alias for `exposure`
+        """
+        for k, v in kwargs.items():
+            if v is not None:
+                if k == "fringes" and v.fringes is None:
+                    continue
+
+                if k not in ["camera", ]:
+                    self.log.warn("Unexpected argument for runH4RG: %s", k)
+
+        if self.config.doDefect and defects is None:
+            raise RuntimeError("Must supply defects if config.doDefect=True.")
+        if self.config.doIPC and defects is None:
+            raise RuntimeError("Must supply defects if config.doIPC=True.")
+
+        if self.config.doIPC:
+            self.correctIPC(exposure, defects, self.config.ipcCoeffs)
+
+        if self.config.doDefect:
+            super().maskAndInterpolateDefects(exposure, defects)
+
+        return pipeBase.Struct(exposure=exposure,
+                               outputExposure=exposure,  # is this needed? Cargo culted from ip_isr isrTask.py
+                               flattenedThumb=None,
+                               ossThumb=None,
+                               )
+
+    @staticmethod
+    def correctIPC(exposure, defects, ipcCoeffs):
+        ipc_cx, ipc_cy = ipcCoeffs
+
+        ipc = exposure.maskedImage.clone()
+        ipc.mask[:] = 0x0
+        defects.maskPixels(ipc)
+
+        ipcarr = ipc.image.array
+        ipcarr[ipc.mask.array == 0] = 0
+        ipcarr[np.isnan(ipcarr)] = 0
+
+        ipcmodel = np.zeros_like(ipcarr, dtype=np.float32)
+
+        ipcmodel[1:, :] += ipc_cy*ipcarr[:-1, :]
+        ipcmodel[:-1, :] += ipc_cy*ipcarr[1:, :]
+        ipcmodel[:, 1:] += ipc_cx*ipcarr[:, :-1]
+        ipcmodel[:, :-1] += ipc_cx*ipcarr[:, 1:]
+
+        exposure.image.array[:, :] -= ipcmodel
+
+        if "IPC" not in exposure.mask.getMaskPlaneDict():
+            exposure.mask.addMaskPlane("IPC")
+            afwDisplay.setDefaultMaskPlaneColor("IPC", "GREEN")
+
+        exposure.mask.array[ipcmodel != 0] |= exposure.mask.getPlaneBitMask("IPC")
+
     def maskAmplifier(self, exposure, amp, defects):
         """Mask bad pixels in amplifier
 
@@ -485,3 +591,6 @@ class PfsIsrTask(ipIsr.IsrTask):
             Exposure to process.
         """
         pass
+
+    def _getMetadataName(self):
+        return None                     # don't write metadata; requires fix to ip_isr

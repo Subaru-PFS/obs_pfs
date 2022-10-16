@@ -58,6 +58,33 @@ AMP : &AMP
     linearityThreshold : 0
     linearityMax : 65535                # == saturation
     linearityCoeffs : [0, 65535]        # == [linearityThreshold, linearityMax]
+#
+# H4RG "amp", actually the entire Chip
+#
+H4RG : &H4RG
+    hdu : 1                             # Only one HDU in the file
+
+    ixy : [0, 0]
+    readCorner : LL
+    flipXY :     [False, False]
+    perAmpData : False                  # is the amp data split across multiple HDUs/Files?
+
+    #                         [[x0,  y0], [xSize, ySize]]
+    rawBBox                 : [[0,    0], [4096,   4096]] # total size of raw data
+
+    rawDataBBox             : [[0,    0], [4096,   4096]] # data region in raw data
+    rawSerialPrescanBBox    : [[0,    0], [0,         0]] # serial prescan (we could use the first 48 too)
+    rawSerialOverscanBBox   : [[0,    0], [0,         0]] # serial overscan
+    rawParallelPrescanBBox  : [[0,    0], [0,         0]] # pixels digitised before first parallel transfer
+    rawParallelOverscanBBox : [[0,    0], [0,         0]] # parallel overscan
+
+    saturation : 65535                  # saturation level, DN XXX Should this be in electrons?
+
+    # Linearity correction is still under discussion, so this is a placeholder.
+    linearityType : PROPORTIONAL
+    linearityThreshold : 0
+    linearityMax : 65535                # == saturation
+    linearityCoeffs : [0, 65535]        # == [linearityThreshold, linearityMax]
 
 #
 # A single detector;  each optical detector is a Pair of Hamamatsu CCDs with 2*4 amplifiers
@@ -218,8 +245,7 @@ CCDs : &CCDs
                 readNoise : 4.181415
     m1 :  # m1 is actually r1
         <<: *CCD
-        id : 3
-        offset : [-93.1, 130.2]         # mm
+        id : -1
 
     b1 :                                # Spectrograph 1, blue arm
         << : *Detector
@@ -262,61 +288,77 @@ CCDs : &CCDs
                 gain : 1.26
                 readNoise : 6
 
-    n1 :    # Infrared arm currently only exists in sims, and is a CCD.
-        <<: *CCD
+    n1 : &n1
+        << : *Detector
+
+        detectorType : 2                # H4RG
         id : 2
-        offset : [-93.1, 65.1]           # mm
+        serial : "TBD"
+        offset : [-93.1, 65.1]          # mm
+
+        amplifiers:                     # only 1 amplifier (well, really 16M amplifiers but treated as 1)
+            "0":
+                <<: *H4RG
+                gain : 1.00             # will be multiplied by W_H4GAIN
+                readNoise : 10
 
     b2:
       <<: *CCD
-      id: 4
+      id: 3
+      serial : Hamamatsu b2
       offset : [-28.0, -65.1]         # mm
-    r2:
+    r2: &r2
       <<: *CCD
-      id: 5
+      id: 4
+      serial : Hamamatsu r2
       offset : [-28.0, 0.0]           # mm
     n2:
-      <<: *CCD
-      id: 6
+      <<: *n1
+      id: 5
+      serial : "18660"
       offset : [-28.0, 65.1]           # mm
-    m2:
-      <<: *CCD
-      id: 7
-      offset : [-28.0, 130.2]         # mm
+    m2:                                # == r2
+      <<: *r2
+      id: -4
 
     b3:
       <<: *CCD
-      id: 8
+      id: 6
+      serial : Hamamatsu b3
       offset : [37.1, -65.1]         # mm
-    r3:
+    r3: &r3
       <<: *CCD
-      id: 9
+      id: 7
+      serial : Hamamatsu r3
       offset : [37.1, 0.0]           # mm
     n3:
-      <<: *CCD
-      id: 10
+      <<: *n1
+      id: 8
+      serial : "18315"
       offset : [37.1, 65.1]           # mm
     m3:
-      <<: *CCD
-      id: 11
+      <<: *r3
+      id: -7                            # == r3
       offset : [37.1, 130.2]         # mm
 
     b4:
       <<: *CCD
-      id: 12
+      id: 9
+      serial : Hamamatsu b4
       offset : [102.2, -65.1]         # mm
-    r4:
+    r4: &r4
       <<: *CCD
-      id: 13
+      id: 10
+      serial : Hamamatsu r4
       offset : [102.2, 0.0]           # mm
     n4:
-      <<: *CCD
-      id: 14
+      <<: *n1
+      id: 11
+      serial : "TBD"
       offset : [102.2, 65.1]           # mm
     m4:
-      <<: *CCD
-      id: 15
-      offset : [102.2, 130.2]         # mm
+      <<: *r4
+      id: -10
     #
     # Now the autoguiders
     #

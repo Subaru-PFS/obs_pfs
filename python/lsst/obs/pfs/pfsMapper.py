@@ -1,12 +1,15 @@
 import os
+import re
 import numpy as np
 
 from astro_metadata_translator import fix_header
 
+from lsst.geom import BoxI, PointI, ExtentI
 from lsst.obs.base import CameraMapper, MakeRawVisitInfo
 import lsst.afw.image as afwImage
+from lsst.afw.fits import FitsError, readMetadata
 import lsst.afw.math as afwMath
-from lsst.daf.persistence import Policy
+from lsst.daf.persistence import LogicalLocation, Policy
 import lsst.utils as utils
 import lsst.obs.base.yamlCamera as yamlCamera
 from lsst.obs.base import FilterDefinition, FilterDefinitionCollection
@@ -173,6 +176,142 @@ class PfsMapper(CameraMapper):
 
             imArr[yslice, xslice] = ampPixels.reshape(ampshape)
 
+    @staticmethod
+    def lookupHdu(read, imType="IMAGE", md=None):
+        """Return the appropriate HDU in the PSFB file
+
+        E.g. im = butler.get("pfsb", dataId, hdu=lookupHdu("IMAGE", 10))
+
+        Parameters
+        ----------
+        read: `int`
+            The desired read of the device (1-indexed)
+        imType: `str`
+            Must be IMAGE or REF (case insensitive)
+        md: `lsst.daf.base.PropertyList`
+            Header from file (optional)
+            Used to validate read, and handle extra reset HDUs if present
+        """
+
+        if md:
+            nread = md.get("W_H4NRED")
+
+            if nread is not None and not (1 <= read <= nread):
+                raise RuntimeError(f"The read must be in the range 1..{nread}; saw {read}")
+
+        hdu = 2*read - 1 + dict(IMAGE=0, REF=1)[imType.upper()]
+
+        return hdu
+
+    def bypass_datasetExists_raw(self, datasetType, pythonType, butlerLocation, dataId):
+        """Gen2 magic to support bypass_raw"""
+        return self.bypass_raw(datasetType, pythonType, butlerLocation, dataId, checkExistence=True)
+
+    def bypass_raw(self, datasetType, pythonType, butlerLocation, dataId, checkExistence=False):
+        """Gen2 butler magic to handle reading "raw" H4RG files, which are CDS estimates not simple reads
+
+        No effect on reading CCD (bmr) data
+        """
+        if dataId['arm'] in "bmr":
+            raise IOError("Please ignore this bypass function for [bmr] data")  # exception => ignore
+
+        def readData(datasetType, butlerLocation, dataId, hdu=1, getMetadata=False, checkExistence=False):
+            """Internal routine to read or check for data"""
+            additionalData = butlerLocation.getAdditionalData()
+            locationString = butlerLocation.getLocations()[0]
+            locStringWithRoot = os.path.join(butlerLocation.getStorage().root, locationString)
+            logLoc = LogicalLocation(locStringWithRoot, additionalData)
+            # test for existence of file, ignoring trailing [...]
+            # because that can specify the HDU or other information
+            filePath = re.sub(r"(\.fits(.[a-zA-Z0-9]+)?)(\[.+\])$", r"\1", logLoc.locString())
+
+            if not os.path.exists(filePath):  # handle reruns
+                cfg = butlerLocation.storage.getRepositoryCfg(butlerLocation.storage.root)
+                for p in cfg.parents:
+                    nfilePath = os.path.join(p.root, locationString)
+                    if os.path.exists(nfilePath):
+                        filePath = nfilePath
+                        break
+
+            if checkExistence:             # we only want to know if the file exists
+                return os.path.exists(filePath)
+
+            if not os.path.exists(filePath):
+                raise RuntimeError("No such FITS file: " + logLoc.locString())
+
+            if getMetadata:
+                metadata = readMetadata(filePath, hdu=0)
+                fix_header(metadata, translator_class=PfsTranslator, filename=filePath)  # modified in-place
+
+                return metadata
+
+            if additionalData.get("llcX"):  # we were asked for a subimage
+                bbox = BoxI(PointI(additionalData["llcX"], additionalData["llcY"]),
+                            ExtentI(additionalData["width"], additionalData["height"]))
+                return afwImage.DecoratedImageF(filePath, hdu=hdu, bbox=bbox)
+            else:
+                return afwImage.DecoratedImageF(filePath, hdu=hdu)
+
+        if checkExistence:
+            return readData(datasetType, butlerLocation, dataId, checkExistence=True)
+
+        md = readData(datasetType, butlerLocation, dataId, getMetadata=True)
+        nread = md.get("W_H4NRED")
+        hasResetFrame = md["W_4FMTVR"] >= 3   # extra IMG/REF HDUs for the initial reset frame
+
+        hdu_img0 = 2 if hasResetFrame else 0   # hdu for first real read
+        #
+        # Process the data using CDS
+        #
+        data = {}
+        hdus = 2*np.array([1] if nread == 1 else [1, nread]) - 1
+        if "hdu" in dataId:
+            hdu = dataId["hdu"]
+            read = (hdu + 1)//2         # which read up the ramp do we want?
+            if read > nread:
+                raise RuntimeError(f"Requested read {read} (HDU {hdu}) is greater than W_H4NRED == {nread}")
+
+            hdus[-1] = hdu
+
+        if hdus[-1]%2 == 0:
+            raise RuntimeError(f"HDU {hdus[-1]} is a reference HDU")
+
+        for hdu in hdus:
+            read = (hdu + 1)//2         # which read up the ramp do we want?
+            try:
+                data[hdu] = readData(datasetType, butlerLocation, dataId, hdu=hdu + hdu_img0)
+            except FitsError as e:
+                self.log.warn("Unable to read IMAGE_%d (hdu %d): %s", read, hdu + hdu_img0, e)
+                continue
+
+            extname = data[hdu].getMetadata()["EXTNAME"]
+            if extname != f"IMAGE_{read}":
+                raise RuntimeError(f'Expected to see EXTNAME = IMAGE_{read}; saw {extname}')
+
+            try:
+                ref = readData(datasetType, butlerLocation, dataId, hdu=hdu + hdu_img0 + 1)
+            except FitsError as e:
+                self.log.warn("Unable to read REF_%d (hdu %d): %s", read, hdu + hdu_img0 + 1, e)
+                continue
+
+            extname = ref.getMetadata()["EXTNAME"]
+            if extname != f"REF_{read}":
+                raise RuntimeError(f'Expected to see EXTNAME = REF_{read}; saw {extname}')
+
+            im = data[hdu].image
+            im -= ref.image
+            del im
+
+        im = data[hdus[0]].image.array
+
+        if hdus[0] == hdus[-1]:         # we can't use CDS
+            self.log.warn("You are processing a single frame; not carrying out CDS")
+        else:
+            im = data[hdus[-1]].image              # data[hdu].image -= data[0].image doesn't work
+            im -= data[hdus[0]].image
+
+        return data[hdus[-1]]
+
     def std_raw(self, item, dataId):
         """Fixup raw image problems.
 
@@ -215,6 +354,18 @@ class PfsMapper(CameraMapper):
 
         if dataVersion is not None and dataVersion <= 0x0070:
             self._shiftAmpPixels(exp)
+
+        if np.nanmean(exp.variance.array) == 0:   # variance isn't set
+            gain = exp.getDetector()[0].getGain()
+
+            if exp.getFilterLabel().physicalLabel == 'n':
+                gain *= md["W_H4GAIN"]
+                var = exp.image.array/gain
+                var *= 2                        # CDS
+            else:
+                var = exp.image.array/gain
+
+            exp.variance.array[:] = var
 
         return exp
 
@@ -416,12 +567,25 @@ class PfsMapper(CameraMapper):
         `lsst.afw.image.Exposure`
             The standardized Exposure.
         """
-        return super()._standardizeExposure(
-            mapping,
-            item,
-            dataId,
-            filter=False,
-            trimmed=trimmed,
-            setVisitInfo=setVisitInfo,
-            setExposureId=setExposureId
-        )
+
+        if not (isinstance(item, afwImage.ExposureU) or isinstance(item, afwImage.ExposureI) or
+                isinstance(item, afwImage.ExposureF) or isinstance(item, afwImage.ExposureD)):
+            item = super()._standardizeExposure(
+                mapping,
+                item,
+                dataId,
+                filter=False,
+                trimmed=trimmed,
+                setVisitInfo=setVisitInfo,
+                setExposureId=setExposureId)
+
+        if item.getFilterLabel() is not None:
+            return item
+
+        actualId = mapping.need(["arm"], dataId)
+        filterName = actualId["arm"]
+        if self.filters is not None and filterName in self.filters:
+            filterName = self.filters[filterName]
+        item.setFilterLabel(afwImage.FilterLabel(band=filterName, physical=filterName))
+
+        return item
