@@ -316,7 +316,7 @@ CCDs : &CCDs
     n2:
       <<: *n1
       id: 5
-      serial : "18660"
+      serial : "18315"
       offset : [-28.0, 65.1]           # mm
     m2:                                # == r2
       <<: *r2
@@ -335,7 +335,7 @@ CCDs : &CCDs
     n3:
       <<: *n1
       id: 8
-      serial : "18315"
+      serial : "18660"
       offset : [37.1, 65.1]           # mm
     m3:
       <<: *r3
