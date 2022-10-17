@@ -1,0 +1,150 @@
+#!/bin/sh
+#
+# After PIPE2D-1094 the defects are stored in drp_pfs_data by their serial numbers, or
+# more precisely their sn numbers.  Unfortunately this does not in general correspond
+# to the spectrograph where the same detectors were installed for testing at JHU.
+# As of 2022-10-16 the mapping was:
+#
+# sn	serial	arm at JHU	arm at LAM	arm at MKO
+# sn1	18315	n3		n2	 
+# sn2	18660	n2	 	 
+# sn3	18321	 	 	 
+# sn4	18661
+#
+# This script rearranges the defects directory to agree with the per-site choices; the
+# mapping is given below at "MAPPING", and this table must be updated if that mapping
+# is changed.  git will know if you fail to do this, and it will tell the Project Office
+#
+jhu=0
+lam=0
+mko=0
+
+while [ "$1" != "" ]; do
+    case $1 in
+	-h|--help)
+	    cat <<'EOF';;
+Usage:
+ingestPfsDefects options STAGING_AREA ROOT [DRP_PFS_DATA_DIR] ingestCuratedCalibs-options
+E.g.
+TARGET=/projects/HSC/PFS/LAM
+#rm -f $TARGET/CALIB/calibRegistry.sqlite3 
+ingestPfsDefects --lam ~/sss/stagingArea $TARGET --calib $TARGET/CALIB --config clobber=True
+
+Options:
+	--jhu	Data is from JHU
+	--lam	Data is from LAM
+	--mko	Data is from Mauna Kea
+Exactly one of these must be provided. Other options:
+	-v	Set -v in shell
+	-x	Set -x in shell
+
+The data from DRP_PFS_DATA_DIR if provided (default: drp_pfs_data product directory) is
+copied to STAGING_AREA (which is first deleted and then recreated), and the directories
+containing H4RG defects are suitable renamed, and the DETECTOR values in the headers
+suitable patched.
+
+The command
+    ingestCuratedCalibs.py ROOT STAGING_AREA/pfs/defects "$@"
+is then run.  The STAGING_AREA is not deleted, but you're welcome to do so if you wish
+EOF
+	--jhu)
+	    jhu=1;;
+	--lam)
+	    lam=1;;
+	--mko)
+	    mko=1;;
+	-v)
+	    set -v;;
+	-x)
+	    set -x;;
+	-*)
+	    echo "Unrecognised option: $1" >&2;;
+	*)
+	    break;;
+    esac
+
+    shift
+done
+
+if [ $(expr $jhu + $lam + $mko) != 1 ]; then
+    echo "Please specify exactly one of --jhu --lam --mko ($jhu $lam $mko)" >&2
+    exit 1
+fi
+
+if [ $# -lt 2 ]; then
+    echo "ingestPfsDefects stagingArea input [defectsDir] [ingestion options]" >&2
+    exit 1
+fi
+
+stagingArea=$1; shift
+input=$1; shift
+
+while [ "$1" != "" ]; do
+    case $1 in
+	-*)
+	    break;;
+	*)
+	    args="$args $1";;
+    esac
+
+    shift
+done
+
+if [ X$args != X ]; then
+    defectsDir=$1; shift
+fi
+
+if [ X$defectsDir = X"" ]; then
+    if [ X$DRP_PFS_DATA_DIR = X"" ]; then
+	echo "Please specify defectsDir or setup drp_pfs_data and try again" >&2
+	exit 1
+    fi
+
+    defectsDir=$DRP_PFS_DATA_DIR/curated/pfs/defects
+fi
+
+rm -rf $stagingArea/pfs
+mkdir -p $stagingArea/pfs
+cp -r $defectsDir $stagingArea/pfs
+
+cd $stagingArea/pfs/defects || exit 1
+
+#
+# These mv commands define the mapping from snX to nY for each location.
+# XXX indicates that we don't yet know the correct answer.
+#
+# Yes, it would be better to move these to a configuration file and out
+# of this script, but it's not entirely clear that it's worth it.  Once
+# all the detectors are in their final places at MKO we won't need to
+# update this mapping ever again.
+#
+# MAPPING
+if [ $jhu = 1 ]; then
+    mv sn1 n3
+    mv sn2 n2
+    mv sn3 n1				# XXX
+    mv sn4 n4				# XXX
+elif [ $lam = 1 ]; then
+    mv sn1 n2
+    mv sn2 n1				# XXX
+    mv sn3 n3				# XXX
+    mv sn4 n4				# XXX
+elif [ $mko = 1 ]; then
+    mv sn1 n1				# XXX
+    mv sn2 n2				# XXX
+    mv sn3 n3				# XXX
+    mv sn4 n4				# XXX
+fi
+#
+# The detector number (nY) used to create the defects is in the headers;
+# patch this to match the detector number where they are now installed
+#
+for d in n1 n2 n3 n4; do
+    n=$(echo $d | sed -e 's/^n//')
+    det=$(echo "2 + 3*($n - 1)" | bc)
+    perl -i.bak -pe "s/(DETECTOR:)\s+\d+/\1 $det/" $stagingArea/pfs/defects/$d/*
+done
+#
+# Finally do the actual injection
+#
+ingestCuratedCalibs.py $input $stagingArea/pfs/defects "$@"
