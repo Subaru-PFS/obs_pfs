@@ -515,6 +515,9 @@ class PfsIsrTask(ipIsr.IsrTask):
         if self.config.doDefect:
             super().maskAndInterpolateDefects(exposure, defects)
 
+        if self.config.maskNegativeVariance:
+            super().maskNegativeVariance(exposure)
+
         nQuarter = exposure.getDetector().getOrientation().getNQuarter()
         if nQuarter != 0:
             exposure.maskedImage = afwMath.rotateImageBy90(exposure.maskedImage, nQuarter)
