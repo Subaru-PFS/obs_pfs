@@ -344,6 +344,9 @@ class PfsMapper(CameraMapper):
         """
         exp = super(PfsMapper, self).std_raw(item, dataId)
 
+        if dataId.get('arm') in "bmr":  # regular CCD data
+            return exp
+
         filename = self.map("raw_filename", dataId).getLocations()[0]
         md = exp.getMetadata()
         fix_header(md, translator_class=PfsTranslator, filename=filename)
