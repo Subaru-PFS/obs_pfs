@@ -344,6 +344,9 @@ class PfsMapper(CameraMapper):
         """
         exp = super(PfsMapper, self).std_raw(item, dataId)
 
+        if dataId.get('arm') in "bmr":  # regular CCD data
+            return exp
+
         filename = self.map("raw_filename", dataId).getLocations()[0]
         md = exp.getMetadata()
         fix_header(md, translator_class=PfsTranslator, filename=filename)
@@ -356,7 +359,10 @@ class PfsMapper(CameraMapper):
             self._shiftAmpPixels(exp)
 
         if np.nanmean(exp.variance.array) == 0:   # variance isn't set
-            gain = exp.getDetector()[0].getGain()
+            channel = exp.getDetector()[0]            # an H4RG/ROIC/SAM "channel", not really an amplifier
+            if len(exp.getDetector()) != 1:
+                raise RuntimeError(f"Rewrite me now we have {len(exp.getDetector())} channels")
+            gain = channel.getGain()
 
             if exp.getFilterLabel().physicalLabel == 'n':
                 gain *= md["W_H4GAIN"]
@@ -365,7 +371,7 @@ class PfsMapper(CameraMapper):
             else:
                 var = exp.image.array/gain
 
-            exp.variance.array[:] = var
+            exp.variance.array[:] = var + channel.getReadNoise()**2
 
         return exp
 
