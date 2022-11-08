@@ -363,6 +363,41 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         return result
 
+    def getIsrExposure(self, dataRef, datasetType, dateObs=None, immediate=True):
+        """Retrieve a calibration dataset for removing instrument signature.
+
+        This override refuses to load bias and dark for ``arm=n``: we don't
+        use them in ``runH4RG``.
+
+        Parameters
+        ----------
+        dataRef : `daf.persistence.butlerSubset.ButlerDataRef`
+            DataRef of the detector data to find calibration datasets
+            for.
+        datasetType : `str`
+            Type of dataset to retrieve (e.g. 'bias', 'flat', etc).
+        dateObs : `str`, optional
+            Date of the observation.  Used to correct butler failures
+            when using fallback filters.
+        immediate : `Bool`
+            If True, disable butler proxies to enable error handling
+            within this routine.
+
+        Returns
+        -------
+        exposure : `lsst.afw.image.Exposure` or `None`
+            Requested calibration frame, or `None` if not required.
+
+        Raises
+        ------
+        RuntimeError
+            Raised if no matching calibration frame can be found.
+        """
+        arm = dataRef.dataId["arm"]
+        if arm == "n" and datasetType in ("bias", "dark"):
+            return None
+        return super().getIsrExposure(dataRef, datasetType, dateObs=dateObs, immediate=immediate)
+
     def run(self, ccdExposure, **kwargs):
         """Perform instrument signature removal on an exposure.
 
