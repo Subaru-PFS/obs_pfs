@@ -36,6 +36,7 @@ class PfsRawVisitInfo(MakeRawVisitInfo):
         # Done setting argDict; check values now that all the header keywords have been consumed
         #
         argDict["darkTime"] = self.getDarkTime(argDict)
+        argDict["id"] = argDict["exposureId"]
 
     def getDarkTime(self, argDict):
         """Retrieve the dark time from an argDict, waiting to be passed to the VisitInfo ctor"""
