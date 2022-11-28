@@ -1,0 +1,63 @@
+# Columns:
+# 1: wavelength (nm)
+# 2: intensity (arbitrary units)
+# 3: description (ionic species)
+# 4: status (bitmask)
+# 5: transition
+# 6: source reference
+#
+# Source bitmask elements:
+# NONE=0: No source information available
+# MANUAL=1: Lines added or modified by hand
+# NIST=2: Lines taken from NIST
+# OSTERBROCK97=4: Osterbrock+1996 (1996PASP..108..277O) and Osterbrock+1997 (1997PASP..109..614O)
+# ROUSSELOT2000=8: Rousselot+2000 (2000A&A...354.1134R)
+# SDSS=16: Lines taken from SDSS
+
+# Emission lines
+103.382     0.0     OVI        0       Galaxy      16
+121.524     0.0     Lyα        0       Galaxy      16
+124.081     0.0     NV         0       Galaxy      16
+130.553     0.0     OI         0       Galaxy      16
+133.531     0.0     CII        0       Galaxy      16
+139.761     0.0     SiIV       0       Galaxy      16
+139.98      0.0     SiIV+OIV   0       Galaxy      16
+154.948     0.0     CIV        0       Galaxy      16
+164.04      0.0     HeII       0       Galaxy      16
+166.585     0.0     OIII]      0       Galaxy      16
+185.74      0.0     AlIII      0       Galaxy      16
+190.8734    0.0     CIII]      0       Galaxy      16
+232.60      0.0     CII]       0       Galaxy      16
+243.95      0.0     NeIV       0       Galaxy      16
+279.9117    0.0     MgII]      0       Galaxy      16
+334.679     0.0     [NeV]      0       Galaxy      16
+342.685     0.0     [NeV]      0       Galaxy      16
+372.7092    0.0     [OII]      0       Galaxy      16
+372.9875    0.0     [OII]      0       Galaxy      16
+386.9857    0.0     [NeIII]    0       Galaxy      0  # http://astronomy.nmsu.edu/drewski/tableofemissionlines.html
+388.90      0.0     HeI        0       Galaxy      16
+407.23      0.0     [SII]      0       Galaxy      16
+410.289     0.0     Hδ         0       Galaxy      16
+434.168     0.0     Hγ         0       Galaxy      16
+436.4436    0.0     [OIII]     0       Galaxy      16
+486.268     0.0     Hβ         0       Galaxy      16
+493.2603    0.0     [OIII]     0       Galaxy      16
+496.0295    0.0     [OIII]     0       Galaxy      16
+500.8240    0.0     [OIII]     0       Galaxy      16
+630.2046    0.0     [OI]       0       Galaxy      16
+636.5536    0.0     [OI]       0       Galaxy      16
+#652.903     0.0     NI         0       Galaxy      16  # Not in http://astronomy.nmsu.edu/drewski/tableofemissionlines.html
+654.986     0.0     [NII]      0       Galaxy      16
+656.461     0.0     Hα         0       Galaxy      16
+658.527     0.0     [NII]      0       Galaxy      16
+671.829     0.0     [SII]      0       Galaxy      16
+673.267     0.0     [SII]      0       Galaxy      16
+# Absorption Lines
+393.4777    0.0     K          0       Galaxy      16
+396.9588    0.0     H          0       Galaxy      16
+430.561     0.0     G          0       Galaxy      16
+517.67      0.0     Mg         0       Galaxy      16
+589.56      0.0     Na         0       Galaxy      16
+850.036     0.0     CaII       0       Galaxy      16
+854.444     0.0     CaII       0       Galaxy      16
+866.452     0.0     CaII       0       Galaxy      16
