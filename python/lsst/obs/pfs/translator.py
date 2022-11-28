@@ -23,7 +23,7 @@ class PfsTranslator(SubaruTranslator):
     supported_instrument = "PFS"
     """Supports the PFS instrument."""
 
-    default_search_path = os.path.join(getPackageDir("obs_pfs"), "corrections")
+    default_search_path = [os.path.join(getPackageDir("obs_pfs"), "corrections")]
     """Default search path to use to locate header correction files."""
 
     default_resource_root = os.path.join(getPackageDir("obs_pfs"), "corrections")
