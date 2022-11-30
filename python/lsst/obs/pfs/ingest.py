@@ -704,7 +704,7 @@ class PfsIngestTask(IngestTask):
             except Exception as exc:
                 raise IngestError(f"Failed to register file {infile}", infile, pos) from exc
 
-        if hduInfoList[0]["category"] == "A":
+        if hduInfoList[0]["category"] in ("A", "B"):
             pfsConfigDir = args.pfsConfigDir if args.pfsConfigDir is not None else os.path.dirname(infile)
             self.ingestPfsConfig(pfsConfigDir, hduInfoList[0], args)
 
