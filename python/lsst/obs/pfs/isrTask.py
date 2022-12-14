@@ -18,8 +18,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-from typing import Optional
-
 import numpy as np
 import numpy.linalg
 import lsst.log
@@ -29,7 +27,6 @@ from lsst.daf.persistence.butlerExceptions import NoResults
 
 import lsst.afw.display as afwDisplay
 import lsst.afw.math as afwMath
-from lsst.afw.image import ExposureF
 import lsst.ip.isr as ipIsr
 from lsst.ip.isr.assembleCcdTask import AssembleCcdTask
 from lsst.ip.isr import isrQa
@@ -151,31 +148,6 @@ but if you have a sufficiently large cosmic ray flux you might want to reconside
     # these numbers are a hand-tuned guess by RHL.  They will be replaced by spatially-resolved
     # measurements from Eddie Berger any day now. PIPE2D-1071
     ipcCoeffs = pexConfig.ListField(dtype=float, default=[13e-3, 6e-3], doc="IPC coefficients in x and y")
-
-    doDichroic = pexConfig.Field(dtype=bool, default=True, doc="Subtract background at dichroic?")
-    dichroicMask = pexConfig.ListField(
-        dtype=str,
-        default=["SAT", "BAD", "NO_DATA"],
-        doc="Mask planes to ignore for dichroic background subtraction",
-    )
-    dichroicTop = pexConfig.DictField(
-        keytype=str,
-        itemtype=int,
-        default=dict(
-            b=50,
-            r=50,
-        ),
-        doc="Number of rows to use for dichroic background subtraction at top of detector, indexed by arm",
-    )
-    dichroicBottom = pexConfig.DictField(
-        keytype=str,
-        itemtype=int,
-        default=dict(
-            r=50,
-            n=50,
-        ),
-        doc="Number of rows to use for dichroic background subtraction at bottom of detector, indexed by arm",
-    )
 
     def setDefaults(self):
         super().setDefaults()
@@ -463,14 +435,9 @@ class PfsIsrTask(ipIsr.IsrTask):
         exposure = ccdExposure                         # argument must be called "ccdExposure"; PIPE2D-1093
 
         if exposure.getFilterLabel().bandLabel == 'n':  # treat H4RGs specially
-            result = self.runH4RG(exposure, **kwargs)
+            return self.runH4RG(exposure, **kwargs)
         else:
-            result = self.runCCD(exposure, **kwargs)
-
-        if self.config.doDichroic:
-            self.dichroicBackground(result.exposure, exposure.getFilterLabel().bandLabel)
-
-        return result
+            return self.runCCD(exposure, **kwargs)
 
     def runCCD(self, ccdExposure, **kwargs):
         """Perform instrument signature removal on a CCD exposure.
@@ -755,61 +722,6 @@ class PfsIsrTask(ipIsr.IsrTask):
             data.scaledMinus(scale, dark)
 
         return finalScale
-
-    def dichroicBackground(self, exposure: ExposureF, arm: str):
-        """Remove any diffuse background in the dichroic region
-
-        Parameters
-        ----------
-        exposure : `lsst.afw.image.Exposure`
-            Exposure to process.
-        arm : `str`
-            Arm of the spectrograph (``b``, ``r``, ``n``, ``m``).
-        """
-        topRows = self.config.dichroicTop.get(arm, None)
-        bottomRows = self.config.dichroicBottom.get(arm, None)
-
-        bitmask = exposure.mask.getPlaneBitMask(self.config.dichroicMask)
-
-        def measureBackground(rows: slice) -> float:
-            """Measure the background in the given rows
-
-            Parameters
-            ----------
-            rows : `slice`
-                Rows to measure.
-
-            Returns
-            -------
-            background `float`
-                Median background in the given rows.
-            """
-            image = exposure.image.array[rows, :]
-            mask = exposure.mask.array[rows, :]
-            good = (mask & bitmask) == 0
-            return np.median(image[good])
-
-        top = measureBackground(slice(-topRows, exposure.getHeight())) if topRows else None
-        bottom = measureBackground(slice(bottomRows)) if bottomRows else None
-
-        breakpoint()
-
-        if top is not None and bottom is not None:
-            # Subtract a ramp across the image
-            height = exposure.getHeight()
-            yBottom = 0.5*bottomRows
-            yTop = height - 0.5*topRows
-            yy = np.arange(height)
-            slope = (top - bottom)/(yTop - yBottom)
-            background = (yy - yBottom)*slope + bottom
-            exposure.image.array -= background[:, np.newaxis]
-            self.log.info("Subtracting dichroic: bottom=%f top=%f", bottom, top)
-        elif top is not None:
-            exposure.image.array -= top
-            self.log.info("Subtracting dichroic: top=%f", top)
-        elif bottom is not None:
-            exposure.image.array -= bottom
-            self.log.info("Subtracting dichroic: bottom=%f", bottom)
 
     def roughZeroPoint(self, exposure):
         """Set an approximate magnitude zero point for the exposure.
