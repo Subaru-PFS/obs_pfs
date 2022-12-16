@@ -531,7 +531,7 @@ class PfsIngestArgumentParser(IngestArgumentParser):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.add_argument("--pfsConfigDir",
-                          help="Directory with pfsConfig/pfsDesign files (default: with images)")
+                          help="Base directory with pfsConfig/pfsDesign files (default: with images)")
 
 
 class PfsIngestConfig(IngestConfig):
@@ -550,6 +550,62 @@ class PfsIngestTask(IngestTask):
     ArgumentParser = PfsIngestArgumentParser
     _DefaultName = "ingestPfs"
 
+    def findPfsConfig(self, dirName, fileInfo):
+        """Find a PfsConfig file
+
+        We search for the PfsConfig file in the following places, in order:
+        * ``dirName/``
+        * ``dirName/<dateObs>/pfsConfig/``
+
+        If the PfsConfig file is not found there, we search for a PfsDesign
+        file in the ``dirName`` directory, and use that to write a PfsConfig
+        file in the ``dirName/<dateObs>/pfsConfig`` directory.
+
+        Parameters
+        ----------
+        dirName : `str`
+            (Base) directory in which the file resides.
+        fileInfo : `dict`
+            Key-value pairs defining the file.
+
+        Returns
+        -------
+        path : `str`
+            Path to the PfsConfig file.
+
+        Raises
+        ------
+        RuntimeError
+            If no PfsConfig or PfsDesign file can be found.
+        """
+        pfsDesignId = fileInfo["pfsDesignId"]
+        visit = fileInfo["visit"]
+        fileName = PfsConfig.fileNameFormat % (pfsDesignId, visit)
+
+        path = os.path.join(dirName, fileName)
+        if os.path.exists(path):
+            return path
+        dateDirName = os.path.join(dirName, fileInfo["dateObs"], "pfsConfig")
+        path = os.path.join(dateDirName, fileName)
+        if os.path.exists(path):
+            return path
+
+        self.log.warn(
+            "Unable to find PfsConfig file for pfsDesignId=0x%016x, visit=%d; using pfsDesign",
+            pfsDesignId,
+            visit,
+        )
+
+        designName = os.path.join(dirName, PfsDesign.fileNameFormat % (pfsDesignId,))
+        if not os.path.exists(designName):
+            raise RuntimeError(f"Unable to find PfsConfig or PfsDesign for pfsDesignId=0x{pfsDesignId:016x}")
+        design = PfsDesign.read(pfsDesignId, dirName)
+        if not os.path.exists(dateDirName):
+            os.makedirs(dateDirName)
+        PfsConfig.fromPfsDesign(design, visit, design.pfiNominal).write(dateDirName)
+        assert os.path.exists(path), f"Failed to write pfsConfig at expected path: {path}"
+        return path
+
     def ingestPfsConfig(self, dirName, fileInfo, args):
         """Ingest a PfsConfig file
 
@@ -566,22 +622,7 @@ class PfsIngestTask(IngestTask):
         if os.path.exists(outfile):
             # Don't clobber one that got put there when we ingested a different spectrograph,arm
             return
-
-        pfsDesignId = fileInfo["pfsDesignId"]
-        visit = fileInfo["visit"]
-        fileName = PfsConfig.fileNameFormat % (pfsDesignId, visit)
-        infile = os.path.join(dirName, fileName)
-        if os.path.exists(infile):
-            self.ingest(infile, outfile, mode=args.mode, dryrun=args.dryrun)
-            return
-
-        # Check for a PfsDesign, and use that instead
-        designName = os.path.join(dirName, PfsDesign.fileNameFormat % (pfsDesignId,))
-        if not os.path.exists(designName):
-            raise RuntimeError("Unable to find PfsConfig or PfsDesign for pfsDesignId=0x%016x" %
-                               (pfsDesignId,))
-        design = PfsDesign.read(pfsDesignId, dirName)
-        PfsConfig.fromPfsDesign(design, visit, design.pfiNominal).write(dirName)
+        infile = self.findPfsConfig(dirName, fileInfo)
         self.ingest(infile, outfile, mode=args.mode, dryrun=args.dryrun)
 
     def ingest(self, infile, outfile, mode="move", dryrun=False):
