@@ -21,6 +21,7 @@
 import numpy as np
 import numpy.linalg
 import lsst.log
+import lsst.geom as geom                # noqa F401; used in eval(darkBBoxes)
 import lsst.pex.config as pexConfig
 from lsst.daf.persistence.butlerExceptions import NoResults
 
@@ -131,6 +132,17 @@ class PfsIsrTaskConfig(ipIsr.IsrTaskConfig):
     windowed = pexConfig.Field(dtype=bool, default=False,
                                doc="Reduction of windowed data, for real-time acquisition? Implies "
                                "overscanFitType=MEDIAN")
+    darkBBoxes = pexConfig.DictField(
+        keytype=str, itemtype=str,
+        default=dict(r3="[geom.BoxI(geom.PointI(4045, 2660), geom.PointI(4095, 2910))]"),
+        doc="List of BBoxes specifying pixels used to determine amplitude of dark frame")
+    fitDarkClipPercentiles = pexConfig.ListField(dtype=float, default=[0, 5],
+                                                 doc="""\
+Percentages used to clip data when using darkBBoxes to estimate dark amplitude; clipping
+is between value and 100 - value.
+
+The first value should probably always be zero, as we haven't removed any signal at that point,
+but if you have a sufficiently large cosmic ray flux you might want to reconsider.""")
 
     doIPC = pexConfig.Field(dtype=bool, default=False, doc="Correct for IPC?")
     # these numbers are a hand-tuned guess by RHL.  They will be replaced by spatially-resolved
@@ -151,6 +163,15 @@ class PfsIsrTaskConfig(ipIsr.IsrTaskConfig):
         if self.doApplyGains:
             raise RuntimeError("doApplyGains must be False: gains are applied automatically.")
 
+        for detName, bboxStr in self.darkBBoxes.items():
+            try:
+                eval(bboxStr)           # can't set self.darkBBoxes[detName] here as it fails type validation
+                estr = ""
+            except Exception as e:
+                estr = str(e)           # it's clearer not to raise within the try block
+
+            if estr:
+                raise ValueError("Malformed isr.darkBBoxes for %s \"%s\": %s" % (detName, bboxStr, estr))
 #
 # Code to handle the broken shutter matrix matrix inverse cache
 #
@@ -462,8 +483,25 @@ class PfsIsrTask(ipIsr.IsrTask):
                           self.config.brokenRedShutter.maximumAllowedParallelOverscanFraction, flux,
                           ("" if doBrokenRedShutter else "; assuming not broken"))
 
+        detName = ccdExposure.getDetector().getName()
+        darkBBoxes = self.config.darkBBoxes
+        if self.config.doDark and detName in darkBBoxes:
+            kwargs0 = kwargs            # initial kwargs
+            kwargs = kwargs.copy()
+            kwargs["dark"] = kwargs["dark"].clone()
+            kwargs["dark"].maskedImage *= 0         # disable dark correction
+
         results = super().run(ccdExposure, **kwargs)
         exposure = results.exposure
+
+        if self.config.doDark and detName in darkBBoxes:
+            bboxes = eval(darkBBoxes[detName])  # we checked that this is OK in PfsIsrTaskConfig.validate()
+
+            scale = self.darkCorrectionFromBBoxes(bboxes, exposure.maskedImage, kwargs0["dark"].maskedImage,
+                                                  self.config.fitDarkClipPercentiles)
+
+            darktime = exposure.info.getVisitInfo().getDarkTime()
+            self.log.info("Scaled dark exposure by %.1f (%.3f/second)", scale, scale/darktime)
 
         if doBrokenRedShutter and self.config.brokenRedShutter.useAnalytic:
             #
@@ -621,6 +659,61 @@ class PfsIsrTask(ipIsr.IsrTask):
             ampExp.mask.array[zeroData] |= ampExp.mask.getPlaneBitMask(["SAT", "NO_DATA"])
 
         return badAmp
+
+    def darkCorrectionFromBBoxes(self, bboxes, data, dark, clipPercentiles):
+        """Apply dark correction in place.
+
+        The amplitude is set by a robust estimate from the pixels specified by bboxes,
+        assumed to be un-contaminated by non-dark signal
+
+        Parameters
+        ----------
+        bboxes : `list` of `lsst.geom.Box2I`
+           Specify which pixels should be used to estimate amplitude
+        data : `lsst.afw.image.MaskedImage`
+           Image to process.  The image is modified by this method.
+        dark : `lsst.afw.image.MaskedImage`
+            Dark image of the same size as ``data``.
+        clipPercentiles : `list` of `float`
+           Percentiles at which we clip the data in each iteration
+
+        Raises
+        ------
+        """
+
+        # Start with a rough linear estimate (well, the MLE ignoring e.g. cosmic rays),
+        # then repeat, after clipping out the first and last n-percentiles
+
+        finalScale = 0                  # the scaling we applied to the dark when all iterations have finished
+        for i, clip in enumerate(clipPercentiles):
+            sumDataDark = 0
+            sumDarkDark = 0
+            for bbox in bboxes:
+                dataArr = data.image[bbox].array
+                darkArr = dark.image[bbox].array
+                var = data.variance[bbox].array
+
+                if clip > 0:
+                    qa, qb = np.percentile(dataArr, [clip, 100 - clip])
+                    keep = np.logical_and(dataArr > qa, dataArr < qb)
+
+                    self.log.debug("Iteration %d: clipping at %g: %.1f -- %.1f", i, clip, qa, qb)
+
+                    dataArr = dataArr[keep]
+                    darkArr = darkArr[keep]
+                    var = var[keep]
+
+                sumDataDark += np.sum(dataArr*darkArr/var)
+                sumDarkDark += np.sum(darkArr**2/var)
+
+            scale = sumDataDark/sumDarkDark
+            finalScale += scale
+
+            self.log.debug("Iteration %d: dark scaling %.1f", i, scale)
+
+            data.scaledMinus(scale, dark)
+
+        return finalScale
 
     def roughZeroPoint(self, exposure):
         """Set an approximate magnitude zero point for the exposure.
