@@ -168,7 +168,7 @@ but if you have a sufficiently large cosmic ray flux you might want to reconside
                 eval(bboxStr)           # can't set self.darkBBoxes[detName] here as it fails type validation
                 estr = ""
             except Exception as e:
-                estr = str(e)           # it's clearer not to raise within the try block
+                estr = str(e)           # it's clearer to the user if we don't raise within the try block
 
             if estr:
                 raise ValueError("Malformed isr.darkBBoxes for %s \"%s\": %s" % (detName, bboxStr, estr))
@@ -497,8 +497,7 @@ class PfsIsrTask(ipIsr.IsrTask):
         if self.config.doDark and detName in darkBBoxes:
             bboxes = eval(darkBBoxes[detName])  # we checked that this is OK in PfsIsrTaskConfig.validate()
 
-            scale = self.darkCorrectionFromBBoxes(bboxes, exposure.maskedImage, kwargs0["dark"].maskedImage,
-                                                  self.config.fitDarkClipPercentiles)
+            scale = self.darkCorrectionFromBBoxes(bboxes, exposure.maskedImage, kwargs0["dark"].maskedImage)
 
             darktime = exposure.info.getVisitInfo().getDarkTime()
             self.log.info("Scaled dark exposure by %.1f (%.3f/second)", scale, scale/darktime)
@@ -660,7 +659,7 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         return badAmp
 
-    def darkCorrectionFromBBoxes(self, bboxes, data, dark, clipPercentiles):
+    def darkCorrectionFromBBoxes(self, bboxes, data, dark):
         """Apply dark correction in place.
 
         The amplitude is set by a robust estimate from the pixels specified by bboxes,
@@ -674,31 +673,40 @@ class PfsIsrTask(ipIsr.IsrTask):
            Image to process.  The image is modified by this method.
         dark : `lsst.afw.image.MaskedImage`
             Dark image of the same size as ``data``.
-        clipPercentiles : `list` of `float`
-           Percentiles at which we clip the data in each iteration
 
-        Raises
-        ------
+        Returns
+        -------
+        scale : `float`
+           The scaling applied to the input dark image
         """
 
         # Start with a rough linear estimate (well, the MLE ignoring e.g. cosmic rays),
         # then repeat, after clipping out the first and last n-percentiles
 
         finalScale = 0                  # the scaling we applied to the dark when all iterations have finished
-        for i, clip in enumerate(clipPercentiles):
+        for i, clip in enumerate(self.config.fitDarkClipPercentiles):
             sumDataDark = 0
             sumDarkDark = 0
             for bbox in bboxes:
                 dataArr = data.image[bbox].array
                 darkArr = dark.image[bbox].array
+                mask = data.mask[bbox].array | dark.mask[bbox].array
                 var = data.variance[bbox].array
+
+                keep = (mask & data.mask.getPlaneBitMask(["SAT", "NO_DATA"])) == 0x0
 
                 if clip > 0:
                     qa, qb = np.percentile(dataArr, [clip, 100 - clip])
-                    keep = np.logical_and(dataArr > qa, dataArr < qb)
+                    keep = np.logical_and(keep, np.logical_and(dataArr > qa, dataArr < qb))
 
                     self.log.debug("Iteration %d: clipping at %g: %.1f -- %.1f", i, clip, qa, qb)
 
+                ngood = np.sum(keep)
+                if ngood == 0:
+                    self.log.warn("Iteration %d: There are no good pixels", i)
+                    return finalScale
+
+                if ngood < keep.size:
                     dataArr = dataArr[keep]
                     darkArr = darkArr[keep]
                     var = var[keep]
