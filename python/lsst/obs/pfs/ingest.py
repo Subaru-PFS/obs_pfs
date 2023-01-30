@@ -733,6 +733,12 @@ class PfsIngestTask(IngestTask):
                 return None
             self.log.warning("%s: already ingested: %s", infile, fileInfo)
         outfile = self.parse.getDestination(args.butler, fileInfo, infile)
+
+        # Ingest pfsConfig. If it does not exist, don't ingest further.
+        if hduInfoList[0]["category"] in ("A", "B"):
+            pfsConfigDir = args.pfsConfigDir if args.pfsConfigDir is not None else os.path.dirname(infile)
+            self.ingestPfsConfig(pfsConfigDir, hduInfoList[0], args)
+
         if not self.ingest(infile, outfile, mode=args.mode, dryrun=args.dryrun):
             return None
         if hduInfoList is None:
@@ -744,10 +750,6 @@ class PfsIngestTask(IngestTask):
                 self.register.addRow(registry, info, dryrun=args.dryrun, create=args.create)
             except Exception as exc:
                 raise IngestError(f"Failed to register file {infile}", infile, pos) from exc
-
-        if hduInfoList[0]["category"] in ("A", "B"):
-            pfsConfigDir = args.pfsConfigDir if args.pfsConfigDir is not None else os.path.dirname(infile)
-            self.ingestPfsConfig(pfsConfigDir, hduInfoList[0], args)
 
         return None  # No further registration should be performed
 
