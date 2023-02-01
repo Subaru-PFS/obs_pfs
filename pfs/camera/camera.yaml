@@ -258,35 +258,35 @@ CCDs : &CCDs
             "0":
                 <<: *A0
                 gain : 1.32
-                readNoise : 6
+                readNoise : 4.69
             "1":
                 <<: *A1
                 gain : 1.31
-                readNoise : 6
+                readNoise : 4.70
             "2":
                 <<: *A2
                 gain : 1.34
-                readNoise : 6
+                readNoise : 5.28
             "3":
                 <<: *A3
                 gain : 1.26
-                readNoise : 6
+                readNoise : 4.72
             "4":
                 <<: *A4
                 gain : 1.36
-                readNoise : 6
+                readNoise : 4.72
             "5":
                 <<: *A5
                 gain : 1.31
-                readNoise : 6
+                readNoise : 4.73
             "6":
                 <<: *A6
                 gain : 1.34
-                readNoise : 6
+                readNoise : 4.90
             "7":
                 <<: *A7
                 gain : 1.26
-                readNoise : 6
+                readNoise : 5.11
 
     n1 : &n1
         << : *Detector
@@ -308,11 +308,77 @@ CCDs : &CCDs
       id: 3
       serial : Hamamatsu b2
       offset : [-28.0, -65.1]         # mm
+      amplifiers:
+        "0":
+          <<: *A0
+          gain: 1.295
+          readNoise: 4.81
+        "1":
+          <<: *A1
+          gain: 2.596
+          readNoise: 7.15
+        "2":
+          <<: *A2
+          gain: 1.319
+          readNoise: 4.42
+        "3":
+          <<: *A3
+          gain: 1.345
+          readNoise: 4.42
+        "4":
+          <<: *A4
+          gain: 1.349
+          readNoise: 4.78
+        "5":
+          <<: *A5
+          gain: 1.333
+          readNoise: 4.67
+        "6":
+          <<: *A6
+          gain: 1.363
+          readNoise: 4.88
+        "7":
+          <<: *A7
+          gain: 1.326
+          readNoise: 4.57
     r2: &r2
       <<: *CCD
       id: 4
       serial : Hamamatsu r2
       offset : [-28.0, 0.0]           # mm
+      amplifiers:
+        "0":
+          <<: *A0
+          gain: 1.090
+          readNoise: 3.84
+        "1":
+          <<: *A1
+          gain: 1.093
+          readNoise: 3.74
+        "2":
+          <<: *A2
+          gain: 1.084
+          readNoise: 3.78
+        "3":
+          <<: *A3
+          gain: 1.087
+          readNoise: 3.83
+        "4":
+          <<: *A4
+          gain: 1.043
+          readNoise: 3.70
+        "5":
+          <<: *A5
+          gain: 1.070
+          readNoise: 4.54
+        "6":
+          <<: *A6
+          gain: 1.065
+          readNoise: 4.61
+        "7":
+          <<: *A7
+          gain: 1.108
+          readNoise: 3.82
     n2:
       <<: *n1
       id: 5
@@ -327,11 +393,77 @@ CCDs : &CCDs
       id: 6
       serial : Hamamatsu b3
       offset : [37.1, -65.1]         # mm
+      amplifiers:
+        "0":
+          <<: *A0
+          gain: 1.235
+          readNoise: 4.06
+        "1":
+          <<: *A1
+          gain: 1.243
+          readNoise: 3.97
+        "2":
+          <<: *A2
+          gain: 1.268
+          readNoise: 3.98
+        "3":
+          <<: *A3
+          gain: 1.224
+          readNoise: 3.97
+        "4":
+          <<: *A4
+          gain: 1.178
+          readNoise: 4.11
+        "5":
+          <<: *A5
+          gain: 1.220
+          readNoise: 3.94
+        "6":
+          <<: *A6
+          gain: 1.224
+          readNoise: 4.05
+        "7":
+          <<: *A7
+          gain: 1.236
+          readNoise: 4.02
     r3: &r3
       <<: *CCD
       id: 7
       serial : Hamamatsu r3
       offset : [37.1, 0.0]           # mm
+      amplifiers:
+        "0":
+          <<: *A0
+          gain: 1.090
+          readNoise: 4.285
+        "1":
+          <<: *A1
+          gain: 1.093
+          readNoise: 3.64
+        "2":
+          <<: *A2
+          gain: 1.083
+          readNoise: 3.67
+        "3":
+          <<: *A3
+          gain: 1.087
+          readNoise: 3.70
+        "4":
+          <<: *A4
+          gain: 1.040
+          readNoise: 3.47
+        "5":
+          <<: *A5
+          gain: 1.070
+          readNoise: 3.44
+        "6":
+          <<: *A6
+          gain: 1.064
+          readNoise: 3.56
+        "7":
+          <<: *A7
+          gain: 1.108
+          readNoise: 3.75
     n3:
       <<: *n1
       id: 8
@@ -347,11 +479,77 @@ CCDs : &CCDs
       id: 9
       serial : Hamamatsu b4
       offset : [102.2, -65.1]         # mm
+      amplifiers:
+        "0":
+          <<: *A0
+          gain: 1.223
+          readNoise: 4.38
+        "1":
+          <<: *A1
+          gain: 1.201
+          readNoise: 4.04
+        "2":
+          <<: *A2
+          gain: 1.207
+          readNoise: 4.09
+        "3":
+          <<: *A3
+          gain: 1.213
+          readNoise: 4.03
+        "4":
+          <<: *A4
+          gain: 1.249
+          readNoise: 4.35
+        "5":
+          <<: *A5
+          gain: 1.249
+          readNoise: 4.03
+        "6":
+          <<: *A6
+          gain: 1.256
+          readNoise: 4.12
+        "7":
+          <<: *A7
+          gain: 1.213
+          readNoise: 4.19
     r4: &r4
       <<: *CCD
       id: 10
       serial : Hamamatsu r4
       offset : [102.2, 0.0]           # mm
+      amplifiers:
+        "0":
+          <<: *A0
+          gain: 1.124
+          readNoise: 3.80
+        "1":
+          <<: *A1
+          gain: 1.092
+          readNoise: 3.78
+        "2":
+          <<: *A2
+          gain: 1.099
+          readNoise: 3.65
+        "3":
+          <<: *A3
+          gain: 1.075
+          readNoise: 3.77
+        "4":
+          <<: *A4
+          gain: 1.065
+          readNoise: 3.63
+        "5":
+          <<: *A5
+          gain: 1.057
+          readNoise: 3.53
+        "6":
+          <<: *A6
+          gain: 1.053
+          readNoise: 3.54
+        "7":
+          <<: *A7
+          gain: 1.074
+          readNoise: 3.73
     n4:
       <<: *n1
       id: 11
