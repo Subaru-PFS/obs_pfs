@@ -155,7 +155,7 @@ class PfsTranslator(SubaruTranslator):
         if "DARKTIME" in self._header:
             darkTime = self._header["DARKTIME"]
             self._used_these_cards("DARKTIME")
-            return (darkTime, dict(unit=u.s))
+            return darkTime*u.s
         return self.to_exposure_time()
 
     @cache_translation
