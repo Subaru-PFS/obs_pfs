@@ -257,36 +257,36 @@ CCDs : &CCDs
         amplifiers:
             "0":
                 <<: *A0
-                gain : 1.32
-                readNoise : 4.69
+                gain : 1.336
+                readNoise : 4.109
             "1":
                 <<: *A1
-                gain : 1.31
-                readNoise : 4.70
+                gain : 1.304
+                readNoise : 3.994
             "2":
                 <<: *A2
-                gain : 1.34
-                readNoise : 5.28
+                gain : 1.343
+                readNoise : 4.064
             "3":
                 <<: *A3
-                gain : 1.26
-                readNoise : 4.72
+                gain : 1.271
+                readNoise : 4.04
             "4":
                 <<: *A4
-                gain : 1.36
-                readNoise : 4.72
+                gain : 1.336
+                readNoise : 4.172
             "5":
                 <<: *A5
-                gain : 1.31
-                readNoise : 4.73
+                gain : 1.322
+                readNoise : 4.056
             "6":
                 <<: *A6
-                gain : 1.34
-                readNoise : 4.90
+                gain : 1.344
+                readNoise : 4.097
             "7":
                 <<: *A7
-                gain : 1.26
-                readNoise : 5.11
+                gain : 1.273
+                readNoise : 4.452
 
     n1 : &n1
         << : *Detector
@@ -396,36 +396,36 @@ CCDs : &CCDs
       amplifiers:
         "0":
           <<: *A0
-          gain: 1.235
-          readNoise: 4.06
+          gain: 1.217
+          readNoise: 3.885
         "1":
           <<: *A1
-          gain: 1.243
-          readNoise: 3.97
+          gain: 1.248
+          readNoise: 3.824
         "2":
           <<: *A2
-          gain: 1.268
-          readNoise: 3.98
+          gain: 1.246
+          readNoise: 3.823
         "3":
           <<: *A3
-          gain: 1.224
-          readNoise: 3.97
+          gain: 1.195
+          readNoise: 3.825
         "4":
           <<: *A4
-          gain: 1.178
-          readNoise: 4.11
+          gain: 1.175
+          readNoise: 3.999
         "5":
           <<: *A5
-          gain: 1.220
-          readNoise: 3.94
+          gain: 1.1999
+          readNoise: 3.81
         "6":
           <<: *A6
-          gain: 1.224
-          readNoise: 4.05
+          gain: 1.22
+          readNoise: 3.891
         "7":
           <<: *A7
-          gain: 1.236
-          readNoise: 4.02
+          gain: 1.232
+          readNoise: 3.874
     r3: &r3
       <<: *CCD
       id: 7
