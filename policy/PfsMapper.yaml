@@ -65,6 +65,8 @@ calibrations:
     python: lsst.ip.isr.Defects
     refCols:
     - visit
+    - arm
+    - spectrograph
     reference: raw
     storage: FitsStorage
     tables: defects
