@@ -148,6 +148,7 @@ but if you have a sufficiently large cosmic ray flux you might want to reconside
     # these numbers are a hand-tuned guess by RHL.  They will be replaced by spatially-resolved
     # measurements from Eddie Berger any day now. PIPE2D-1071
     ipcCoeffs = pexConfig.ListField(dtype=float, default=[13e-3, 6e-3], doc="IPC coefficients in x and y")
+    doMedianInterpolation = pexConfig.Field(dtype=bool, default=False, doc="Do median interpolation.")
 
     def setDefaults(self):
         super().setDefaults()
@@ -585,7 +586,10 @@ class PfsIsrTask(ipIsr.IsrTask):
             self.correctIPC(exposure, defects, self.config.ipcCoeffs)
 
         if self.config.doDefect:
-            super().maskAndInterpolateDefects(exposure, defects)
+            if self.config.doMedianInterpolation:
+                self.maskAndMedianInterpDefects(exposure, defects)
+            else:
+                super().maskAndInterpolateDefects(exposure, defects)
 
         if self.config.maskNegativeVariance:
             super().maskNegativeVariance(exposure)
@@ -626,6 +630,31 @@ class PfsIsrTask(ipIsr.IsrTask):
             afwDisplay.setDefaultMaskPlaneColor("IPC", "GREEN")
 
         exposure.mask.array[ipcmodel != 0] |= exposure.mask.getPlaneBitMask("IPC")
+
+    def maskAndMedianInterpDefects(self, exposure, defects):
+        self.maskDefect(exposure, defects)
+
+        # Pad the input array with zeros so that we don't have to worry about edge cases.
+        shape = exposure.image.array.shape
+        padded_data = np.ma.ones((shape[0] + 2, shape[1] + 2), dtype='float32') * np.nan
+        padded_data.mask = np.ones(padded_data.shape, dtype='bool')
+
+        mask = exposure.maskedImage.getMask()
+        mask = (mask.array & mask.getPlaneBitMask('BAD')).astype('bool')
+
+        padded_data[1:-1, 1:-1] = exposure.image.array
+        padded_data.mask[1:-1, 1:-1] = mask
+
+        i, j = np.indices(shape)
+        roi_indices = np.indices((3, 3))
+
+        i_indices = i[:, :, None, None] + roi_indices[0]
+        j_indices = j[:, :, None, None] + roi_indices[1]
+        roi = padded_data[i_indices, j_indices]
+
+        # Compute the median of each window along the last two dimensions.
+        res = np.ma.median(roi, axis=(2, 3))
+        exposure.image.array[mask] = res[mask]
 
     def maskAmplifier(self, exposure, amp, defects):
         """Mask bad pixels in amplifier
