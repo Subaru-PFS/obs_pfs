@@ -18,20 +18,19 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import numpy as np
-import numpy.linalg
-import lsst.log
-import lsst.geom as geom                # noqa F401; used in eval(darkBBoxes)
-import lsst.pex.config as pexConfig
-from lsst.daf.persistence.butlerExceptions import NoResults
-
 import lsst.afw.display as afwDisplay
 import lsst.afw.math as afwMath
+import lsst.geom as geom  # noqa F401; used in eval(darkBBoxes)
 import lsst.ip.isr as ipIsr
-from lsst.ip.isr.assembleCcdTask import AssembleCcdTask
-from lsst.ip.isr import isrQa
-from lsst.utils.timer import timeMethod
+import lsst.log
+import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
+import numpy as np
+import numpy.linalg
+from lsst.daf.persistence.butlerExceptions import NoResults
+from lsst.ip.isr import isrQa
+from lsst.ip.isr.assembleCcdTask import AssembleCcdTask
+from lsst.utils.timer import timeMethod
 
 ___all__ = ["IsrTask", "IsrTaskConfig"]
 
@@ -47,7 +46,7 @@ class BrokenShutterConfig(pexConfig.Config):
     maximumAllowedParallelOverscanFraction = \
         pexConfig.Field(dtype=float, default=0.01,
                         doc="Largest permitted fraction of flux seen "
-                        "in parallel overscan if shutter's working")
+                            "in parallel overscan if shutter's working")
 
     useAnalytic = pexConfig.Field(dtype=bool, default=False,
                                   doc="Use an analytic correction")
@@ -131,7 +130,7 @@ class PfsIsrTaskConfig(ipIsr.IsrTaskConfig):
     )
     windowed = pexConfig.Field(dtype=bool, default=False,
                                doc="Reduction of windowed data, for real-time acquisition? Implies "
-                               "overscanFitType=MEDIAN")
+                                   "overscanFitType=MEDIAN")
     darkBBoxes = pexConfig.DictField(
         keytype=str, itemtype=str,
         default=dict(r3="[geom.BoxI(geom.PointI(4045, 2660), geom.PointI(4095, 2910))]"),
@@ -149,6 +148,7 @@ but if you have a sufficiently large cosmic ray flux you might want to reconside
     # measurements from Eddie Berger any day now. PIPE2D-1071
     ipcCoeffs = pexConfig.ListField(dtype=float, default=[13e-3, 6e-3], doc="IPC coefficients in x and y")
     doMedianInterpolation = pexConfig.Field(dtype=bool, default=False, doc="Do median interpolation.")
+    doRotateH4 = pexConfig.Field(dtype=bool, default=False, doc="rotate H4 image to match CCDs ?")
 
     def setDefaults(self):
         super().setDefaults()
@@ -166,13 +166,15 @@ but if you have a sufficiently large cosmic ray flux you might want to reconside
 
         for detName, bboxStr in self.darkBBoxes.items():
             try:
-                eval(bboxStr)           # can't set self.darkBBoxes[detName] here as it fails type validation
+                eval(bboxStr)  # can't set self.darkBBoxes[detName] here as it fails type validation
                 estr = ""
             except Exception as e:
-                estr = str(e)           # it's clearer to the user if we don't raise within the try block
+                estr = str(e)  # it's clearer to the user if we don't raise within the try block
 
             if estr:
                 raise ValueError("Malformed isr.darkBBoxes for %s \"%s\": %s" % (detName, bboxStr, estr))
+
+
 #
 # Code to handle the broken shutter matrix matrix inverse cache
 #
@@ -204,7 +206,7 @@ class BrokenShutterKernelCache:
         key = int(t_exp + 0.5)
         if key not in cls.__cache:
             if cls.__maxsize > 0 and len(cls.__cache) >= cls.__maxsize:  # need to delete an old kernel
-                k_min = None                                            # the least popular kernel
+                k_min = None  # the least popular kernel
                 n_min = 0
                 for k, v in cls.__cache.items():
                     if k_min is None or v[1] < n_min:
@@ -320,7 +322,7 @@ class PfsIsrTask(ipIsr.IsrTask):
         result = self.run(ccdExposure, camera=camera, **isrData.getDict())
 
         if self.config.doBrokenRedShutter and \
-           ccdExposure.getDetector().getName() in self.config.brokenRedShutter.brokenShutterList:
+                ccdExposure.getDetector().getName() in self.config.brokenRedShutter.brokenShutterList:
             if not self.config.brokenRedShutter.useAnalytic:
                 #
                 # If we're using the `r` arm subtract a neighbouring image if it's a bias
@@ -433,7 +435,7 @@ class PfsIsrTask(ipIsr.IsrTask):
            result : `lsst.pipe.base.Struct`
               Result struct;  see `lsst.ip.isr.isrTask.run`
         """
-        exposure = ccdExposure                         # argument must be called "ccdExposure"; PIPE2D-1093
+        exposure = ccdExposure  # argument must be called "ccdExposure"; PIPE2D-1093
 
         if exposure.getFilterLabel().bandLabel == 'n':  # treat H4RGs specially
             return self.runH4RG(exposure, **kwargs)
@@ -457,7 +459,7 @@ class PfsIsrTask(ipIsr.IsrTask):
             return self.runH4RG(ccdExposure, **kwargs)
 
         doBrokenRedShutter = self.config.doBrokenRedShutter and \
-            ccdExposure.getDetector().getName() in self.config.brokenRedShutter.brokenShutterList
+                             ccdExposure.getDetector().getName() in self.config.brokenRedShutter.brokenShutterList
 
         if doBrokenRedShutter and self.config.brokenRedShutter.checkParallelOverscan:
             excessPOscan = []
@@ -476,7 +478,7 @@ class PfsIsrTask(ipIsr.IsrTask):
 
             flux = np.mean(meanFlux)
             excess = np.mean(excessPOscan)
-            if excess <= self.config.brokenRedShutter.maximumAllowedParallelOverscanFraction*flux:
+            if excess <= self.config.brokenRedShutter.maximumAllowedParallelOverscanFraction * flux:
                 doBrokenRedShutter = False
 
             self.log.info("Checking parallel overscan: %g %s %g*%g %s",
@@ -487,10 +489,10 @@ class PfsIsrTask(ipIsr.IsrTask):
         detName = ccdExposure.getDetector().getName()
         darkBBoxes = self.config.darkBBoxes
         if self.config.doDark and detName in darkBBoxes:
-            kwargs0 = kwargs            # initial kwargs
+            kwargs0 = kwargs  # initial kwargs
             kwargs = kwargs.copy()
             kwargs["dark"] = kwargs["dark"].clone()
-            kwargs["dark"].maskedImage *= 0         # disable dark correction
+            kwargs["dark"].maskedImage *= 0  # disable dark correction
 
         results = super().run(ccdExposure, **kwargs)
         exposure = results.exposure
@@ -501,7 +503,7 @@ class PfsIsrTask(ipIsr.IsrTask):
             scale = self.darkCorrectionFromBBoxes(bboxes, exposure.maskedImage, kwargs0["dark"].maskedImage)
 
             darktime = exposure.info.getVisitInfo().getDarkTime()
-            self.log.info("Scaled dark exposure by %.1f (%.3f/second)", scale, scale/darktime)
+            self.log.info("Scaled dark exposure by %.1f (%.3f/second)", scale, scale / darktime)
 
         if doBrokenRedShutter and self.config.brokenRedShutter.useAnalytic:
             #
@@ -523,15 +525,15 @@ class PfsIsrTask(ipIsr.IsrTask):
             t_read = self.config.brokenRedShutter.t_read
             t_stare = self.config.brokenRedShutter.t_stare
 
-            if t_exp == 0:          # we can't correct a bias
+            if t_exp == 0:  # we can't correct a bias
                 self.log.debug("Not correcting bias for broken red shutter analytically")
             else:
                 brokenShutterKernelCache.setCacheSize(self.config.brokenRedShutter.cacheSize)
 
                 N = exposure.getHeight()
                 kern = np.zeros((N, N))
-                kern += t_wipe/N*(1 - np.tri(N, k=1))  # i.e. upper tri
-                kern += t_read/N*np.tri(N, k=-1)
+                kern += t_wipe / N * (1 - np.tri(N, k=1))  # i.e. upper tri
+                kern += t_read / N * np.tri(N, k=-1)
                 np.fill_diagonal(kern, t_stare)
                 kern /= t_exp
 
@@ -543,8 +545,8 @@ class PfsIsrTask(ipIsr.IsrTask):
                     brokenShutterKernelCache.clear()
 
                 self.log.info("Correcting for broken red shutter analytically")
-                exposure.image.array[:] = ikern@exposure.image.array
-                exposure.variance.array[:] = (ikern**2)@exposure.variance.array
+                exposure.image.array[:] = ikern @ exposure.image.array
+                exposure.variance.array[:] = (ikern ** 2) @ exposure.variance.array
 
         return results
 
@@ -594,9 +596,14 @@ class PfsIsrTask(ipIsr.IsrTask):
         if self.config.maskNegativeVariance:
             super().maskNegativeVariance(exposure)
 
-        nQuarter = exposure.getDetector().getOrientation().getNQuarter()
-        if nQuarter != 0:
-            exposure.maskedImage = afwMath.rotateImageBy90(exposure.maskedImage, nQuarter)
+        if self.config.doRotateH4:
+            # quick transpose.
+            exposure.image.array[:] = exposure.image.array.transpose()[::-1, :]
+            exposure.mask.array[:] = exposure.mask.array.transpose()[::-1, :]
+
+        # nQuarter = exposure.getDetector().getOrientation().getNQuarter()
+        # if nQuarter != 0:
+        #     exposure.maskedImage = afwMath.rotateImageBy90(exposure.maskedImage, nQuarter)
 
         return pipeBase.Struct(exposure=exposure,
                                outputExposure=exposure,  # is this needed? Cargo culted from ip_isr isrTask.py
@@ -618,10 +625,10 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         ipcmodel = np.zeros_like(ipcarr, dtype=np.float32)
 
-        ipcmodel[1:, :] += ipc_cy*ipcarr[:-1, :]
-        ipcmodel[:-1, :] += ipc_cy*ipcarr[1:, :]
-        ipcmodel[:, 1:] += ipc_cx*ipcarr[:, :-1]
-        ipcmodel[:, :-1] += ipc_cx*ipcarr[:, 1:]
+        ipcmodel[1:, :] += ipc_cy * ipcarr[:-1, :]
+        ipcmodel[:-1, :] += ipc_cy * ipcarr[1:, :]
+        ipcmodel[:, 1:] += ipc_cx * ipcarr[:, :-1]
+        ipcmodel[:, :-1] += ipc_cx * ipcarr[:, 1:]
 
         exposure.image.array[:, :] -= ipcmodel
 
@@ -654,6 +661,7 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         # Compute the median of each window along the last two dimensions.
         res = np.ma.median(roi, axis=(2, 3))
+        # replacing masked value with median.
         exposure.image.array[mask] = res[mask]
 
     def maskAmplifier(self, exposure, amp, defects):
@@ -712,7 +720,7 @@ class PfsIsrTask(ipIsr.IsrTask):
         # Start with a rough linear estimate (well, the MLE ignoring e.g. cosmic rays),
         # then repeat, after clipping out the first and last n-percentiles
 
-        finalScale = 0                  # the scaling we applied to the dark when all iterations have finished
+        finalScale = 0  # the scaling we applied to the dark when all iterations have finished
         for i, clip in enumerate(self.config.fitDarkClipPercentiles):
             sumDataDark = 0
             sumDarkDark = 0
@@ -740,10 +748,10 @@ class PfsIsrTask(ipIsr.IsrTask):
                     darkArr = darkArr[keep]
                     var = var[keep]
 
-                sumDataDark += np.sum(dataArr*darkArr/var)
-                sumDarkDark += np.sum(darkArr**2/var)
+                sumDataDark += np.sum(dataArr * darkArr / var)
+                sumDarkDark += np.sum(darkArr ** 2 / var)
 
-            scale = sumDataDark/sumDarkDark
+            scale = sumDataDark / sumDarkDark
             finalScale += scale
 
             self.log.debug("Iteration %d: dark scaling %.1f", i, scale)
@@ -765,4 +773,4 @@ class PfsIsrTask(ipIsr.IsrTask):
         pass
 
     def _getMetadataName(self):
-        return None                     # don't write metadata; requires fix to ip_isr
+        return None  # don't write metadata; requires fix to ip_isr
