@@ -147,7 +147,8 @@ but if you have a sufficiently large cosmic ray flux you might want to reconside
     # these numbers are a hand-tuned guess by RHL.  They will be replaced by spatially-resolved
     # measurements from Eddie Berger any day now. PIPE2D-1071
     ipcCoeffs = pexConfig.ListField(dtype=float, default=[13e-3, 6e-3], doc="IPC coefficients in x and y")
-    doMedianInterpolation = pexConfig.Field(dtype=bool, default=False, doc="Do median interpolation.")
+    doMedianInterpolationAlf = pexConfig.Field(dtype=bool, default=False, doc="Do median interpolation alf.")
+    doMedianInterpolationRhl = pexConfig.Field(dtype=bool, default=False, doc="Do median interpolation rhl.")
     doRotateH4 = pexConfig.Field(dtype=bool, default=False, doc="rotate H4 image to match CCDs ?")
 
     def setDefaults(self):
@@ -588,8 +589,10 @@ class PfsIsrTask(ipIsr.IsrTask):
             self.correctIPC(exposure, defects, self.config.ipcCoeffs)
 
         if self.config.doDefect:
-            if self.config.doMedianInterpolation:
-                self.maskAndMedianInterpDefects(exposure, defects)
+            if self.config.doMedianInterpolationAlf:
+                self.maskAndMedianInterpDefectsAlf(exposure, defects)
+            elif self.config.doMedianInterpolationRhl:
+                self.maskAndMedianInterpDefectsRhl(exposure, defects)
             else:
                 super().maskAndInterpolateDefects(exposure, defects)
 
@@ -638,7 +641,7 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         exposure.mask.array[ipcmodel != 0] |= exposure.mask.getPlaneBitMask("IPC")
 
-    def maskAndMedianInterpDefects(self, exposure, defects):
+    def maskAndMedianInterpDefectsAlf(self, exposure, defects):
         self.maskDefect(exposure, defects)
 
         # Pad the input array with zeros so that we don't have to worry about edge cases.
@@ -661,6 +664,32 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         # Compute the median of each window along the last two dimensions.
         res = np.ma.median(roi, axis=(2, 3))
+        # replacing masked value with median.
+        exposure.image.array[mask] = res[mask]
+
+    def maskAndMedianInterpDefectsRhl(self, exposure, defects):
+        self.maskDefect(exposure, defects)
+
+        # Pad the input array with zeros so that we don't have to worry about edge cases.
+        nRows, nCols = exposure.image.array.shape
+        padded_data = np.ma.ones((nRows + 2, nCols + 2), dtype='float32') * np.nan
+        padded_data.mask = np.ones(padded_data.shape, dtype='bool')
+
+        mask = exposure.maskedImage.getMask()
+        mask = (mask.array & mask.getPlaneBitMask('BAD')).astype('bool')
+
+        padded_data[1:-1, 1:-1] = exposure.image.array
+        padded_data.mask[1:-1, 1:-1] = mask
+
+        roi = np.zeros((9, nRows, nCols))
+
+        for i in range(9):
+            minRow, minCol = i // 3, i % 3
+            maxRow, maxCol = minRow + nRows, minCol + nCols
+            roi[i] = padded_data[minRow:maxRow, minCol:maxCol]
+
+        # Compute the median of each window along the last two dimensions.
+        res = np.ma.median(roi, axis=0)
         # replacing masked value with median.
         exposure.image.array[mask] = res[mask]
 
