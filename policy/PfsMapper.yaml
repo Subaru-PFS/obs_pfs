@@ -311,6 +311,15 @@ datasets:
     tables:
     - raw
 
+  background:
+    template: 'background/%(dateObs)s/v%(visit)06d/background-%(visit)06d-%(arm)s%(spectrograph)d.pickle'
+    python: object
+    persistable: ignored
+    storage: PickleStorage
+    level: Ccd
+    tables:
+    - raw
+
   pfsArmLsf:
     template: 'pfsArm/%(dateObs)s/v%(visit)06d/pfsArmLsf-%(visit)06d-%(arm)s%(spectrograph)d.pickle'
     python: dict
