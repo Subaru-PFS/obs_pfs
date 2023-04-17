@@ -227,7 +227,7 @@ datasets:
     - raw
 
   sky1d:
-    template: 'sky1d/%(dateObs)s/v%(visit)07d/sky1d-%(visit)06d-%(arm)s.fits'
+    template: 'sky1d/%(dateObs)s/v%(visit)07d/sky1d-%(visit)06d-%(arm)s%(spectrograph)d.fits'
     python: pfs.drp.stella.focalPlaneFunction.FocalPlaneFunction
     persistable: FocalPlaneFunction
     storage: FitsCatalogStorage
@@ -309,6 +309,15 @@ datasets:
     python: pfs.drp.stella.arcLine.ArcLineSet
     persistable: ArcLineSet
     storage: FitsCatalogStorage
+    level: Ccd
+    tables:
+    - raw
+
+  background:
+    template: 'background/%(dateObs)s/v%(visit)06d/background-%(visit)06d-%(arm)s%(spectrograph)d.pickle'
+    python: object
+    persistable: ignored
+    storage: PickleStorage
     level: Ccd
     tables:
     - raw
