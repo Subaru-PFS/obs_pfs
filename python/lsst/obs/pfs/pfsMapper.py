@@ -269,11 +269,13 @@ class PfsMapper(CameraMapper):
         hdus = 2*np.array([1] if nread == 1 else [1, nread]) - 1
         if "hdu" in dataId:
             hdu = dataId["hdu"]
-            read = (hdu + 1)//2         # which read up the ramp do we want?
-            if read > nread:
-                raise RuntimeError(f"Requested read {read} (HDU {hdu}) is greater than W_H4NRED == {nread}")
+            if hdu > 0:
+                read = (hdu + 1)//2         # which read up the ramp do we want?
+                if read > nread:
+                    raise RuntimeError(
+                        f"Requested read {read} (HDU {hdu}) is greater than W_H4NRED == {nread}")
 
-            hdus[-1] = hdu
+                hdus[-1] = hdu
 
         if hdus[-1]%2 == 0:
             raise RuntimeError(f"HDU {hdus[-1]} is a reference HDU")
