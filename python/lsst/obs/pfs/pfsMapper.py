@@ -434,6 +434,12 @@ class PfsMapper(CameraMapper):
         fix_header(item, translator_class=PfsTranslator, filename=filename)
         return item
 
+    def std_rawb(self, item, dataId):
+        if item.getMetadata()["EXTNAME"].startswith("IMAGE_"):
+            return super(PfsMapper, self).std_raw(item, dataId)
+
+        return self._standardizeExposure(self.exposures["raw"], item, dataId, setVisitInfo=False)
+
     def std_guider(self, item, dataId):
         """Standardize guider image
 
