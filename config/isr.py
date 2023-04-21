@@ -9,3 +9,6 @@ config.overscan.fitType = "AKIMA_SPLINE"
 config.overscan.order = 30
 config.fwhm = 2.5
 config.doIPC = True                     # only relevant for H4RGs
+
+from pfs.drp.stella.crosstalk import PfsCrosstalkTask
+config.crosstalk.retarget(PfsCrosstalkTask)
