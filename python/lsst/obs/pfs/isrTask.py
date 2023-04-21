@@ -390,7 +390,7 @@ class PfsIsrTask(ipIsr.IsrTask):
     def getIsrExposure(self, dataRef, datasetType, dateObs=None, immediate=True):
         """Retrieve a calibration dataset for removing instrument signature.
 
-        This override refuses to load bias and dark for ``arm=n``: we don't
+        This override refuses to load biases for ``arm=n``: we don't
         use them in ``runH4RG``.
 
         Parameters
@@ -418,7 +418,7 @@ class PfsIsrTask(ipIsr.IsrTask):
             Raised if no matching calibration frame can be found.
         """
         arm = dataRef.dataId["arm"]
-        if arm == "n" and datasetType in ("bias", "dark"):
+        if arm == "n" and datasetType in ("bias",):
             return None
         return super().getIsrExposure(dataRef, datasetType, dateObs=dateObs, immediate=immediate)
 
@@ -550,7 +550,7 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         return results
 
-    def runH4RG(self, exposure, defects=None, **kwargs):
+    def runH4RG(self, exposure, dark=None, defects=None, **kwargs):
         """Specialist instrument signature removal for H4RG detectors
 
         Parameters
@@ -579,11 +579,16 @@ class PfsIsrTask(ipIsr.IsrTask):
                 if k not in ["camera", ]:
                     self.log.warn("Unexpected argument for runH4RG: %s", k)
 
+        if self.config.doDark and dark is None:
+            raise RuntimeError("Must supply a dark exposure if config.doDark=True.")
         if self.config.doDefect and defects is None:
             raise RuntimeError("Must supply defects if config.doDefect=True.")
         if self.config.doIPC and defects is None:
             raise RuntimeError("Must supply defects if config.doIPC=True.")
 
+        # Think about the ordering here.
+        # E.g. dark subtraction before defects (but then we'd have to rotate the dark,
+        # either here or when writing it)
         if self.config.doIPC:
             self.correctIPC(exposure, defects, self.config.ipcCoeffs)
 
@@ -596,6 +601,11 @@ class PfsIsrTask(ipIsr.IsrTask):
         nQuarter = exposure.getDetector().getOrientation().getNQuarter()
         if nQuarter != 0:
             exposure.maskedImage = afwMath.rotateImageBy90(exposure.maskedImage, nQuarter)
+
+        if self.config.doDark:
+            self.log.info("Applying dark correction.")
+            super().darkCorrection(exposure, dark)
+            super().debugView(exposure, "doDark")
 
         return pipeBase.Struct(exposure=exposure,
                                outputExposure=exposure,  # is this needed? Cargo culted from ip_isr isrTask.py
