@@ -292,6 +292,10 @@ class PfsMapper(CameraMapper):
             if extname != f"IMAGE_{read}":
                 raise RuntimeError(f'Expected to see EXTNAME = IMAGE_{read}; saw {extname}')
 
+            W_SRH4 = md["W_SRH4"]
+            if W_SRH4 == "no available value":
+                W_SRH4 = 18660
+
             try:
                 ref = readData(datasetType, butlerLocation, dataId, hdu=hdu + hdu_img0 + 1)
             except FitsError as e:
@@ -303,7 +307,36 @@ class PfsMapper(CameraMapper):
                 raise RuntimeError(f'Expected to see EXTNAME = REF_{read}; saw {extname}')
 
             im = data[hdu].image
-            im -= ref.image
+            if False:
+                im -= ref.image
+            else:
+                if W_SRH4 == 18660:
+                    xc, yc = 3280, 3545
+                    Rx, Ry = 40, 35
+                    ref.image.array[yc - Ry:yc + Ry + 1, xc - Rx:xc + Rx + 1] = np.NaN
+
+                nChannel = 32
+                channelWidth = 128
+                c = 0
+                for i in range(nChannel):
+                    ichan = im.array[:, c:c + channelWidth]
+                    rchan = ref.image.array[:, c:c + channelWidth]
+                    c += channelWidth
+
+                    if False:
+                        ichan -= rchan
+                    elif True:
+                        refPerColumn = np.nanmedian(rchan, axis=0)
+                        rchan -= refPerColumn
+
+                        if True:
+                            if i == 26 and W_SRH4 == 18660:
+                                refPerColumn = refPerColumn[96:]  # exclude the weird bad column
+
+                        refCorrection = np.nanmedian(rchan, axis=1) + np.mean(refPerColumn)
+
+                        ichan[:] = (ichan.T - refCorrection).T
+
             del im
 
         im = data[hdus[0]].image.array
