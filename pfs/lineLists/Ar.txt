@@ -3,6 +3,8 @@
 # 2: intensity (arbitrary units)
 # 3: description (ionic species)
 # 4: status (bitmask)
+# 5: transition
+# 6: source reference
 #
 # Status bitmask elements:
 # GOOD=0: Line is good
@@ -10,181 +12,197 @@
 # BLEND=2: Line is blended with other line(s)
 # SUSPECT=4: Line is of suspect quality
 # REJECTED=8: Line has been rejected from use in PFS
-# BROAD=16: Line is broader than normal when observed with HgAr lamp
+# BROAD=16: Line is broader than normal
+# DETECTORMAP_USED=32: Used for fitting detectorMap
+# DETECTORMAP_RESERVED=64: Reserved during fitting detectorMap
+# SKYSUB_USED=128: Used for 2d sky subtraction
+# MERGED=256: Line has been merged into another
+# COMBINED=512: Line created from MERGED lines
+# PROTECTED=1024: Line is protected from discard by exclusion zone
+# LAM_FOCUS=2048: Line is used by LAM for detector focus purposes
+# LAM_IMAGEQUALITY=4096: Line is used by LAM for image quality measurement
 #
-346.20600            7.00    ArI          0
-355.53210            7.00    ArI          0
-360.75510            7.00    ArI          0
-377.14400           20.00    ArI          0
-383.57670            7.00    ArI          16
-394.86220            7.00    ArI          0
-395.00970           35.00    ArI          0
-404.55610           50.00    ArI          0
-415.97620          400.00    ArI          0
-416.53540           50.00    ArI          0
-418.30630           50.00    ArI          0
-419.18940          100.00    ArI          0
-419.22100           50.00    ArI          0
-419.95000          200.00    ArI          0
-420.18580          400.00    ArI          0
-425.23820           25.00    ArI          0
-426.05610          200.00    ArI          0
-426.74870          100.00    ArI          16
-427.33710          150.00    ArI          0
-430.13110          100.00    ArI          0
-433.47790          100.00    ArI          16
-433.65570           50.00    ArI          16
-434.63900           25.00    ArI          16
-451.19980          100.00    ArI          0
-452.35910           20.00    ArI          0
-459.73850           15.00    ArI          16
-462.97370            7.00    ArI          16
-470.36320           15.00    ArI          16
-515.28260            5.00    ArI          0
-516.37230           15.00    ArI          0
-518.91910           20.00    ArI          0
-522.27250            7.00    ArI          0
-542.28590            5.00    ArI          0
-545.31670           10.00    ArI          0
-549.74010           25.00    ArI          0
-550.76430            5.00    ArI          0
-556.02460           25.00    ArI          0
-557.40880           10.00    ArI          0
-560.82900           35.00    ArI          0
-565.22720           20.00    ArI          0
-574.11120           10.00    ArI          0
-583.58800            5.00    ArI          0
-586.19340           10.00    ArI          0
-588.42540           15.00    ArI          0
-589.02160           25.00    ArI          0
-591.37230           50.00    ArI          0
-593.04560           15.00    ArI          0
-594.43150            5.00    ArI          0
-598.89600            7.00    ArI          0
-600.06610            5.00    ArI          0
-602.68190            5.00    ArI          0
-603.37970           70.00    ArI          0
-604.48960           35.00    ArI          0
-605.43990           10.00    ArI          0
-606.10500           20.00    ArI          0
-610.04910            7.00    ArI          0
-610.73250           10.00    ArI          0
-614.71420           10.00    ArI          0
-617.18810            7.00    ArI          0
-617.48040           10.00    ArI          0
-621.42220           10.00    ArI          0
-621.76580            5.00    ArI          0
-629.86130            7.00    ArI          0
-630.94010           15.00    ArI          0
-637.13360            7.00    ArI          0
-638.64820           20.00    ArI          0
-641.80810           70.00    ArI          0
-653.99180           15.00    ArI          0
-660.66770           15.00    ArI          0
-666.25150            5.00    ArI          0
-666.58910            5.00    ArI          0
-667.91260          100.00    ArI          1
-675.46980          150.00    ArI          1
-675.80280            5.00    ArI          0
-676.84800           15.00    ArI          0
-687.31850          150.00    ArI          1
-688.14800            5.00    ArI          0
-689.00740           10.00    ArI          0
-693.95780           50.00    ArI          8
-695.33950            7.00    ArI          0
-696.21700            7.00    ArI          0
-696.73520        10000.00    ArI          0
-703.21900          150.00    ArI          1
-706.91670        10000.00    ArI          0
-707.06850          100.00    ArI          1
-710.94370           25.00    ArI          0
-712.77840           25.00    ArI          0
-714.90120         1000.00    ArI          0
-716.08120           15.00    ArI          0
-720.89660           70.00    ArI          0
-726.71740           15.00    ArI          0
-727.26670            7.00    ArI          8
-727.49400         2000.00    ArI          0
-731.37310           35.00    ArI          0
-731.80210           25.00    ArI          0
-735.28390            5.00    ArI          0
-735.53190           70.00    ArI          8
-737.41490          200.00    ArI          1
-738.60140        10000.00    ArI          0
-739.50160           20.00    ArI          0
-741.43790           15.00    ArI          0
-742.73390           10.00    ArI          0
-743.74160           25.00    ArI          8
-743.83450           10.00    ArI          8
-750.59350        20000.00    ArI          16
-751.67210        15000.00    ArI          0
-763.72080        25000.00    ArI          0
-772.58870        15000.00    ArI          2
-772.63330        10000.00    ArI          2
-789.32460           10.00    ArI          8
-795.03620        20000.00    ArI          0
-800.83590        20000.00    ArI          0
-801.69900        25000.00    ArI          0
-805.55230            7.00    ArI          8
-810.59210        20000.00    ArI          0
-811.75420        35000.00    ArI          0
-826.67940        10000.00    ArI          16
-839.45800           20.00    ArI          8
-841.05210        15000.00    ArI          0
-842.69630        20000.00    ArI          0
-852.37830        15000.00    ArI          16
-860.81400            7.00    ArI          8
-867.03250         4500.00    ArI          0
-885.23400          180.00    ArI          1
-907.78850           20.00    ArI          8
-912.54710        35000.00    ArI          0
-919.71610          550.00    ArI          1
-922.70300        15000.00    ArI          16
-929.40810          400.00    ArI          1
-935.67870         1600.00    ArI          16
-966.04350        25000.00    ArI          0
-978.71860         4500.00    ArI          1
-1005.48200         180.00    ArI          0
-1033.55500          30.00    ArI          0
-1047.29230        1600.00    ArI          0
-1048.09050          13.00    ArI          0
-1050.93800         180.00    ArI          0
-1067.64890         200.00    ArI          0
-1068.46990          11.00    ArI          0
-1073.68100          30.00    ArI          0
-1076.21100          30.00    ArI          0
-1108.19030          11.00    ArI          0
-1110.95000          30.00    ArI          0
-1144.49650          12.00    ArI          0
-1149.12540         400.00    ArI          16
-1167.19040         200.00    ArI          0
-1172.26960          12.00    ArI          0
-1211.56410         200.00    ArI          0
-1214.30600          50.00    ArI          0
-1234.67700          50.00    ArI          0
-1240.62210         200.00    ArI          0
-1244.27240         200.00    ArI          0
-1245.95300         100.00    ArI          0
-1249.10800         200.00    ArI          0
-1270.57560         150.00    ArI          0
-1273.69010          30.00    ArI          0
-1274.97190          12.00    ArI          0
-1280.62410         200.00    ArI          0
-1293.67330          50.00    ArI          0
-1296.02030         500.00    ArI          0
-1301.18220         200.00    ArI          0
-1321.76000         200.00    ArI          0
-1323.17250         200.00    ArI          0
-1323.45200         100.00    ArI          0
-1327.62700         500.00    ArI          0
-1331.68510        1000.00    ArI          0
-1337.07660        1000.00    ArI          0
-1350.31000          30.00    ArI          0
-1350.78840        1000.00    ArI          0
-1357.73290          11.00    ArI          0
-1360.30520          30.00    ArI          0
-1362.63840         400.00    ArI          0
-1368.22900         200.00    ArI          0
-1372.23280        1000.00    ArI          0
-1382.94950          10.00    ArI          0
-1391.12800          10.00    ArI          0
+# Source bitmask elements:
+# NONE=0: No source information available
+# MANUAL=1: Lines added or modified by hand
+# NIST=2: Lines taken from NIST
+# OSTERBROCK97=4: Osterbrock+1996 (1996PASP..108..277O) and Osterbrock+1997 (1997PASP..109..614O)
+# ROUSSELOT2000=8: Rousselot+2000 (2000A&A...354.1134R)
+# SDSS=16: Lines taken from SDSS (https://www.sdss.org/dr14/spectro/spectro_basics)
+#
+346.20600            7.00    ArI          0 UNKNOWN   0
+355.53210            7.00    ArI          0 UNKNOWN   0
+360.75510            7.00    ArI          0 UNKNOWN   0
+377.14400           20.00    ArI          0 UNKNOWN   0
+383.57670            7.00    ArI         16 UNKNOWN   0
+394.86220            7.00    ArI          0 UNKNOWN   0
+395.00970           35.00    ArI          0 UNKNOWN   0
+404.55610           50.00    ArI          0 UNKNOWN   0
+415.97620          400.00    ArI          0 UNKNOWN   0
+416.53540           50.00    ArI          0 UNKNOWN   0
+418.30630           50.00    ArI          0 UNKNOWN   0
+419.18940          100.00    ArI          0 UNKNOWN   0
+419.22100           50.00    ArI          0 UNKNOWN   0
+419.95000          200.00    ArI          0 UNKNOWN   0
+420.18580          400.00    ArI          0 UNKNOWN   0
+425.23820           25.00    ArI          0 UNKNOWN   0
+426.05610          200.00    ArI          0 UNKNOWN   0
+426.74870          100.00    ArI         16 UNKNOWN   0
+427.33710          150.00    ArI          0 UNKNOWN   0
+430.13110          100.00    ArI          0 UNKNOWN   0
+433.47790          100.00    ArI         16 UNKNOWN   0
+433.65570           50.00    ArI         16 UNKNOWN   0
+434.63900           25.00    ArI         16 UNKNOWN   0
+451.19980          100.00    ArI          0 UNKNOWN   0
+452.35910           20.00    ArI          0 UNKNOWN   0
+459.73850           15.00    ArI         16 UNKNOWN   0
+462.97370            7.00    ArI         16 UNKNOWN   0
+470.36320           15.00    ArI         16 UNKNOWN   0
+515.28260            5.00    ArI          0 UNKNOWN   0
+516.37230           15.00    ArI          0 UNKNOWN   0
+518.91910           20.00    ArI          0 UNKNOWN   0
+522.27250            7.00    ArI          0 UNKNOWN   0
+542.28590            5.00    ArI          0 UNKNOWN   0
+545.31670           10.00    ArI          0 UNKNOWN   0
+549.74010           25.00    ArI          0 UNKNOWN   0
+550.76430            5.00    ArI          0 UNKNOWN   0
+556.02460           25.00    ArI          0 UNKNOWN   0
+557.40880           10.00    ArI          0 UNKNOWN   0
+560.82900           35.00    ArI          0 UNKNOWN   0
+565.22720           20.00    ArI          0 UNKNOWN   0
+574.11120           10.00    ArI          0 UNKNOWN   0
+583.58800            5.00    ArI          0 UNKNOWN   0
+586.19340           10.00    ArI          0 UNKNOWN   0
+588.42540           15.00    ArI          0 UNKNOWN   0
+589.02160           25.00    ArI          0 UNKNOWN   0
+591.37230           50.00    ArI          0 UNKNOWN   0
+593.04560           15.00    ArI          0 UNKNOWN   0
+594.43150            5.00    ArI          0 UNKNOWN   0
+598.89600            7.00    ArI          0 UNKNOWN   0
+600.06610            5.00    ArI          0 UNKNOWN   0
+602.68190            5.00    ArI          0 UNKNOWN   0
+603.37970           70.00    ArI          0 UNKNOWN   0
+604.48960           35.00    ArI          0 UNKNOWN   0
+605.43990           10.00    ArI          0 UNKNOWN   0
+606.10500           20.00    ArI          0 UNKNOWN   0
+610.04910            7.00    ArI          0 UNKNOWN   0
+610.73250           10.00    ArI          0 UNKNOWN   0
+614.71420           10.00    ArI          0 UNKNOWN   0
+617.18810            7.00    ArI          0 UNKNOWN   0
+617.48040           10.00    ArI          0 UNKNOWN   0
+621.42220           10.00    ArI          0 UNKNOWN   0
+621.76580            5.00    ArI          0 UNKNOWN   0
+629.86130            7.00    ArI          0 UNKNOWN   0
+630.94010           15.00    ArI          0 UNKNOWN   0
+637.13360            7.00    ArI          0 UNKNOWN   0
+638.64820           20.00    ArI          0 UNKNOWN   0
+641.80810           70.00    ArI          0 UNKNOWN   0
+653.99180           15.00    ArI          0 UNKNOWN   0
+660.66770           15.00    ArI          0 UNKNOWN   0
+666.25150            5.00    ArI          0 UNKNOWN   0
+666.58910            5.00    ArI          0 UNKNOWN   0
+667.91260          100.00    ArI          1 UNKNOWN   0
+675.46980          150.00    ArI          1 UNKNOWN   0
+675.80280            5.00    ArI          0 UNKNOWN   0
+676.84800           15.00    ArI          0 UNKNOWN   0
+687.31850          150.00    ArI          1 UNKNOWN   0
+688.14800            5.00    ArI          0 UNKNOWN   0
+689.00740           10.00    ArI          0 UNKNOWN   0
+693.95780           50.00    ArI          8 UNKNOWN   0
+695.33950            7.00    ArI          0 UNKNOWN   0
+696.21700            7.00    ArI          0 UNKNOWN   0
+696.73520        10000.00    ArI       6144 UNKNOWN   0
+703.21900          150.00    ArI          1 UNKNOWN   0
+706.91670        10000.00    ArI          0 UNKNOWN   0
+707.06850          100.00    ArI          1 UNKNOWN   0
+710.94370           25.00    ArI          0 UNKNOWN   0
+712.77840           25.00    ArI          0 UNKNOWN   0
+714.90120         1000.00    ArI          0 UNKNOWN   0
+716.08120           15.00    ArI          0 UNKNOWN   0
+720.89660           70.00    ArI          0 UNKNOWN   0
+726.71740           15.00    ArI          0 UNKNOWN   0
+727.26670            7.00    ArI          8 UNKNOWN   0
+727.49400         2000.00    ArI       6144 UNKNOWN   0
+731.37310           35.00    ArI          0 UNKNOWN   0
+731.80210           25.00    ArI          0 UNKNOWN   0
+735.28390            5.00    ArI          0 UNKNOWN   0
+735.53190           70.00    ArI          8 UNKNOWN   0
+737.41490          200.00    ArI          1 UNKNOWN   0
+738.60140        10000.00    ArI          0 UNKNOWN   0
+739.50160           20.00    ArI          0 UNKNOWN   0
+741.43790           15.00    ArI          0 UNKNOWN   0
+742.73390           10.00    ArI          0 UNKNOWN   0
+743.74160           25.00    ArI          8 UNKNOWN   0
+743.83450           10.00    ArI          8 UNKNOWN   0
+750.59350        20000.00    ArI         16 UNKNOWN   0
+751.67210        15000.00    ArI          0 UNKNOWN   0
+763.72080        25000.00    ArI       6144 UNKNOWN   0
+772.58870        15000.00    ArI          2 UNKNOWN   0
+772.63330        10000.00    ArI          2 UNKNOWN   0
+789.32460           10.00    ArI          8 UNKNOWN   0
+795.03620        20000.00    ArI       6144 UNKNOWN   0
+800.83590        20000.00    ArI          0 UNKNOWN   0
+801.69900        25000.00    ArI          0 UNKNOWN   0
+805.55230            7.00    ArI          8 UNKNOWN   0
+810.59210        20000.00    ArI          0 UNKNOWN   0
+811.75420        35000.00    ArI          0 UNKNOWN   0
+826.67940        10000.00    ArI       6160 UNKNOWN   0
+839.45800           20.00    ArI          8 UNKNOWN   0
+841.05210        15000.00    ArI          0 UNKNOWN   0
+842.69630        20000.00    ArI          0 UNKNOWN   0
+852.37830        15000.00    ArI         16 UNKNOWN   0
+860.81400            7.00    ArI          8 UNKNOWN   0
+867.03250         4500.00    ArI          0 UNKNOWN   0
+885.23400          180.00    ArI          1 UNKNOWN   0
+907.78850           20.00    ArI          8 UNKNOWN   0
+912.54710        35000.00    ArI       6144 UNKNOWN   0
+919.71610          550.00    ArI          1 UNKNOWN   0
+922.70300        15000.00    ArI         16 UNKNOWN   0
+929.40810          400.00    ArI          1 UNKNOWN   0
+935.67870         1600.00    ArI         16 UNKNOWN   0
+966.04350        25000.00    ArI       6144 UNKNOWN   0
+978.71860         4500.00    ArI          1 UNKNOWN   0
+1005.48200         180.00    ArI          0 UNKNOWN   0
+1033.55500          30.00    ArI          0 UNKNOWN   0
+1047.29230        1600.00    ArI          0 UNKNOWN   0
+1048.09050          13.00    ArI          0 UNKNOWN   0
+1050.93800         180.00    ArI          0 UNKNOWN   0
+1067.64890         200.00    ArI          0 UNKNOWN   0
+1068.46990          11.00    ArI          0 UNKNOWN   0
+1073.68100          30.00    ArI          0 UNKNOWN   0
+1076.21100          30.00    ArI          0 UNKNOWN   0
+1108.19030          11.00    ArI          0 UNKNOWN   0
+1110.95000          30.00    ArI          0 UNKNOWN   0
+1144.49650          12.00    ArI          0 UNKNOWN   0
+1149.12540         400.00    ArI         16 UNKNOWN   0
+1167.19040         200.00    ArI          0 UNKNOWN   0
+1172.26960          12.00    ArI          0 UNKNOWN   0
+1211.56410         200.00    ArI          0 UNKNOWN   0
+1214.30600          50.00    ArI          0 UNKNOWN   0
+1234.67700          50.00    ArI          0 UNKNOWN   0
+1240.62210         200.00    ArI          0 UNKNOWN   0
+1244.27240         200.00    ArI          0 UNKNOWN   0
+1245.95300         100.00    ArI          0 UNKNOWN   0
+1249.10800         200.00    ArI          0 UNKNOWN   0
+1270.57560         150.00    ArI          0 UNKNOWN   0
+1273.69010          30.00    ArI          0 UNKNOWN   0
+1274.97190          12.00    ArI          0 UNKNOWN   0
+1280.62410         200.00    ArI          0 UNKNOWN   0
+1293.67330          50.00    ArI          0 UNKNOWN   0
+1296.02030         500.00    ArI          0 UNKNOWN   0
+1301.18220         200.00    ArI          0 UNKNOWN   0
+1321.76000         200.00    ArI          0 UNKNOWN   0
+1323.17250         200.00    ArI          0 UNKNOWN   0
+1323.45200         100.00    ArI          0 UNKNOWN   0
+1327.62700         500.00    ArI          0 UNKNOWN   0
+1331.68510        1000.00    ArI          0 UNKNOWN   0
+1337.07660        1000.00    ArI          0 UNKNOWN   0
+1350.31000          30.00    ArI          0 UNKNOWN   0
+1350.78840        1000.00    ArI          0 UNKNOWN   0
+1357.73290          11.00    ArI          0 UNKNOWN   0
+1360.30520          30.00    ArI          0 UNKNOWN   0
+1362.63840         400.00    ArI          0 UNKNOWN   0
+1368.22900         200.00    ArI          0 UNKNOWN   0
+1372.23280        1000.00    ArI          0 UNKNOWN   0
+1382.94950          10.00    ArI          0 UNKNOWN   0
+1391.12800          10.00    ArI          0 UNKNOWN   0
