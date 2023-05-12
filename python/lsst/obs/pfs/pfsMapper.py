@@ -13,6 +13,7 @@ from lsst.daf.persistence import LogicalLocation, Policy
 import lsst.utils as utils
 import lsst.obs.base.yamlCamera as yamlCamera
 from lsst.obs.base import FilterDefinition, FilterDefinitionCollection
+from lsst.daf.persistence import NoResults
 from .translator import PfsTranslator
 
 
@@ -596,3 +597,10 @@ class PfsMapper(CameraMapper):
         item.setFilterLabel(afwImage.FilterLabel(band=filterName, physical=filterName))
 
         return item
+
+    def map_crosstalk(self, dataId, write=False):
+        """Disable crosstalk lookup
+
+        This forces ISR to read the crosstalk from the camera.
+        """
+        raise NoResults("Crosstalk is stored in the detector", "crosstalk", dataId)

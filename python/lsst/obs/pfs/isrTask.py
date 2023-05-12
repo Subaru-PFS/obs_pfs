@@ -33,6 +33,8 @@ from lsst.ip.isr import isrQa
 from lsst.utils.timer import timeMethod
 import lsst.pipe.base as pipeBase
 
+from pfs.drp.stella.crosstalk import PfsCrosstalkTask
+
 ___all__ = ["IsrTask", "IsrTaskConfig"]
 
 
@@ -148,6 +150,7 @@ but if you have a sufficiently large cosmic ray flux you might want to reconside
     # these numbers are a hand-tuned guess by RHL.  They will be replaced by spatially-resolved
     # measurements from Eddie Berger any day now. PIPE2D-1071
     ipcCoeffs = pexConfig.ListField(dtype=float, default=[13e-3, 6e-3], doc="IPC coefficients in x and y")
+    crosstalk = pexConfig.ConfigurableField(target=PfsCrosstalkTask, doc="Inter-CCD crosstalk correction")
 
     def setDefaults(self):
         super().setDefaults()
