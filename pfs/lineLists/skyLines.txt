@@ -6,7 +6,7 @@
 # 5: transition
 # 6: source reference
 #
-# Status bitmask elements:
+# Status bitmask elements (see python/pfs/drp/stella/referenceLine.py):
 # GOOD=0: Line is good
 # NOT_VISIBLE=1: Line is not typically visible in PFS (maybe too faint)
 # BLEND=2: Line is blended with other line(s)
@@ -19,6 +19,9 @@
 # MERGED=256: Line has been merged into another
 # COMBINED=512: Line created from MERGED lines
 # PROTECTED=1024: Line is protected from discard by exclusion zone
+# LAM_FOCUS=0x800: Line is used by LAM for detector focus purposes
+# LAM_IMAGEQUALITY=0x1000: Line is used by LAM for image quality measurement
+# DUPLICATE=0x2000: Line is a duplicate (e.g. an unmerged component of a merged line)
 #
 # Source bitmask elements:
 # NONE=0: No source information available
@@ -697,9 +700,9 @@
 1240.08780         865.51    OH           0 7-4_P2(4.5)   8
 1242.33470        1816.10    OH           0 7-4_P1(5.5)   8
 1248.27075         391.93    OH           0 7-4_P2(5.5)   8
-#1250.1915            0.00    OH           0 7-4_P1e(6.5)  8   # from figure in Rousselot paper
-1250.24170         766.49    OH           0 7-4_P1e(6.5)|7-4_P1f(6.5)   8
-#1250.2919            0.00    OH           0 7-4_P1f(6.5)  8   # from figure in Rousselot paper
+1250.1915            0.00    OH      0x2000 7-4_P1e(6.5)  8   # from figure in Rousselot paper
+1250.24170         766.49    OH       0x100 7-4_P1e(6.5)|7-4_P1f(6.5)   8
+1250.2919            0.00    OH      0x2000 7-4_P1f(6.5)  8   # from figure in Rousselot paper
 1257.15795         199.43    OH           0 7-4_P2(6.5)   8
 1258.83450         412.75    OH           0 7-4_P1e(7.5)   8
 1258.96130         660.80    OH           0 7-4_P1f(7.5)   8
