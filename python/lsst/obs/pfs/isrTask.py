@@ -592,7 +592,7 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         return results
 
-    def runH4RG(self, exposure, dark=None, defects=None, **kwargs):
+    def runH4RG(self, exposure, dark=None, flat=None, defects=None, **kwargs):
         """Specialist instrument signature removal for H4RG detectors
 
         Parameters
@@ -600,6 +600,10 @@ class PfsIsrTask(ipIsr.IsrTask):
         exposure : `lsst.afw.image.Exposure`
             The raw exposure that is to be run through ISR.  The
             exposure is modified by this method.
+        dark : `lsst.afw.image.Exposure`
+            Dark exposure to subtract.
+        flat : `lsst.afw.image.Exposure`
+            Flat-field exposure to divide by.
         defects : `lsst.ip.isr.Defects`, optional
             List of defects.
         kwargs : `dict` other keyword arguments specifying e.g. combined biases
@@ -618,11 +622,13 @@ class PfsIsrTask(ipIsr.IsrTask):
                 if k == "fringes" and v.fringes is None:
                     continue
 
-                if k not in ["camera", ]:
+                if k not in ["camera", "crosstalk"]:
                     self.log.warn("Unexpected argument for runH4RG: %s", k)
 
         if self.config.doDark and dark is None:
             raise RuntimeError("Must supply a dark exposure if config.doDark=True.")
+        if self.config.doFlat and flat is None:
+            raise RuntimeError("Must supply a flat exposure if config.doFlat=True.")
         if self.config.doDefect and defects is None:
             raise RuntimeError("Must supply defects if config.doDefect=True.")
         if self.config.doIPC and defects is None:
@@ -658,6 +664,11 @@ class PfsIsrTask(ipIsr.IsrTask):
             self.log.info("Applying dark correction.")
             super().darkCorrection(exposure, dark)
             super().debugView(exposure, "doDark")
+
+        if self.config.doFlat:
+            self.log.info("Applying flat correction.")
+            self.flatCorrection(exposure, flat)
+            self.debugView(exposure, "doFlat")
 
         return pipeBase.Struct(exposure=exposure,
                                outputExposure=exposure,  # is this needed? Cargo culted from ip_isr isrTask.py
