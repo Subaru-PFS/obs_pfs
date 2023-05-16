@@ -149,8 +149,44 @@ but if you have a sufficiently large cosmic ray flux you might want to reconside
     doIPC = pexConfig.Field(dtype=bool, default=False, doc="Correct for IPC?")
     # these numbers are a hand-tuned guess by RHL.  They will be replaced by spatially-resolved
     # measurements from Eddie Berger any day now. PIPE2D-1071
-    ipcCoeffs = pexConfig.ListField(dtype=float, default=[13e-3, 6e-3], doc="IPC coefficients in x and y")
-    crosstalk = pexConfig.ConfigurableField(target=PfsCrosstalkTask, doc="Inter-CCD crosstalk correction")
+    #
+    # The new code looks something like:
+    """
+    import lsst.pex.config as pexConfig
+
+    ipcCoeffsFile = "/work/cloomis/18660_ipc_kernel_first_attempt.fits"  # From Eddie Bergeron
+    nmed = 3
+
+    with astropy.io.fits.open(ipcCoeffsFile) as fits:
+        md =fits[1].header
+        nx = md["NX"]
+        ny = md["NY"]
+
+        ipcCoeffsFromFile = {}
+        for i in range(1, nx*ny + 1):
+            md = fits[i].header
+            ix = md["KERNEL_X"] - nx//2
+            iy = md["KERNEL_Y"] - ny//2
+
+            coeffs = np.ndarray.astype(fits[i].data, 'float32')
+            coeffs[coeffs > 0.1] = np.median(coeffs)
+            coeffs = np.rot90(coeffs, 1)   # returns a view
+            coeffs = scipy.ndimage.median_filter(coeffs, size=(nmed, nmed), mode='nearest')
+
+            ipcCoeffsFromFile[ix + iy*1j] = coeffs
+
+    pexConfig.Field.supportedTypes.add(np.ndarray)
+    config.ipcCoeffs = ipcCoeffsFromFile
+    """
+
+    ipcCoeffs = pexConfig.DictField(
+        keytype=complex, itemtype=None,
+        default={               # indexed by (dx, dy)
+            -1 + 1*1j: 0,     0 + 1*1j: 6e-3, 1 + 1*1j: 0,      # noqa E241
+            -1 + 0*1j: 13e-3, 0 + 0*1j: 0,    1 + 0*1j: 13e-3,  # noqa E241
+            -1 - 1*1j: 0,     0 - 1*1j: 6e-3, 1 - 1*1j: 0,      # noqa E241
+        },
+        doc="IPC coefficients indexed by dx + dy*1j")
 
     def setDefaults(self):
         super().setDefaults()
@@ -615,8 +651,6 @@ class PfsIsrTask(ipIsr.IsrTask):
 
     @staticmethod
     def correctIPC(exposure, defects, ipcCoeffs):
-        ipc_cx, ipc_cy = ipcCoeffs
-
         ipc = exposure.maskedImage.clone()
         ipc.mask[:] = 0x0
         defects.maskPixels(ipc)
@@ -627,10 +661,19 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         ipcmodel = np.zeros_like(ipcarr, dtype=np.float32)
 
-        ipcmodel[1:, :] += ipc_cy*ipcarr[:-1, :]
-        ipcmodel[:-1, :] += ipc_cy*ipcarr[1:, :]
-        ipcmodel[:, 1:] += ipc_cx*ipcarr[:, :-1]
-        ipcmodel[:, :-1] += ipc_cx*ipcarr[:, 1:]
+        nx, ny = exposure.getDimensions()
+        nc = int(np.sqrt(len(ipcCoeffs)) + 0.5)
+        nc2 = nc//2
+        for y in range(-nc2, nc2 + 1):
+            y0, y1 = (y, ny)     if y > 0 else ( 0, ny + y)  # noqa E201, E272
+            y2, y3 = (0, ny - y) if y > 0 else (-y, ny)
+            for x in range(-nc2, nc2 + 1):
+                if x == 0 and y == 0:
+                    continue
+
+                x0, x1 = (x, nx)     if x > 0 else ( 0, nx + x)  # noqa E201, E272
+                x2, x3 = (0, nx - x) if x > 0 else (-x, nx)
+                ipcmodel[y0:y1, x0:x1] += (ipcCoeffs[x + y*1j]*ipcarr)[y2:y3, x2:x3]
 
         exposure.image.array[:, :] -= ipcmodel
 
