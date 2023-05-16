@@ -33,6 +33,8 @@ from lsst.ip.isr import isrQa
 from lsst.utils.timer import timeMethod
 import lsst.pipe.base as pipeBase
 
+from pfs.drp.stella.crosstalk import PfsCrosstalkTask
+
 ___all__ = ["IsrTask", "IsrTaskConfig"]
 
 
@@ -143,6 +145,7 @@ is between value and 100 - value.
 
 The first value should probably always be zero, as we haven't removed any signal at that point,
 but if you have a sufficiently large cosmic ray flux you might want to reconsider.""")
+    crosstalk = pexConfig.ConfigurableField(target=PfsCrosstalkTask, doc="Inter-CCD crosstalk correction")
 
     doIPC = pexConfig.Field(dtype=bool, default=False, doc="Correct for IPC?")
     # these numbers are a hand-tuned guess by RHL.  They will be replaced by spatially-resolved
