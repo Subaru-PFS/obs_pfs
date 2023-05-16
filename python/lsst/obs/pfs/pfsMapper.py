@@ -337,10 +337,6 @@ class PfsMapper(CameraMapper):
 
                         ichan[:] = (ichan.T - refCorrection).T
 
-            del im
-
-        im = data[hdus[0]].image.array
-
         if hdus[0] == hdus[-1]:         # we can't use CDS
             self.log.warn("You are processing a single frame; not carrying out CDS")
         else:
@@ -391,24 +387,6 @@ class PfsMapper(CameraMapper):
 
         if dataVersion is not None and dataVersion <= 0x0070:
             self._shiftAmpPixels(exp)
-
-        if dataId.get("arm") in "bmr":  # regular CCD data
-            return exp
-
-        if np.nanmean(exp.variance.array) == 0:   # variance isn't set
-            channel = exp.getDetector()[0]            # an H4RG/ROIC/SAM "channel", not really an amplifier
-            if len(exp.getDetector()) != 1:
-                raise RuntimeError(f"Rewrite me now we have {len(exp.getDetector())} channels")
-            gain = channel.getGain()
-
-            if exp.getFilterLabel().physicalLabel == 'n':
-                gain *= md["W_H4GAIN"]
-                var = exp.image.array/gain
-                var *= 2                        # CDS
-            else:
-                var = exp.image.array/gain
-
-            exp.variance.array[:] = var + channel.getReadNoise()**2
 
         return exp
 
@@ -617,9 +595,10 @@ class PfsMapper(CameraMapper):
             The standardized Exposure.
         """
 
-        if not (isinstance(item, afwImage.ExposureU) or isinstance(item, afwImage.ExposureI) or
-                isinstance(item, afwImage.ExposureF) or isinstance(item, afwImage.ExposureD)):
-            item = super()._standardizeExposure(
+        if isinstance(item, (afwImage.ExposureU, afwImage.ExposureI, afwImage.ExposureF, afwImage.ExposureD)):
+            exp = item
+        else:
+            exp = super()._standardizeExposure(
                 mapping,
                 item,
                 dataId,
@@ -628,16 +607,36 @@ class PfsMapper(CameraMapper):
                 setVisitInfo=setVisitInfo,
                 setExposureId=setExposureId)
 
-        if item.getFilterLabel() is not None:
-            return item
+        if exp.getFilterLabel() is not None:
+            return exp
 
         actualId = mapping.need(["arm"], dataId)
         filterName = actualId["arm"]
         if self.filters is not None and filterName in self.filters:
             filterName = self.filters[filterName]
-        item.setFilterLabel(afwImage.FilterLabel(band=filterName, physical=filterName))
+        exp.setFilterLabel(afwImage.FilterLabel(band=filterName, physical=filterName))
 
-        return item
+        if actualId["arm"] in "bmr":    # regular CCD data
+            return exp
+
+        # Handle H4RGs
+        md = exp.getMetadata()
+
+        detector = exp.getDetector().rebuild()   # returns a Detector Builder
+
+        for channel in detector.getAmplifiers():  # an H4RG/ROIC/SAM "channel", not really an amplifier
+            gain = channel.getGain()
+            readNoise = channel.getReadNoise()
+
+            gain /= md["W_H4GAIN"]       # allow for the ASIC preamp gain (electrons per ADU)
+            readNoise /= md["W_H4GAIN"]  # allow for the ASIC preamp gain (units are now ADU)
+
+            channel.setGain(gain)
+            channel.setReadNoise(readNoise)
+
+        exp.setDetector(detector.finish())
+
+        return exp
 
     def map_crosstalk(self, dataId, write=False):
         """Disable crosstalk lookup

@@ -340,8 +340,10 @@ CCDs : &CCDs
         amplifiers:                     # only 1 amplifier (well, really 16M amplifiers but treated as 1)
             "0":
                 <<: *H4RG
-                gain : 1.00             # will be multiplied by W_H4GAIN
-                readNoise : 10
+                # Here "adu" means "ADU if the ASIC gain were unity"
+                # We'll divide by the ASIC gain W_H4GAIN in std_raw and std_rawb 
+                gain : 9.04             # adu/electron
+                readNoise : 18.1        # a single ref-pixel corrected read; adu
 
     b2:
       <<: *CCD

@@ -33,8 +33,6 @@ from lsst.ip.isr import isrQa
 from lsst.utils.timer import timeMethod
 import lsst.pipe.base as pipeBase
 
-from pfs.drp.stella.crosstalk import PfsCrosstalkTask
-
 ___all__ = ["IsrTask", "IsrTaskConfig"]
 
 
@@ -191,6 +189,8 @@ but if you have a sufficiently large cosmic ray flux you might want to reconside
     def setDefaults(self):
         super().setDefaults()
         self.assembleCcd.retarget(PfsAssembleCcdTask)
+        # self.doApplyGains must be False: gains are applied automatically in PFS's overload of assembleCcd
+        # for CCDs and in std_raw for H4RGs (as the ASIC gain can be changed)
         self.doApplyGains = False
 
     def validate(self):
@@ -307,10 +307,13 @@ class PfsIsrTask(ipIsr.IsrTask):
 
     """Apply common instrument signature correction algorithms to a raw frame.
 
-    We run the vanilla ISR, with the exception of optionally correcting for
-    the effects of a broken red-arm shutter on a PFS spectrograph
-    methods have been split into subtasks that can be redirected
-    appropriately.
+    The run method calls runCCD() to use the vanilla ISR for the b/r CCDs, with the
+    exception of optionally correcting for the effects of a broken red-arm shutter
+    on a PFS spectrograph.
+
+    H4RGs are treated very differently as they are very different beasts; see runH4RG.
+
+    Methods have been split into subtasks that can be redirected appropriately.
     """
 
     @timeMethod
@@ -625,6 +628,16 @@ class PfsIsrTask(ipIsr.IsrTask):
         # Think about the ordering here.
         # E.g. dark subtraction before defects (but then we'd have to rotate the dark,
         # either here or when writing it)
+        assert len(exposure.getDetector()) == 1, "Fix me now we have multiple channels"
+
+        channel = exposure.getDetector()[0]
+        gain = channel.getGain()
+
+        exposure.image *= gain       # convert to electrons
+        var = exposure.image         # assumes photon noise -- not true for the persistence
+        var += 2*(gain*channel.getReadNoise())**2  # 2* comes from CDS
+        exposure.variance = var
+
         if self.config.doIPC:
             self.correctIPC(exposure, defects, self.config.ipcCoeffs)
 
