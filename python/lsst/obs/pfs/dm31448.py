@@ -85,6 +85,9 @@ class PfsSqlRegistry(SqlRegistry):
         reference = sequencify(reference)
         lookupProperties = sequencify(lookupProperties)
 
+        if isinstance(self.conn, pgsql.extensions.connection):
+            # For some unknown reason, PostgreSQL can have a connection with a failed transaction
+            self.conn.rollback()
         try:
             return self._lookup(lookupProperties, dataId, reference)
         except (pgsql.errors.UndefinedColumn,

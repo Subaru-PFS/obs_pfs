@@ -145,16 +145,55 @@ is between value and 100 - value.
 
 The first value should probably always be zero, as we haven't removed any signal at that point,
 but if you have a sufficiently large cosmic ray flux you might want to reconsider.""")
+    crosstalk = pexConfig.ConfigurableField(target=PfsCrosstalkTask, doc="Inter-CCD crosstalk correction")
 
     doIPC = pexConfig.Field(dtype=bool, default=False, doc="Correct for IPC?")
     # these numbers are a hand-tuned guess by RHL.  They will be replaced by spatially-resolved
     # measurements from Eddie Berger any day now. PIPE2D-1071
-    ipcCoeffs = pexConfig.ListField(dtype=float, default=[13e-3, 6e-3], doc="IPC coefficients in x and y")
-    crosstalk = pexConfig.ConfigurableField(target=PfsCrosstalkTask, doc="Inter-CCD crosstalk correction")
+    #
+    # The new code looks something like:
+    """
+    import lsst.pex.config as pexConfig
+
+    ipcCoeffsFile = "/work/cloomis/18660_ipc_kernel_first_attempt.fits"  # From Eddie Bergeron
+    nmed = 3
+
+    with astropy.io.fits.open(ipcCoeffsFile) as fits:
+        md =fits[1].header
+        nx = md["NX"]
+        ny = md["NY"]
+
+        ipcCoeffsFromFile = {}
+        for i in range(1, nx*ny + 1):
+            md = fits[i].header
+            ix = md["KERNEL_X"] - nx//2
+            iy = md["KERNEL_Y"] - ny//2
+
+            coeffs = np.ndarray.astype(fits[i].data, 'float32')
+            coeffs[coeffs > 0.1] = np.median(coeffs)
+            coeffs = np.rot90(coeffs, 1)   # returns a view
+            coeffs = scipy.ndimage.median_filter(coeffs, size=(nmed, nmed), mode='nearest')
+
+            ipcCoeffsFromFile[ix + iy*1j] = coeffs
+
+    pexConfig.Field.supportedTypes.add(np.ndarray)
+    config.ipcCoeffs = ipcCoeffsFromFile
+    """
+
+    ipcCoeffs = pexConfig.DictField(
+        keytype=complex, itemtype=None,
+        default={               # indexed by (dx, dy)
+            -1 + 1*1j: 0,     0 + 1*1j: 6e-3, 1 + 1*1j: 0,      # noqa E241
+            -1 + 0*1j: 13e-3, 0 + 0*1j: 0,    1 + 0*1j: 13e-3,  # noqa E241
+            -1 - 1*1j: 0,     0 - 1*1j: 6e-3, 1 - 1*1j: 0,      # noqa E241
+        },
+        doc="IPC coefficients indexed by dx + dy*1j")
 
     def setDefaults(self):
         super().setDefaults()
         self.assembleCcd.retarget(PfsAssembleCcdTask)
+        # self.doApplyGains must be False: gains are applied automatically in PFS's overload of assembleCcd
+        # for CCDs and in std_raw for H4RGs (as the ASIC gain can be changed)
         self.doApplyGains = False
 
     def validate(self):
@@ -271,10 +310,13 @@ class PfsIsrTask(ipIsr.IsrTask):
 
     """Apply common instrument signature correction algorithms to a raw frame.
 
-    We run the vanilla ISR, with the exception of optionally correcting for
-    the effects of a broken red-arm shutter on a PFS spectrograph
-    methods have been split into subtasks that can be redirected
-    appropriately.
+    The run method calls runCCD() to use the vanilla ISR for the b/r CCDs, with the
+    exception of optionally correcting for the effects of a broken red-arm shutter
+    on a PFS spectrograph.
+
+    H4RGs are treated very differently as they are very different beasts; see runH4RG.
+
+    Methods have been split into subtasks that can be redirected appropriately.
     """
 
     @timeMethod
@@ -390,7 +432,7 @@ class PfsIsrTask(ipIsr.IsrTask):
     def getIsrExposure(self, dataRef, datasetType, dateObs=None, immediate=True):
         """Retrieve a calibration dataset for removing instrument signature.
 
-        This override refuses to load bias and dark for ``arm=n``: we don't
+        This override refuses to load biases for ``arm=n``: we don't
         use them in ``runH4RG``.
 
         Parameters
@@ -418,7 +460,7 @@ class PfsIsrTask(ipIsr.IsrTask):
             Raised if no matching calibration frame can be found.
         """
         arm = dataRef.dataId["arm"]
-        if arm == "n" and datasetType in ("bias", "dark"):
+        if arm == "n" and datasetType in ("bias",):
             return None
         return super().getIsrExposure(dataRef, datasetType, dateObs=dateObs, immediate=immediate)
 
@@ -550,7 +592,7 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         return results
 
-    def runH4RG(self, exposure, defects=None, **kwargs):
+    def runH4RG(self, exposure, dark=None, flat=None, defects=None, **kwargs):
         """Specialist instrument signature removal for H4RG detectors
 
         Parameters
@@ -558,6 +600,10 @@ class PfsIsrTask(ipIsr.IsrTask):
         exposure : `lsst.afw.image.Exposure`
             The raw exposure that is to be run through ISR.  The
             exposure is modified by this method.
+        dark : `lsst.afw.image.Exposure`
+            Dark exposure to subtract.
+        flat : `lsst.afw.image.Exposure`
+            Flat-field exposure to divide by.
         defects : `lsst.ip.isr.Defects`, optional
             List of defects.
         kwargs : `dict` other keyword arguments specifying e.g. combined biases
@@ -576,13 +622,30 @@ class PfsIsrTask(ipIsr.IsrTask):
                 if k == "fringes" and v.fringes is None:
                     continue
 
-                if k not in ["camera", ]:
+                if k not in ["camera", "crosstalk"]:
                     self.log.warn("Unexpected argument for runH4RG: %s", k)
 
+        if self.config.doDark and dark is None:
+            raise RuntimeError("Must supply a dark exposure if config.doDark=True.")
+        if self.config.doFlat and flat is None:
+            raise RuntimeError("Must supply a flat exposure if config.doFlat=True.")
         if self.config.doDefect and defects is None:
             raise RuntimeError("Must supply defects if config.doDefect=True.")
         if self.config.doIPC and defects is None:
             raise RuntimeError("Must supply defects if config.doIPC=True.")
+
+        # Think about the ordering here.
+        # E.g. dark subtraction before defects (but then we'd have to rotate the dark,
+        # either here or when writing it)
+        assert len(exposure.getDetector()) == 1, "Fix me now we have multiple channels"
+
+        channel = exposure.getDetector()[0]
+        gain = channel.getGain()
+
+        exposure.image *= gain       # convert to electrons
+        var = exposure.image         # assumes photon noise -- not true for the persistence
+        var += 2*(gain*channel.getReadNoise())**2  # 2* comes from CDS
+        exposure.variance = var
 
         if self.config.doIPC:
             self.correctIPC(exposure, defects, self.config.ipcCoeffs)
@@ -597,6 +660,16 @@ class PfsIsrTask(ipIsr.IsrTask):
         if nQuarter != 0:
             exposure.maskedImage = afwMath.rotateImageBy90(exposure.maskedImage, nQuarter)
 
+        if self.config.doDark:
+            self.log.info("Applying dark correction.")
+            super().darkCorrection(exposure, dark)
+            super().debugView(exposure, "doDark")
+
+        if self.config.doFlat:
+            self.log.info("Applying flat correction.")
+            self.flatCorrection(exposure, flat)
+            self.debugView(exposure, "doFlat")
+
         return pipeBase.Struct(exposure=exposure,
                                outputExposure=exposure,  # is this needed? Cargo culted from ip_isr isrTask.py
                                flattenedThumb=None,
@@ -605,8 +678,6 @@ class PfsIsrTask(ipIsr.IsrTask):
 
     @staticmethod
     def correctIPC(exposure, defects, ipcCoeffs):
-        ipc_cx, ipc_cy = ipcCoeffs
-
         ipc = exposure.maskedImage.clone()
         ipc.mask[:] = 0x0
         defects.maskPixels(ipc)
@@ -617,10 +688,19 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         ipcmodel = np.zeros_like(ipcarr, dtype=np.float32)
 
-        ipcmodel[1:, :] += ipc_cy*ipcarr[:-1, :]
-        ipcmodel[:-1, :] += ipc_cy*ipcarr[1:, :]
-        ipcmodel[:, 1:] += ipc_cx*ipcarr[:, :-1]
-        ipcmodel[:, :-1] += ipc_cx*ipcarr[:, 1:]
+        nx, ny = exposure.getDimensions()
+        nc = int(np.sqrt(len(ipcCoeffs)) + 0.5)
+        nc2 = nc//2
+        for y in range(-nc2, nc2 + 1):
+            y0, y1 = (y, ny)     if y > 0 else ( 0, ny + y)  # noqa E201, E272
+            y2, y3 = (0, ny - y) if y > 0 else (-y, ny)
+            for x in range(-nc2, nc2 + 1):
+                if x == 0 and y == 0:
+                    continue
+
+                x0, x1 = (x, nx)     if x > 0 else ( 0, nx + x)  # noqa E201, E272
+                x2, x3 = (0, nx - x) if x > 0 else (-x, nx)
+                ipcmodel[y0:y1, x0:x1] += (ipcCoeffs[x + y*1j]*ipcarr)[y2:y3, x2:x3]
 
         exposure.image.array[:, :] -= ipcmodel
 

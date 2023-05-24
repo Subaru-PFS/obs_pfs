@@ -333,15 +333,17 @@ CCDs : &CCDs
 
         detectorType : 2                # H4RG
         id : 2
-        serial : "TBD"
+        serial : "18660:116"            # value at MKO.  Detector:SAM
         offset : [-93.1, 65.1]          # mm
         yaw : 270.0                     # rotation in plane of camera (degrees)
 
         amplifiers:                     # only 1 amplifier (well, really 16M amplifiers but treated as 1)
             "0":
                 <<: *H4RG
-                gain : 1.00             # will be multiplied by W_H4GAIN
-                readNoise : 10
+                # Here "adu" means "ADU if the ASIC gain were unity"
+                # We'll divide by the ASIC gain W_H4GAIN in std_raw and std_rawb 
+                gain : 9.04             # adu/electron
+                readNoise : 18.1        # a single ref-pixel corrected read; adu
 
     b2:
       <<: *CCD
@@ -424,7 +426,7 @@ CCDs : &CCDs
     n2:
       <<: *n1
       id: 5
-      serial : "18315"
+      serial : "TBD:TBD"                # value at MKO.  Detector:SAM
       offset : [-28.0, 65.1]           # mm
     m2:                                # == r2
       <<: *r2
@@ -529,7 +531,7 @@ CCDs : &CCDs
     n3:
       <<: *n1
       id: 8
-      serial : "18660"
+      serial : "TBD:TBD"                # value at MKO.  Detector:SAM
       offset : [37.1, 65.1]           # mm
     m3:
       <<: *r3
@@ -617,7 +619,7 @@ CCDs : &CCDs
     n4:
       <<: *n1
       id: 11
-      serial : "TBD"
+      serial : "18661:119"              # value at MKO.  Detector:SAM
       offset : [102.2, 65.1]           # mm
     m4:
       <<: *r4
