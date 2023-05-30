@@ -597,6 +597,8 @@ class PfsMapper(CameraMapper):
 
         if isinstance(item, (afwImage.ExposureU, afwImage.ExposureI, afwImage.ExposureF, afwImage.ExposureD)):
             exp = item
+            if exp.getDetector() is None:
+                self._setCcdDetector(exp, dataId, trimmed)
         else:
             exp = super()._standardizeExposure(
                 mapping,
@@ -617,6 +619,9 @@ class PfsMapper(CameraMapper):
         exp.setFilterLabel(afwImage.FilterLabel(band=filterName, physical=filterName))
 
         if actualId["arm"] in "bmr":    # regular CCD data
+            return exp
+
+        if mapping.datasetType != "raw":
             return exp
 
         # Handle H4RGs
