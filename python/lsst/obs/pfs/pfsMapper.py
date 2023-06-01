@@ -622,19 +622,23 @@ class PfsMapper(CameraMapper):
         # Handle H4RGs
         md = exp.getMetadata()
 
-        detector = exp.getDetector().rebuild()   # returns a Detector Builder
+        detector = exp.getDetector()
+        if md.get("CALIB_ID"):
+            assert detector is None
+        else:
+            detector = detector.rebuild()   # returns a Detector Builder
 
-        for channel in detector.getAmplifiers():  # an H4RG/ROIC/SAM "channel", not really an amplifier
-            gain = channel.getGain()
-            readNoise = channel.getReadNoise()
+            for channel in detector.getAmplifiers():  # an H4RG/ROIC/SAM "channel", not really an amplifier
+                gain = channel.getGain()
+                readNoise = channel.getReadNoise()
 
-            gain /= md["W_H4GAIN"]       # allow for the ASIC preamp gain (electrons per ADU)
-            readNoise /= md["W_H4GAIN"]  # allow for the ASIC preamp gain (units are now ADU)
+                gain /= md["W_H4GAIN"]       # allow for the ASIC preamp gain (electrons per ADU)
+                readNoise /= md["W_H4GAIN"]  # allow for the ASIC preamp gain (units are now ADU)
 
-            channel.setGain(gain)
-            channel.setReadNoise(readNoise)
+                channel.setGain(gain)
+                channel.setReadNoise(readNoise)
 
-        exp.setDetector(detector.finish())
+            exp.setDetector(detector.finish())
 
         return exp
 
