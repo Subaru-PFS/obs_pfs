@@ -642,8 +642,8 @@ class PfsIsrTask(ipIsr.IsrTask):
         channel = exposure.getDetector()[0]
         gain = channel.getGain()
 
-        exposure.image *= gain       # convert to electrons
-        var = exposure.image         # assumes photon noise -- not true for the persistence
+        exposure.image *= gain        # convert to electrons
+        var = exposure.image.clone()  # assumes photon noise -- not true for the persistence
         var += 2*(gain*channel.getReadNoise())**2  # 2* comes from CDS
         exposure.variance = var
 
