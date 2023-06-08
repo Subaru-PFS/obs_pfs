@@ -127,7 +127,6 @@ class PfsIsrTaskConfig(ipIsr.IsrTaskConfig):
     """
     doBrokenRedShutter = pexConfig.Field(dtype=bool, default=False,
                                          doc="Attempt to correct for a broken red shutter?")
-
     brokenRedShutter = pexConfig.ConfigField(
         dtype=BrokenShutterConfig, doc="Broken shutter related configuration options."
     )
@@ -146,7 +145,12 @@ is between value and 100 - value.
 The first value should probably always be zero, as we haven't removed any signal at that point,
 but if you have a sufficiently large cosmic ray flux you might want to reconsider.""")
     crosstalk = pexConfig.ConfigurableField(target=PfsCrosstalkTask, doc="Inter-CCD crosstalk correction")
-
+    doFlatNir = pexConfig.Field(
+        dtype=bool,
+        default=True,
+        doc=("Correct for flat field in NIR? This switch is independent of `doFlat`; "
+             "the NIR data will be flat-fielded if either is `True`."),
+    )
     doIPC = pexConfig.Field(dtype=bool, default=False, doc="Correct for IPC?")
     # these numbers are a hand-tuned guess by RHL.  They will be replaced by spatially-resolved
     # measurements from Eddie Berger any day now. PIPE2D-1071
@@ -429,6 +433,41 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         return result
 
+    def readIsrData(self, dataRef, rawExposure):
+        """Retrieve necessary frames for instrument signature removal.
+
+        Pre-fetching all required ISR data products limits the IO
+        required by the ISR. Any conflict between the calibration data
+        available and that needed for ISR is also detected prior to
+        doing processing, allowing it to fail quickly.
+
+        This override ensures we have the NIR flat if ``doFlatNir`` is ``True``.
+
+        Parameters
+        ----------
+        dataRef : `daf.persistence.butlerSubset.ButlerDataRef`
+            Butler reference of the detector data to be processed
+        rawExposure : `afw.image.Exposure`
+            The raw exposure that will later be corrected with the
+            retrieved calibration data; should not be modified in this
+            method.
+
+        Returns
+        -------
+        result : `lsst.pipe.base.Struct`
+            Struct containing the necessary calibs.
+        """
+        result = super().readIsrData(dataRef, rawExposure)
+
+        if dataRef.dataId["arm"] == "n" and self.config.doFlatNir and not self.config.doFlat:
+            try:
+                dateObs = rawExposure.getInfo().getVisitInfo().getDate().toPython().isoformat()
+            except RuntimeError:
+                dateObs = None
+            result.flat = self.getIsrExposure(dataRef, self.config.flatDataProductName, dateObs=dateObs)
+
+        return result
+
     def getIsrExposure(self, dataRef, datasetType, dateObs=None, immediate=True):
         """Retrieve a calibration dataset for removing instrument signature.
 
@@ -627,7 +666,7 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         if self.config.doDark and dark is None:
             raise RuntimeError("Must supply a dark exposure if config.doDark=True.")
-        if self.config.doFlat and flat is None:
+        if (self.config.doFlat or self.config.doFlatNir) and flat is None:
             raise RuntimeError("Must supply a flat exposure if config.doFlat=True.")
         if self.config.doDefect and defects is None:
             raise RuntimeError("Must supply defects if config.doDefect=True.")
@@ -665,7 +704,7 @@ class PfsIsrTask(ipIsr.IsrTask):
             super().darkCorrection(exposure, dark)
             super().debugView(exposure, "doDark")
 
-        if self.config.doFlat:
+        if self.config.doFlat or self.config.doFlatNir:
             self.log.info("Applying flat correction.")
             self.flatCorrection(exposure, flat)
             self.debugView(exposure, "doFlat")
