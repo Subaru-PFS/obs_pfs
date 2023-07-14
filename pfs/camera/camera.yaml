@@ -531,8 +531,8 @@ CCDs : &CCDs
     n3:
       <<: *n1
       id: 8
-      serial : "TBD:TBD"                # value at MKO.  Detector:SAM
-      offset : [37.1, 65.1]           # mm
+      serial : "18321:124"              # value at MKO.  Detector:SAM
+      offset : [37.1, 65.1]             # mm
     m3:
       <<: *r3
       id: -7                            # == r3
