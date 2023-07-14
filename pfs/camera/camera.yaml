@@ -333,7 +333,7 @@ CCDs : &CCDs
 
         detectorType : 2                # H4RG
         id : 2
-        serial : "18660:116"            # value at MKO.  Detector:SAM
+        serial : "18660:229"            # value at MKO.  Detector:ASIC
         offset : [-93.1, 65.1]          # mm
         yaw : 270.0                     # rotation in plane of camera (degrees)
 
@@ -426,7 +426,7 @@ CCDs : &CCDs
     n2:
       <<: *n1
       id: 5
-      serial : "TBD:TBD"                # value at MKO.  Detector:SAM
+      serial : "18315:120"              # value at MKO.  Detector:ASIC
       offset : [-28.0, 65.1]           # mm
     m2:                                # == r2
       <<: *r2
@@ -531,7 +531,7 @@ CCDs : &CCDs
     n3:
       <<: *n1
       id: 8
-      serial : "18321:124"              # value at MKO.  Detector:SAM
+      serial : "18321:119"              # value at MKO.  Detector:ASIC
       offset : [37.1, 65.1]             # mm
     m3:
       <<: *r3
@@ -619,7 +619,7 @@ CCDs : &CCDs
     n4:
       <<: *n1
       id: 11
-      serial : "18661:119"              # value at MKO.  Detector:SAM
+      serial : "18661:118"              # value at MKO.  Detector:ASIC
       offset : [102.2, 65.1]           # mm
     m4:
       <<: *r4
