@@ -630,6 +630,8 @@ class PfsMapper(CameraMapper):
         detector = exp.getDetector()
         if md.get("CALIB_ID"):
             assert detector is None
+        elif re.search(r"^REF_[0-9]+$", md['EXTNAME']):
+            pass
         else:
             detector = detector.rebuild()   # returns a Detector Builder
 
