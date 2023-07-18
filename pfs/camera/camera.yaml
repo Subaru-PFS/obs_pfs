@@ -341,9 +341,9 @@ CCDs : &CCDs
             "0":
                 <<: *H4RG
                 # Here "adu" means "ADU if the ASIC gain were unity"
-                # We'll divide by the ASIC gain W_H4GAIN in std_raw and std_rawb 
-                gain : 9.04             # adu/electron
-                readNoise : 18.1        # a single ref-pixel corrected read; adu
+                # We'll divide by the ASIC gain W_H4GAIN in PfsMapper._standardizeExposure
+                gain : 9.05             # adu/electron (3.2 with H4GAIN=2.828 == sqrt(8)). From Eddie Bergeron
+                readNoise : 13.5        # a single ref-pixel corrected read; electrons (Teledyne CDS/sqrt(2))
 
     b2:
       <<: *CCD
@@ -428,6 +428,16 @@ CCDs : &CCDs
       id: 5
       serial : "18315:120"              # value at MKO.  Detector:ASIC
       offset : [-28.0, 65.1]           # mm
+
+      amplifiers:                     # only 1 amplifier (well, really 16M amplifiers but treated as 1)
+          "0":
+              <<: *H4RG
+              # Here "adu" means "ADU if the ASIC gain were unity"
+              # We'll divide by the ASIC gain W_H4GAIN in PfsMapper._standardizeExposure
+              gain : 7.66             # e-/adu
+                                      # from 18660, scaled by 6.59/7.78 (transimpedence gain ratio, Teledyne)
+              readNoise : 12.8        # a single ref-pixel corrected read; electrons (Teledyne CDS/sqrt(2))
+
     m2:                                # == r2
       <<: *r2
       id: -4
@@ -533,6 +543,16 @@ CCDs : &CCDs
       id: 8
       serial : "18321:119"              # value at MKO.  Detector:ASIC
       offset : [37.1, 65.1]             # mm
+
+      amplifiers:                     # only 1 amplifier (well, really 16M amplifiers but treated as 1)
+          "0":
+              <<: *H4RG
+              # Here "adu" means "ADU if the ASIC gain were unity"
+              # We'll divide by the ASIC gain W_H4GAIN in PfsMapper._standardizeExposure
+              gain : 7.96             # e-/adu
+                                      # from 18660, scaled by 6.59/7.49 (transimpedence gain ratio, Teledyne)
+              readNoise : 14.7        # a single ref-pixel corrected read; electrons (Teledyne CDS/sqrt(2))
+
     m3:
       <<: *r3
       id: -7                            # == r3
@@ -621,6 +641,16 @@ CCDs : &CCDs
       id: 11
       serial : "18661:118"              # value at MKO.  Detector:ASIC
       offset : [102.2, 65.1]           # mm
+
+      amplifiers:                     # only 1 amplifier (well, really 16M amplifiers but treated as 1)
+          "0":
+              <<: *H4RG
+              # Here "adu" means "ADU if the ASIC gain were unity"
+              # We'll divide by the ASIC gain W_H4GAIN in PfsMapper._standardizeExposure
+              gain : 8.76             # e-/adu
+                                      # from 18660, scaled by 6.59/6.81 (transimpedence gain ratio, Teledyne)
+              readNoise : 14.8        # a single ref-pixel corrected read; electrons (Teledyne CDS/sqrt(2))
+
     m4:
       <<: *r4
       id: -10
