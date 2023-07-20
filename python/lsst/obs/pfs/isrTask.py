@@ -151,47 +151,12 @@ but if you have a sufficiently large cosmic ray flux you might want to reconside
         doc=("Correct for flat field in NIR? This switch is independent of `doFlat`; "
              "the NIR data will be flat-fielded if either is `True`."),
     )
-    doIPC = pexConfig.Field(dtype=bool, default=False, doc="Correct for IPC?")
-    # these numbers are a hand-tuned guess by RHL.  They will be replaced by spatially-resolved
-    # measurements from Eddie Berger any day now. PIPE2D-1071
-    #
-    # The new code looks something like:
-    """
-    import lsst.pex.config as pexConfig
-
-    ipcCoeffsFile = "/work/cloomis/18660_ipc_kernel_first_attempt.fits"  # From Eddie Bergeron
-    nmed = 3
-
-    with astropy.io.fits.open(ipcCoeffsFile) as fits:
-        md =fits[1].header
-        nx = md["NX"]
-        ny = md["NY"]
-
-        ipcCoeffsFromFile = {}
-        for i in range(1, nx*ny + 1):
-            md = fits[i].header
-            ix = md["KERNEL_X"] - nx//2
-            iy = md["KERNEL_Y"] - ny//2
-
-            coeffs = np.ndarray.astype(fits[i].data, 'float32')
-            coeffs[coeffs > 0.1] = np.median(coeffs)
-            coeffs = np.rot90(coeffs, 1)   # returns a view
-            coeffs = scipy.ndimage.median_filter(coeffs, size=(nmed, nmed), mode='nearest')
-
-            ipcCoeffsFromFile[ix + iy*1j] = coeffs
-
-    pexConfig.Field.supportedTypes.add(np.ndarray)
-    config.ipcCoeffs = ipcCoeffsFromFile
-    """
-
-    ipcCoeffs = pexConfig.DictField(
-        keytype=complex, itemtype=None,
-        default={               # indexed by (dx, dy)
-            -1 + 1*1j: 0,     0 + 1*1j: 6e-3, 1 + 1*1j: 0,      # noqa E241
-            -1 + 0*1j: 13e-3, 0 + 0*1j: 0,    1 + 0*1j: 13e-3,  # noqa E241
-            -1 - 1*1j: 0,     0 - 1*1j: 6e-3, 1 - 1*1j: 0,      # noqa E241
-        },
-        doc="IPC coefficients indexed by dx + dy*1j")
+    doIPC = pexConfig.Field(dtype=bool, default=True, doc="Correct for IPC?")
+    ipcDataProductName = pexConfig.Field(
+        dtype=str,
+        doc="Name of the IPC coefficients data product",
+        default="ipc",
+    )
 
     def setDefaults(self):
         super().setDefaults()
@@ -459,12 +424,18 @@ class PfsIsrTask(ipIsr.IsrTask):
         """
         result = super().readIsrData(dataRef, rawExposure)
 
-        if dataRef.dataId["arm"] == "n" and self.config.doFlatNir and not self.config.doFlat:
+        if dataRef.dataId["arm"] == "n" and (self.config.doFlatNir or self.config.doIPC):
             try:
                 dateObs = rawExposure.getInfo().getVisitInfo().getDate().toPython().isoformat()
             except RuntimeError:
                 dateObs = None
-            result.flat = self.getIsrExposure(dataRef, self.config.flatDataProductName, dateObs=dateObs)
+
+            if not self.config.doFlat:
+                result.flat = self.getIsrExposure(dataRef,
+                                                  self.config.flatDataProductName, dateObs=dateObs)
+            if self.config.doIPC:
+                result.ipcCoeffs = self.getIsrExposure(dataRef,
+                                                       self.config.ipcDataProductName, dateObs=dateObs)
 
         return result
 
@@ -631,7 +602,7 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         return results
 
-    def runH4RG(self, exposure, dark=None, flat=None, defects=None, **kwargs):
+    def runH4RG(self, exposure, dark=None, flat=None, defects=None, ipcCoeffs=None, **kwargs):
         """Specialist instrument signature removal for H4RG detectors
 
         Parameters
@@ -639,12 +610,14 @@ class PfsIsrTask(ipIsr.IsrTask):
         exposure : `lsst.afw.image.Exposure`
             The raw exposure that is to be run through ISR.  The
             exposure is modified by this method.
-        dark : `lsst.afw.image.Exposure`
+        dark : `lsst.afw.image.Exposure`, optional
             Dark exposure to subtract.
-        flat : `lsst.afw.image.Exposure`
+        flat : `lsst.afw.image.Exposure`, optional
             Flat-field exposure to divide by.
         defects : `lsst.ip.isr.Defects`, optional
             List of defects.
+        ipcCoeffs : `lsst.afw.image.Exposure`, optional  XXXXX
+            IPC correction coefficients to apply (PROTOCOL 1 for now, single HDU with no spatial variation)
         kwargs : `dict` other keyword arguments specifying e.g. combined biases
             N.b. no values are currently valid
         Returns
@@ -670,8 +643,11 @@ class PfsIsrTask(ipIsr.IsrTask):
             raise RuntimeError("Must supply a flat exposure if config.doFlat=True.")
         if self.config.doDefect and defects is None:
             raise RuntimeError("Must supply defects if config.doDefect=True.")
-        if self.config.doIPC and defects is None:
-            raise RuntimeError("Must supply defects if config.doIPC=True.")
+        if self.config.doIPC:
+            if defects is None:
+                raise RuntimeError("Must supply defects if config.doIPC=True.")
+            if ipcCoeffs is None:
+                raise RuntimeError("Must supply ipcCoeffs if config.doIPC=True.")
 
         # Think about the ordering here.
         # E.g. dark subtraction before defects (but then we'd have to rotate the dark,
@@ -687,7 +663,8 @@ class PfsIsrTask(ipIsr.IsrTask):
         exposure.variance = var
 
         if self.config.doIPC:
-            self.correctIPC(exposure, defects, self.config.ipcCoeffs)
+            self.log.info("Applying IPC correction.")
+            self.correctIPC(exposure, defects, ipcCoeffs)
 
         if self.config.doDefect:
             super().maskAndInterpolateDefects(exposure, defects)
