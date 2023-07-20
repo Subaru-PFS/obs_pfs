@@ -335,7 +335,7 @@ class PfsMapper(CameraMapper):
 
                         refCorrection = np.nanmedian(rchan, axis=1) + np.mean(refPerColumn)
 
-                        ichan[:] = (ichan.T - refCorrection).T
+                        ichan -= refCorrection.reshape((len(refCorrection), 1))
 
         if hdus[0] == hdus[-1]:         # we can't use CDS
             self.log.warn("You are processing a single frame; not carrying out CDS")
@@ -462,6 +462,26 @@ class PfsMapper(CameraMapper):
         Because it is not an Exposure.
         """
         return item
+
+    def std_ipc(self, item, dataId):
+        """Disable standardization for IPC coefficients
+
+        Because it is not an Exposure.
+        """
+        exp = item
+
+        protocol = exp.getMetadata()["PROTOCOL"]
+        assert protocol == 1
+
+        arr = exp.image.array
+        nx, ny = arr.shape
+
+        ipcCoeffs = {}
+        for iy in range(-(ny//2), ny//2 + 1):
+            for ix in range(-(nx//2), nx//2 + 1):
+                ipcCoeffs[ix + iy*1j] = arr[iy + ny//2, ix + nx//2]
+
+        return ipcCoeffs
 
     def map_linearizer(self, dataId, write=False):
         """Map a linearizer."""
@@ -630,7 +650,7 @@ class PfsMapper(CameraMapper):
         detector = exp.getDetector()
         if md.get("CALIB_ID"):
             assert detector is None
-        elif re.search(r"^REF_[0-9]+$", md['EXTNAME']):
+        elif re.search(r"^(RESET_)?REF_[0-9]+$", md['EXTNAME']):
             pass
         else:
             detector = detector.rebuild()   # returns a Detector Builder
