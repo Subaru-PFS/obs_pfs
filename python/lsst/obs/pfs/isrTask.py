@@ -662,9 +662,11 @@ class PfsIsrTask(ipIsr.IsrTask):
         var += 2*channel.getReadNoise()**2  # 2* comes from CDS
         exposure.variance = var
 
+        nQuarter = exposure.getDetector().getOrientation().getNQuarter()
+
         if self.config.doIPC:
             self.log.info("Applying IPC correction.")
-            self.correctIPC(exposure, defects, ipcCoeffs)
+            self.correctIPC(exposure, defects, ipcCoeffs, -nQuarter)
 
         if self.config.doDefect:
             super().maskAndInterpolateDefects(exposure, defects)
@@ -672,7 +674,6 @@ class PfsIsrTask(ipIsr.IsrTask):
         if self.config.maskNegativeVariance:
             super().maskNegativeVariance(exposure)
 
-        nQuarter = exposure.getDetector().getOrientation().getNQuarter()
         if nQuarter != 0:
             exposure.maskedImage = afwMath.rotateImageBy90(exposure.maskedImage, nQuarter)
 
@@ -693,7 +694,17 @@ class PfsIsrTask(ipIsr.IsrTask):
                                )
 
     @staticmethod
-    def correctIPC(exposure, defects, ipcCoeffs):
+    def correctIPC(exposure, defects, ipcCoeffs, nQuarter=0):
+        """Correct the exposure for the IPC associated with the defects
+
+        Note that the coefficients may be scalars or images with the same dimensions as the exposure
+
+        exposure:  The image in question
+        defects:   List of defects
+        ipcCoeffs: dict of dict of coefficients;  ipcCoeffs[dx][dy] is the fraction of flux at (dx, dy)
+        nQuarter:  number of pi/2 turns that will be applied to the data to get it into the
+                   same orientation as the IPC coefficients
+        """
         ipc = exposure.maskedImage.clone()
         ipc.mask[:] = 0x0
         defects.maskPixels(ipc)
@@ -705,7 +716,7 @@ class PfsIsrTask(ipIsr.IsrTask):
         ipcmodel = np.zeros_like(ipcarr, dtype=np.float32)
 
         nx, ny = exposure.getDimensions()
-        nc = int(np.sqrt(len(ipcCoeffs)) + 0.5)
+        nc = len(ipcCoeffs)
         nc2 = nc//2
         for y in range(-nc2, nc2 + 1):
             y0, y1 = (y, ny)     if y > 0 else ( 0, ny + y)  # noqa E201, E272
@@ -716,7 +727,20 @@ class PfsIsrTask(ipIsr.IsrTask):
 
                 x0, x1 = (x, nx)     if x > 0 else ( 0, nx + x)  # noqa E201, E272
                 x2, x3 = (0, nx - x) if x > 0 else (-x, nx)
-                ipcmodel[y0:y1, x0:x1] += (ipcCoeffs[x][y]*ipcarr)[y2:y3, x2:x3]
+                #
+                # The image is rotated by nQuarter relative to the IPC coefficients.
+                # Rotate the coefficients to match
+                if nQuarter%4 == 0:
+                    rx, ry = x, y
+                elif nQuarter%4 == 1:
+                    rx, ry = y, -x
+                elif nQuarter%4 == 2:
+                    rx, ry = -x, -y
+                else:
+                    rx, ry == -y, x
+
+                rx, ry = y, -x
+                ipcmodel[y0:y1, x0:x1] += (ipcCoeffs[rx][ry]*ipcarr)[y2:y3, x2:x3]
 
         exposure.image.array[:, :] -= ipcmodel
 
