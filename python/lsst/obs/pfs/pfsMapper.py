@@ -466,20 +466,21 @@ class PfsMapper(CameraMapper):
     def std_ipc(self, item, dataId):
         """Disable standardization for IPC coefficients
 
-        Because it is not an Exposure.
+        The IPC coefficients are read from FITS, but into their own data type (a nested dict). In the
+        case of a constant array of coefficients (protocol 1) they are read from a DecoratedImage,
+        but in general we'll need to be able to handle a MEF with one HDU for each coefficient
         """
-        exp = item
-
-        protocol = exp.getMetadata()["PROTOCOL"]
+        protocol = item.getMetadata()["PROTOCOL"]
         assert protocol == 1
 
-        arr = exp.image.array
+        arr = item.image.array
         nx, ny = arr.shape
 
         ipcCoeffs = {}
-        for iy in range(-(ny//2), ny//2 + 1):
-            for ix in range(-(nx//2), nx//2 + 1):
-                ipcCoeffs[ix + iy*1j] = arr[iy + ny//2, ix + nx//2]
+        for ix in range(-(nx//2), nx//2 + 1):
+            ipcCoeffs[ix] = {}
+            for iy in range(-(ny//2), ny//2 + 1):
+                ipcCoeffs[ix][iy] = arr[iy + ny//2, ix + nx//2]
 
         return ipcCoeffs
 

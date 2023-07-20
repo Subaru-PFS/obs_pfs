@@ -716,7 +716,7 @@ class PfsIsrTask(ipIsr.IsrTask):
 
                 x0, x1 = (x, nx)     if x > 0 else ( 0, nx + x)  # noqa E201, E272
                 x2, x3 = (0, nx - x) if x > 0 else (-x, nx)
-                ipcmodel[y0:y1, x0:x1] += (ipcCoeffs[x + y*1j]*ipcarr)[y2:y3, x2:x3]
+                ipcmodel[y0:y1, x0:x1] += (ipcCoeffs[x][y]*ipcarr)[y2:y3, x2:x3]
 
         exposure.image.array[:, :] -= ipcmodel
 
