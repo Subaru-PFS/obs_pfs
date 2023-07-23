@@ -690,7 +690,7 @@ def readIPCMEF(ipcCoeffsFile, nmed=1, rawOrientation=True):
     The return type is that expected by the H4RG IsrTask
     """
     with astropy.io.fits.open(ipcCoeffsFile) as fits:
-        md =fits[1].header
+        md = fits[1].header
         nx = md["NX"]
         ny = md["NY"]
 
@@ -715,6 +715,5 @@ def readIPCMEF(ipcCoeffsFile, nmed=1, rawOrientation=True):
                 coeffs = scipy.ndimage.median_filter(coeffs, size=(nmed, nmed), mode='nearest')
 
             ipcCoeffs[ix][iy] = coeffs
-            
+
     return ipcCoeffs
-    
