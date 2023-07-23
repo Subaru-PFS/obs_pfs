@@ -683,7 +683,7 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         exposure.image *= gain        # convert to electrons
         var = exposure.image.clone()  # assumes photon noise -- not true for the persistence
-        var += 2*(gain*channel.getReadNoise())**2  # 2* comes from CDS
+        var += 2*channel.getReadNoise()**2  # 2* comes from CDS
         exposure.variance = var
 
         if self.config.doIPC:
