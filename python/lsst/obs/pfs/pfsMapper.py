@@ -1,7 +1,9 @@
 import os
 import re
 import numpy as np
+import scipy
 
+import astropy
 from astro_metadata_translator import fix_header
 
 from lsst.geom import BoxI, PointI, ExtentI
@@ -468,7 +470,8 @@ class PfsMapper(CameraMapper):
 
         The IPC coefficients are read from FITS, but into their own data type (a nested dict). In the
         case of a constant array of coefficients (protocol 1) they are read from a DecoratedImage,
-        but in general we'll need to be able to handle a MEF with one HDU for each coefficient
+        but in general we'll need to be able to handle a MEF with one HDU for each coefficient. The
+        code to read them is in readIPCMEF()
         """
         protocol = item.getMetadata()["PROTOCOL"]
         assert protocol == 1
@@ -673,3 +676,45 @@ class PfsMapper(CameraMapper):
         This forces ISR to read the crosstalk from the camera.
         """
         raise NoResults("Crosstalk is stored in the detector", "crosstalk", dataId)
+
+
+def readIPCMEF(ipcCoeffsFile, nmed=1, rawOrientation=True):
+    """Read a MEF containing IPC coefficients
+
+    ipcCoeffsFile : `str` FITS file to read
+    nmed:  `int` Size of median filter to apply
+    rawOrientation: `bool` If true the coefficients are in "raw" orientation, i.e. horizontal channels
+
+    Returns: a dict-of-dicts indexed as ipcCoeffs[ix][iy] where [0][0] is the aggressor pixel
+
+    The return type is that expected by the H4RG IsrTask
+    """
+    with astropy.io.fits.open(ipcCoeffsFile) as fits:
+        md =fits[1].header
+        nx = md["NX"]
+        ny = md["NY"]
+
+        ipcCoeffs = {}
+        for ix in range(-(nx//2), nx//2 + 1):
+            ipcCoeffs[ix] = {}
+
+        for i in range(1, nx*ny + 1):
+            md = fits[i].header
+            ix = md["KERNEL_X"] - nx//2
+            iy = md["KERNEL_Y"] - ny//2
+
+            coeffs = np.ndarray.astype(fits[i].data, 'float32')
+            coeffs[coeffs > 0.1] = np.median(coeffs)
+            #
+            # We rotate the image to match the CCDs, so we may need to rotate the coefficients too
+            #
+            if rawOrientation:
+                coeffs = np.rot90(coeffs, 1)  # returns a view
+
+            if nmed > 1:
+                coeffs = scipy.ndimage.median_filter(coeffs, size=(nmed, nmed), mode='nearest')
+
+            ipcCoeffs[ix][iy] = coeffs
+            
+    return ipcCoeffs
+    
