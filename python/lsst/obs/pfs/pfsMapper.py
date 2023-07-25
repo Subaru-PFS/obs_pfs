@@ -1,7 +1,9 @@
 import os
 import re
 import numpy as np
+import scipy
 
+import astropy
 from astro_metadata_translator import fix_header
 
 from lsst.geom import BoxI, PointI, ExtentI
@@ -335,7 +337,7 @@ class PfsMapper(CameraMapper):
 
                         refCorrection = np.nanmedian(rchan, axis=1) + np.mean(refPerColumn)
 
-                        ichan[:] = (ichan.T - refCorrection).T
+                        ichan -= refCorrection.reshape((len(refCorrection), 1))
 
         if hdus[0] == hdus[-1]:         # we can't use CDS
             self.log.warn("You are processing a single frame; not carrying out CDS")
@@ -462,6 +464,28 @@ class PfsMapper(CameraMapper):
         Because it is not an Exposure.
         """
         return item
+
+    def std_ipc(self, item, dataId):
+        """Disable standardization for IPC coefficients
+
+        The IPC coefficients are read from FITS, but into their own data type (a nested dict). In the
+        case of a constant array of coefficients (protocol 1) they are read from a DecoratedImage,
+        but in general we'll need to be able to handle a MEF with one HDU for each coefficient. The
+        code to read them is in readIPCMEF()
+        """
+        protocol = item.getMetadata()["PROTOCOL"]
+        assert protocol == 1
+
+        arr = item.image.array
+        nx, ny = arr.shape
+
+        ipcCoeffs = {}
+        for ix in range(-(nx//2), nx//2 + 1):
+            ipcCoeffs[ix] = {}
+            for iy in range(-(ny//2), ny//2 + 1):
+                ipcCoeffs[ix][iy] = arr[iy + ny//2, ix + nx//2]
+
+        return ipcCoeffs
 
     def map_linearizer(self, dataId, write=False):
         """Map a linearizer."""
@@ -630,7 +654,7 @@ class PfsMapper(CameraMapper):
         detector = exp.getDetector()
         if md.get("CALIB_ID"):
             assert detector is None
-        elif re.search(r"^REF_[0-9]+$", md['EXTNAME']):
+        elif re.search(r"^(RESET_)?REF_[0-9]+$", md['EXTNAME']):
             pass
         else:
             detector = detector.rebuild()   # returns a Detector Builder
@@ -652,3 +676,44 @@ class PfsMapper(CameraMapper):
         This forces ISR to read the crosstalk from the camera.
         """
         raise NoResults("Crosstalk is stored in the detector", "crosstalk", dataId)
+
+
+def readIPCMEF(ipcCoeffsFile, nmed=1, rawOrientation=True):
+    """Read a MEF containing IPC coefficients
+
+    ipcCoeffsFile : `str` FITS file to read
+    nmed:  `int` Size of median filter to apply
+    rawOrientation: `bool` If true the coefficients are in "raw" orientation, i.e. horizontal channels
+
+    Returns: a dict-of-dicts indexed as ipcCoeffs[ix][iy] where [0][0] is the aggressor pixel
+
+    The return type is that expected by the H4RG IsrTask
+    """
+    with astropy.io.fits.open(ipcCoeffsFile) as fits:
+        md = fits[1].header
+        nx = md["NX"]
+        ny = md["NY"]
+
+        ipcCoeffs = {}
+        for ix in range(-(nx//2), nx//2 + 1):
+            ipcCoeffs[ix] = {}
+
+        for i in range(1, nx*ny + 1):
+            md = fits[i].header
+            ix = md["KERNEL_X"] - nx//2
+            iy = md["KERNEL_Y"] - ny//2
+
+            coeffs = np.ndarray.astype(fits[i].data, 'float32')
+            coeffs[coeffs > 0.1] = np.median(coeffs)
+            #
+            # We rotate the image to match the CCDs, so we may need to rotate the coefficients too
+            #
+            if rawOrientation:
+                coeffs = np.rot90(coeffs, 1)  # returns a view
+
+            if nmed > 1:
+                coeffs = scipy.ndimage.median_filter(coeffs, size=(nmed, nmed), mode='nearest')
+
+            ipcCoeffs[ix][iy] = coeffs
+
+    return ipcCoeffs
