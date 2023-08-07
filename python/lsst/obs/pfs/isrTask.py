@@ -430,7 +430,8 @@ class PfsIsrTask(ipIsr.IsrTask):
             except RuntimeError:
                 dateObs = None
 
-            if not self.config.doFlat:
+            # If doFlat=True, super().readIsrData already read the flat
+            if self.config.doFlatNir and not self.config.doFlat:
                 result.flat = self.getIsrExposure(dataRef,
                                                   self.config.flatDataProductName, dateObs=dateObs)
             if self.config.doIPC:
