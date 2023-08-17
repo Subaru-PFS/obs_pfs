@@ -2,6 +2,8 @@
 Utilities for working with PFS data
 """
 
+import os
+
 
 def getLamps(md):
     """Return a list of lit lamps, according to the header
@@ -57,3 +59,30 @@ def getLampElements(md):
     }
     elements = [menu[key] for key in menu if md.get(key, False)]
     return {el for sublist in elements for el in sublist}
+
+
+def getCalibPath(refOrButler):
+    """Attempt to figure out the calibration path
+
+    This only works with the Gen2 middleware, and involves digging in the
+    internals.
+
+    Parameters
+    ----------
+    refOrButler : `ButlerDataRef` or `Butler`
+        Data reference or data butler.
+
+    Returns
+    -------
+    path : `str`
+        Path for calibs, or ``UNKNOWN``.
+    """
+    from lsst.daf.persistence import ButlerDataRef
+    if isinstance(refOrButler, ButlerDataRef):
+        butler = refOrButler.getButler()
+    else:
+        butler = refOrButler
+    try:
+        return os.path.realpath(butler._repos.inputs()[-1].cfg.mapperArgs["calibRoot"])
+    except Exception:
+        return "UNKNOWN"
