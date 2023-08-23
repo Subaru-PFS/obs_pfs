@@ -33,6 +33,7 @@ from lsst.ip.isr import isrQa
 from lsst.utils.timer import timeMethod
 import lsst.pipe.base as pipeBase
 
+from .utils import getCalibPath
 from pfs.drp.stella.crosstalk import PfsCrosstalkTask
 
 ___all__ = ["IsrTask", "IsrTaskConfig"]
@@ -323,7 +324,6 @@ class PfsIsrTask(ipIsr.IsrTask):
         self.log.info("Performing ISR on sensor %s" % (sensorRef.dataId))
 
         ccdExposure = sensorRef.get(self.config.datasetType)
-
         camera = sensorRef.get("camera")
         if camera is None and self.config.doAddDistortionModel:
             raise RuntimeError("config.doAddDistortionModel is True "
@@ -331,6 +331,7 @@ class PfsIsrTask(ipIsr.IsrTask):
         isrData = self.readIsrData(sensorRef, ccdExposure)
 
         result = self.run(ccdExposure, camera=camera, **isrData.getDict())
+        result.exposure.getMetadata().set("PFS.DRP2D.CALIB", getCalibPath(sensorRef))
 
         if self.config.doBrokenRedShutter and \
            ccdExposure.getDetector().getName() in self.config.brokenRedShutter.brokenShutterList:
