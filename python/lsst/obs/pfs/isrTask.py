@@ -331,7 +331,7 @@ class PfsIsrTask(ipIsr.IsrTask):
         isrData = self.readIsrData(sensorRef, ccdExposure)
 
         result = self.run(ccdExposure, camera=camera, **isrData.getDict())
-        result.exposure.getMetadata().set("PFS.DRP2D.CALIB", getCalibPath(sensorRef))
+        result.exposure.getMetadata().set("PFS_DRP2D_CALIB", getCalibPath(sensorRef))
 
         if self.config.doBrokenRedShutter and \
            ccdExposure.getDetector().getName() in self.config.brokenRedShutter.brokenShutterList:
