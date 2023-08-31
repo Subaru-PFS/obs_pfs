@@ -45,6 +45,14 @@ exposures:
   calexp:
     template: 'calExp/%(dateObs)s/v%(visit)06d/calExp-%(site)s%(category)s%(visit)06d%(arm)s%(spectrograph)1d.fits'
 
+  subtracted:
+    template: 'subtracted/%(dateObs)s/v%(visit)06d/subtracted-%(site)s%(category)s%(visit)06d%(arm)s%(spectrograph)1d.fits'
+    persistable: ExposureF
+    storage: FitsStorage
+    python: lsst.afw.image.ExposureF
+    level: Ccd
+    tables: raw
+
   guider:
     description: "A raw autoguider image."
     template: '%(dateObs)s/PF%(site)s%(category)s%(visit)06d%(sequence)02d.fits[%(hdu)d]'
