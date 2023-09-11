@@ -18,6 +18,13 @@ def getLamps(md):
     lamps : `set` of `str`
         Set of lit lamps.
     """
+    # The lamp headers aren't perfectly reliable, so let's first check some others
+    dataType = (md.get("DATA-TYP") or "").lower().strip()
+    if dataType == "object":
+        return set()
+    if dataType == "flat":
+        return set(["Quartz"])
+
     menu = {
         # Modern "short" headers
         "W_AITNEO": "Ne",
@@ -42,6 +49,10 @@ def getLampElements(md):
 
     @param md: dafBase.PropertyList containing the header
     """
+
+    # The lamp headers aren't perfectly reliable, so let's first check some others
+    if (md.get("DATA-TYP") or "").lower().strip() in ("object", "flat"):
+        return set()
 
     md = md.toDict()
     menu = {
