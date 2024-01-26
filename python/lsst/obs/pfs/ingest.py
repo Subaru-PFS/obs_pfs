@@ -853,10 +853,10 @@ class PfsIngestCalibsTask(IngestCalibsTask):
                 return None, None
             self.log.warn("%s: already ingested: %s" % (infile, fileInfo))
 
-        # If we have a bias/dark/flat for 'r' or 'm' arm, ingest the alternate: the pixels are identical
+        # If we have a bias/dark for 'r' or 'm' arm, ingest the alternate: the pixels are identical
         assert len(hduInfoList) == 1
         hduInfo = hduInfoList[0]
-        if calibType in ("bias", "dark", "flat") and hduInfo["arm"] in ("r", "m"):
+        if calibType in ("bias", "dark") and hduInfo["arm"] in ("r", "m"):
             copy = hduInfo.copy()
             copy["arm"] = "r" if copy["arm"] == "m" else "m"
             hduInfoList.append(copy)
