@@ -349,6 +349,33 @@ datasets:
     tables:
     - raw
 
+  extQaStats:
+    template: 'extQaStats/%(dateObs)s/v%(visit)06d/extQaStats-%(visit)06d-%(arm)s%(spectrograph)d.pdf'
+    python: object
+    persistable: ignored
+    storage: MatplotlibStorage
+    level: Ccd
+    tables:
+    - raw
+
+  extQaImage:
+    template: 'extQaImage/%(dateObs)s/v%(visit)06d/extQaImage-%(visit)06d-%(arm)s%(spectrograph)d.pdf'
+    python: object
+    persistable: ignored
+    storage: MatplotlibStorage
+    level: Ccd
+    tables:
+    - raw
+
+  extQaImage_pickle:
+    template: 'extQaImage/%(dateObs)s/v%(visit)06d/extQaImage-%(visit)06d-%(arm)s%(spectrograph)d.pickle'
+    python: dict
+    persistable: ignored
+    storage: PickleStorage
+    level: Ccd
+    tables:
+    - raw
+
   pfsArmLsf:
     template: 'pfsArm/%(dateObs)s/v%(visit)06d/pfsArmLsf-%(visit)06d-%(arm)s%(spectrograph)d.pickle'
     python: dict
@@ -469,6 +496,14 @@ datasets:
   bootstrap_config:
     template: config/bootstrap.py
     python: pfs.drp.stella.bootstrap.BootstrapConfig
+    persistable: Config
+    storage: ConfigStorage
+    tables:
+    - raw
+
+  extractionQa_config:
+    template: config/extractionQa.py
+    python: pfs.drp.qa.extractionQa.ExtractionQaConfig
     persistable: Config
     storage: ConfigStorage
     tables:

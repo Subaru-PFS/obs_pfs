@@ -25,6 +25,8 @@ datastore:
     LsfDict: lsst.daf.butler.formatters.pickle.PickleFormatter
     Lsf: lsst.daf.butler.formatters.pickle.PickleFormatter
     NevenPsf: lsst.daf.butler.formatters.pickle.PickleFormatter
+    MultipagePdfFigure: pfs.drp.qa.formatters.PdfMatplotlibFormatter
+    QaDict: lsst.daf.butler.formatters.pickle.PickleFormatter
   templates:
     instrument+detector+dither: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{dither:?}_{detector.full_name:?}_{run}"
     instrument+detector+pfs_design_id: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{detector.full_name:?}_{pfs_design_id:?}_{run}"
@@ -67,3 +69,7 @@ storageClasses:
     pytype: pfs.drp.stella.lsf.Lsf
   NevenPsf:
     pytype: pfs.drp.stella.NevenPsfContinued.NevenPsf
+  MultipagePdfFigure:
+    pytype: pfs.drp.qa.storageClasses.MultipagePdfFigure
+  QaDict:
+    pytype: pfs.drp.qa.storageClasses.QaDict
