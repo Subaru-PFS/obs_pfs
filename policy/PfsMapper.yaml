@@ -376,6 +376,24 @@ datasets:
     tables:
     - raw
 
+  dmQaResidualImage:
+    template: 'detectorMapQA/%(dateObs)s/v%(visit)06d/dmQaResidualImage-%(visit)06d-%(arm)s%(spectrograph)d.pdf'
+    python: matplotlib.backends.backend_pdf.PdfPages
+    persistable: ignored
+    storage: MatplotlibStorage
+    level: Ccd
+    tables:
+    - raw
+
+  dmQaResidualStats:
+    template: 'detectorMapQA/%(dateObs)s/v%(visit)06d/dmQaResidualStats-%(visit)06d-%(arm)s%(spectrograph)d.pickle'
+    python: dict
+    persistable: ignored
+    storage: PickleStorage
+    level: Ccd
+    tables:
+    - raw 
+
   pfsArmLsf:
     template: 'pfsArm/%(dateObs)s/v%(visit)06d/pfsArmLsf-%(visit)06d-%(arm)s%(spectrograph)d.pickle'
     python: dict
@@ -504,6 +522,14 @@ datasets:
   extractionQa_config:
     template: config/extractionQa.py
     python: pfs.drp.qa.extractionQa.ExtractionQaConfig
+    persistable: Config
+    storage: ConfigStorage
+    tables:
+    - raw
+
+  detectorMapQa_config:
+    template: config/detectorMapQa.py
+    python: pfs.drp.qa.detectorMapQa.DetectorMapQaTask
     persistable: Config
     storage: ConfigStorage
     tables:
