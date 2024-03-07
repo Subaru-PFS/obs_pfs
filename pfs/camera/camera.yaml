@@ -44,7 +44,7 @@ AMP : &AMP
 
     #                         [[x0,  y0], [xSize, ySize]]
     rawBBox                 : [[0,    0], [552,    4300]] # total size of one amp's raw data
-    
+
     rawDataBBox             : [[8,   48], [512,    4176]] # data region in raw data
     rawSerialPrescanBBox    : [[0,   48], [8,      4176]] # serial prescan (we could use the first 48 too)
     rawSerialOverscanBBox   : [[520, 48], [32,     4176]] # serial overscan
@@ -93,7 +93,7 @@ Detector : &Detector
     detectorType : .nan
     refpos : [2048, 2088]               # centre of chip
     offset : [.nan, .nan]
-    # 
+    #
     bbox : [[0, 0], [4095, 4175]]       # total bbox of trimmed detector
     pixelSize : [0.015, 0.015]          # in mm
     transformDict : {nativeSys : 'Pixels', transforms : None}
@@ -155,6 +155,15 @@ CCD : &CCD
           <<: *A1
           ixy : [7, 0]
           # gain, readnoise needed in override
+
+#
+# A HgCdTe H4RG15
+H4RG15 : &H4RG15
+    << : *Detector
+    # detectorType, id, serial, offset needed in override
+    refpos : [2048, 2048]               # centre of chip
+    #
+    bbox : [[0, 0], [4095, 4095]]       # total bbox of trimmed detector
 
 #
 # Now the guide cameras
@@ -329,7 +338,7 @@ CCDs : &CCDs
                 readNoise : 4.452
 
     n1 : &n1
-        << : *Detector
+        << : *H4RG15
 
         detectorType : 2                # H4RG
         id : 2
