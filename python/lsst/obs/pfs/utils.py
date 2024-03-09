@@ -26,6 +26,18 @@ def getLamps(md):
         return set(["Quartz"])
 
     menu = {
+        # The W_ENIISA headers were used for a short, but regrettable, time in early 2024
+        "W_ENIISA": "Ar_eng",
+        "W_ENIISC": "Quartz_eng",
+        "W_ENIISH": "HgAr_eng",
+        "W_ENIISK": "Kr_eng",
+        "W_ENIISN": "Ne_eng",
+        # THREE (count them, 3) characters for the elements
+        "W_ENIARG": "Ar_eng",
+        "W_ENIQTH": "Quartz_eng",
+        "W_ENIHGA": "HgAr_eng",
+        "W_ENIKRY": "Kr_eng",
+        "W_ENINEO": "Ne_eng",
         # Modern "short" headers
         "W_AITNEO": "Ne",
         "W_AITXEN": "Xe",
@@ -41,6 +53,7 @@ def getLamps(md):
         "W_AIT_SRC_Xe": "Xe",
         "W_AIT_SRC_Qth": "Quartz",
     }
+
     return {menu[key] for key in menu if md.get(key, False)}
 
 
@@ -50,25 +63,25 @@ def getLampElements(md):
     @param md: dafBase.PropertyList containing the header
     """
 
-    # The lamp headers aren't perfectly reliable, so let's first check some others
-    if (md.get("DATA-TYP") or "").lower().strip() in ("object", "flat"):
-        return set()
+    lamps = getLamps(md)
 
-    md = md.toDict()
     menu = {
-        # Modern "short" headers
-        "W_AITNEO": ["Ne"],
-        "W_AITXEN": ["Xe"],
-        "W_AITHGA": ["Hg", "Ar"],
-        "W_AITKRY": ["Kr"],
-        "W_AITARG": ["Ar"],
-        "W_AITHGC": ["Hg", "Cd", "Ar"],
-        # Old "long" headers (2017)
-        "W_AIT_SRC_Ne": ["Ne"],
-        "W_AIT_SRC_HgAr": ["Hg", "Ar"],
-        "W_AIT_SRC_Xe": ["Xe"],
+        # Engineering fibres ("IIS")
+        "Quartz_eng": [],
+        "Ar_eng": ["Ar_eng"],
+        "HgAr_eng": ["Hg_eng", "Ar_eng"],
+        "Kr_eng": ["Kr_eng"],
+        "Ne_eng": ["Ne_eng"],
+        # Science fibres
+        "Quartz": [],
+        "Ar": ["Ar"],
+        "HgAr": ["Hg", "Ar"],
+        "HgCd": ["Hg", "Cd", "Ar"],
+        "Kr": ["Kr"],
+        "Ne": ["Ne"],
+        "Xe": ["Xe"],
     }
-    elements = [menu[key] for key in menu if md.get(key, False)]
+    elements = [menu[key] for key in lamps]
     return {el for sublist in elements for el in sublist}
 
 
