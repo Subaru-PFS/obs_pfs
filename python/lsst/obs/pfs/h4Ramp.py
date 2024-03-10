@@ -20,16 +20,24 @@ class H4Ramp:
     # The irpDefects are generated using the calcIrpDefects method, and are not yet curated. Badly need to be.
     corrections = {18734:dict(leakage=0.012, irpNoiseClip=10.0),
                    18660:dict(leakage=0.003, irpNoiseClip=9.0,
-                              irpDefects=np.array([ 196,  303,  334,  348,  821,  901,  996, 1282, 
+                              irpDefects=np.array([ 196,  303,  334,  348,  821,  901,  996, 1282,
                                                    1449, 1469, 1473, 1551, 1582, 1645, 1723, 1831, 
                                                    1945, 2049, 2200, 2448, 2600, 2730, 2865, 3036, 
                                                    3084, 3118, 3169, 3343, 3692, 3753, 3865])),
-                   18315:dict(leakage=0.003, irpNoiseClip=9.0,
-                              irpDefects=np.array([ 556, 1120, 1137, 1242, 1565, 1607, 1947, 2067, 
+                   18315:dict(leakage=[0.0048, 0.00486, -0.0, 0.0048, 0.00475, 0.00506, 0.00518, 0.00478, 
+                                       0.00479, 0.00477, 0.00493, 0.0047, 0.00456, 0.00467, 0.00453, 0.0044, 
+                                       0.00427, 0.00466, 0.00462, 0.00467, 0.00459, 0.00467, 0.0048, 0.00535, 
+                                       0.0054, 0.00528, 0.00563, 0.00547, 0.0058, 0.00587, 0.0062, 0.00513], 
+                              irpNoiseClip=9.0,
+                              irpDefects=np.array([ 73, 518, 556, 1120, 1137, 1242, 1565, 1607, 1947, 2067, 
                                                    2113, 2194, 2240, 2294, 2460, 2676, 2705, 2858, 
                                                    3238, 3249, 3276, 3327, 3332, 3455, 3479, 3492, 
                                                    3590, 3953, 3961, 3979, 4083])),
-                   18321:dict(leakage=0.001, irpNoiseClip=9.0,
+                   18321:dict(leakage=[0.00214, 0.00255, 0.00231, 0.00224, 0.00205, 0.00243, 0.00229, 0.00225, 
+                                       0.0022, 0.00221, 0.00224, 0.00187, 0.0022, 0.00193, 0.00177, 0.00111, 
+                                       0.00172, 0.00214, 0.00167, 0.00192, 0.00208, 0.00233, 0.00224, 0.00245, 
+                                       0.00264, 0.00324, 0.00316, 0.00286, 0.00308, 0.003, 0.00278, 0.00265], 
+                              irpNoiseClip=9.0,
                               irpDefects=np.array([  51,   99,  284,  367,  770, 1047, 1119, 1368, 
                                                    1462, 1483, 1649, 1748, 2061, 2120, 2216, 2608, 
                                                    2686, 2694, 2829, 2837, 2941, 3040, 3046, 3332, 3618]))}
@@ -59,7 +67,7 @@ class H4Ramp:
         # How much of the data to subtract from the IRP. 
         # More complicated than just a simple factor, sad to say. So disable for now.
         self.dataToIrpLeakageFactor = self.corrections[self.h4Serial]['leakage']
-        if disableLeakage:
+        if False and disableLeakage:
             self.dataToIrpLeakageFactor = 0.0
 
         # wire in default routines
@@ -112,6 +120,8 @@ class H4Ramp:
         # Check whether butler.get('rawb') is actually efficient -- CPL
         # Hmm, inefficient for reading stacks, by a factor of ~2. open/close overhead?
         img = self.butler.get('rawb', self.dataId, hdu=hdu)
+        if False and np.isnan(img.image.array).any():
+            self.logger.warning(f'NaNs in {self.dataId} {hdu}: {np.isnan(img.image.array).sum()}')
         return img.maskedImage
     
     def positiveIndex(self, n):
@@ -158,6 +168,36 @@ class H4Ramp:
         hdu = f'REF_{readNum}'
         return self.getRawRead(hdu)
 
+    @staticmethod
+    def evilGetArray(image):
+        """Get the array from a maskedImage, and REPLACE NaNs with 0 (the FITS BLANK value)
+
+        This is horrendous. We are required to have BLANK cards, and the Rubin reader replaces
+        matching pixels with NaNs. 
+
+        When we know we do not care and need numpy arrays (e.g. when building stacks)
+        call this to replace NaNs with 0. 
+        """
+        
+        arr = image.image.array
+        nanmask = np.isnan(arr)
+        if nanmask.any():
+            # I feel so dirty -- CPL
+            arr[nanmask] = 0.0
+        return arr
+
+    def getRawDataImageArray(self, readNum):
+        """Get an data image as an numpy array, with NaNs replaced by 0."""
+
+        img = self.getRawDataImage(readNum)
+        return self.evilGetArray(img)
+    
+    def getRawIrpImageArray(self, readNum):
+        """Get an IRP image as an numpy array, with NaNs replaced by 0."""
+
+        img = self.getRawIrpImage(readNum)
+        return self.evilGetArray(img)
+    
     def refpix4BorderCorrect(self, image, colWindow=4,
                              doRows=True, doCols=True):
         """This is the "standard" Teledyne 'refPixel4' border reference pixel scheme. 
@@ -175,7 +215,7 @@ class H4Ramp:
         routine. In general don't use it, either.
         """
 
-        im = image.image.array
+        im = image.array
         imHeight, imWidth = im.shape
         if imHeight != self.h4Size or imWidth != self.h4Size:
             raise RuntimeError('not ready to deal with non-full images')
@@ -256,8 +296,8 @@ class H4Ramp:
         if noiseClip is None:
             noiseClip = self.corrections[self.h4Serial]['irpNoiseClip']
 
-        i0 = self.getRawIrpImage(r0).image.array
-        i1 = self.getRawIrpImage(r1).image.array
+        i0 = self.getRawIrpImageArray(r0)
+        i1 = self.getRawIrpImageArray(r1)
         dIrp = i1-i0
 
         # Some 18660/18321 ASIC channels have varying slopes: flatten them out a bit.
@@ -280,7 +320,7 @@ class H4Ramp:
             return mask
 
     def interpolateChannelIrp(self, rawChan, doFlip):
-        """Given an IRPn channel, return IRP1 channel image.
+        """Given an IRPn channel from a PFSB file, return IRP1 channel image.
 
         Args
         ----
@@ -319,6 +359,39 @@ class H4Ramp:
             refChan = refChan[:, ::-1]
 
         return refChan
+
+    def calcDataFeedthrough(self, r0=0, r1=-1, debug=False):
+        """Fit per-channel feedthrough. Use a flat or something with features: we are trying to flatten the result"""
+
+        r0 = self.positiveIndex(r0)
+        r1 = self.positiveIndex(r1)    
+        if r1-r0 < 1:
+            raise ValueError(f'r1 ({r1}) must be greater than r0 ({r0}) + 1:')
+
+        image0 = self.getRawDataImageArray(r0)
+        image1 = self.getRawDataImageArray(r1)
+
+        ref0 = self.getRawIrpImageArray(r0)
+        ref1 = self.getRawIrpImageArray(r1)
+
+        def fitFunc(x, c, r0, r1, i0, i1):
+            xslice = slice(c*128, (c+1)*128)
+            d0 = r0[xslice, :] - i0[xslice, :] * x
+            d1 = r1[xslice, :] - i1[xslice, :] * x
+            dd = d1 - d0
+
+            pLo, pHi = np.nanpercentile(dd, (10, 90))
+            if debug:
+                print(f'{c}   {x:0.5f} {pHi-pLo:0.5f} {pLo:0.5f} {pHi:0.5f}')
+            return pHi-pLo
+        
+        res = dict()
+        for c in range(32):
+
+            ret = scipy.optimize.minimize_scalar(fitFunc, bracket=[0.0, 0.03],
+                                                 args=(c, ref0, ref1, image0, image1))
+            res[c] = ret.x
+        return res
     
     def constructFullIrp(self, refImg):
         """Given an IRPn image, return IRP1 image.
@@ -349,7 +422,7 @@ class H4Ramp:
 
         """
 
-        rawIrp = refImg.image.array
+        rawIrp = self.evilGetArray(refImg)
         height, width = rawIrp.shape
 
         # If we are a full frame, no interpolation is necessary.
@@ -413,12 +486,13 @@ class H4Ramp:
 
         # Construct a cos bell filter to run over each channel. 
         # Pad filter with zeros to same width as padded channel.
-        filtCore = scipy.signal.hann(filterWidth)
-        filtCore /= filtCore.sum()
-        filt1 = np.zeros(shape=(chan_w+padWidth), dtype='f4')
-        fc = (chan_w+filterWidth)//2
-        filt1[fc-ww_half:fc+ww_half+1] = filtCore
-        filt = np.tile(filt1, (h, 1))
+        if filterWidth > 0:
+            filtCore = scipy.signal.hann(filterWidth)
+            filtCore /= filtCore.sum()
+            filt1 = np.zeros(shape=(chan_w+padWidth), dtype='f4')
+            fc = (chan_w+filterWidth)//2
+            filt1[fc-ww_half:fc+ww_half+1] = filtCore
+            filt = np.tile(filt1, (h, 1))
 
         # scratch space for the padded channel
         chan1 = np.zeros(shape=(h, chan_w+padWidth), dtype=rawDiffIrp.dtype)
@@ -428,25 +502,32 @@ class H4Ramp:
             colLow = i_c*chan_w
             colHigh = (i_c + 1)*chan_w
             chanPixIdx = np.arange(colLow, colHigh)
-            chan0 = rawDiffIrp[:, chanPixIdx]
+            chan0 = rawDiffIrp[:, chanPixIdx].copy()
+            if np.any(np.isnan(chan0)):
+                print(f'nan in chan0 {i_c} {np.isnan(chan0).sum()}')
             if badCols is not None:
-                badcolsChan = np.where((badCols >= colLow) & (badCols < colHigh))[0]
+                badcolsChan = badCols[(badCols >= colLow) & (badCols < colHigh)] - colLow
                 if len(badcolsChan) > 0:
-                    chan0[:, badcolsChan] = np.median(chan0, axis=1, keepdims=True)
+                    # print(f'{i_c} {badcolsChan} {badcolsChan + colLow}')
+                    chan0[:, badcolsChan] = np.nanmedian(chan0, axis=1, keepdims=True)
                     
-            # Pad channel with median of channel out to half the filter width
-            chan1[:, ww_half:chan_w+ww_half] = chan0
-            chan1[:, :ww_half] = np.median(chan0[:, :ww_half], axis=1, keepdims=True) 
-            chan1[:, -ww_half:] = np.median(chan0[:, -ww_half:], axis=1, keepdims=True)
+            if filterWidth > 0:
+                # Pad channel with median of channel out to half the filter width
+                chan1[:, ww_half:chan_w+ww_half] = chan0
+                chan1[:, :ww_half] = np.nanmedian(chan0[:, :ww_half], axis=1, keepdims=True) 
+                chan1[:, -ww_half:] = np.nanmedian(chan0[:, -ww_half:], axis=1, keepdims=True)
+                if np.any(np.isnan(chan1)):
+                    print(f'nan in chan1 {i_c} {np.isnan(chan1).sum()}')
 
-            if useFft:
-                chan_f = scipy.signal.fftconvolve(chan1, filt, mode='same', axes=1)
+                if useFft:
+                    chan_f = scipy.signal.fftconvolve(chan1, filt, mode='same', axes=1)
+                else:
+                    chan_f = scipy.signal.oaconvolve(chan1, filt, mode='same', axes=1)
+                out[:, chanPixIdx] = chan_f[:, ww_half:chan_w+ww_half]
             else:
-                chan_f = scipy.signal.oaconvolve(chan1, filt, mode='same', axes=1)
-            out[:, chanPixIdx] = chan_f[:, ww_half:chan_w+ww_half]
-
+                out[:, chanPixIdx] = chan0
         t1 = time.time()
-        self.logger.debug(f' final IRP: {t1-t0:0.3f}s {filt.shape} {chan1.shape} raw={rawDiffIrp.sum():0.1f} fac={out.sum()/rawDiffIrp.sum():0.5f}')
+        self.logger.debug(f' final IRP: {t1-t0:0.3f}s {filt.shape if filterWidth > 0 else 0} {chan1.shape} raw={rawDiffIrp.sum():0.1f} fac={out.sum()/rawDiffIrp.sum():0.5f}')
         
         return out
 
@@ -476,6 +557,16 @@ class H4Ramp:
 
         return image
 
+    def applyLeakageCorrection(self, ref, image, leakageFactor=None):
+        if leakageFactor is None:
+            leakageFactor = self.dataToIrpLeakageFactor
+
+        for c in range(32):
+            xslice = slice(c*128, (c+1)*128)
+            ref[xslice, :] -= image[xslice, :] * leakageFactor[c]
+
+        return ref
+        
     def _getDiffIrp(self, r0=0, r1=-1, leakageFactor=None,
                     filterWidth=31, badCols=None):
         """Just for development. Get a couple of steps of the difference IRP image."""
@@ -488,21 +579,25 @@ class H4Ramp:
         if r1-r0 < 1:
             raise ValueError(f'r1 ({r1}) must be greater than r0 ({r0}) + 1:')
 
-        image0 = self.getRawDataImage(r0).image.array
-        image1 = self.getRawDataImage(r1).image.array
+        image0 = self.getRawDataImageArray(r0)
+        image1 = self.getRawDataImageArray(r1)
 
-        ref0 = self.getRawIrpImage(r0).image.array
-        ref1 = self.getRawIrpImage(r1).image.array
-        dref0 = ref1 - ref0
+        ref0 = self.getRawIrpImageArray(r0)
+        ref1 = self.getRawIrpImageArray(r1)
+        dref0 = ref1 - ref0   
+        # Naive img - ref
 
-        if leakageFactor > 0:
-            ref0 -= image0 * leakageFactor
-            ref1 -= image1 * leakageFactor
+        if leakageFactor is not None:
+            ref0 = self.applyLeakageCorrection(ref0, image0, leakageFactor)
+            ref1 = self.applyLeakageCorrection(ref1, image1, leakageFactor)
         dref1 = ref1 - ref0
+        dref2 = self._getFinalDiffIrp(dref1, filterWidth=0, badCols=badCols)
+        # Naive correction plus leakage corrections and masking bad columns
 
-        dref = self._getFinalDiffIrp(dref1, filterWidth=filterWidth, badCols=badCols)
+        drefFinal = self._getFinalDiffIrp(dref1, filterWidth=filterWidth, badCols=badCols)
+        # Also spacially smooth IRP image
 
-        return dref, dref0, dref1
+        return dref0, dref2, drefFinal
         
     def getCds(self, r0=0, r1=-1, useIrp=True, filterIRP=True,
                useLeakageFactor=None):
@@ -537,19 +632,21 @@ class H4Ramp:
         leakageFactor = useLeakageFactor if useLeakageFactor is not None else self.dataToIrpLeakageFactor
 
         t0 = time.time()
-        image0 = self.getRawDataImage(r0).image.array
-        image1 = self.getRawDataImage(r1).image.array
+        image0 = self.getRawDataImageArray(r0)
+        image1 = self.getRawDataImageArray(r1)
 
         if self.haveIrp and useIrp:
-            ref0 = self.getRawIrpImage(r0).image.array
-            ref1 = self.getRawIrpImage(r1).image.array
+            ref0 = self.getRawIrpImageArray(r0)
+            ref1 = self.getRawIrpImageArray(r1)
 
-            if filterIRP and leakageFactor > 0:
-                ref0 -= image0 * leakageFactor
-                ref1 -= image1 * leakageFactor
+            if filterIRP and leakageFactor is not None:
+                ref0 = self.applyLeakageCorrection(ref0, image0, leakageFactor)
+                ref1 = self.applyLeakageCorrection(ref1, image1, leakageFactor)
             dref = ref1 - ref0
             if filterIRP:
                 dref = self._getFinalDiffIrp(dref)
+            else:
+                dref = self._getFinalDiffIrp(dref, filterWidth=0)
 
             image1 -= image0
             image1 -= dref
@@ -598,7 +695,7 @@ class H4Ramp:
             if stack is None:
                 h, w = readImg.image.array.shape
                 stack = np.empty(shape=(nreads, h, w), dtype='f4')
-            stack[r_i,:,:] = readImg.image.array
+            stack[r_i,:,:] = self.evilGetArray(readImg)
 
         if subtractR0:
             stack -= stack[0]
@@ -615,7 +712,7 @@ class H4Ramp:
                                  r0=r0, r1=r1, step=step, subtractR0=subtractR0)
 
     def cdsStack(self, r0=0, r1=-1, step=1, filterIrp=True, bbox=None,
-                 useLeakageFactor=None):
+                 useLeakageFactor=None, debug=False):
         """Return all the fully IRP-corrected frames in a single 3d stack.
 
         Given two raw data images d0 and d1, and two raw IRP images i0 and i1, the net CDS image
@@ -663,31 +760,30 @@ class H4Ramp:
         nreads = r1 - r0 + 1
 
         # Grab the components of read 0, which we will subtract from all the others.
-        irp0 = self.getRawIrpImage(r0).image.array
-        data0 = self.getRawDataImage(r0).image.array
-        if leakageFactor > 0:
-            irp0 -= data0 * leakageFactor
+        irp0 = self.getRawIrpImageArray(r0)
+        data0 = self.getRawDataImageArray(r0)
+        if leakageFactor is not None:
+            irp0 = self.applyLeakageCorrection(irp0, data0, leakageFactor)
 
         stack = np.empty(shape=(nreads-1, *data0.shape), dtype='f4')
         for r_i in range(r0+1, r1+1, step):
             t0 = time.time()
-            ddata = data1 = self.getRawDataImage(r_i).image.array
-            irp1 = self.getRawIrpImage(r_i).image.array
+            data1 = self.getRawDataImageArray(r_i)
+            irp1 = self.getRawIrpImageArray(r_i)
             t1 = time.time()
-            if leakageFactor > 0:
-                irp1 -= data1 * leakageFactor
+            if leakageFactor is not None:
+                irp1 = self.applyLeakageCorrection(irp1, data1)
             dirp = irp1 - irp0
             ddata = data1 - data0
             if filterIrp:
                 ddata -= self._getFinalDiffIrp(dirp)
+            else:
+                ddata -= self._getFinalDiffIrp(dirp, filterWidth=0)
             stack[r_i-1,:,:] = ddata
             t2 = time.time()
-            self.logger.warning(f'cds {r_i} io1={t1-t0:0.3f} proc={t2-t1:0.3f}')
+            if debug:
+                print(f'cds {r_i} io1={t1-t0:0.3f} proc={t2-t1:0.3f}')
         return stack
-
-def getRead(butler, dataId, readNum, useIrp=True):
-    ramp = H4Ramp(butler, dataId)
-    return ramp.getRead(readNum, useIrp=useIrp)
 
 def getCds(butler, dataId, r0=0, r1=-1, useIrp=True):
     ramp = H4Ramp(butler, dataId)
