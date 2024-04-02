@@ -1,6 +1,8 @@
 from lsst.obs.pfs.ingest import PfsCalibsParseTask
 config.parse.retarget(PfsCalibsParseTask)
-config.register.validityUntilSuperseded = ['bias', 'dark', 'detectorMap', 'flat', 'fiberProfiles', 'defects']
+config.register.validityUntilSuperseded = [
+    'bias', 'dark', 'detectorMap', 'flat', 'fiberProfiles', 'fiberNorms' 'defects'
+]
 
 config.register.columns = {'arm': 'text',
                            'ccd': 'int',
@@ -22,6 +24,6 @@ config.parse.translators = {'arm': 'translate_arm',
 
 config.register.detector = ['arm', 'spectrograph']
 config.register.unique = ['arm', 'spectrograph', 'calibTime']
-config.register.tables = ['bias', 'dark', 'detectorMap', 'flat', 'fiberProfiles', 'ipc']
+config.register.tables = ['bias', 'dark', 'detectorMap', 'flat', 'fiberProfiles', 'fiberNorms', 'ipc']
 config.register.visit = ['calibDate', 'arm', 'spectrograph']
 config.register.calibDate = "calibTime"  # date+time, for intra-day resolution

@@ -458,6 +458,13 @@ class PfsMapper(CameraMapper):
         """
         return item
 
+    def std_fiberNorms(self, item, dataId):
+        """Disable standardization for fiberNorms
+
+        Because it is not an Exposure.
+        """
+        return item
+
     def std_detectorMap(self, item, dataId):
         """Disable standardization for detectorMap
 

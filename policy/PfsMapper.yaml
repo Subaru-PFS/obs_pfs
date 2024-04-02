@@ -158,6 +158,25 @@ calibrations:
     validRange: true
     validStartName: validStart
     validEndName: validEnd
+  fiberNorms:
+    template: 'FIBERNORMS/pfsFiberNorms-%(calibDate)s-%(visit0)06d-%(arm)s%(spectrograph)1d.fits'
+    python: pfs.drp.stella.datamodel.PfsFiberNorms
+    persistable: PfsFiberNorms
+    storage: FitsCatalogStorage
+    level: Ccd
+    tables: fiberNorms
+    columns:
+    - arm
+    - spectrograph
+    - taiObs
+    reference: raw
+    refCols:
+    - visit
+    - arm
+    - spectrograph
+    validRange: true
+    validStartName: validStart
+    validEndName: validEnd
   detectorMap:
     template: 'DETECTORMAP/pfsDetectorMap-%(visit0)06d-%(arm)s%(spectrograph)1d.fits'
     python: pfs.drp.stella.DetectorMap
