@@ -492,6 +492,14 @@ datasets:
     tables:
     - raw
 
+  fiberNorms_config:
+    template: config/fiberNorms.py
+    python: pfs.drp.stella.constructFiberNorms.ConstructFiberNormsConfig
+    persistable: Config
+    storage: ConfigStorage
+    tables:
+    - raw
+
   reduceExposure_config:
     template: config/reduceExposure.py
     python: pfs.drp.stella.reduceExposure.ReduceExposureConfig
