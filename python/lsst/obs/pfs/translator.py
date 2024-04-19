@@ -29,8 +29,7 @@ class PfsTranslator(SubaruTranslator):
     default_resource_root = os.path.join(getPackageDir("obs_pfs"), "corrections")
     """Default resource path root to use to locate header correction files."""
 
-    _const_map = {"boresight_rotation_angle": Angle(0.0*u.deg),
-                  "boresight_rotation_coord": "sky",
+    _const_map = {"boresight_rotation_coord": "mount",
                   "telescope": "Subaru",
                   "observation_type": "science",
                   }
@@ -50,6 +49,7 @@ class PfsTranslator(SubaruTranslator):
         "ext_dither": "W_ENFCAZ",
         "ext_shift": "W_ENFCAY",
         "ext_focus": "W_ENFCAX",
+        "boresight_rotation_angle": ("INSROT", dict(unit=u.deg, default=0.0)),
         # Guesses for what we will use in the future
         "boresight_airmass": ("AIRMASS", dict(default=np.nan)),
         "pressure": ("OUT-PRS", dict(unit=u.hPa, default=np.nan)),
