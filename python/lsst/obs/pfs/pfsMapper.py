@@ -40,6 +40,7 @@ class PfsRawVisitInfo(MakeRawVisitInfo):
         #
         argDict["darkTime"] = self.getDarkTime(argDict)
         argDict["id"] = argDict["exposureId"]
+        argDict["boresightRotAngle"] = self.popAngle(md, "INSROT")
 
     def getDarkTime(self, argDict):
         """Retrieve the dark time from an argDict, waiting to be passed to the VisitInfo ctor"""

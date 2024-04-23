@@ -2,7 +2,7 @@ import os
 
 import numpy as np
 import astropy.units as u
-from astropy.coordinates import SkyCoord, Angle, AltAz
+from astropy.coordinates import SkyCoord, AltAz
 
 from astro_metadata_translator import SubaruTranslator, cache_translation, PropertyDefinition
 from astro_metadata_translator.translators.helpers import altaz_from_degree_headers
