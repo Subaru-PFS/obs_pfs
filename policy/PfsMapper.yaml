@@ -394,6 +394,24 @@ datasets:
     tables:
     - raw 
 
+  fiberProfilesStats:
+    template: 'FIBERPROFILES/pfsFiberProfilesStats-%(calibDate)s-%(visit0)06d-%(arm)s%(spectrograph)1d.pdf'
+    python: matplotlib.backends.backend_pdf.PdfPages
+    persistable: ignored
+    storage: MatplotlibStorage
+    level: Ccd
+    tables:
+    - raw
+
+  fiberProfilesPlots:
+    template: 'FIBERPROFILES/pfsFiberProfilesPlots-%(calibDate)s-%(visit0)06d-%(arm)s%(spectrograph)1d.pdf'
+    python: matplotlib.backends.backend_pdf.PdfPages
+    persistable: ignored
+    storage: MatplotlibStorage
+    level: Ccd
+    tables:
+    - raw
+
   pfsArmLsf:
     template: 'pfsArm/%(dateObs)s/v%(visit)06d/pfsArmLsf-%(visit)06d-%(arm)s%(spectrograph)d.pickle'
     python: dict
