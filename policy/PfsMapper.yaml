@@ -158,6 +158,25 @@ calibrations:
     validRange: true
     validStartName: validStart
     validEndName: validEnd
+  fiberNorms:
+    template: 'FIBERNORMS/pfsFiberNorms-%(calibDate)s-%(visit0)06d-%(arm)s%(spectrograph)1d.fits'
+    python: pfs.drp.stella.datamodel.PfsFiberNorms
+    persistable: PfsFiberNorms
+    storage: FitsCatalogStorage
+    level: Ccd
+    tables: fiberNorms
+    columns:
+    - arm
+    - spectrograph
+    - taiObs
+    reference: raw
+    refCols:
+    - visit
+    - arm
+    - spectrograph
+    validRange: true
+    validStartName: validStart
+    validEndName: validEnd
   detectorMap:
     template: 'DETECTORMAP/pfsDetectorMap-%(visit0)06d-%(arm)s%(spectrograph)1d.fits'
     python: pfs.drp.stella.DetectorMap
@@ -468,6 +487,14 @@ datasets:
   reduceArc_config:
     template: config/reduceArc.py
     python: pfs.drp.stella.reduceArc.ReduceArcConfig
+    persistable: Config
+    storage: ConfigStorage
+    tables:
+    - raw
+
+  fiberNorms_config:
+    template: config/fiberNorms.py
+    python: pfs.drp.stella.constructFiberNorms.ConstructFiberNormsConfig
     persistable: Config
     storage: ConfigStorage
     tables:

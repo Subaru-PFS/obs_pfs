@@ -11,6 +11,7 @@ datastore:
     PfsConfig: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     FiberProfileSet: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     FiberTraceSet: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+    PfsFiberNorms: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     DetectorMap: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     PfsArm: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     PfsMerged: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
@@ -41,6 +42,8 @@ storageClasses:
     pytype: pfs.drp.stella.FiberProfileSet
   FiberTraceSet:
     pytype: pfs.drp.stella.FiberTraceSet
+  PfsFiberNorms:
+    pytype: pfs.drp.stella.datamodel.PfsFiberNorms
   DetectorMap:
     pytype: pfs.drp.stella.DetectorMap
   PfsArm:

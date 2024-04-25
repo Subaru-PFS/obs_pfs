@@ -40,6 +40,7 @@ class PfsRawVisitInfo(MakeRawVisitInfo):
         #
         argDict["darkTime"] = self.getDarkTime(argDict)
         argDict["id"] = argDict["exposureId"]
+        argDict["boresightRotAngle"] = self.popAngle(md, "INSROT")
 
     def getDarkTime(self, argDict):
         """Retrieve the dark time from an argDict, waiting to be passed to the VisitInfo ctor"""
@@ -453,6 +454,13 @@ class PfsMapper(CameraMapper):
 
     def std_fiberProfiles(self, item, dataId):
         """Disable standardization for fiberProfiles
+
+        Because it is not an Exposure.
+        """
+        return item
+
+    def std_fiberNorms(self, item, dataId):
+        """Disable standardization for fiberNorms
 
         Because it is not an Exposure.
         """
