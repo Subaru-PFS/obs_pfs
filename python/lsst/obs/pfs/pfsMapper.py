@@ -1,3 +1,4 @@
+import glob
 import os
 import re
 import numpy as np
@@ -16,6 +17,7 @@ import lsst.utils as utils
 import lsst.obs.base.yamlCamera as yamlCamera
 from lsst.obs.base import FilterDefinition, FilterDefinitionCollection
 from lsst.daf.persistence import NoResults
+from pfs.datamodel.utils import calculatePfsVisitHash, wraparoundNVisit
 from .translator import PfsTranslator
 
 
@@ -233,7 +235,9 @@ class PfsMapper(CameraMapper):
             if not os.path.exists(filePath):  # handle reruns
                 cfg = butlerLocation.storage.getRepositoryCfg(butlerLocation.storage.root)
                 for p in cfg.parents:
-                    nfilePath = os.path.join(p.root, locationString)
+                    if not isinstance(p, str):
+                        p = p.root
+                    nfilePath = os.path.join(p, locationString)
                     if os.path.exists(nfilePath):
                         filePath = nfilePath
                         break
@@ -685,6 +689,49 @@ class PfsMapper(CameraMapper):
         """
         raise NoResults("Crosstalk is stored in the detector", "crosstalk", dataId)
 
+    def map_pfsObject(self, dataId, write=False):
+        dataId = dataId.copy()
+
+        if "visits" in dataId:
+            visits = dataId["visits"]
+            dataId.update(nVisit=wraparoundNVisit(len(set(visits))),
+                          pfsVisitHash=calculatePfsVisitHash(set(visits)))
+
+        # Look to see if there are any missing keys, and if so replace them by "*" in the template
+        template = self.mappings["pfsObject"].template
+        missingKeys = False
+        for k in self.getKeys("pfsObject", 1):
+            if k not in dataId:
+                missingKeys = True
+                template = re.sub(r"%\(" + k + r"\)\d*[dsx]", "*", template)
+
+        if not missingKeys:
+            # Easy; call the usual mapper
+            return self.mappings["pfsObject"].map(self, dataId, write)
+
+        # There were missing keys.  Fill out the ones that we do have
+        template = template % dataId
+
+        # Look for possible matches by globbing.  Note that raising an exception is how the
+        # butler expects to recognise failure
+        fn = os.path.join(self.root, template)
+        candidates = glob.glob(fn)
+        if len(candidates) == 0:
+            raise RuntimeError(f"Unable to find glob {fn}")
+        elif len(candidates) > 1:
+            raise RuntimeError(f"Glob {fn} is ambiguous: {', '.join(candidates)}")
+        else:
+            fn = candidates[0]
+
+        # We have a candidate filename and a template, so we can parse the former to
+        # set the missing fields in the latter
+        template = os.path.join(self.root, self.mappings["pfsObject"].template)
+
+        updateDataIdFromFilename(dataId, template, fn)
+
+        # We should now have a complete set of keys, so call the usual mapper
+        return self.mappings["pfsObject"].map(self, dataId, write)
+
 
 def readIPCMEF(ipcCoeffsFile, nmed=1, rawOrientation=True):
     """Read a MEF containing IPC coefficients
@@ -725,3 +772,52 @@ def readIPCMEF(ipcCoeffsFile, nmed=1, rawOrientation=True):
             ipcCoeffs[ix][iy] = coeffs
 
     return ipcCoeffs
+
+
+def updateDataIdFromFilename(dataId, template, fn):
+    """Given a dataId, a template, and a filename that was expanded
+    from that template, fill out the missing fields in the dataId
+
+    The template and filename are both taken to be absolute paths
+    """
+    subtemplates = [f"{'' if i == 0 else '%'}{c}" for i, c in enumerate(template.split('%'))]
+    for i, st in enumerate(subtemplates):
+        try:
+            st = st % dataId
+        except KeyError:
+            pass
+
+        subtemplates[i] = st
+
+    template = "".join(subtemplates)
+
+    cp = os.path.commonprefix([template, fn])
+    template = template[len(cp):]
+    fn = fn[len(cp):]
+
+    subtemplates = [f"{'' if i == 0 else '%'}{c}" for i, c in enumerate(template.split('%'))]
+    fieldRe = r"^%\(([^)]+)\)[0-9a-f]*([dsx])(.*)"
+
+    variables = []
+    for i, st in enumerate(subtemplates):
+        if st.startswith('%'):
+            mat = re.search(fieldRe, st)
+            variable, fmt, next = mat.groups()
+            variables.append((variable, fmt))
+            st = re.sub(fieldRe, f'({dict(d=r"[0-9]+", x="[0-9a-f]+", s=".+")[fmt]}){next}', st)
+            subtemplates[i] = st
+
+    templateRe = "".join(subtemplates)
+
+    mat = re.search(templateRe, fn)
+    assert mat is not None
+
+    for (var, fmt), value in zip(variables, mat.groups()):
+        if fmt == 'd':
+            value = int(re.sub("^0*", "", value))
+        elif fmt == 'x':
+            value = int("0x" + value, 16)
+
+        dataId[var] = value
+
+    return dataId
