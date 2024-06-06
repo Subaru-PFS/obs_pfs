@@ -272,6 +272,14 @@ datasets:
     tables:
     - raw
 
+  fiberNorms_meas:  # fiberNorms measured from data
+    template: 'FIBERNORMS/pfsFiberNorms-%(visit)06d.fits'
+    python: pfs.drp.stella.datamodel.PfsFiberNorms
+    persistable: PfsFiberNorms
+    storage: FitsCatalogStorage
+    tables:
+    - raw
+
   sky1d:
     template: 'sky1d/%(dateObs)s/v%(visit)07d/sky1d-%(visit)06d-%(arm)s%(spectrograph)d.fits'
     python: pfs.drp.stella.focalPlaneFunction.FocalPlaneFunction
