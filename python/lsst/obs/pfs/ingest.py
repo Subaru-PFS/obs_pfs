@@ -29,6 +29,9 @@ class PfsParseConfig(ParseConfig):
     """Configuration for PfsParseTask"""
     pfsDesignId = Field(dtype=int, default=0x0, doc="Default value for pfsDesignId")
 
+    validStart = Field(dtype=str, default="", doc="Start of validity range for these calibrations, "
+                       "'YYYY-MM-DDThh:mm:ss' (e.g. '2024-05-01T00:00:00'); you may omit 'T...'")
+
     def setDefaults(self):
         ParseConfig.setDefaults(self)
         self.translators["field"] = "translate_field"
@@ -399,6 +402,10 @@ class PfsCalibsParseTask(CalibsParseTask):
         return self._translateFromCalibId("arm", md)
 
     def translate_calibDate(self, md):
+        validStart = self.config.validStart
+        if validStart:
+            return validStart[:validStart.find("T")] if "T" in validStart else validStart
+
         return self._translateFromCalibId("calibDate", md)
 
     def translate_calibTime(self, md):
@@ -414,6 +421,10 @@ class PfsCalibsParseTask(CalibsParseTask):
         calibTime : `str`
             Time of calibration frame.
         """
+        validStart = self.config.validStart
+        if validStart:
+            return validStart
+
         try:
             return self._translateFromCalibId("calibTime", md)
         except Exception:
