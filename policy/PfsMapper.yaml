@@ -159,7 +159,7 @@ calibrations:
     validStartName: validStart
     validEndName: validEnd
   fiberNorms:
-    template: 'FIBERNORMS/pfsFiberNorms-%(calibDate)s-%(visit0)06d-%(arm)s%(spectrograph)1d.fits'
+    template: 'FIBERNORMS/pfsFiberNorms-%(calibDate)s-%(visit0)06d-%(arm)s.fits'
     python: pfs.drp.stella.datamodel.PfsFiberNorms
     persistable: PfsFiberNorms
     storage: FitsCatalogStorage
@@ -167,7 +167,6 @@ calibrations:
     tables: fiberNorms
     columns:
     - arm
-    - spectrograph
     - taiObs
     reference: raw
     refCols:
@@ -273,7 +272,7 @@ datasets:
     - raw
 
   fiberNorms_meas:  # fiberNorms measured from data
-    template: 'FIBERNORMS/pfsFiberNorms-%(visit)06d.fits'
+    template: 'FIBERNORMS/%(dateObs)s/pfsFiberNorms-%(visit)06d-%(arm)s.fits'
     python: pfs.drp.stella.datamodel.PfsFiberNorms
     persistable: PfsFiberNorms
     storage: FitsCatalogStorage
