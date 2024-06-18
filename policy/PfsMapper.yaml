@@ -499,9 +499,9 @@ datasets:
     tables:
     - raw
 
-  fiberNorms_config:
-    template: config/fiberNorms.py
-    python: pfs.drp.stella.constructFiberNorms.ConstructFiberNormsConfig
+  measureFiberNorms_config:
+    template: config/measureFiberNorms.py
+    python: pfs.drp.stella.measureFiberNorms.MeasureFiberNormsConfig
     persistable: Config
     storage: ConfigStorage
     tables:
