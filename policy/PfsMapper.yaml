@@ -279,6 +279,14 @@ datasets:
     tables:
     - raw
 
+  fiberNorms_plot:  # plot of fiberNorms
+    template: 'FIBERNORMS/%(dateObs)s/pfsFiberNorms-%(visit)06d-%(arm)s.pdf'
+    python: matplotlib.backends.backend_pdf.PdfPages
+    persistable: ignored
+    storage: MatplotlibStorage
+    tables:
+    - raw
+
   sky1d:
     template: 'sky1d/%(dateObs)s/v%(visit)07d/sky1d-%(visit)06d-%(arm)s%(spectrograph)d.fits'
     python: pfs.drp.stella.focalPlaneFunction.FocalPlaneFunction
