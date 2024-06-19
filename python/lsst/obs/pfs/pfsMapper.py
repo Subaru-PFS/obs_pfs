@@ -690,47 +690,84 @@ class PfsMapper(CameraMapper):
         raise NoResults("Crosstalk is stored in the detector", "crosstalk", dataId)
 
     def map_pfsObject(self, dataId, write=False):
+        return self._map_pfsObjectHelper("pfsObject", dataId, write=write)
+
+    def map_pfsSingle(self, dataId, write=False):
+        return self._map_pfsObjectHelper("pfsSingle", dataId, write=write)
+
+    def _map_pfsObjectHelper(self, dataType, dataId, write=False):
+        """Map an object of type dataType, using the file system to resolve dataId fields when possible
+
+        Used by e.g. pfsObject
+        """
         dataId = dataId.copy()
 
         if "visits" in dataId:
-            visits = dataId["visits"]
-            dataId.update(nVisit=wraparoundNVisit(len(set(visits))),
-                          pfsVisitHash=calculatePfsVisitHash(set(visits)))
+            visits = sorted(set(dataId["visits"]))
+            nVisit = wraparoundNVisit(len(visits))
+            pfsVisitHash = calculatePfsVisitHash(visits)
+
+            if "nVisit" in dataId and nVisit != dataId["nVisit"]:
+                raise RuntimeError(f"Saw nVisit={dataId['nVisit']}, but calculated {nVisit} from "
+                                   f"[{', '.join([str(v) for v in visits])}]")
+            if "pfsVisitHash" in dataId and pfsVisitHash != dataId["pfsVisitHash"]:
+                raise RuntimeError(f"Saw pfsVisitHash = 0x{dataId['pfsVisitHash']:x}, "
+                                   f"but calculated 0x{pfsVisitHash:x} from "
+                                   f"[{', '.join([str(v) for v in visits])}]")
+
+            dataId.update(nVisit=nVisit, pfsVisitHash=pfsVisitHash)
+            del dataId["visits"]
 
         # Look to see if there are any missing keys, and if so replace them by "*" in the template
-        template = self.mappings["pfsObject"].template
+        template = self.mappings[dataType].template
+        keys = self.getKeys(dataType, 1)
+
+        badKeys = []
+        for k in dataId:
+            if k not in keys:
+                badKeys.append(k)
+        if badKeys:
+            raise RuntimeError(f"Unrecognized items in dataId for {dataType}: {', '.join(badKeys)}."
+                               f" Allowed values are {', '.join(keys)}")
+
         missingKeys = False
-        for k in self.getKeys("pfsObject", 1):
+        for k in keys:
             if k not in dataId:
                 missingKeys = True
                 template = re.sub(r"%\(" + k + r"\)\d*[dsx]", "*", template)
 
         if not missingKeys:
             # Easy; call the usual mapper
-            return self.mappings["pfsObject"].map(self, dataId, write)
+            return self.mappings[dataType].map(self, dataId, write)
 
         # There were missing keys.  Fill out the ones that we do have
         template = template % dataId
 
-        # Look for possible matches by globbing.  Note that raising an exception is how the
+        mapperTemplate = os.path.join(self.root, self.mappings[dataType].template)
+
+        # Look for possible matches by globbing.  Note that raising NoResults is how the
         # butler expects to recognise failure
         fn = os.path.join(self.root, template)
         candidates = glob.glob(fn)
         if len(candidates) == 0:
-            raise RuntimeError(f"Unable to find glob {fn}")
+            raise NoResults(f"Unable to find glob {fn}", dataType, dataId)
         elif len(candidates) > 1:
-            raise RuntimeError(f"Glob {fn} is ambiguous: {', '.join(candidates)}")
+            dids = []
+            for fn in candidates:
+                did = dataId.copy()
+                updateDataIdFromFilename(did, mapperTemplate, fn)
+                dids.append(did)
+
+            raise RuntimeError(f"DataId is ambiguous. Possibilities are {describeDuplicationInDataIds(dids)}")
         else:
             fn = candidates[0]
 
         # We have a candidate filename and a template, so we can parse the former to
         # set the missing fields in the latter
-        template = os.path.join(self.root, self.mappings["pfsObject"].template)
-
-        updateDataIdFromFilename(dataId, template, fn)
+        updateDataIdFromFilename(dataId, mapperTemplate, fn)
 
         # We should now have a complete set of keys, so call the usual mapper
-        return self.mappings["pfsObject"].map(self, dataId, write)
+        return self.mappings[dataType].map(self, dataId, write)
 
 
 def readIPCMEF(ipcCoeffsFile, nmed=1, rawOrientation=True):
@@ -821,3 +858,38 @@ def updateDataIdFromFilename(dataId, template, fn):
         dataId[var] = value
 
     return dataId
+
+
+def describeDuplicationInDataIds(dids):
+    """Given a list of dataIds which correspond to different data sets, return a description of
+    how they differ.
+
+    More precisely, return a string in the form "k1: [v1, v2]; k2: [v1, v2]" for each problematic key
+    """
+    did0 = dids[0].copy()
+
+    for k in did0:
+        did0[k] = set()
+        for did in dids:
+            did0[k].add(did[k])
+
+    ambiguous = {}
+    for k, v in did0.items():
+        if len(v) > 1:
+            ambiguous[k] = list(v)
+
+    result = []
+    for k, values in zip(ambiguous, zip(ambiguous.values())):
+        values = values[0]
+        nmax = 10
+        if len(values) > nmax:
+            values = values[:nmax]
+            dots = ", ..."
+        else:
+            dots = ""
+
+        val = [(f"0x{v:x}" if k in ["objId", "pfsVisitHash"] else f"{v}") for v in values]
+
+        result.append(f"{k}: [{', '.join(val)}{dots}]")
+
+    return "; ".join(result)
