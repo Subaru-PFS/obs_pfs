@@ -159,7 +159,7 @@ calibrations:
     validStartName: validStart
     validEndName: validEnd
   fiberNorms:
-    template: 'FIBERNORMS/pfsFiberNorms-%(calibDate)s-%(visit0)06d-%(arm)s%(spectrograph)1d.fits'
+    template: 'FIBERNORMS/pfsFiberNorms-%(calibDate)s-%(visit0)06d-%(arm)s.fits'
     python: pfs.drp.stella.datamodel.PfsFiberNorms
     persistable: PfsFiberNorms
     storage: FitsCatalogStorage
@@ -167,7 +167,6 @@ calibrations:
     tables: fiberNorms
     columns:
     - arm
-    - spectrograph
     - taiObs
     reference: raw
     refCols:
@@ -269,6 +268,22 @@ datasets:
     python: pfs.drp.stella.DetectorMap
     persistable: DetectorMap
     storage: FitsCatalogStorage
+    tables:
+    - raw
+
+  fiberNorms_meas:  # fiberNorms measured from data
+    template: 'FIBERNORMS/%(dateObs)s/pfsFiberNorms-%(visit)06d-%(arm)s.fits'
+    python: pfs.drp.stella.datamodel.PfsFiberNorms
+    persistable: PfsFiberNorms
+    storage: FitsCatalogStorage
+    tables:
+    - raw
+
+  fiberNorms_plot:  # plot of fiberNorms
+    template: 'FIBERNORMS/%(dateObs)s/pfsFiberNorms-%(visit)06d-%(arm)s.pdf'
+    python: matplotlib.backends.backend_pdf.PdfPages
+    persistable: ignored
+    storage: MatplotlibStorage
     tables:
     - raw
 
@@ -492,9 +507,9 @@ datasets:
     tables:
     - raw
 
-  fiberNorms_config:
-    template: config/fiberNorms.py
-    python: pfs.drp.stella.constructFiberNorms.ConstructFiberNormsConfig
+  measureFiberNorms_config:
+    template: config/measureFiberNorms.py
+    python: pfs.drp.stella.measureFiberNorms.MeasureFiberNormsConfig
     persistable: Config
     storage: ConfigStorage
     tables:
