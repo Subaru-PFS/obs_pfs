@@ -722,14 +722,6 @@ class PfsMapper(CameraMapper):
         template = self.mappings[dataType].template
         keys = self.getKeys(dataType, 1)
 
-        badKeys = []
-        for k in dataId:
-            if k not in keys:
-                badKeys.append(k)
-        if badKeys:
-            raise RuntimeError(f"Unrecognized items in dataId for {dataType}: {', '.join(badKeys)}."
-                               f" Allowed values are {', '.join(keys)}")
-
         missingKeys = False
         for k in keys:
             if k not in dataId:
