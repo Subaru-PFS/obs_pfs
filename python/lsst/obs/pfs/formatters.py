@@ -1,8 +1,10 @@
+from typing import Literal, Optional
+
 from lsst.obs.base.formatters.fitsExposure import FitsExposureFormatter
 from lsst.obs.base import FitsRawFormatterBase
 
 from .loadCamera import loadCamera
-from .pfsMapper import pfsFilterDefinitions
+from .filterDefinitions import pfsFilterDefinitions
 from .translator import PfsTranslator
 
 __all__ = (
@@ -18,7 +20,7 @@ class PfsRawFormatter(FitsRawFormatterBase):
 
     translatorClass = PfsTranslator
     filterDefinitions = pfsFilterDefinitions
-    pfsCategory = None
+    pfsCategory: Optional[Literal["F", "L", "S"]] = None
 
     def getDetector(self, id: int):
         """Return the detector that acquired this raw exposure.

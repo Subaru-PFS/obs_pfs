@@ -92,8 +92,8 @@ class PfsRawIngestTask(RawIngestTask):
         return super().makeExposureRecord(
             obsInfo,
             universe,
-            pfs_design_id=obsInfo.ext_pfs_design_id,
-            dither=obsInfo.ext_dither,
+            pfs_design_id=obsInfo.ext_pfs_design_id,  # type: ignore[attr-defined]
+            dither=obsInfo.ext_dither,  # type: ignore[attr-defined]
         )
 
     def makeDependencyRecords(
@@ -123,11 +123,11 @@ class PfsRawIngestTask(RawIngestTask):
             The records to insert, indexed by dimension name.
         """
         dither = universe["dither"].RecordClass(
-            value=obsInfo.ext_dither,
+            value=obsInfo.ext_dither,  # type: ignore[attr-defined]
             instrument=obsInfo.instrument,
         )
         pfs_design_id = universe["pfs_design_id"].RecordClass(
-            value=obsInfo.ext_pfs_design_id,
+            value=obsInfo.ext_pfs_design_id,  # type: ignore[attr-defined]
             instrument=obsInfo.instrument,
         )
         return dict(dither=dither, pfs_design_id=pfs_design_id)
