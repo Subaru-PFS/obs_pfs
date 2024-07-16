@@ -23,7 +23,7 @@ import numpy.linalg
 import lsst.log
 import lsst.geom as geom                # noqa F401; used in eval(darkBBoxes)
 import lsst.pex.config as pexConfig
-from lsst.daf.persistence.butlerExceptions import NoResults
+from lsst.daf.persistence import NoResults
 
 import lsst.afw.display as afwDisplay
 import lsst.afw.math as afwMath
