@@ -61,6 +61,7 @@ def checkRawHeader(filename: str, allowFix: bool = False):
     - ``TELESCOP``: Telescope
     - ``INSTRUME``: Instrument
     - ``DETECTOR``: Detector
+    - ``DET-ID``: Detector number
     - ``W_VISIT``: PFS exposure visit number
     - ``W_ARM``: Spectrograph arm 1=b, 2=r, 3=n, 4=medRed
     - ``W_SPMOD``: Spectrograph module. 1-4 at Subaru
@@ -93,6 +94,11 @@ def checkRawHeader(filename: str, allowFix: bool = False):
             if data.category != "D":
                 modified |= checkKeyword(header, "DETECTOR", f"{data.arm}{data.spectrograph}",
                                          "Name of the detector", allowFix)
+                if data.arm == "m":
+                    detId = -3*(data.spectrograph - 1) - 1
+                else:
+                    detId = 3*(data.spectrograph - 1) + data.armNum - 1
+                modified |= checkKeyword(header, "DET-ID", detId, "Detector ID", allowFix)
                 modified |= checkKeyword(header, "W_ARM", data.armNum,
                                          "Spectrograph arm: 1=b, 2=r, 3=n, 4=medRed", allowFix)
                 modified |= checkKeyword(header, "W_SPMOD", data.spectrograph, "Spectrograph module: 1-4",
