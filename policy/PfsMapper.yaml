@@ -421,7 +421,7 @@ datasets:
 
   dmQaResidualStats:
     template: 'detectorMapQA/%(dateObs)s/v%(visit)06d/dmQaResidualStats-%(visit)06d-%(arm)s%(spectrograph)d.pickle'
-    python: dict
+    python: pandas.core.frame.DataFrame
     persistable: ignored
     storage: PickleStorage
     level: Ccd
