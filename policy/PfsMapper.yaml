@@ -410,9 +410,18 @@ datasets:
     tables:
     - raw
 
-  dmQaResidualImage:
-    template: 'detectorMapQA/%(dateObs)s/v%(visit)06d/dmQaResidualImage-%(visit)06d-%(arm)s%(spectrograph)d.pdf'
-    python: matplotlib.backends.backend_pdf.PdfPages
+  dmQaResidualPlot:
+    template: 'detectorMapQA/%(dateObs)s/v%(visit)06d/dmQaResidualPlot-%(visit)06d-%(arm)s%(spectrograph)d.png'
+    python: None
+    persistable: ignored
+    storage: MatplotlibStorage
+    level: Ccd
+    tables:
+    - raw
+
+  dmQaCombinedResidualPlot:
+    template: 'detectorMapQA/dmQaCombinedResidualPlot-%(arm)s%(spectrograph)d.png'
+    python: None
     persistable: ignored
     storage: MatplotlibStorage
     level: Ccd
@@ -426,7 +435,16 @@ datasets:
     storage: PickleStorage
     level: Ccd
     tables:
-    - raw 
+    - raw
+
+  dmQaDetectorStats:
+    template: 'detectorMapQA/dmQaDetectorStats-%(arm)s%(spectrograph)d.pickle'
+    python: pandas.core.frame.DataFrame
+    persistable: ignored
+    storage: PickleStorage
+    level: Ccd
+    tables:
+    - raw
 
   fiberProfilesStats:
     template: 'FIBERPROFILES/pfsFiberProfilesStats-%(calibDate)s-%(visit0)06d-%(arm)s%(spectrograph)1d.pdf'
