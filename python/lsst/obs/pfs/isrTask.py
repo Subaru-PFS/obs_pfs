@@ -31,10 +31,13 @@ import lsst.afw.display as afwDisplay
 import lsst.afw.math as afwMath
 from lsst.afw.image import DecoratedImageF
 import lsst.ip.isr as ipIsr
+from lsst.ip.isr.isrTask import IsrTaskConnections
 from lsst.ip.isr.assembleCcdTask import AssembleCcdTask
 from lsst.ip.isr import isrQa
 from lsst.utils.timer import timeMethod
 import lsst.pipe.base as pipeBase
+from lsst.pipe.base.connectionTypes import PrerequisiteInput as PrerequisiteConnection
+from lsst.daf.butler import DimensionGraph
 
 from .utils import getCalibPath
 from pfs.drp.stella.crosstalk import PfsCrosstalkTask
@@ -124,7 +127,93 @@ class PfsAssembleCcdTask(AssembleCcdTask):
         return exposure
 
 
-class PfsIsrTaskConfig(ipIsr.IsrTaskConfig):
+def lookupBiasDark(datasetType, registry, dataId, collections):
+    """Look up a bias or dark frame
+
+    This is a lookup function for the IsrTaskConnections PrerequisiteConnection
+    that finds a bias or dark frame for a given dataId. We use it to provide an
+    r or m bias or dark frame for r/m arms.
+
+    Parameters
+    ----------
+    datasetType : `str`
+        The dataset type to look up.
+    registry : `lsst.daf.butler.Registry`
+        The butler registry.
+    dataId : `lsst.daf.butler.DataCoordinate`
+        The data identifier.
+    collections : `list` of `str`
+        The collections to search.
+
+    Returns
+    -------
+    refs : `list` of `lsst.daf.butler.Reference`
+        The references to the bias or dark frame.
+    """
+    timespan = dataId.timespan
+    if dataId["arm"] not in "rm":
+        return [registry.findDataset(datasetType, collections=collections, dataId=dataId, timespan=timespan)]
+
+    reducedGraph = DimensionGraph(dataId.universe, names=("instrument", "spectrograph"))
+    reducedId = dataId.subset(reducedGraph)
+    detector = dataId["detector"]
+    ref1 = None
+    ref2 = None
+    try:
+        ref1 = registry.findDataset(
+            datasetType, collections=collections, dataId=reducedId, detector=detector, timespan=timespan
+        )
+    except Exception:
+        pass
+    try:
+        ref2 = registry.findDataset(
+            datasetType, collections=collections, dataId=reducedId, detector=-detector, timespan=timespan
+        )
+    except Exception:
+        pass
+
+    if ref1 is None and ref2 is None:
+        raise RuntimeError(f"Unable to find {datasetType} for {dataId}")
+    if ref1 is None:
+        return [ref2]
+    return [ref1]  # Same arm as original, so use this.
+
+
+class PfsIsrConnections(IsrTaskConnections):
+    bias = PrerequisiteConnection(
+        name="bias",
+        doc="Input bias calibration.",
+        storageClass="ExposureF",
+        dimensions=["instrument", "detector"],
+        isCalibration=True,
+        minimum=0,
+        lookupFunction=lookupBiasDark,
+    )
+    dark = PrerequisiteConnection(
+        name="dark",
+        doc="Input dark calibration.",
+        storageClass="ExposureF",
+        dimensions=["instrument", "detector"],
+        isCalibration=True,
+        lookupFunction=lookupBiasDark,
+    )
+
+    def adjustQuantum(self, inputs, outputs, label, dataId):
+        """Adjust the quantum graph to remove arm=n biases"""
+        expRefs = inputs["ccdExposure"][1][0]
+        arm = expRefs.dataId["arm"]
+        adjusted = {}
+        if arm == "n":
+            # We don't want the bias for arm=n
+            connection, oldRefs = inputs["bias"]
+            newRefs = [ref for ref in oldRefs if ref.dataId["arm"] != "n"]
+            adjusted["bias"] = (connection, newRefs)
+            inputs.update(adjusted)
+        super().adjustQuantum(inputs, outputs, label, dataId)
+        return adjusted, {}
+
+
+class PfsIsrTaskConfig(ipIsr.IsrTaskConfig, pipelineConnections=PfsIsrConnections):
     """Configuration parameters for PFS's IsrTask.
 
     Items are grouped in the order in which they are executed by the task.
