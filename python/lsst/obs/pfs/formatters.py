@@ -1,10 +1,13 @@
-from typing import Literal, Optional
+from typing import Any, Literal, Optional, Set
 
-from lsst.obs.base.formatters.fitsExposure import FitsExposureFormatter
+from lsst.daf.butler import StorageClassDelegate
+from lsst.obs.base.formatters.fitsExposure import FitsExposureFormatter, standardizeAmplifierParameters
 from lsst.obs.base import FitsRawFormatterBase
+from lsst.afw.image import makeExposure, makeMaskedImage, FilterLabel
 
 from .loadCamera import loadCamera
 from .filterDefinitions import pfsFilterDefinitions
+from .raw import PfsRaw
 from .translator import PfsTranslator
 
 __all__ = (
@@ -16,11 +19,56 @@ __all__ = (
 
 
 class PfsRawFormatter(FitsRawFormatterBase):
-    """Gen3 Butler Formatters for PFS raw data."""
-
     translatorClass = PfsTranslator
     filterDefinitions = pfsFilterDefinitions
     pfsCategory: Optional[Literal["F", "L", "S"]] = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._raw = PfsRaw(self.fileDescriptor.location.path, self.pfsCategory)
+
+    def read(self, component: Optional[str] = None):
+        # Docstring inherited.
+        if component == "ramp":
+            if (readNum := self.checked_parameters.get("readNum")) is None:
+                raise ValueError(f"No 'readNum' specified for ramp")
+            return self._raw.getCorrectedNirRead(readNum)
+        if component == "exposure":
+            exposure = makeExposure(makeMaskedImage(self._raw.getImage()))
+            exposure.setDetector(self._raw.detector)
+            info = exposure.getInfo()
+            info.setVisitInfo(self._raw.visitInfo)
+            info.setId(self._raw.visitInfo.id)
+            info.setMetadata(self._raw.metadata)
+            info.setDetector(self._raw.detector)
+            arm = self._raw.obsInfo.ext_arm
+            info.setFilter(FilterLabel(arm, arm))
+            return exposure
+        if component == "image":
+            return self._raw.getImage()
+        if component == "numReads":
+            return self._raw.getNumReads()
+        if component == "metadata":
+            return self._raw.metadata
+        if component == "obsInfo":
+            return self._raw.obsInfo
+        if component == "visitInfo":
+            return self._raw.visitInfo
+        if component == "detector":
+            return self._raw.detector
+        if component == "id":
+            return self._raw.visitInfo.id
+        if component == "bbox":
+            return self._raw.bbox
+        if component == "dimensions":
+            return self._raw.dimensions
+        if component == "xy0":
+            return self._raw.xy0
+        return self._raw
+
+    def write(self, inMemoryDatset: Any):
+        # Docstring inherited.
+        raise NotImplementedError("PfsRawFormatter does not support writing")
 
     def getDetector(self, id: int):
         """Return the detector that acquired this raw exposure.
@@ -36,88 +84,6 @@ class PfsRawFormatter(FitsRawFormatterBase):
             The detector associated with that ``id``.
         """
         return loadCamera(self.pfsCategory)[id]
-
-    def makeWcs(self, visitInfo, detector):
-        """Create a SkyWcs from information about the exposure.
-
-        If VisitInfo is not None, use it and the detector to create a SkyWcs,
-        otherwise return the metadata-based SkyWcs (always created, so that
-        the relevant metadata keywords are stripped).
-
-        Since PFS doesn't have a simple WCS for raw images, we simply disable
-        this.
-
-        Parameters
-        ----------
-        visitInfo : `~lsst.afw.image.VisitInfo`
-            The information about the telescope boresight and camera
-            orientation angle for this exposure.
-        detector : `~lsst.afw.cameraGeom.Detector`
-            The detector used to acquire this exposure.
-
-        Returns
-        -------
-        skyWcs : `~lsst.afw.geom.SkyWcs`
-            Reversible mapping from pixel coordinates to sky coordinates.
-
-        Raises
-        ------
-        InitialSkyWcsError
-            Raised if there is an error generating the SkyWcs, chained from the
-            lower-level exception if available.
-        """
-        return None
-
-    def _shiftAmpPixels(self, image):
-        """Shift pixels in early raw frames.
-
-        Early ADC versions insert a spurious pixel at the beginning of the
-        readout. This affects all rows, pushing the last overscan pixel of a
-        given row into the first leadin pixel on the following row.
-
-        We strip out the 0th pixel, and leave the last one untouched.
-
-        Parameters
-        ----------
-        image : `lsst.afw.image.Image`
-            Raw image; modified.
-        """
-        imArr = image.getArray()
-
-        for amp in self.getDetector(self.observationInfo.detector_num):
-            ySlice, xSlice = amp.getRawBBox().getSlices()
-            ampIm = imArr[ySlice, xSlice]
-            ampShape = ampIm.shape
-
-            # Don't bother being tricky: make a copy.
-            ampPixels = ampIm.flatten()
-            ampPixels[:-1] = ampPixels[1:]
-
-            imArr[ySlice, xSlice] = ampPixels.reshape(ampShape)
-
-    def readImage(self):
-        """Read just the image component of the Exposure.
-
-        For PFS, we check an early ADC bug. Since this is almost certainly an
-        FPGA bug, the decision is based on the FPGA version number. As of
-        2016-12-01 the keyword is misnamed, so we can fix the format if the
-        keyword does not exist.
-
-        Returns
-        -------
-        image : `~lsst.afw.image.Image`
-            In-memory image component.
-        """
-        image = super().readImage()
-
-        try:
-            dataVersion = int(self.metadata.get("W_VERSIONS_FPGA"), 16)
-        except Exception:
-            dataVersion = None
-        if dataVersion is not None and dataVersion <= 0x0070:
-            self._shiftAmpPixels(image)
-
-        return image
 
 
 class PfsSimulatorRawFormatter(PfsRawFormatter):

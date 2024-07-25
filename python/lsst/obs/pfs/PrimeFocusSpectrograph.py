@@ -120,6 +120,9 @@ class PrimeFocusSpectrograph(Instrument):
         # Register types for datasets that will be ingested into the datastore.
         # Other types will be defined by the pipelines.
         self.registerDatasetType(
+            registry, "raw", ["instrument", "exposure", "spectrograph", "arm", "detector"], "PfsRaw"
+        )
+        self.registerDatasetType(
             registry,
             "pfsConfig",
             ["instrument", "exposure"],
