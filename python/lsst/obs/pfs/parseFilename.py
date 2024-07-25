@@ -73,7 +73,7 @@ def parseRawFilename(filename: str) -> ParsedRawFilename:
         raise ValueError("Unable to interpret filename: %s" % (filename,))
     site, category, exposure, first, second = matches.groups()
     exposure = int(exposure)
-    if category == "A":  # spectrograph
+    if category in ("A", "B"):  # spectrograph
         if first in "brnm":
             arm = first
             armNum = dict(b=1, r=2, n=3, m=4)[arm]
@@ -90,3 +90,4 @@ def parseRawFilename(filename: str) -> ParsedRawFilename:
         sequence = 10*int(first) + int(second)
         return ParsedRawFilename(site=site, category=category, exposure=exposure, spectrograph=0, arm="g",
                                  armNum=0, sequence=sequence)
+    raise RuntimeError(f"Unrecognized category: {category}")
