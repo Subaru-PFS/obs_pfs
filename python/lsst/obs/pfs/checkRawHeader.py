@@ -60,7 +60,7 @@ def checkRawHeader(filename: str, allowFix: bool = False):
     These keywords include:
     - ``TELESCOP``: Telescope
     - ``INSTRUME``: Instrument
-    - ``DETECTOR``: Detector
+    - ``DETECTOR``: Detector name
     - ``DET-ID``: Detector number
     - ``W_VISIT``: PFS exposure visit number
     - ``W_ARM``: Spectrograph arm 1=b, 2=r, 3=n, 4=medRed
@@ -77,14 +77,20 @@ def checkRawHeader(filename: str, allowFix: bool = False):
     data = parseRawFilename(filename)
     log.info(f"Checking {filename}")
     with astropy.io.fits.open(filename, "update" if allowFix else "readonly", save_backup=True) as fits:
+        modified = False
         header = fits[0].header
         if header["NAXIS"] == 0:
             # Probably compressed
+            modified |= checkKeyword(header, "INHERIT", True, "Inherit from previous header", allowFix)
+            for key in ("TELESCOP", "INSTRUME", "DETECTOR", "W_VISIT", "W_ARM", "W_SPMOD", "W_SITE"):
+                if key in header:
+                    del header[key]
+                    modified = True
+
             header = fits[1].header
             if header["NAXIS"] != 2:
                 raise RuntimeError(f"Can't find main header for {filename}")
 
-        modified = False
         try:
             modified |= checkKeyword(header, "TELESCOP", "Subaru 8.2m", "Telescope", allowFix)
             modified |= checkKeyword(header, "INSTRUME", "PFS", "Instrument", allowFix)
