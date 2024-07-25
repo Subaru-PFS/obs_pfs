@@ -477,16 +477,16 @@ topology:
     skymap_regions: [patch, tract]
 
   temporal:
-    observation_timespans: [exposure, visit]
+    observation_timespans: [exposure, visit, detector]
 
 packers:
   visit_detector:
     fixed: [instrument]
-    dimensions: [instrument, visit, detector]
+    dimensions: [instrument, visit, spectrograph, arm]
     cls: lsst.daf.butler.instrument.ObservationDimensionPacker
   exposure_detector:
     fixed: [instrument]
-    dimensions: [instrument, exposure, detector]
+    dimensions: [instrument, exposure, spectrograph, arm]
     cls: lsst.daf.butler.instrument.ObservationDimensionPacker
   tract_patch:
     fixed: [skymap]

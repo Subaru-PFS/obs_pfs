@@ -87,7 +87,7 @@ class PfsRawIngestTask(RawIngestTask):
             available.
         """
         required, optional = super().getObservationInfoSubsets()
-        required |= {"ext_pfs_design_id", "ext_dither"}
+        required |= {"ext_arm", "ext_spectrograph", "ext_pfs_design_id", "ext_dither"}
         return required, optional
 
     def makeExposureRecord(
@@ -115,6 +115,8 @@ class PfsRawIngestTask(RawIngestTask):
         return super().makeExposureRecord(
             obsInfo,
             universe,
+            arm=obsInfo.ext_arm,  # type: ignore[attr-defined]
+            spectrograph=obsInfo.ext_spectrograph,  # type: ignore[attr-defined]
             pfs_design_id=obsInfo.ext_pfs_design_id,  # type: ignore[attr-defined]
             dither=obsInfo.ext_dither,  # type: ignore[attr-defined]
         )
@@ -145,6 +147,14 @@ class PfsRawIngestTask(RawIngestTask):
         records : `dict` [`str`, `DimensionRecord`]
             The records to insert, indexed by dimension name.
         """
+        arm = universe["arm"].RecordClass(
+            name=obsInfo.ext_arm,  # type: ignore[attr-defined]
+            instrument=obsInfo.instrument,
+        )
+        spectrograph = universe["spectrograph"].RecordClass(
+            num=obsInfo.ext_spectrograph,  # type: ignore[attr-defined]
+            instrument=obsInfo.instrument,
+        )
         dither = universe["dither"].RecordClass(
             value=obsInfo.ext_dither,  # type: ignore[attr-defined]
             instrument=obsInfo.instrument,
@@ -153,7 +163,7 @@ class PfsRawIngestTask(RawIngestTask):
             value=obsInfo.ext_pfs_design_id,  # type: ignore[attr-defined]
             instrument=obsInfo.instrument,
         )
-        return dict(dither=dither, pfs_design_id=pfs_design_id)
+        return dict(arm=arm, spectrograph=spectrograph, dither=dither, pfs_design_id=pfs_design_id)
 
     def _calculate_dataset_info(
         self, header: Union[Mapping[str, Any], ObservationInfo], filename: ResourcePath
