@@ -43,7 +43,6 @@ class PfsTranslator(SubaruTranslator):
         "detector_group": "W_SPMOD",
         "exposure_time": ("EXPTIME", dict(unit=u.s)),
         "detector_serial": "DETECTOR",
-        "object": "IMAGETYP",  # XXX to be updated; hopefully to OBJECT
         "ext_spectrograph": "W_SPMOD",
         "ext_pfs_design_id": "W_PFDSGN",
         "ext_dither": "W_ENFCAZ",
@@ -90,6 +89,18 @@ class PfsTranslator(SubaruTranslator):
         return "INSTRUME" in header and header["INSTRUME"] == "PFS"
 
     @cache_translation
+    def to_object(self):
+        for keyword in ("OBJECT", "IMAGETYP"):
+            if keyword not in self._header:
+                continue
+            value = self._header[keyword].strip()
+            if not value:
+                continue
+            self._used_these_cards(keyword)
+            return self._header[keyword]
+        return "UNKNOWN"
+
+    @cache_translation
     def to_altaz_begin(self):
         if "ALTITUDE" not in self._header or "AZIMUTH" not in self._header:
             return AltAz(0.0*u.deg, 0.0*u.deg, obstime=self.to_datetime_begin(),
@@ -129,10 +140,12 @@ class PfsTranslator(SubaruTranslator):
 
     @cache_translation
     def to_detector_num(self):
-        arm = self._header["W_ARM"]
+        armNum = self._header["W_ARM"]
         spectrograph = self._header["W_SPMOD"]
         self._used_these_cards("W_ARM", "W_SPMOD")
-        return 4*(spectrograph - 1) + arm - 1
+        if armNum == 4:  # arm=m
+            return - 3*(spectrograph - 1) - 1
+        return 3*(spectrograph - 1) + armNum - 1
 
     @cache_translation
     def to_tracking_radec(self):

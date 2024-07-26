@@ -60,7 +60,8 @@ def checkRawHeader(filename: str, allowFix: bool = False):
     These keywords include:
     - ``TELESCOP``: Telescope
     - ``INSTRUME``: Instrument
-    - ``DETECTOR``: Detector
+    - ``DETECTOR``: Detector name
+    - ``DET-ID``: Detector number
     - ``W_VISIT``: PFS exposure visit number
     - ``W_ARM``: Spectrograph arm 1=b, 2=r, 3=n, 4=medRed
     - ``W_SPMOD``: Spectrograph module. 1-4 at Subaru
@@ -76,14 +77,20 @@ def checkRawHeader(filename: str, allowFix: bool = False):
     data = parseRawFilename(filename)
     log.info(f"Checking {filename}")
     with astropy.io.fits.open(filename, "update" if allowFix else "readonly", save_backup=True) as fits:
+        modified = False
         header = fits[0].header
         if header["NAXIS"] == 0:
             # Probably compressed
+            modified |= checkKeyword(header, "INHERIT", True, "Inherit from previous header", allowFix)
+            for key in ("TELESCOP", "INSTRUME", "DETECTOR", "W_VISIT", "W_ARM", "W_SPMOD", "W_SITE"):
+                if key in header:
+                    del header[key]
+                    modified = True
+
             header = fits[1].header
             if header["NAXIS"] != 2:
                 raise RuntimeError(f"Can't find main header for {filename}")
 
-        modified = False
         try:
             modified |= checkKeyword(header, "TELESCOP", "Subaru 8.2m", "Telescope", allowFix)
             modified |= checkKeyword(header, "INSTRUME", "PFS", "Instrument", allowFix)
@@ -93,6 +100,11 @@ def checkRawHeader(filename: str, allowFix: bool = False):
             if data.category != "D":
                 modified |= checkKeyword(header, "DETECTOR", f"{data.arm}{data.spectrograph}",
                                          "Name of the detector", allowFix)
+                if data.arm == "m":
+                    detId = -3*(data.spectrograph - 1) - 1
+                else:
+                    detId = 3*(data.spectrograph - 1) + data.armNum - 1
+                modified |= checkKeyword(header, "DET-ID", detId, "Detector ID", allowFix)
                 modified |= checkKeyword(header, "W_ARM", data.armNum,
                                          "Spectrograph arm: 1=b, 2=r, 3=n, 4=medRed", allowFix)
                 modified |= checkKeyword(header, "W_SPMOD", data.spectrograph, "Spectrograph module: 1-4",
