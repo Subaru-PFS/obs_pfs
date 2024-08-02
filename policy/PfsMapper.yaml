@@ -446,6 +446,33 @@ datasets:
     tables:
     - raw
 
+  fluxCalStats:
+    template: 'fluxCalQA/%(dateObs)s/v%(visit)06d/fluxCalStats-%(visit)06d.pickle'
+    python: pandas.core.frame.DataFrame
+    persistable: ignored
+    storage: PickleStorage
+    level: Visit
+    tables:
+    - raw
+
+  fluxCalMagDiffPlot:
+    template: 'fluxCalQA/%(dateObs)s/v%(visit)06d/fluxCalMagDiffPlot-%(visit)06d.png'
+    python: None
+    persistable: ignored
+    storage: MatplotlibStorage
+    level: Ccd
+    tables:
+    - raw
+
+  fluxCalColorDiffPlot:
+    template: 'fluxCalQA/%(dateObs)s/v%(visit)06d/fluxCalColorDiffPlot-%(visit)06d.png'
+    python: None
+    persistable: ignored
+    storage: MatplotlibStorage
+    level: Ccd
+    tables:
+    - raw
+
   fiberProfilesStats:
     template: 'FIBERPROFILES/pfsFiberProfilesStats-%(calibDate)s-%(visit0)06d-%(arm)s%(spectrograph)1d.pdf'
     python: matplotlib.backends.backend_pdf.PdfPages
@@ -499,7 +526,6 @@ datasets:
     level: Visit
     tables:
     - raw
-
 
   fiberFlat_config:
     template: config/fiberFlat.py
@@ -608,6 +634,14 @@ datasets:
   detectorMapQa_config:
     template: config/detectorMapQa.py
     python: pfs.drp.qa.detectorMapQa.DetectorMapQaTask
+    persistable: Config
+    storage: ConfigStorage
+    tables:
+    - raw
+
+  fluxCalQa_config:
+    template: config/fluxCalQa.py
+    python: pfs.drp.qa.fluxCalQa.FluxCalQaTask
     persistable: Config
     storage: ConfigStorage
     tables:
