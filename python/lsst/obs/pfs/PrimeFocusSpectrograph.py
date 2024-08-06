@@ -129,7 +129,11 @@ class PrimeFocusSpectrograph(Instrument):
             "PfsConfig",
         )
         self.registerDatasetType(
-            registry, "detectorMap_bootstrap", ["instrument", "detector"], "DetectorMap"
+            registry,
+            "detectorMap_calib",
+            ["instrument", "detector"],
+            "DetectorMap",
+            True,
         )
 
     def registerDatasetType(
