@@ -88,6 +88,7 @@ class PfsRawIngestTask(RawIngestTask):
         """
         required, optional = super().getObservationInfoSubsets()
         required |= {"ext_arm", "ext_spectrograph", "ext_pfs_design_id", "ext_dither"}
+        optional |= {"ext_shift", "ext_focus", "ext_lamps"}
         return required, optional
 
     def makeExposureRecord(
@@ -119,6 +120,9 @@ class PfsRawIngestTask(RawIngestTask):
             spectrograph=obsInfo.ext_spectrograph,  # type: ignore[attr-defined]
             pfs_design_id=obsInfo.ext_pfs_design_id,  # type: ignore[attr-defined]
             dither=obsInfo.ext_dither,  # type: ignore[attr-defined]
+            shift=obsInfo.ext_shift,  # type: ignore[attr-defined]
+            focus=obsInfo.ext_focus,  # type: ignore[attr-defined]
+            lamps=obsInfo.ext_lamps,  # type: ignore[attr-defined]
         )
 
     def makeDependencyRecords(

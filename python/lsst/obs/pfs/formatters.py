@@ -1,7 +1,9 @@
 from typing import Any, Literal, Optional, Set
 
-from lsst.daf.butler import StorageClassDelegate
-from lsst.obs.base.formatters.fitsExposure import FitsExposureFormatter, standardizeAmplifierParameters
+import numpy as np
+
+from lsst.obs.base.formatters.fitsExposure import FitsExposureFormatter
+from lsst.obs.base.formatters.fitsGeneric import FitsGenericFormatter
 from lsst.obs.base import FitsRawFormatterBase
 from lsst.afw.image import makeExposure, makeMaskedImage, FilterLabel
 
@@ -132,3 +134,23 @@ class PfsFitsExposureFormatter(FitsExposureFormatter):
             filters associated with this dataset type.
         """
         return file_filter_label
+
+
+class DetectorMapFormatter(FitsGenericFormatter):
+    """Formatter for DetectorMap
+
+    Provides components for the DetectorMap.
+    """
+    def read(self, component: Optional[str] = None):
+        # Docstring inherited.
+        from pfs.drp.stella import DetectorMap
+        path = self.fileDescriptor.location.path
+        detectorMap = DetectorMap.readFits(path)
+        if component is None:
+            return detectorMap
+        # This is inefficient, but it makes it very easy without implementing I/O
+        if component == "bbox":
+            return detectorMap.getBBox()
+        if component == "slitOffsets":
+            return np.vstack([detectorMap.getSpatialOffsets(), detectorMap.getSpectralOffsets()])
+        raise ValueError(f"Unknown component {component}")

@@ -307,6 +307,21 @@ elements:
         type: float
         doc: >
           Angle in degrees from the zenith at the start of the exposure.
+      -
+        name: shift
+        type: float
+        doc: >
+          Slit offset in the wavelength dimension.
+      -
+        name: focus
+        type: float
+        doc: >
+          Hexapod offset perpendicular to the detector.
+      -
+        name: lamps
+        type: string
+        doc: >
+          Comma-separated list of lamps.
     storage:
       cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
 
