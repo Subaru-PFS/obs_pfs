@@ -33,6 +33,7 @@ datastore:
     instrument+detector+dither: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{dither:?}_{detector.full_name:?}_{run}"
     instrument+detector+pfs_design_id: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{detector.full_name:?}_{pfs_design_id:?}_{run}"
     instrument+exposure+arm:  "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{exposure:?}_{arm:?}_{run}"
+    instrument+arm: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{arm:?}_{run}"
 
 registry:
   db: sqlite:///<butlerRoot>/gen3.sqlite3
