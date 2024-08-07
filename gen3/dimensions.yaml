@@ -476,12 +476,46 @@ elements:
     storage:
       cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
 
-  exposure_patch:
+  cat_id:
     doc: >
-      Patches known to overlap an exposure.
-      This is determined from the pfsConfig, which has a list of tract,patch
-      for all fiber targets.
-    requires: [instrument, exposure, skymap, tract, patch]
+      Catalog identifier for a target.
+    keys:
+      -
+        name: id
+        type: int
+    requires: [instrument]
+    storage:
+      cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
+
+  obj_id:
+    doc: >
+      Object identifier for a target.
+    keys:
+      -
+        name: id
+        type: int
+    requires: [cat_id]
+    storage:
+      cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
+
+  fiber_id:
+    doc: >
+      Fiber identifier.
+    keys:
+      -
+        name: id
+        type: int
+    requires: [instrument]
+    implies: [spectrograph]
+    storage:
+      cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
+
+  pfsConfig:
+    doc: >
+      A many-to-many join table that provides targets for each exposure. This
+      is essentially the (target information of the) pfsConfig, represented in
+      the database.
+    requires: [exposure, fiber_id, cat_id, obj_id]
     always_join: true
     storage:
       cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
