@@ -19,8 +19,6 @@ datastore:
     PfsFluxReference: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     PfsSingle: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     PfsObject: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
-    PfsCalibratedSpectra: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
-    PfsObjectSpectra: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     SkyModel: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     FocalPlaneFunction: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     ArcLineSet: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
@@ -34,6 +32,9 @@ datastore:
     instrument+detector+pfs_design_id: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{detector.full_name:?}_{pfs_design_id:?}_{run}"
     instrument+exposure+arm:  "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{exposure:?}_{arm:?}_{run}"
     instrument+arm: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{arm:?}_{run}"
+    instrument+cat_id+obj_id: "{run:/}/{datasetType}.{component:?}/{cat_id:?}/{datasetType}_{component:?}_{instrument:?}_{cat_id:?}_{obj_id:?}_{run}"
+    instrument+cat_id+obj_id+exposure: "{run:/}/{datasetType}.{component:?}/{exposure:?}/{cat_id:?}/{datasetType}_{component:?}_{instrument:?}_{cat_id:?}_{obj_id:?}_{exposure:?}_{run}"
+    instrument+cat_id: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{cat_id:?}_{run}"
 
 registry:
   db: sqlite:///<butlerRoot>/gen3.sqlite3
@@ -61,10 +62,6 @@ storageClasses:
     pytype: pfs.drp.stella.datamodel.PfsSingle
   PfsObject:
     pytype: pfs.drp.stella.datamodel.PfsObject
-  PfsCalibratedSpectra:
-    pytype: pfs.drp.stella.datamodel.pfsTargetSpectra.PfsCalibratedSpectra
-  PfsObjectSpectra:
-    pytype: pfs.drp.stella.datamodel.pfsTargetSpectra.PfsObjectSpectra
   SkyModel:
     pytype: pfs.drp.stella.sky2d.SkyModel
   FocalPlaneFunction:
