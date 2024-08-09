@@ -37,6 +37,7 @@ from lsst.ip.isr import isrQa
 from lsst.utils.timer import timeMethod
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base.connectionTypes import PrerequisiteInput as PrerequisiteConnection
+from lsst.pipe.base.connectionTypes import Output as OutputConnection
 from lsst.daf.butler import DimensionGraph
 
 from .utils import getCalibPath
@@ -156,21 +157,24 @@ def lookupBiasDark(datasetType, registry, dataId, collections):
 
     reducedGraph = DimensionGraph(dataId.universe, names=("instrument", "spectrograph"))
     reducedId = dataId.subset(reducedGraph)
-    detector = dataId["detector"]
+    arm = dataId["arm"]
+    spectrograph = dataId["spectrograph"]
+
     ref1 = None
     ref2 = None
+    kwargs = dict(
+        collections=collections, dataId=reducedId, spectrograph=spectrograph, timespan=timespan
+    )
     try:
-        ref1 = registry.findDataset(
-            datasetType, collections=collections, dataId=reducedId, detector=detector, timespan=timespan
-        )
+        ref1 = registry.findDataset(datasetType, arm=arm, **kwargs)
     except Exception:
         pass
-    try:
-        ref2 = registry.findDataset(
-            datasetType, collections=collections, dataId=reducedId, detector=-detector, timespan=timespan
-        )
-    except Exception:
-        pass
+    if arm in "rm":
+        otherArm = dict(r="m", m="r")[arm]
+        try:
+            ref2 = registry.findDataset(datasetType, arm=otherArm, **kwargs)
+        except Exception:
+            pass
 
     if ref1 is None and ref2 is None:
         raise RuntimeError(f"Unable to find {datasetType} for {dataId}")
@@ -184,7 +188,7 @@ class PfsIsrConnections(IsrTaskConnections):
         name="bias",
         doc="Input bias calibration.",
         storageClass="ExposureF",
-        dimensions=["instrument", "detector"],
+        dimensions=["instrument", "arm", "spectrograph"],
         isCalibration=True,
         minimum=0,
         lookupFunction=lookupBiasDark,
@@ -193,9 +197,23 @@ class PfsIsrConnections(IsrTaskConnections):
         name="dark",
         doc="Input dark calibration.",
         storageClass="ExposureF",
-        dimensions=["instrument", "detector"],
+        dimensions=["instrument", "arm", "spectrograph"],
         isCalibration=True,
         lookupFunction=lookupBiasDark,
+    )
+    flat = PrerequisiteConnection(
+        name="flat",
+        doc="Input flat calibration.",
+        storageClass="ExposureF",
+        dimensions=["instrument", "arm", "spectrograph"],
+        isCalibration=True,
+    )
+
+    outputExposure = OutputConnection(
+        name="postISRCCD",
+        doc="Output ISR processed exposure.",
+        storageClass="Exposure",
+        dimensions=["instrument", "exposure", "arm", "spectrograph"],
     )
 
     def adjustQuantum(self, inputs, outputs, label, dataId):
