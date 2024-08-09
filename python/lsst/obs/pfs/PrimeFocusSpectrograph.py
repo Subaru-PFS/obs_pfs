@@ -140,7 +140,7 @@ class PrimeFocusSpectrograph(Instrument):
         self.registerDatasetType(
             registry,
             "detectorMap_calib",
-            ["instrument", "detector"],
+            ["instrument", "arm", "spectrograph"],
             "DetectorMap",
             True,
         )
