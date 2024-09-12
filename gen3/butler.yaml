@@ -37,6 +37,10 @@ datastore:
     instrument+cat_id+obj_id: "{run:/}/{datasetType}.{component:?}/{cat_id:?}/{datasetType}_{component:?}_{instrument:?}_{cat_id:?}_{obj_id:?}_{run}"
     instrument+cat_id+obj_id+exposure: "{run:/}/{datasetType}.{component:?}/{exposure:?}/{cat_id:?}/{datasetType}_{component:?}_{instrument:?}_{cat_id:?}_{obj_id:?}_{exposure:?}_{run}"
     instrument+cat_id: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{cat_id:?}_{run}"
+    instrument+profiles_run+profiles_group: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{profiles_run:?}_{profiles_group:?}_{run}"
+    instrument+profiles_run+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{profiles_run:?}_{arm:?}{spectrograph:?}_{run}"
+    instrument+profiles_run+profiles_group+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{profiles_run:?}_{profiles_group:?}_{arm:?}{spectrograph:?}_{run}"
+    instrument+profiles_run+profiles_group+exposure+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{profiles_run:?}_{profiles_group:?}_{exposure:?}_{arm:?}{spectrograph:?}_{run}"
 
 registry:
   db: sqlite:///<butlerRoot>/gen3.sqlite3

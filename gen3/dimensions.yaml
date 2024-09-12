@@ -520,6 +520,36 @@ elements:
     storage:
       cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
 
+  profiles_run:
+    doc: >
+      Fiber profile measurement run.
+    keys:
+      -
+        name: run
+        type: string
+    requires: [instrument]
+    storage:
+      cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
+
+  profiles_group:
+    doc: >
+      Fiber profile measurement group.
+    keys:
+      -
+        name: group_num
+        type: int
+    requires: [profiles_run]
+    storage:
+      cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
+
+  profiles_exposures:
+    doc: >
+      Exposures involved in a fiber profile measurement group.
+    requires: [profiles_group, exposure]
+    always_join: true
+    storage:
+      cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
+
 topology:
   spatial:
     observation_regions: [visit_detector_region, visit]

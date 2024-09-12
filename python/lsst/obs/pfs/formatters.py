@@ -1,4 +1,4 @@
-from typing import Any, Literal, Optional, Set
+from typing import Any, Literal, Optional
 
 import numpy as np
 
@@ -33,7 +33,7 @@ class PfsRawFormatter(FitsRawFormatterBase):
         # Docstring inherited.
         if component == "ramp":
             if (readNum := self.checked_parameters.get("readNum")) is None:
-                raise ValueError(f"No 'readNum' specified for ramp")
+                raise ValueError("No 'readNum' specified for ramp")
             return self._raw.getCorrectedNirRead(readNum)
         if component == "exposure":
             exposure = makeExposure(makeMaskedImage(self._raw.getImage()))
