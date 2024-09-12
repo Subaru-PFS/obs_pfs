@@ -1,4 +1,4 @@
-from typing import Literal, Optional, TYPE_CHECKING, Union, overload
+from typing import Literal, Optional, TYPE_CHECKING, Union
 
 import numpy as np
 
@@ -14,7 +14,6 @@ from .translator import PfsTranslator
 if TYPE_CHECKING:
     from lsst.afw.cameraGeom import Detector
     from lsst.daf.base import PropertyList
-    from lsst.geom import Box2I
 
 __all__ = ("PfsRaw",)
 
