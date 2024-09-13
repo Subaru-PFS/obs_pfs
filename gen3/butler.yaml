@@ -55,7 +55,7 @@ storageClasses:
     pytype: pfs.drp.stella.datamodel.PfsFiberNorms
   DetectorMap:
     pytype: pfs.drp.stella.DetectorMap
-    components:
+    derivedComponents:
       slitOffsets: NumpyArray  # Slit offsets
       bbox: Box2I  # Bounding box
   PfsArm:
