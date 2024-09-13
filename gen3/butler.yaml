@@ -19,8 +19,8 @@ datastore:
     PfsFluxReference: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     PfsSingle: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     PfsObject: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
-    PfsCalibratedSpectra: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
-    PfsObjectSpectra: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+    PfsCalibratedSpectra: lsst.obs.pfs.formatters.PfsCalibratedSpectraFormatter
+    PfsObjectSpectra: lsst.obs.pfs.formatters.PfsObjectSpectraFormatter
     SkyModel: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     FocalPlaneFunction: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     ArcLineSet: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
@@ -72,8 +72,16 @@ storageClasses:
     pytype: pfs.drp.stella.datamodel.PfsObject
   PfsCalibratedSpectra:
     pytype: pfs.drp.stella.datamodel.pfsTargetSpectra.PfsCalibratedSpectra
+    parameters:
+      - obj_id  # Object identifier
+    derivedComponents:
+      single: PfsSingle  # Single spectrum; requires obj_id
   PfsObjectSpectra:
     pytype: pfs.drp.stella.datamodel.pfsTargetSpectra.PfsObjectSpectra
+    parameters:
+      - obj_id  # Object identifier
+    derivedComponents:
+      single: PfsObject  # Single spectrum; requires obj_id
   SkyModel:
     pytype: pfs.drp.stella.sky2d.SkyModel
   FocalPlaneFunction:
