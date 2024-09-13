@@ -487,35 +487,33 @@ elements:
     storage:
       cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
 
-  obj_id:
+  combination:
     doc: >
-      Object identifier for a target.
+      A way of referring to a particular combination of exposures.
     keys:
       -
-        name: id
-        type: int
-    requires: [cat_id]
+        name: name  # Symbolic name for the combination (easier to refer to than a big number)
+        type: string
+      -
+        name: pfs_visit_hash
+        type: int  # Needs to be 64 bits, but "int" should be sufficient
+    requires: [instrument]
     storage:
       cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
 
-  fiber_id:
+  combination_join:
     doc: >
-      Fiber identifier.
-    keys:
-      -
-        name: id
-        type: int
-    requires: [instrument]
-    implies: [spectrograph]
+      A join table for combinations of exposures.
+    requires: [combination, exposure]
+    always_join: true
     storage:
       cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
 
   pfsConfig:
     doc: >
-      A many-to-many join table that provides targets for each exposure. This
-      is essentially the (target information of the) pfsConfig, represented in
-      the database.
-    requires: [exposure, fiber_id, cat_id, obj_id]
+      A join table that provides the catId present in each exposure. This
+      is pulled from the pfsConfig.
+    requires: [exposure, cat_id]
     always_join: true
     storage:
       cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage

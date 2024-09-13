@@ -31,7 +31,6 @@ from lsst.daf.butler import Registry
 from lsst.utils.introspection import get_full_type_name
 from lsst.obs.base import Instrument
 from lsst.daf.butler import DatasetType
-from pfs.utils.fiberids import FiberIds
 from .filterDefinitions import pfsFilterDefinitions
 from .formatters import PfsRawFormatter, PfsSimulatorRawFormatter, PfsDevelopmentRawFormatter
 from .loadCamera import loadCamera
@@ -90,14 +89,6 @@ class PrimeFocusSpectrograph(Instrument):
             for arm in "brnmx":
                 registry.syncDimensionData(
                     "arm", dict(instrument=instrument, name=arm), update=update
-                )
-
-            fibers = FiberIds()
-            for fiberId, spectrograph in zip(fibers.fiberId, fibers.spectrographId):
-                registry.syncDimensionData(
-                    "fiber_id",
-                    dict(instrument=instrument, fiber_id=int(fiberId), spectrograph=int(spectrograph)),
-                    update=update,
                 )
 
             for detector in camera:
