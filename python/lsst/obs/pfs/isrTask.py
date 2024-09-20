@@ -745,7 +745,7 @@ class PfsIsrTask(ipIsr.IsrTask):
                 if k == "fringes" and v.fringes is None:
                     continue
 
-                if k not in ["camera", "crosstalk"]:
+                if k not in ["camera", "crosstalk", "crosstalkSources"]:
                     self.log.warn("Unexpected argument for runH4RG: %s", k)
 
         if self.config.doDark and dark is None:
