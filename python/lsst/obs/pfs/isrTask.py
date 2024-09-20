@@ -655,6 +655,11 @@ class PfsIsrTask(ipIsr.IsrTask):
         results = super().run(ccdExposure, **kwargs)
         exposure = results.exposure
 
+        isNan = np.isnan(exposure.image.array) | np.isnan(exposure.variance.array)
+        if np.any(isNan):
+            self.log.warn("Unmasked NaNs in ISR-processed exposure: %d pixels", np.sum(isNan))
+            exposure.mask.array[isNan] |= exposure.mask.getPlaneBitMask(["BAD", "UNMASKEDNAN"])
+
         if self.config.doDark and detName in darkBBoxes:
             bboxes = eval(darkBBoxes[detName])  # we checked that this is OK in PfsIsrTaskConfig.validate()
 
@@ -960,7 +965,7 @@ class PfsIsrTask(ipIsr.IsrTask):
                 mask = data.mask[bbox].array | dark.mask[bbox].array
                 var = data.variance[bbox].array
 
-                keep = (mask & data.mask.getPlaneBitMask(["SAT", "NO_DATA"])) == 0x0
+                keep = (mask & data.mask.getPlaneBitMask(["BAD", "SAT", "NO_DATA"])) == 0x0
 
                 if clip > 0:
                     qa, qb = np.percentile(dataArr, [clip, 100 - clip])
