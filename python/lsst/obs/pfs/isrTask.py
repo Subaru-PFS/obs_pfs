@@ -262,8 +262,9 @@ but if you have a sufficiently large cosmic ray flux you might want to reconside
         itemtype=str,
         default=dict(
             n1="pfsIpc-2023-04-17T13:21:09.707-090750-n1.fits",
-            n2="pfsIpc-2023-07-15T00:10:01.950-096714-n3.fits",
-            n3="pfsIpc-2023-11-27T13:21:09.707-102106-n2.fits",
+            n2="pfsIpc-2023-11-27T13:21:09.707-102106-n2.fits",
+            n3="pfsIpc-2023-07-15T00:10:01.950-096714-n3.fits",
+            n4="pfsIpc-2024-07-09T00:10:01.950-112241-n4.fits",
         ),
         doc="Mapping of detector name to IPC kernel filename",
     )
@@ -654,6 +655,11 @@ class PfsIsrTask(ipIsr.IsrTask):
         results = super().run(ccdExposure, **kwargs)
         exposure = results.exposure
 
+        isNan = np.isnan(exposure.image.array) | np.isnan(exposure.variance.array)
+        if np.any(isNan):
+            self.log.warn("Unmasked NaNs in ISR-processed exposure: %d pixels", np.sum(isNan))
+            exposure.mask.array[isNan] |= exposure.mask.getPlaneBitMask(["BAD", "UNMASKEDNAN"])
+
         if self.config.doDark and detName in darkBBoxes:
             bboxes = eval(darkBBoxes[detName])  # we checked that this is OK in PfsIsrTaskConfig.validate()
 
@@ -739,7 +745,7 @@ class PfsIsrTask(ipIsr.IsrTask):
                 if k == "fringes" and v.fringes is None:
                     continue
 
-                if k not in ["camera", "crosstalk"]:
+                if k not in ["camera", "crosstalk", "crosstalkSources"]:
                     self.log.warn("Unexpected argument for runH4RG: %s", k)
 
         if self.config.doDark and dark is None:
@@ -959,7 +965,7 @@ class PfsIsrTask(ipIsr.IsrTask):
                 mask = data.mask[bbox].array | dark.mask[bbox].array
                 var = data.variance[bbox].array
 
-                keep = (mask & data.mask.getPlaneBitMask(["SAT", "NO_DATA"])) == 0x0
+                keep = (mask & data.mask.getPlaneBitMask(["BAD", "SAT", "NO_DATA"])) == 0x0
 
                 if clip > 0:
                     qa, qb = np.percentile(dataArr, [clip, 100 - clip])

@@ -1,4 +1,5 @@
 from typing import Any, Literal, Optional
+from importlib import import_module
 
 import numpy as np
 
@@ -154,3 +155,47 @@ class DetectorMapFormatter(FitsGenericFormatter):
         if component == "slitOffsets":
             return np.vstack([detectorMap.getSpatialOffsets(), detectorMap.getSpectralOffsets()])
         raise ValueError(f"Unknown component {component}")
+
+
+class PfsTargetSpectraFormatter(FitsGenericFormatter):
+    """Formatter for PfsTargetSpectra
+
+    Provides the 'single' component, that extracts a single spectrum.
+    """
+    PfsTargetSpectraClass: str = ""  # Subclasses must override
+
+    def read(self, component: Optional[str] = None):
+        # Docstring inherited.
+        module = import_module("pfs.drp.stella.datamodel.pfsTargetSpectra", )
+        cls = getattr(module, self.PfsTargetSpectraClass)
+
+        path = self.fileDescriptor.location.path
+        spectra = cls.readFits(path)
+        if component is None:
+            return spectra
+
+        parameters = self.fileDescriptor.parameters
+        if parameters is None:
+            parameters = {}
+
+        # This is inefficient, but it makes it very easy without implementing I/O
+        if component == "single":
+            # Don't care about catId, because all spectra in this file should have the same catId
+            if "objId" in parameters and "obj_id" in parameters:
+                raise ValueError("objId and obj_id both specified")
+            objId = parameters.get("objId", parameters.get("obj_id"))
+            select = [target for target in spectra if target.objId == objId]
+            if not select:
+                raise ValueError(f"objId={objId} not found in spectra at {path}")
+            if len(select) > 1:
+                raise ValueError(f"objId={objId} found multiple times in spectra at {path}")
+            return spectra[select.pop()]
+        raise ValueError(f"Unknown component {component}")
+
+
+class PfsCalibratedSpectraFormatter(PfsTargetSpectraFormatter):
+    PfsTargetSpectraClass = "PfsCalibratedSpectra"
+
+
+class PfsObjectSpectraFormatter(PfsTargetSpectraFormatter):
+    PfsTargetSpectraClass = "PfsObjectSpectra"

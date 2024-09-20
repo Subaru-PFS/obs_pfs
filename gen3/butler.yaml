@@ -19,6 +19,8 @@ datastore:
     PfsFluxReference: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     PfsSingle: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     PfsObject: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+    PfsCalibratedSpectra: lsst.obs.pfs.formatters.PfsCalibratedSpectraFormatter
+    PfsObjectSpectra: lsst.obs.pfs.formatters.PfsObjectSpectraFormatter
     SkyModel: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     FocalPlaneFunction: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     ArcLineSet: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
@@ -34,9 +36,7 @@ datastore:
     instrument+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{arm:?}{spectrograph:?}_{run}"
     instrument+exposure+arm:  "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{exposure:?}_{arm:?}_{run}"
     instrument+arm: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{arm:?}_{run}"
-    instrument+cat_id+obj_id: "{run:/}/{datasetType}.{component:?}/{cat_id:?}/{datasetType}_{component:?}_{instrument:?}_{cat_id:?}_{obj_id:?}_{run}"
-    instrument+cat_id+obj_id+exposure: "{run:/}/{datasetType}.{component:?}/{exposure:?}/{cat_id:?}/{datasetType}_{component:?}_{instrument:?}_{cat_id:?}_{obj_id:?}_{exposure:?}_{run}"
-    instrument+cat_id: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{cat_id:?}_{run}"
+    instrument+combination+cat_id: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{combination:?}_{cat_id:?}_{run}"
     instrument+profiles_run+profiles_group: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{profiles_run:?}_{profiles_group:?}_{run}"
     instrument+profiles_run+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{profiles_run:?}_{arm:?}{spectrograph:?}_{run}"
     instrument+profiles_run+profiles_group+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{profiles_run:?}_{profiles_group:?}_{arm:?}{spectrograph:?}_{run}"
@@ -55,7 +55,7 @@ storageClasses:
     pytype: pfs.drp.stella.datamodel.PfsFiberNorms
   DetectorMap:
     pytype: pfs.drp.stella.DetectorMap
-    components:
+    derivedComponents:
       slitOffsets: NumpyArray  # Slit offsets
       bbox: Box2I  # Bounding box
   PfsArm:
@@ -68,6 +68,18 @@ storageClasses:
     pytype: pfs.drp.stella.datamodel.PfsSingle
   PfsObject:
     pytype: pfs.drp.stella.datamodel.PfsObject
+  PfsCalibratedSpectra:
+    pytype: pfs.drp.stella.datamodel.pfsTargetSpectra.PfsCalibratedSpectra
+    parameters:
+      - obj_id  # Object identifier
+    derivedComponents:
+      single: PfsSingle  # Single spectrum; requires obj_id
+  PfsObjectSpectra:
+    pytype: pfs.drp.stella.datamodel.pfsTargetSpectra.PfsObjectSpectra
+    parameters:
+      - obj_id  # Object identifier
+    derivedComponents:
+      single: PfsObject  # Single spectrum; requires obj_id
   SkyModel:
     pytype: pfs.drp.stella.sky2d.SkyModel
   FocalPlaneFunction:
