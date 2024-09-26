@@ -18,8 +18,10 @@ class H4Ramp:
 
     # Get these into some config file(s) -- CPL
     # The irpDefects are generated using the calcIrpDefects method, and are not yet curated. Badly need to be.
-    corrections = {18734:dict(leakage=0.012, irpNoiseClip=10.0),
-                   18660:dict(leakage=0.003, irpNoiseClip=9.0,
+    corrections = {18734:dict(leakage=np.ones(32, dtype='f4')*0.012, 
+                              irpNoiseClip=10.0),
+                   18660:dict(leakage=np.ones(32, dtype='f4')*0.003, 
+                              irpNoiseClip=9.0,
                               irpDefects=np.array([ 196,  303,  334,  348,  821,  901,  996, 1282,
                                                    1449, 1469, 1473, 1551, 1582, 1645, 1723, 1831, 
                                                    1945, 2049, 2200, 2448, 2600, 2730, 2865, 3036, 
