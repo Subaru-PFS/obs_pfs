@@ -8,18 +8,19 @@ datastore:
     ExposureI: lsst.obs.pfs.formatters.PfsFitsExposureFormatter
 
     # PFS-specific dataset types
+    PfsRaw: lsst.obs.pfs.formatters.PfsRawFormatter
     PfsConfig: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     FiberProfileSet: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     FiberTraceSet: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     PfsFiberNorms: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
-    DetectorMap: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+    DetectorMap: lsst.obs.pfs.formatters.DetectorMapFormatter
     PfsArm: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     PfsMerged: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     PfsFluxReference: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     PfsSingle: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     PfsObject: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
-    PfsCalibratedSpectra: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
-    PfsObjectSpectra: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+    PfsCalibratedSpectra: lsst.obs.pfs.formatters.PfsCalibratedSpectraFormatter
+    PfsObjectSpectra: lsst.obs.pfs.formatters.PfsObjectSpectraFormatter
     SkyModel: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     FocalPlaneFunction: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     ArcLineSet: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
@@ -29,9 +30,17 @@ datastore:
     MultipagePdfFigure: pfs.drp.qa.formatters.PdfMatplotlibFormatter
     QaDict: lsst.daf.butler.formatters.pickle.PickleFormatter
   templates:
-    instrument+detector+dither: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{dither:?}_{detector.full_name:?}_{run}"
-    instrument+detector+pfs_design_id: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{detector.full_name:?}_{pfs_design_id:?}_{run}"
+    instrument+arm+spectrograph+dither: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{arm:?}{spectrograph:?}_{dither:?}_{run}"
+    instrument+arm+spectrograph+pfs_design_id: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{arm:?}{spectrograph:?}_{pfs_design_id:?}_{run}"
+    instrument+arm+spectrograph+exposure: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{exposure:?}_{arm:?}{spectrograph:?}_{run}"
+    instrument+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{arm:?}{spectrograph:?}_{run}"
     instrument+exposure+arm:  "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{exposure:?}_{arm:?}_{run}"
+    instrument+arm: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{arm:?}_{run}"
+    instrument+combination+cat_id: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{combination:?}_{cat_id:?}_{run}"
+    instrument+profiles_run+profiles_group: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{profiles_run:?}_{profiles_group:?}_{run}"
+    instrument+profiles_run+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{profiles_run:?}_{arm:?}{spectrograph:?}_{run}"
+    instrument+profiles_run+profiles_group+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{profiles_run:?}_{profiles_group:?}_{arm:?}{spectrograph:?}_{run}"
+    instrument+profiles_run+profiles_group+exposure+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{profiles_run:?}_{profiles_group:?}_{exposure:?}_{arm:?}{spectrograph:?}_{run}"
 
 registry:
   db: sqlite:///<butlerRoot>/gen3.sqlite3
@@ -46,6 +55,9 @@ storageClasses:
     pytype: pfs.drp.stella.datamodel.PfsFiberNorms
   DetectorMap:
     pytype: pfs.drp.stella.DetectorMap
+    derivedComponents:
+      slitOffsets: NumpyArray  # Slit offsets
+      bbox: Box2I  # Bounding box
   PfsArm:
     pytype: pfs.drp.stella.datamodel.PfsArm
   PfsMerged:
@@ -58,8 +70,16 @@ storageClasses:
     pytype: pfs.drp.stella.datamodel.PfsObject
   PfsCalibratedSpectra:
     pytype: pfs.drp.stella.datamodel.pfsTargetSpectra.PfsCalibratedSpectra
+    parameters:
+      - obj_id  # Object identifier
+    derivedComponents:
+      single: PfsSingle  # Single spectrum; requires obj_id
   PfsObjectSpectra:
     pytype: pfs.drp.stella.datamodel.pfsTargetSpectra.PfsObjectSpectra
+    parameters:
+      - obj_id  # Object identifier
+    derivedComponents:
+      single: PfsObject  # Single spectrum; requires obj_id
   SkyModel:
     pytype: pfs.drp.stella.sky2d.SkyModel
   FocalPlaneFunction:
@@ -76,3 +96,20 @@ storageClasses:
     pytype: pfs.drp.qa.storageClasses.MultipagePdfFigure
   QaDict:
     pytype: pfs.drp.qa.storageClasses.QaDict
+  PfsRaw:
+    pytype: lsst.obs.pfs.raw.PfsRaw
+    parameters:
+      - bbox  # Bounding box to read (Box2I)
+      - readNum  # Read number of NIR ramp (int)
+    components:
+      exposure: Exposure  # CCD image or NIR CDS image, as an Exposure (like for a "raw")
+      image: Image  # CCD image or NIR CDS image
+      ramp: Image  # NIR ramp read image; requires readNum
+      numReads: int  # Number of NIR ramp reads
+      metadata: PropertyList  # header
+      visitInfo: VisitInfo  # parsed visit information
+      detector: Detector
+      id: int  # exposure ID
+      bbox: Box2I  # bounding box
+      dimensions: Extent2I  # size of image
+      xy0: Point2I  # bounding box origin

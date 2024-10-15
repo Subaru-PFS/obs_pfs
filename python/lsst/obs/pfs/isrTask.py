@@ -18,20 +18,27 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+import os
 import numpy as np
 import numpy.linalg
 import lsst.log
 import lsst.geom as geom                # noqa F401; used in eval(darkBBoxes)
 import lsst.pex.config as pexConfig
-from lsst.daf.persistence.butlerExceptions import NoResults
+from lsst.daf.persistence import NoResults
+from lsst.utils import getPackageDir
 
 import lsst.afw.display as afwDisplay
 import lsst.afw.math as afwMath
+from lsst.afw.image import DecoratedImageF
 import lsst.ip.isr as ipIsr
+from lsst.ip.isr.isrTask import IsrTaskConnections
 from lsst.ip.isr.assembleCcdTask import AssembleCcdTask
 from lsst.ip.isr import isrQa
 from lsst.utils.timer import timeMethod
 import lsst.pipe.base as pipeBase
+from lsst.pipe.base.connectionTypes import PrerequisiteInput as PrerequisiteConnection
+from lsst.pipe.base.connectionTypes import Output as OutputConnection
+from lsst.daf.butler import DimensionGraph
 
 from .utils import getCalibPath
 from pfs.drp.stella.crosstalk import PfsCrosstalkTask
@@ -121,7 +128,110 @@ class PfsAssembleCcdTask(AssembleCcdTask):
         return exposure
 
 
-class PfsIsrTaskConfig(ipIsr.IsrTaskConfig):
+def lookupBiasDark(datasetType, registry, dataId, collections):
+    """Look up a bias or dark frame
+
+    This is a lookup function for the IsrTaskConnections PrerequisiteConnection
+    that finds a bias or dark frame for a given dataId. We use it to provide an
+    r or m bias or dark frame for r/m arms.
+
+    Parameters
+    ----------
+    datasetType : `str`
+        The dataset type to look up.
+    registry : `lsst.daf.butler.Registry`
+        The butler registry.
+    dataId : `lsst.daf.butler.DataCoordinate`
+        The data identifier.
+    collections : `list` of `str`
+        The collections to search.
+
+    Returns
+    -------
+    refs : `list` of `lsst.daf.butler.Reference`
+        The references to the bias or dark frame.
+    """
+    timespan = dataId.timespan
+    if dataId["arm"] not in "rm":
+        return [registry.findDataset(datasetType, collections=collections, dataId=dataId, timespan=timespan)]
+
+    reducedGraph = DimensionGraph(dataId.universe, names=("instrument", "spectrograph"))
+    reducedId = dataId.subset(reducedGraph)
+    arm = dataId["arm"]
+    spectrograph = dataId["spectrograph"]
+
+    ref1 = None
+    ref2 = None
+    kwargs = dict(
+        collections=collections, dataId=reducedId, spectrograph=spectrograph, timespan=timespan
+    )
+    try:
+        ref1 = registry.findDataset(datasetType, arm=arm, **kwargs)
+    except Exception:
+        pass
+    if arm in "rm":
+        otherArm = dict(r="m", m="r")[arm]
+        try:
+            ref2 = registry.findDataset(datasetType, arm=otherArm, **kwargs)
+        except Exception:
+            pass
+
+    if ref1 is None and ref2 is None:
+        raise RuntimeError(f"Unable to find {datasetType} for {dataId}")
+    if ref1 is None:
+        return [ref2]
+    return [ref1]  # Same arm as original, so use this.
+
+
+class PfsIsrConnections(IsrTaskConnections):
+    bias = PrerequisiteConnection(
+        name="bias",
+        doc="Input bias calibration.",
+        storageClass="ExposureF",
+        dimensions=["instrument", "arm", "spectrograph"],
+        isCalibration=True,
+        minimum=0,
+        lookupFunction=lookupBiasDark,
+    )
+    dark = PrerequisiteConnection(
+        name="dark",
+        doc="Input dark calibration.",
+        storageClass="ExposureF",
+        dimensions=["instrument", "arm", "spectrograph"],
+        isCalibration=True,
+        lookupFunction=lookupBiasDark,
+    )
+    flat = PrerequisiteConnection(
+        name="flat",
+        doc="Input flat calibration.",
+        storageClass="ExposureF",
+        dimensions=["instrument", "arm", "spectrograph"],
+        isCalibration=True,
+    )
+
+    outputExposure = OutputConnection(
+        name="postISRCCD",
+        doc="Output ISR processed exposure.",
+        storageClass="Exposure",
+        dimensions=["instrument", "exposure", "arm", "spectrograph"],
+    )
+
+    def adjustQuantum(self, inputs, outputs, label, dataId):
+        """Adjust the quantum graph to remove arm=n biases"""
+        expRefs = inputs["ccdExposure"][1][0]
+        arm = expRefs.dataId["arm"]
+        adjusted = {}
+        if arm == "n":
+            # We don't want the bias for arm=n
+            connection, oldRefs = inputs["bias"]
+            newRefs = [ref for ref in oldRefs if ref.dataId["arm"] != "n"]
+            adjusted["bias"] = (connection, newRefs)
+            inputs.update(adjusted)
+        super().adjustQuantum(inputs, outputs, label, dataId)
+        return adjusted, {}
+
+
+class PfsIsrTaskConfig(ipIsr.IsrTaskConfig, pipelineConnections=PfsIsrConnections):
     """Configuration parameters for PFS's IsrTask.
 
     Items are grouped in the order in which they are executed by the task.
@@ -147,10 +257,16 @@ The first value should probably always be zero, as we haven't removed any signal
 but if you have a sufficiently large cosmic ray flux you might want to reconsider.""")
     crosstalk = pexConfig.ConfigurableField(target=PfsCrosstalkTask, doc="Inter-CCD crosstalk correction")
     doIPC = pexConfig.Field(dtype=bool, default=True, doc="Correct for IPC?")
-    ipcDataProductName = pexConfig.Field(
-        dtype=str,
-        doc="Name of the IPC coefficients data product",
-        default="ipc",
+    ipc = pexConfig.DictField(
+        keytype=str,
+        itemtype=str,
+        default=dict(
+            n1="pfsIpc-2023-04-17T13:21:09.707-090750-n1.fits",
+            n2="pfsIpc-2023-11-27T13:21:09.707-102106-n2.fits",
+            n3="pfsIpc-2023-07-15T00:10:01.950-096714-n3.fits",
+            n4="pfsIpc-2024-07-09T00:10:01.950-112241-n4.fits",
+        ),
+        doc="Mapping of detector name to IPC kernel filename",
     )
 
     def setDefaults(self):
@@ -479,7 +595,7 @@ class PfsIsrTask(ipIsr.IsrTask):
         """
         exposure = ccdExposure                         # argument must be called "ccdExposure"; PIPE2D-1093
 
-        if exposure.getFilterLabel().bandLabel == 'n':  # treat H4RGs specially
+        if exposure.getFilter().bandLabel == 'n':  # treat H4RGs specially
             return self.runH4RG(exposure, **kwargs)
         else:
             return self.runCCD(exposure, **kwargs)
@@ -497,7 +613,7 @@ class PfsIsrTask(ipIsr.IsrTask):
            result : `lsst.pipe.base.Struct`
               Result struct;  see `lsst.ip.isr.isrTask.run`
         """
-        if ccdExposure.getFilterLabel().bandLabel == 'n':  # treat H4RGs specially
+        if ccdExposure.getFilter().bandLabel == 'n':  # treat H4RGs specially
             return self.runH4RG(ccdExposure, **kwargs)
 
         doBrokenRedShutter = self.config.doBrokenRedShutter and \
@@ -538,6 +654,11 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         results = super().run(ccdExposure, **kwargs)
         exposure = results.exposure
+
+        isNan = np.isnan(exposure.image.array) | np.isnan(exposure.variance.array)
+        if np.any(isNan):
+            self.log.warn("Unmasked NaNs in ISR-processed exposure: %d pixels", np.sum(isNan))
+            exposure.mask.array[isNan] |= exposure.mask.getPlaneBitMask(["BAD", "UNMASKEDNAN"])
 
         if self.config.doDark and detName in darkBBoxes:
             bboxes = eval(darkBBoxes[detName])  # we checked that this is OK in PfsIsrTaskConfig.validate()
@@ -592,7 +713,7 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         return results
 
-    def runH4RG(self, exposure, dark=None, flat=None, defects=None, ipcCoeffs=None, **kwargs):
+    def runH4RG(self, exposure, dark=None, flat=None, defects=None, detectorNum=None, **kwargs):
         """Specialist instrument signature removal for H4RG detectors
 
         Parameters
@@ -606,8 +727,8 @@ class PfsIsrTask(ipIsr.IsrTask):
             Flat-field exposure to divide by.
         defects : `lsst.ip.isr.Defects`, optional
             List of defects.
-        ipcCoeffs : `lsst.afw.image.Exposure`, optional  XXXXX
-            IPC correction coefficients to apply (PROTOCOL 1 for now, single HDU with no spatial variation)
+        detectorNum: `int`, optional
+            The integer number for the detector to process.
         kwargs : `dict` other keyword arguments specifying e.g. combined biases
             N.b. no values are currently valid
         Returns
@@ -624,7 +745,7 @@ class PfsIsrTask(ipIsr.IsrTask):
                 if k == "fringes" and v.fringes is None:
                     continue
 
-                if k not in ["camera", "crosstalk"]:
+                if k not in ["camera", "crosstalk", "crosstalkSources"]:
                     self.log.warn("Unexpected argument for runH4RG: %s", k)
 
         if self.config.doDark and dark is None:
@@ -636,8 +757,7 @@ class PfsIsrTask(ipIsr.IsrTask):
         if self.config.doIPC:
             if defects is None:
                 raise RuntimeError("Must supply defects if config.doIPC=True.")
-            if ipcCoeffs is None:
-                raise RuntimeError("Must supply ipcCoeffs if config.doIPC=True.")
+            ipcCoeffs = self.readIPC(exposure.getDetector().getName())
 
         # Think about the ordering here.
         # E.g. dark subtraction before defects (but then we'd have to rotate the dark,
@@ -682,6 +802,45 @@ class PfsIsrTask(ipIsr.IsrTask):
                                flattenedThumb=None,
                                ossThumb=None,
                                )
+
+    def readIPC(self, detectorName: str) -> dict[int, dict[int, float]]:
+        """Read IPC coefficients from file
+
+        We believe these should be static, so haven't gone to the trouble of
+        making them calibs. Instead, they are read from a file specified in the
+        config, indexed by detector name.
+
+        Parameters
+        ----------
+        detectorName : `str`
+            Name of detector.
+
+        Returns
+        ipcCoeffs : `dict` mapping `int` to a `dict` mapping `int` to float
+            IPC coefficients. ``ipcCoeffs[dx][dy]`` is the fraction of flux at
+            (dx, dy).
+        """
+        filename = self.config.ipc[detectorName]
+        if not os.path.isabs(filename):
+            absFilename = os.path.join(getPackageDir("drp_pfs_data"), "ipc", filename)
+            if os.path.exists(absFilename):
+                filename = absFilename
+
+        data = DecoratedImageF(filename)
+        protocol = data.getMetadata()["PROTOCOL"]
+        if protocol != 1:
+            raise RuntimeError(f"Unexpected IPC protocol version {protocol}")
+
+        arr = data.image.array
+        nx, ny = arr.shape
+
+        ipcCoeffs = {}
+        for ix in range(-(nx//2), nx//2 + 1):
+            ipcCoeffs[ix] = {}
+            for iy in range(-(ny//2), ny//2 + 1):
+                ipcCoeffs[ix][iy] = arr[iy + ny//2, ix + nx//2]
+
+        return ipcCoeffs
 
     @staticmethod
     def correctIPC(exposure, defects, ipcCoeffs, nQuarter=0):
@@ -806,7 +965,7 @@ class PfsIsrTask(ipIsr.IsrTask):
                 mask = data.mask[bbox].array | dark.mask[bbox].array
                 var = data.variance[bbox].array
 
-                keep = (mask & data.mask.getPlaneBitMask(["SAT", "NO_DATA"])) == 0x0
+                keep = (mask & data.mask.getPlaneBitMask(["BAD", "SAT", "NO_DATA"])) == 0x0
 
                 if clip > 0:
                     qa, qb = np.percentile(dataArr, [clip, 100 - clip])

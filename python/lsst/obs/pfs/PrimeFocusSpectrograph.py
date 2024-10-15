@@ -24,15 +24,14 @@ __all__ = ("PrimeFocusSpectrograph", "PfsSimulator", "PfsDevelopment")
 
 import os
 
-from typing import List
+from typing import List, Literal, Optional
 
 from lsst.utils import getPackageDir
 from lsst.daf.butler import Registry
 from lsst.utils.introspection import get_full_type_name
 from lsst.obs.base import Instrument
-from lsst.obs.base.gen2to3 import TranslatorFactory, PhysicalFilterToBandKeyHandler
 from lsst.daf.butler import DatasetType
-from .pfsMapper import pfsFilterDefinitions
+from .filterDefinitions import pfsFilterDefinitions
 from .formatters import PfsRawFormatter, PfsSimulatorRawFormatter, PfsDevelopmentRawFormatter
 from .loadCamera import loadCamera
 
@@ -43,7 +42,7 @@ class PrimeFocusSpectrograph(Instrument):
     policyName = "pfs"
     obsDataPackage = "drp_pfs_data"
     filterDefinitions = pfsFilterDefinitions
-    pfsCategory = None
+    pfsCategory: Optional[Literal["F", "L", "S"]] = None
     standardCuratedDatasetTypes = frozenset(["defects"])
 
     def __init__(self, **kwargs):
@@ -121,16 +120,20 @@ class PrimeFocusSpectrograph(Instrument):
         # Register types for datasets that will be ingested into the datastore.
         # Other types will be defined by the pipelines.
         self.registerDatasetType(
+            registry, "raw", ["instrument", "exposure", "spectrograph", "arm", "detector"], "PfsRaw"
+        )
+        self.registerDatasetType(
             registry,
             "pfsConfig",
-            (
-                "instrument",
-                "exposure",
-            ),
+            ["instrument", "exposure"],
             "PfsConfig",
         )
         self.registerDatasetType(
-            registry, "detectorMap_bootstrap", ("instrument", "detector"), "DetectorMap"
+            registry,
+            "detectorMap_calib",
+            ["instrument", "arm", "spectrograph"],
+            "DetectorMap",
+            True,
         )
 
     def registerDatasetType(
@@ -207,20 +210,6 @@ class PrimeFocusSpectrograph(Instrument):
         return os.path.join(
             cls.getObsDataPackageDir(), "curated", cls.policyName, datasetTypeName
         )
-
-    def makeDataIdTranslatorFactory(self) -> TranslatorFactory:
-        # Docstring inherited from lsst.obs.base.Instrument.
-        factory = TranslatorFactory()
-        factory.addGenericInstrumentRules(self.getName())
-        # Translate Gen2 `filter` to band if it hasn't been consumed
-        # yet and gen2keys includes tract.
-        factory.addRule(
-            PhysicalFilterToBandKeyHandler(self.filterDefinitions),
-            instrument=self.getName(),
-            gen2keys=("filter", "tract"),
-            consume=("filter",),
-        )
-        return factory
 
 
 class PfsSimulator(PrimeFocusSpectrograph):

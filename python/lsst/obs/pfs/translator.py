@@ -3,6 +3,7 @@ import os
 import numpy as np
 import astropy.units as u
 from astropy.coordinates import SkyCoord, AltAz
+from astropy.time import Time, TimeDelta
 
 from astro_metadata_translator import SubaruTranslator, cache_translation, PropertyDefinition
 from astro_metadata_translator.translators.helpers import altaz_from_degree_headers
@@ -29,33 +30,41 @@ class PfsTranslator(SubaruTranslator):
     default_resource_root = os.path.join(getPackageDir("obs_pfs"), "corrections")
     """Default resource path root to use to locate header correction files."""
 
-    _const_map = {"boresight_rotation_coord": "mount",
-                  "telescope": "Subaru",
-                  "observation_type": "science",
-                  }
+    # Provided by superclasses:
+    # * location (SubaruTranslator)
+    # * observation_counter (SubaruTranslator)
+    # * observing_day (MetadataTranslator)
+
+    _const_map = {
+        "boresight_rotation_coord": "mount",
+        "group_counter_end": 0,
+        "group_counter_start": 0,
+        "telescope": "Subaru",
+    }
     """Constant mappings"""
 
     _trivial_map = {
         # Existing
-        "exposure_id": "W_VISIT",
-        "observation_id": "W_VISIT",
-        "visit_id": "W_VISIT",
+        "boresight_airmass": ("AIRMASS", dict(default=np.nan)),
+        "boresight_rotation_angle": ("INSROT", dict(unit=u.deg, default=0.0)),
         "detector_group": "W_SPMOD",
-        "exposure_time": ("EXPTIME", dict(unit=u.s)),
         "detector_serial": "DETECTOR",
-        "object": "IMAGETYP",  # XXX to be updated; hopefully to OBJECT
+        "detector_unique_name": "DETECTOR",
+        "exposure_id": "W_VISIT",
+        "exposure_group": ("W_PFDSNM", dict(default="")),
+        "exposure_time": ("EXPTIME", dict(unit=u.s)),
+        "focus_z": ("FOC-VAL", dict(unit=u.um, default=np.nan)),
+        "observation_id": "W_VISIT",
+        "pressure": ("OUT-PRS", dict(unit=u.hPa, default=np.nan)),
+        "relative_humidity": ("OUT-HUM", dict(default=np.nan)),
+        "science_program": ("PROP-ID", dict(default="unknown")),
+        "temperature": ("OUT-TMP", dict(unit=u.K, default=np.nan)),
+        "visit_id": "W_VISIT",
         "ext_spectrograph": "W_SPMOD",
         "ext_pfs_design_id": "W_PFDSGN",
         "ext_dither": "W_ENFCAZ",
         "ext_shift": "W_ENFCAY",
         "ext_focus": "W_ENFCAX",
-        "boresight_rotation_angle": ("INSROT", dict(unit=u.deg, default=0.0)),
-        # Guesses for what we will use in the future
-        "boresight_airmass": ("AIRMASS", dict(default=np.nan)),
-        "pressure": ("OUT-PRS", dict(unit=u.hPa, default=np.nan)),
-        "relative_humidity": ("OUT-HUM", dict(default=np.nan)),
-        "science_program": ("PROP-ID", dict(default=0)),
-        "temperature": ("OUT-TMP", dict(unit=u.K, default=np.nan)),
     }
     """One-to-one mappings"""
 
@@ -89,6 +98,35 @@ class PfsTranslator(SubaruTranslator):
         """
         return "INSTRUME" in header and header["INSTRUME"] == "PFS"
 
+    def from_header_string(self, *keywords):
+        """Return the first non-empty value from the header
+
+        Parameters
+        ----------
+        *keywords : `str`
+            Keywords to search for in the header
+
+        Returns
+        -------
+        value : `str`
+            First non-empty value found in the header, or `None` if none found.
+        """
+        for key in keywords:
+            if key not in self._header:
+                continue
+            value = self._header[key].strip()
+            if not value:
+                continue
+            self._used_these_cards(key)
+            return self._header[key]
+        return None
+
+    @cache_translation
+    def to_object(self):
+        # IMAGETYP is to support the simulator, which doesn't set OBJECT
+        value = self.from_header_string("OBJECT", "IMAGETYP")
+        return value if value else "UNKNOWN"
+
     @cache_translation
     def to_altaz_begin(self):
         if "ALTITUDE" not in self._header or "AZIMUTH" not in self._header:
@@ -99,17 +137,14 @@ class PfsTranslator(SubaruTranslator):
 
     @cache_translation
     def to_datetime_begin(self):
-        # Neven writes:
-        # > by comparing `DATE-OBS` for exposures with different `EXPTIME`, I am
-        # > concluding that `DATE-OBS` refers to the end of the exposure
-        value = self.to_datetime_end() - self._header["EXPTIME"]*u.second
-        self._used_these_cards("EXPTIME")
+        value = Time(self._header["MJD-STR"], format="mjd", scale=self._header.get("TIMESYS", "utc").lower())
+        self._used_these_cards("MJD-STR", "TIMESYS")
         return value
 
     @cache_translation
     def to_datetime_end(self):
-        value = self._from_fits_date_string(self._header["DATE-OBS"], scale="utc")
-        self._used_these_cards("DATE-OBS")
+        value = Time(self._header["MJD-END"], format="mjd", scale=self._header.get("TIMESYS", "utc").lower())
+        self._used_these_cards("MJD-END", "TIMESYS")
         return value
 
     @cache_translation
@@ -129,10 +164,12 @@ class PfsTranslator(SubaruTranslator):
 
     @cache_translation
     def to_detector_num(self):
-        arm = self._header["W_ARM"]
+        armNum = self._header["W_ARM"]
         spectrograph = self._header["W_SPMOD"]
         self._used_these_cards("W_ARM", "W_SPMOD")
-        return 4*(spectrograph - 1) + arm - 1
+        if armNum == 4:  # arm=m
+            return - 3*(spectrograph - 1) - 1
+        return 3*(spectrograph - 1) + armNum - 1
 
     @cache_translation
     def to_tracking_radec(self):
@@ -167,3 +204,49 @@ class PfsTranslator(SubaruTranslator):
         armNum = self._header["W_ARM"]
         self._used_these_cards("W_ARM")
         return {1: "b", 2: "r", 3: "n", 4: "m"}[armNum]
+
+    @cache_translation
+    def to_can_see_sky(self):
+        domeShutter = self._header.get("W_TSHUTR", "closed")
+        self._used_these_cards("W_TSHUTR")
+        return domeShutter == "open"
+
+    @cache_translation
+    def to_has_simulated_content(self):
+        site = self._header["W_SITE"]
+        self._used_these_cards("W_SITE")
+        return site == "F"
+
+    @cache_translation
+    def to_observation_reason(self):
+        obsType = self.to_observation_type()
+        return dict(science="science", UNKNOWN="UNKNOWN").get(obsType, "calibration")
+
+    @cache_translation
+    def to_observation_type(self):
+        value = self.from_header_string("DATA-TYP", "IMAGETYP")
+        if value is None:
+            return "UNKNOWN"
+        if value == "OBJECT":
+            return "science"
+        return value.lower()
+
+    @classmethod
+    def observing_date_to_offset(cls, observing_date: Time) -> TimeDelta | None:
+        """Return the offset to use when calculating the observing day.
+
+        Parameters
+        ----------
+        observing_date : `astropy.time.Time`
+            The date of the observation. Unused.
+
+        Returns
+        -------
+        offset : `astropy.time.TimeDelta`
+            The offset to apply. The offset is always 12 hours. PFS has
+            no defined observing day concept in its headers. To ensure that
+            observations from a single night all have the same observing_day,
+            adopt the same offset used by the Vera Rubin Observatory of
+            12 hours.
+        """
+        return TimeDelta(12 * 3600, format="sec", scale="tai"),

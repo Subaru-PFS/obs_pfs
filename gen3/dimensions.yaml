@@ -307,6 +307,21 @@ elements:
         type: float
         doc: >
           Angle in degrees from the zenith at the start of the exposure.
+      -
+        name: shift
+        type: float
+        doc: >
+          Slit offset in the wavelength dimension.
+      -
+        name: focus
+        type: float
+        doc: >
+          Hexapod offset perpendicular to the detector.
+      -
+        name: lamps
+        type: string
+        doc: >
+          Comma-separated list of lamps.
     storage:
       cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
 
@@ -461,12 +476,74 @@ elements:
     storage:
       cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
 
-  exposure_patch:
+  cat_id:
     doc: >
-      Patches known to overlap an exposure.
-      This is determined from the pfsConfig, which has a list of tract,patch
-      for all fiber targets.
-    requires: [instrument, exposure, skymap, tract, patch]
+      Catalog identifier for a target.
+    keys:
+      -
+        name: id
+        type: int
+    requires: [instrument]
+    storage:
+      cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
+
+  combination:
+    doc: >
+      A way of referring to a particular combination of exposures.
+    keys:
+      -
+        name: name  # Symbolic name for the combination (easier to refer to than a big number)
+        type: string
+      -
+        name: pfs_visit_hash
+        type: int  # Needs to be 64 bits, but "int" should be sufficient
+    requires: [instrument]
+    storage:
+      cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
+
+  combination_join:
+    doc: >
+      A join table for combinations of exposures.
+    requires: [combination, exposure]
+    always_join: true
+    storage:
+      cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
+
+  pfsConfig:
+    doc: >
+      A join table that provides the catId present in each exposure. This
+      is pulled from the pfsConfig.
+    requires: [exposure, cat_id]
+    always_join: true
+    storage:
+      cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
+
+  profiles_run:
+    doc: >
+      Fiber profile measurement run.
+    keys:
+      -
+        name: run
+        type: string
+    requires: [instrument]
+    storage:
+      cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
+
+  profiles_group:
+    doc: >
+      Fiber profile measurement group.
+    keys:
+      -
+        name: group_num
+        type: int
+    requires: [profiles_run]
+    storage:
+      cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
+
+  profiles_exposures:
+    doc: >
+      Exposures involved in a fiber profile measurement group.
+    requires: [profiles_group, exposure]
     always_join: true
     storage:
       cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
@@ -477,16 +554,16 @@ topology:
     skymap_regions: [patch, tract]
 
   temporal:
-    observation_timespans: [exposure, visit]
+    observation_timespans: [exposure, visit, detector]
 
 packers:
   visit_detector:
     fixed: [instrument]
-    dimensions: [instrument, visit, detector]
+    dimensions: [instrument, visit, spectrograph, arm]
     cls: lsst.daf.butler.instrument.ObservationDimensionPacker
   exposure_detector:
     fixed: [instrument]
-    dimensions: [instrument, exposure, detector]
+    dimensions: [instrument, exposure, spectrograph, arm]
     cls: lsst.daf.butler.instrument.ObservationDimensionPacker
   tract_patch:
     fixed: [skymap]
