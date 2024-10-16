@@ -143,9 +143,7 @@ class PfsTranslator(SubaruTranslator):
 
     @cache_translation
     def to_datetime_end(self):
-        value = Time(self._header["MJD-END"], format="mjd", scale=self._header.get("TIMESYS", "utc").lower())
-        self._used_these_cards("MJD-END", "TIMESYS")
-        return value
+        return self.to_datetime_begin() + self.to_exposure_time()
 
     @cache_translation
     def to_detector_name(self):
