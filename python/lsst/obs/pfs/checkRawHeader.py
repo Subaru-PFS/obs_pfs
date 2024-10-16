@@ -2,6 +2,7 @@ from typing import Union
 
 import astropy.io.fits
 from astropy import log
+from astropy.time import Time
 from lsst.obs.pfs.parseFilename import parseRawFilename
 
 __all__ = ("checkRawHeader",)
@@ -66,6 +67,7 @@ def checkRawHeader(filename: str, allowFix: bool = False):
     - ``W_ARM``: Spectrograph arm 1=b, 2=r, 3=n, 4=medRed
     - ``W_SPMOD``: Spectrograph module. 1-4 at Subaru
     - ``W_SITE``: PFS DAQ location: S=Subaru, J=JHU, L=LAM, A=ASIAA, F=simulator
+    - ``MJD-STR``: Start time of exposure
 
     Parameters
     ----------
@@ -109,6 +111,9 @@ def checkRawHeader(filename: str, allowFix: bool = False):
                                          "Spectrograph arm: 1=b, 2=r, 3=n, 4=medRed", allowFix)
                 modified |= checkKeyword(header, "W_SPMOD", data.spectrograph, "Spectrograph module: 1-4",
                                          allowFix)
+            if "MJD-STR" not in header:
+                mjd = Time(header["DATE-OBS"], scale="utc").mjd
+                modified |= checkKeyword(header, "MJD-STR", mjd, "Start time of exposure", allowFix)
         except ValueError as exc:
             raise ValueError(f"Bad header for {filename}") from exc
 
