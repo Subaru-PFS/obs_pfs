@@ -81,8 +81,8 @@ def checkRawHeader(filename: str, allowFix: bool = False):
     with astropy.io.fits.open(filename, "update" if allowFix else "readonly", save_backup=True) as fits:
         modified = False
         header = fits[0].header
-        if header["NAXIS"] == 0:
-            # Probably compressed
+        if header["NAXIS"] == 0 and header.get("W_SRH4", None) is None:
+            # Probably compressed, not NIR
             modified |= checkKeyword(header, "INHERIT", True, "Inherit from previous header", allowFix)
             for key in ("TELESCOP", "INSTRUME", "DETECTOR", "W_VISIT", "W_ARM", "W_SPMOD", "W_SITE"):
                 if key in header:
