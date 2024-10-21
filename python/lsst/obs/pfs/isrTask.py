@@ -24,7 +24,6 @@ import numpy.linalg
 import lsst.log
 import lsst.geom as geom                # noqa F401; used in eval(darkBBoxes)
 import lsst.pex.config as pexConfig
-from lsst.daf.persistence import NoResults
 from lsst.utils import getPackageDir
 
 import lsst.afw.display as afwDisplay
@@ -484,7 +483,7 @@ class PfsIsrTask(ipIsr.IsrTask):
                                               sensorRef.dataId["visit"])
 
                                 exp2 = self.runDataRef(sensorRef).exposure
-                        except NoResults as e:
+                        except Exception as e:
                             self.log.warn("Unable to read %d %s%d for broken red shutter correction: %s",
                                           sensorRef.dataId["visit"], sensorRef.dataId["arm"],
                                           sensorRef.dataId["spectrograph"], e)
