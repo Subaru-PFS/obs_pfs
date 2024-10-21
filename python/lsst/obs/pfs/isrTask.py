@@ -202,10 +202,10 @@ class PfsIsrConnections(IsrTaskConnections):
         lookupFunction=lookupBiasDark,
     )
     flat = PrerequisiteConnection(
-        name="flat",
-        doc="Input flat calibration.",
+        name="fiberFlat",
+        doc="Combined flat",
         storageClass="ExposureF",
-        dimensions=["instrument", "arm", "spectrograph"],
+        dimensions=("instrument", "arm", "spectrograph"),
         isCalibration=True,
     )
 
