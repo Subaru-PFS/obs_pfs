@@ -275,6 +275,7 @@ but if you have a sufficiently large cosmic ray flux you might want to reconside
         # self.doApplyGains must be False: gains are applied automatically in PFS's overload of assembleCcd
         # for CCDs and in std_raw for H4RGs (as the ASIC gain can be changed)
         self.doApplyGains = False
+        self.connections.ccdExposure = "raw.exposure"
 
     def validate(self):
         if self.windowed:
