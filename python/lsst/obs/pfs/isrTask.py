@@ -24,7 +24,6 @@ import numpy.linalg
 import lsst.log
 import lsst.geom as geom                # noqa F401; used in eval(darkBBoxes)
 import lsst.pex.config as pexConfig
-from lsst.daf.persistence import NoResults
 from lsst.utils import getPackageDir
 
 import lsst.afw.display as afwDisplay
@@ -202,10 +201,10 @@ class PfsIsrConnections(IsrTaskConnections):
         lookupFunction=lookupBiasDark,
     )
     flat = PrerequisiteConnection(
-        name="flat",
-        doc="Input flat calibration.",
+        name="fiberFlat",
+        doc="Combined flat",
         storageClass="ExposureF",
-        dimensions=["instrument", "arm", "spectrograph"],
+        dimensions=("instrument", "arm", "spectrograph"),
         isCalibration=True,
     )
 
@@ -275,6 +274,7 @@ but if you have a sufficiently large cosmic ray flux you might want to reconside
         # self.doApplyGains must be False: gains are applied automatically in PFS's overload of assembleCcd
         # for CCDs and in std_raw for H4RGs (as the ASIC gain can be changed)
         self.doApplyGains = False
+        self.connections.ccdExposure = "raw.exposure"
 
     def validate(self):
         if self.windowed:
@@ -483,7 +483,7 @@ class PfsIsrTask(ipIsr.IsrTask):
                                               sensorRef.dataId["visit"])
 
                                 exp2 = self.runDataRef(sensorRef).exposure
-                        except NoResults as e:
+                        except Exception as e:
                             self.log.warn("Unable to read %d %s%d for broken red shutter correction: %s",
                                           sensorRef.dataId["visit"], sensorRef.dataId["arm"],
                                           sensorRef.dataId["spectrograph"], e)
@@ -745,7 +745,7 @@ class PfsIsrTask(ipIsr.IsrTask):
                 if k == "fringes" and v.fringes is None:
                     continue
 
-                if k not in ["camera", "crosstalk", "crosstalkSources"]:
+                if k not in ("camera", "crosstalk", "crosstalkSources", "linearizer"):
                     self.log.warn("Unexpected argument for runH4RG: %s", k)
 
         if self.config.doDark and dark is None:
