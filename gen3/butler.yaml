@@ -71,15 +71,17 @@ storageClasses:
   PfsCalibratedSpectra:
     pytype: pfs.drp.stella.datamodel.pfsTargetSpectra.PfsCalibratedSpectra
     parameters:
+      - objId  # Object identifier
       - obj_id  # Object identifier
     derivedComponents:
-      single: PfsSingle  # Single spectrum; requires obj_id
+      single: PfsSingle  # Single spectrum; requires objId/obj_id
   PfsObjectSpectra:
     pytype: pfs.drp.stella.datamodel.pfsTargetSpectra.PfsObjectSpectra
     parameters:
+      - objId  # Object identifier
       - obj_id  # Object identifier
     derivedComponents:
-      single: PfsObject  # Single spectrum; requires obj_id
+      single: PfsObject  # Single spectrum; requires objId/obj_id
   SkyModel:
     pytype: pfs.drp.stella.sky2d.SkyModel
   FocalPlaneFunction:
