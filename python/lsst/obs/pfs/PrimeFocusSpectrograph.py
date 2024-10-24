@@ -35,6 +35,14 @@ from .filterDefinitions import pfsFilterDefinitions
 from .formatters import PfsRawFormatter, PfsSimulatorRawFormatter, PfsDevelopmentRawFormatter
 from .loadCamera import loadCamera
 
+import lsst.obs.base._instrument
+lsst.obs.base._instrument.StandardCuratedCalibrationDatasetTypes = dict(
+    defects=dict(
+        dimensions=("instrument", "detector", "arm", "spectrograph"),
+        storageClass="Defects",
+    ),
+)
+
 
 class PrimeFocusSpectrograph(Instrument):
     """Gen3 Butler specialization class for Subaru's Prime Focus Spectrograph."""
@@ -69,7 +77,6 @@ class PrimeFocusSpectrograph(Instrument):
                     "name": instrument,
                     "detector_max": 20,
                     "visit_max": obsMax,
-                    "exposure_max": obsMax,
                     "class_name": get_full_type_name(self),
                 },
                 update=update,
@@ -120,12 +127,12 @@ class PrimeFocusSpectrograph(Instrument):
         # Register types for datasets that will be ingested into the datastore.
         # Other types will be defined by the pipelines.
         self.registerDatasetType(
-            registry, "raw", ["instrument", "exposure", "spectrograph", "arm", "detector"], "PfsRaw"
+            registry, "raw", ["instrument", "visit", "spectrograph", "arm"], "PfsRaw"
         )
         self.registerDatasetType(
             registry,
             "pfsConfig",
-            ["instrument", "exposure"],
+            ["instrument", "visit"],
             "PfsConfig",
         )
         self.registerDatasetType(

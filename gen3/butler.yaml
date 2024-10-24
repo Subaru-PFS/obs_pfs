@@ -32,15 +32,15 @@ datastore:
   templates:
     instrument+arm+spectrograph+dither: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{arm:?}{spectrograph:?}_{dither:?}_{run}"
     instrument+arm+spectrograph+pfs_design_id: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{arm:?}{spectrograph:?}_{pfs_design_id:?}_{run}"
-    instrument+arm+spectrograph+exposure: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{exposure:?}_{arm:?}{spectrograph:?}_{run}"
+    instrument+arm+spectrograph+visit: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{visit:?}_{arm:?}{spectrograph:?}_{run}"
     instrument+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{arm:?}{spectrograph:?}_{run}"
-    instrument+exposure+arm:  "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{exposure:?}_{arm:?}_{run}"
+    instrument+visit+arm:  "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{visit:?}_{arm:?}_{run}"
     instrument+arm: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{arm:?}_{run}"
     instrument+combination+cat_id: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{combination:?}_{cat_id:?}_{run}"
     instrument+profiles_run+profiles_group: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{profiles_run:?}_{profiles_group:?}_{run}"
     instrument+profiles_run+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{profiles_run:?}_{arm:?}{spectrograph:?}_{run}"
     instrument+profiles_run+profiles_group+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{profiles_run:?}_{profiles_group:?}_{arm:?}{spectrograph:?}_{run}"
-    instrument+profiles_run+profiles_group+exposure+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{profiles_run:?}_{profiles_group:?}_{exposure:?}_{arm:?}{spectrograph:?}_{run}"
+    instrument+profiles_run+profiles_group+visit+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{profiles_run:?}_{profiles_group:?}_{visit:?}_{arm:?}{spectrograph:?}_{run}"
 
 registry:
   db: sqlite:///<butlerRoot>/gen3.sqlite3
@@ -71,15 +71,17 @@ storageClasses:
   PfsCalibratedSpectra:
     pytype: pfs.drp.stella.datamodel.pfsTargetSpectra.PfsCalibratedSpectra
     parameters:
+      - objId  # Object identifier
       - obj_id  # Object identifier
     derivedComponents:
-      single: PfsSingle  # Single spectrum; requires obj_id
+      single: PfsSingle  # Single spectrum; requires objId/obj_id
   PfsObjectSpectra:
     pytype: pfs.drp.stella.datamodel.pfsTargetSpectra.PfsObjectSpectra
     parameters:
+      - objId  # Object identifier
       - obj_id  # Object identifier
     derivedComponents:
-      single: PfsObject  # Single spectrum; requires obj_id
+      single: PfsObject  # Single spectrum; requires objId/obj_id
   SkyModel:
     pytype: pfs.drp.stella.sky2d.SkyModel
   FocalPlaneFunction:

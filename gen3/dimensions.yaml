@@ -14,7 +14,7 @@ elements:
     doc: >
       An entity that produces observations.  An instrument defines a set of
       physical_filters and detectors and a numbering system for the exposures
-      and visits that represent observations with it.
+      that represent observations with it.
     keys:
       -
         name: name
@@ -26,12 +26,6 @@ elements:
         type: int
         doc: >
           Maximum value for the 'visit' field for visits associated with
-          this instrument (exclusive).
-      -
-        name: exposure_max
-        type: int
-        doc: >
-          Maximum value for the 'exposure' field for exposures associated with
           this instrument (exclusive).
       -
         name: detector_max
@@ -142,79 +136,7 @@ elements:
 
   visit:
     doc: >
-      A sequence of observations processed together, comprised of one or
-      more exposures from the same instrument with the same pointing and
-      physical_filter.
-      The visit table contains metadata that is both meaningful only for
-      science exposures and the same for all exposures in a visit.
-    keys:
-      -
-        name: id
-        type: int
-      -
-        name: name
-        type: string
-        length: 64
-    requires: [instrument]
-    implies: [visit_system]
-    metadata:
-      -
-        name: day_obs
-        type: int
-        doc: >
-          Day of observation as defined by the observatory (YYYYMMDD format).
-          If a visit crosses multiple days this entry will be the earliest
-          day of any of the exposures that make up the visit.
-      -
-        name: exposure_time
-        type: float
-        doc: >
-          The total exposure time of the visit in seconds.  This should
-          be equal to the sum of the exposure_time values for all
-          constituent exposures (i.e. it should not include time between
-          exposures).
-      -
-        name: target_name
-        type: string
-        length: 64
-        doc: Object of interest for this visit or survey field name.
-      -
-        name: observation_reason
-        type: string
-        length: 32
-        doc: >
-          The reason this visit was taken. (e.g. science,
-          filter scan, unknown, various).
-      -
-        name: science_program
-        type: string
-        length: 64
-        doc: Observing program (survey or proposal) identifier.
-      -
-        name: zenith_angle
-        type: float
-        doc: >
-          Approximate zenith angle in degrees during the visit.
-          Can only be approximate since it is continuously changing during
-          and observation and multiple visits can be combined from a
-          relatively long period.
-    storage:
-      cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
-
-  exposure:
-    doc: >
-      An observation associated with a particular instrument.  All direct
-      observations are identified with an exposure, but derived datasets
-      that may be based on more than one exposure (e.g. multiple snaps) are
-      typically identified with visits instead, even for instruments that
-      don't have multiple exposures per visit.  As a result, instruments
-      that don't have multiple exposures per visit will typically have visit
-      entries that are essentially duplicates of their exposure entries.
-
-      The exposure table contains metadata entries that are relevant for
-      calibration exposures, and does not duplicate entries in visit that
-      would be the same for all exposures within a visit with the exception
-      of the exposure.group entry.
+      An observation associated with a particular instrument.
     keys:
       -
         name: id
@@ -393,42 +315,6 @@ elements:
     storage:
       cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
 
-  visit_detector_region:
-    doc: >
-      A many-to-many join table that provides region information for
-      visit-detector combinations.
-    requires: [visit, detector]
-    storage:
-      cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
-
-  visit_system:
-    doc: >
-      A system of self-consistent visit definitions, within which each
-      exposure should appear at most once.
-    keys:
-      -
-        name: id
-        type: int
-      -
-        name: name
-        type: string
-        length: 32
-    requires: [instrument]
-    storage:
-      cls: lsst.daf.butler.registry.dimensions.caching.CachingDimensionRecordStorage
-      nested:
-        cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
-
-  visit_definition:
-    doc: >
-      A many-to-many join table that relates exposures to the visits they
-      belong to.
-    requires: [exposure, visit_system]
-    implies: [visit]
-    always_join: true
-    storage:
-      cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
-
   spectrograph:
     doc: >
       A PFS spectrograph module within a particular instrument [1-4]
@@ -489,7 +375,7 @@ elements:
 
   combination:
     doc: >
-      A way of referring to a particular combination of exposures.
+      A way of referring to a particular combination of visits.
     keys:
       -
         name: name  # Symbolic name for the combination (easier to refer to than a big number)
@@ -503,17 +389,17 @@ elements:
 
   combination_join:
     doc: >
-      A join table for combinations of exposures.
-    requires: [combination, exposure]
+      A join table for combinations of visits.
+    requires: [combination, visit]
     always_join: true
     storage:
       cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
 
   pfsConfig:
     doc: >
-      A join table that provides the catId present in each exposure. This
+      A join table that provides the catId present in each visit. This
       is pulled from the pfsConfig.
-    requires: [exposure, cat_id]
+    requires: [visit, cat_id]
     always_join: true
     storage:
       cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
@@ -540,30 +426,26 @@ elements:
     storage:
       cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
 
-  profiles_exposures:
+  profiles_visits:
     doc: >
-      Exposures involved in a fiber profile measurement group.
-    requires: [profiles_group, exposure]
+      Visits involved in a fiber profile measurement group.
+    requires: [profiles_group, visit]
     always_join: true
     storage:
       cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
 
 topology:
   spatial:
-    observation_regions: [visit_detector_region, visit]
+    observation_regions: [visit]
     skymap_regions: [patch, tract]
 
   temporal:
-    observation_timespans: [exposure, visit, detector]
+    observation_timespans: [visit, detector]
 
 packers:
   visit_detector:
     fixed: [instrument]
     dimensions: [instrument, visit, spectrograph, arm]
-    cls: lsst.daf.butler.instrument.ObservationDimensionPacker
-  exposure_detector:
-    fixed: [instrument]
-    dimensions: [instrument, exposure, spectrograph, arm]
     cls: lsst.daf.butler.instrument.ObservationDimensionPacker
   tract_patch:
     fixed: [skymap]

@@ -3,7 +3,7 @@
 
 config.expectWcs = False            # our spectrographs don't write a WCS to the header
 config.doLinearize = False
-config.doCrosstalk = True
+config.doCrosstalk = False
 config.doFringe = False
 config.overscan.fitType = "AKIMA_SPLINE"
 config.overscan.order = 30
