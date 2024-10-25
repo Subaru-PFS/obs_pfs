@@ -136,6 +136,30 @@ class PfsFitsExposureFormatter(FitsExposureFormatter):
         """
         return file_filter_label
 
+    def write(self, exposure: Any) -> None:
+        """Write a Dataset.
+
+        Workaround for DM-47152: FITS header keywords longer than 8 characters
+        must have "HIERARCH " prepended to them, or there's a danger that a
+        long string value will be damaged.
+
+        Parameters
+        ----------
+        exposure : `object`
+            The Dataset to store.
+        """
+        metadata = exposure.getMetadata()
+        fixes = []
+        for key in metadata:
+            if len(key) > 8 and not key.startswith("HIEARCH "):
+                fixes.append(key)
+        for key in fixes:
+            value = metadata.get(key)
+            comment = metadata.getComment(key)
+            metadata.remove(key)
+            metadata.add("HIERARCH " + key, value, comment)
+        return super().write(exposure)
+
 
 class DetectorMapFormatter(FitsGenericFormatter):
     """Formatter for DetectorMap
