@@ -151,7 +151,7 @@ class PfsFitsExposureFormatter(FitsExposureFormatter):
         metadata = exposure.getMetadata()
         fixes = []
         for key in metadata:
-            if len(key) > 8 and not key.startswith("HIEARCH "):
+            if len(key) > 8 and not key.startswith("HIERARCH "):
                 fixes.append(key)
         for key in fixes:
             value = metadata.get(key)
