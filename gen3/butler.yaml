@@ -43,6 +43,7 @@ datastore:
     instrument+profiles_run+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{profiles_run:?}_{arm:?}{spectrograph:?}_{run}"
     instrument+profiles_run+profiles_group+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{profiles_run:?}_{profiles_group:?}_{arm:?}{spectrograph:?}_{run}"
     instrument+profiles_run+profiles_group+visit+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{visit.day_obs:?}/{visit:?}/{datasetType}_{component:?}_{instrument:?}_{profiles_run:?}_{profiles_group:?}_{visit:?}_{arm:?}{spectrograph:?}_{run}"
+    instrument+visit_group+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{visit_group.day_obs:?}/{visit_group:?}/{datasetType}_{component:?}_{instrument:?}_{visit_group:?}_{arm:?}{spectrograph:?}_{run}"
 
 registry:
   db: sqlite:///<butlerRoot>/gen3.sqlite3
