@@ -30,17 +30,19 @@ datastore:
     MultipagePdfFigure: pfs.drp.qa.formatters.PdfMatplotlibFormatter
     QaDict: lsst.daf.butler.formatters.pickle.PickleFormatter
   templates:
+    default: "{run:/}/{datasetType}.{component:?}/{visit.day_obs:?}/{visit:?}/{datasetType}_{component:?}_{instrument:?}_{visit:?}_{arm:?}{spectrograph:?}_{detector:?}_{run}"
+    instrument+detector: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{detector:?}_{run}"  # used for defects
     instrument+arm+spectrograph+dither: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{arm:?}{spectrograph:?}_{dither:?}_{run}"
     instrument+arm+spectrograph+pfs_design_id: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{arm:?}{spectrograph:?}_{pfs_design_id:?}_{run}"
-    instrument+arm+spectrograph+visit: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{visit:?}_{arm:?}{spectrograph:?}_{run}"
+    instrument+visit+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{visit.day_obs:?}/{visit:?}/{datasetType}_{component:?}_{instrument:?}_{visit:?}_{arm:?}{spectrograph:?}_{run}"
     instrument+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{arm:?}{spectrograph:?}_{run}"
-    instrument+visit+arm:  "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{visit:?}_{arm:?}_{run}"
+    instrument+visit+arm: "{run:/}/{datasetType}.{component:?}/{visit.day_obs:?}/{visit:?}/{datasetType}_{component:?}_{instrument:?}_{visit:?}_{arm:?}_{run}"
     instrument+arm: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{arm:?}_{run}"
     instrument+combination+cat_id: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{combination:?}_{cat_id:?}_{run}"
     instrument+profiles_run+profiles_group: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{profiles_run:?}_{profiles_group:?}_{run}"
     instrument+profiles_run+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{profiles_run:?}_{arm:?}{spectrograph:?}_{run}"
     instrument+profiles_run+profiles_group+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{profiles_run:?}_{profiles_group:?}_{arm:?}{spectrograph:?}_{run}"
-    instrument+profiles_run+profiles_group+visit+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{profiles_run:?}_{profiles_group:?}_{visit:?}_{arm:?}{spectrograph:?}_{run}"
+    instrument+profiles_run+profiles_group+visit+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{visit.day_obs:?}/{visit:?}/{datasetType}_{component:?}_{instrument:?}_{profiles_run:?}_{profiles_group:?}_{visit:?}_{arm:?}{spectrograph:?}_{run}"
 
 registry:
   db: sqlite:///<butlerRoot>/gen3.sqlite3
