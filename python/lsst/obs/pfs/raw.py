@@ -61,7 +61,14 @@ class PfsRaw:
     def detector(self) -> "Detector":
         """Return the detector"""
         detId = self.metadata["DET-ID"]
-        return loadCamera(self.pfsCategory)[detId]
+        detector = loadCamera(self.pfsCategory)[detId]
+        if self.isNir():
+            detector = detector.rebuild()   # returns a Detector Builder
+            gain = self.metadata["W_H4GAIN"]  # ASIC pre-amp gain (electrons per ADU)
+            for channel in detector.getAmplifiers():  # an H4RG/ROIC/SAM "channel", not really an amplifier
+                channel.setGain(channel.getGain() / gain)
+            detector = detector.finish()
+        return detector
 
     @property
     def obsInfo(self) -> ObservationInfo:
