@@ -198,6 +198,18 @@ class PrimeFocusSpectrograph(Instrument):
         """
         return loadCamera(self.pfsCategory)
 
+    def makeDefaultRawIngestRunName(self) -> str:
+        """Make the default instrument-specific run collection string for raw
+        data ingest.
+
+        Returns
+        -------
+        coll : `str`
+            Run collection name to be used as the default for ingestion of
+            raws.
+        """
+        return self.makeCollectionName("raw", "sps")
+
     @classmethod
     def _getSpecificCuratedCalibrationPath(cls, datasetTypeName):
         """Return the path of the curated calibration directory.
