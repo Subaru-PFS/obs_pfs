@@ -1,0 +1,6 @@
+description: Reduce an exposure
+tasks:
+  isr:
+    class: lsst.obs.pfs.isrTask.PfsIsrTask
+  cosmicray2:
+    class: pfs.drp.stella.cosmicray.CompareCosmicRayTask
