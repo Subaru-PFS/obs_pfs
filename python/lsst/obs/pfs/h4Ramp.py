@@ -19,40 +19,48 @@ class H4Ramp:
     # Get these into some config file(s) -- CPL
     # The irpDefects are generated using the calcIrpDefects method, and are not yet curated. Badly need to be.
     corrections = {18734:dict(leakage=np.ones(32, dtype='f4')*0.012, 
-                              irpNoiseClip=10.0),
-                   18660:dict(leakage=np.ones(32, dtype='f4')*0.003, 
-                              irpNoiseClip=9.0,
-                              irpDefects=np.array([ 196,  303,  334,  348,  821,  901,  996, 1282,
+                              irpNoiseClip=5.0),
+                   18660:dict(leakage=np.ones(32, dtype='f4')*0.003,
+                              irpNoiseClip=5.0,
+                              irpDefects0=np.array([ 196,  303,  334,  348,  821,  901,  996, 1282,
                                                    1449, 1469, 1473, 1551, 1582, 1645, 1723, 1831, 
                                                    1945, 2049, 2200, 2448, 2600, 2730, 2865, 3036, 
-                                                   3084, 3118, 3169, 3343, 3692, 3753, 3865])),
+                                                   3084, 3118, 3169, 3343, 3692, 3753, 3865]),
+                              irpDefects=np.array([196,  334,  821, 1449, 1551, 1582, 1645, 1723, 
+                                                   2600, 3084, 3118, 3169, 3726, 3794, 3865])),
                    18315:dict(leakage=[0.0048, 0.00486, -0.0, 0.0048, 0.00475, 0.00506, 0.00518, 0.00478, 
                                        0.00479, 0.00477, 0.00493, 0.0047, 0.00456, 0.00467, 0.00453, 0.0044, 
                                        0.00427, 0.00466, 0.00462, 0.00467, 0.00459, 0.00467, 0.0048, 0.00535, 
                                        0.0054, 0.00528, 0.00563, 0.00547, 0.0058, 0.00587, 0.0062, 0.00513], 
-                              irpNoiseClip=9.0,
-                              irpDefects=np.array([ 73, 518, 556, 1120, 1137, 1242, 1565, 1607, 1947, 2067, 
+                              irpNoiseClip=5.0,
+                              irpDefects0=np.array([ 73, 518, 556, 1120, 1137, 1242, 1565, 1607, 1947, 2067, 
                                                    2113, 2194, 2240, 2294, 2460, 2676, 2705, 2858, 
                                                    3238, 3249, 3276, 3327, 3332, 3455, 3479, 3492, 
-                                                   3590, 3953, 3961, 3979, 4083])),
+                                                   3590, 3953, 3961, 3979, 4083]),
+                              irpDefects=np.array([471,  518, 1565, 1607, 2676, 2858, 3238, 3455, 
+                                                   4060, 4064, 4065, 4066])),
                    18321:dict(leakage=[0.00214, 0.00255, 0.00231, 0.00224, 0.00205, 0.00243, 0.00229, 0.00225, 
                                        0.0022, 0.00221, 0.00224, 0.00187, 0.0022, 0.00193, 0.00177, 0.00111, 
                                        0.00172, 0.00214, 0.00167, 0.00192, 0.00208, 0.00233, 0.00224, 0.00245, 
                                        0.00264, 0.00324, 0.00316, 0.00286, 0.00308, 0.003, 0.00278, 0.00265], 
-                              irpNoiseClip=9.0,
-                              irpDefects=np.array([  51,   99,  284,  367,  770, 1047, 1119, 1368, 
+                              irpNoiseClip=5.0,
+                              irpDefects0=np.array([  51,   99,  284,  367,  770, 1047, 1119, 1368, 
                                                    1462, 1483, 1649, 1748, 2061, 2120, 2216, 2608, 
-                                                   2686, 2694, 2829, 2837, 2941, 3040, 3046, 3332, 3618]))}
+                                                   2686, 2694, 2829, 2837, 2941, 3040, 3046, 3332, 3618]),
+                              irpDefects=np.array([284,  330,  367, 1649, 1748, 2216, 2829])),
+                   18661:dict(leakage=np.ones(32, dtype='f4')*0.005,
+                              irpNoiseClip=5.0,
+                              irpDefects=np.array([959, 1219, 1654], dtype='i4')),
+    }
 
-    def __init__(self, butler, dataId, disableLeakage=True):
+    def __init__(self, pfsRaw, disableLeakage=True):
         self.logger = logging.getLogger('H4Ramp')
-        self.butler = butler
-        self.dataId = dataId
+        self.pfsRaw = pfsRaw
         
-        self.md = md = butler.get("raw_md", dataId)
+        self.md = md = pfsRaw.metadata
         self.nread = md['W_H4NRED']
         self.nchan = md['W_H4NCHN'] # For single-asic instruments like PFS: 32, 16, 4, or 1
-        self.irpN = md['W_H4IRPN']
+        self.irpN = md['W_H4IRPN']  # The number of science pixels per reference pixel.
         self.irpOffset = md['W_H4IRPO'] # The offset of the reference pixel within the N science pixels.
 
         # Do the channel readout directions flip?
@@ -76,8 +84,7 @@ class H4Ramp:
         self.borderCorrect = self.refpix4BorderCorrect
         
     def __str__(self):
-        return (f'H4Ramp(nread={self.nread}, IRP=({self.irpN},{self.irpOffset}), '
-                f'dataId={self.dataId}')
+        return (f'H4Ramp(nread={self.nread}, IRP=({self.irpN},{self.irpOffset})')
 
     def __repr__(self):
         return str(self)
@@ -86,8 +93,9 @@ class H4Ramp:
     def loadFromButler(cls, butler, dataId, disableLeakage=True, **kw):
         dataId = dataId.copy()
         dataId.update(kw)
-        
-        return cls(butler, dataId, disableLeakage=disableLeakage)
+
+        raw = butler.get('raw', dataId)
+        return cls(raw, disableLeakage=disableLeakage)
 
     @property
     def haveIrp(self):
@@ -121,7 +129,7 @@ class H4Ramp:
 
         # Check whether butler.get('rawb') is actually efficient -- CPL
         # Hmm, inefficient for reading stacks, by a factor of ~2. open/close overhead?
-        img = self.butler.get('rawb', self.dataId, hdu=hdu)
+        img = self.pfsRaw.get(hdu=hdu)
         if False and np.isnan(img.image.array).any():
             self.logger.warning(f'NaNs in {self.dataId} {hdu}: {np.isnan(img.image.array).sum()}')
         return img.maskedImage
@@ -150,8 +158,7 @@ class H4Ramp:
         """
 
         readNum = self._readIdxToFITSIdx(readNum)
-        hdu = f'IMAGE_{readNum}'
-        return self.getRawRead(hdu)
+        return self.pfsRaw.getNirRead(readNum, imageType='IMAGE')
 
     def getRawIrpImage(self, readNum):
         """Get an IRP ("reference") image. 
@@ -167,8 +174,7 @@ class H4Ramp:
               'u2' by default.
         """
         readNum = self._readIdxToFITSIdx(readNum)
-        hdu = f'REF_{readNum}'
-        return self.getRawRead(hdu)
+        return self.pfsRaw.getNirRead(readNum, imageType='REF')
 
     @staticmethod
     def evilGetArray(image):
@@ -181,7 +187,7 @@ class H4Ramp:
         call this to replace NaNs with 0. 
         """
         
-        arr = image.image.array
+        arr = image.getArray()
         nanmask = np.isnan(arr)
         if nanmask.any():
             # I feel so dirty -- CPL
