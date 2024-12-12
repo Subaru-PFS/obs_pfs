@@ -6,5 +6,5 @@ tasks:
     class: pfs.drp.stella.cosmicray.CosmicRayTask
   reduceExposure:
     config:
-      requireAdjustDetectorMap: True
+      requireAdjustDetectorMap: False
     class: pfs.drp.stella.reduceExposure.ReduceExposureTask
