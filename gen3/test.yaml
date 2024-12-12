@@ -1,0 +1,10 @@
+description: Reduce an exposure
+tasks:
+  isr:
+    class: lsst.obs.pfs.isrTask.PfsIsrTask
+  cosmicray:
+    class: pfs.drp.stella.cosmicray.CosmicRayTask
+  reduceExposure:
+    config:
+      requireAdjustDetectorMap: True
+    class: pfs.drp.stella.reduceExposure.ReduceExposureTask
