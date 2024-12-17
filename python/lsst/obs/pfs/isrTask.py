@@ -86,6 +86,46 @@ class BrokenShutterConfig(pexConfig.Config):
         if self.window > 1 and self.useAnalytic:
             raise ValueError(f"You may not specify both (window == {self.window}) > 1 and useAnalytic")
 
+class H4Config(pexConfig.Config):
+    """Configuration parameters for H4 reductions"""
+
+    quickCDS = pexConfig.Field(dtype=bool, default=True,
+                                  doc="Only consider last and first reads instead of the full ramp cube")
+    doCR = pexConfig.Field(dtype=bool, default=False,
+                                  doc="Run ramp-based CR rejection. Requires quickCDS=False")
+    useIRP = pexConfig.Field(dtype=bool, default=True,
+                                  doc="Use Interleaved Reference Pixel planes if available")
+    IRPinterpolation = pexConfig.Field(dtype=str, default="repeat",
+                                       doc="IRPn to IRP1 interpolation method")
+    IRPwindow = pexConfig.Field(dtype=int, default=0, # 16..32, probably.
+                                doc="width of smoothing window for IRP corrections. 0=no smoothing")
+    IRPbadPixels = pexConfig.DictField(keytype=str, itemtype="str",
+                                       doc="List of bad Interleaved Reference Pixels"
+                                       default=dict(n1=None,
+                                                    n2=None,
+                                                    n3=None,
+                                                    n4=None)) 
+    doIRPcrosstalk = pexConfig.Field(dtype=bool, default=False,
+                                     doc="Correct for data->IRP crosstalk")
+    IRPcrosstalk = pexConfig.DictField(keytype=str, itemtype="str",
+                                       doc="Per-channel crosstalk coefficients from data to IRP pixels"
+                                       default=dict(n1=None,
+                                                    n2=None,
+                                                    n3=None,
+                                                    n4=None)) 
+
+    doIPC = pexConfig.Field(dtype=bool, default=True, doc="Correct for IPC?")
+    ipc = pexConfig.DictField(
+        keytype=str,
+        itemtype=str,
+        default=dict(
+            n1="pfsIpc-2023-04-17T13:21:09.707-090750-n1.fits",
+            n2="pfsIpc-2023-11-27T13:21:09.707-102106-n2.fits",
+            n3="pfsIpc-2023-07-15T00:10:01.950-096714-n3.fits",
+            n4="pfsIpc-2024-07-09T00:10:01.950-112241-n4.fits",
+        ),
+        doc="Mapping of detector name to IPC kernel filename",
+    )
 
 class PfsAssembleCcdTask(AssembleCcdTask):
     def assembleCcd(self, exposure):
@@ -528,19 +568,12 @@ is between value and 100 - value.
 
 The first value should probably always be zero, as we haven't removed any signal at that point,
 but if you have a sufficiently large cosmic ray flux you might want to reconsider.""")
+
+    h4 = pexConfig.ConfigField(
+        dtype=H4Config, doc="H4 related configuration")
+
+    # Probably move to .h4, but check -- CPL
     crosstalk = pexConfig.ConfigurableField(target=PfsCrosstalkTask, doc="Inter-CCD crosstalk correction")
-    doIPC = pexConfig.Field(dtype=bool, default=True, doc="Correct for IPC?")
-    ipc = pexConfig.DictField(
-        keytype=str,
-        itemtype=str,
-        default=dict(
-            n1="pfsIpc-2023-04-17T13:21:09.707-090750-n1.fits",
-            n2="pfsIpc-2023-11-27T13:21:09.707-102106-n2.fits",
-            n3="pfsIpc-2023-07-15T00:10:01.950-096714-n3.fits",
-            n4="pfsIpc-2024-07-09T00:10:01.950-112241-n4.fits",
-        ),
-        doc="Mapping of detector name to IPC kernel filename",
-    )
 
     def setDefaults(self):
         super().setDefaults()
@@ -867,13 +900,13 @@ class PfsIsrTask(ipIsr.IsrTask):
         """
         result = super().readIsrData(dataRef, rawExposure)
 
-        if dataRef.dataId["arm"] == "n" and self.config.doIPC:
+        if dataRef.dataId["arm"] == "n" and self.config.h4.doIPC:
             try:
                 dateObs = rawExposure.getInfo().getVisitInfo().getDate().toPython().isoformat()
             except RuntimeError:
                 dateObs = None
 
-            if self.config.doIPC:
+            if self.config.h4.doIPC:
                 result.ipcCoeffs = self.getIsrExposure(dataRef,
                                                        self.config.ipcDataProductName, dateObs=dateObs)
 
@@ -1122,9 +1155,9 @@ class PfsIsrTask(ipIsr.IsrTask):
         image = pfsRaw.getImage()
 
         exposure = self._makeExposure(pfsRaw, image)
-        if self.config.doIPC:
+        if self.config.h4.doIPC:
             if defects is None:
-                raise RuntimeError("Must supply defects if config.doIPC=True.")
+                raise RuntimeError("Must supply defects if config.h4.doIPC=True.")
             ipcCoeffs = self.readIPC(exposure.getDetector().getName())
 
         # Think about the ordering here.
@@ -1142,7 +1175,7 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         nQuarter = exposure.getDetector().getOrientation().getNQuarter()
 
-        if self.config.doIPC:
+        if self.config.h4.doIPC:
             self.log.info("Applying IPC correction.")
             self.correctIPC(exposure, defects, ipcCoeffs, -nQuarter)
 
