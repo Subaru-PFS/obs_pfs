@@ -60,6 +60,10 @@ class PfsRaw:
 
         return self._metadata
 
+    def getMetadata(self) -> "PropertyList":
+        """Hoist the .exposure.getMetadata() up"""
+        return self.metadata
+    
     @property
     def detector(self) -> "Detector":
         """Return the detector"""

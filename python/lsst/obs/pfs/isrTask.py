@@ -244,9 +244,9 @@ class PfsIsrConnections(PipelineTaskConnections, dimensions=("instrument", "visi
     """Connections for IsrTask"""
 
     ccdExposure = InputConnection(
-        name="raw.exposure",
+        name="raw",
         doc="Input exposure to process.",
-        storageClass="Exposure",
+        storageClass="PfsRaw",
         dimensions=["instrument", "visit", "arm", "spectrograph"],
     )
     camera = PrerequisiteConnection(
@@ -766,18 +766,19 @@ class PfsIsrTask(ipIsr.IsrTask):
         """
         self.log.info("Performing ISR on sensor %s" % (sensorRef.dataId))
 
-        ccdExposure = sensorRef.get(self.config.datasetType)
+        pfsRaw = sensorRef.get(self.config.datasetType)
+        detectorName = pfsRaw.detector.getName()
         camera = sensorRef.get("camera")
         if camera is None and self.config.doAddDistortionModel:
             raise RuntimeError("config.doAddDistortionModel is True "
                                "but could not get a camera from the butler")
         isrData = self.readIsrData(sensorRef, ccdExposure)
 
-        result = self.run(ccdExposure, camera=camera, **isrData.getDict())
+        result = self.run(pfsRaw, camera=camera, **isrData.getDict())
         result.exposure.getMetadata().set("PFSCALIB", getCalibPath(sensorRef))
 
         if self.config.doBrokenRedShutter and \
-           ccdExposure.getDetector().getName() in self.config.brokenRedShutter.brokenShutterList:
+           detectorName in self.config.brokenRedShutter.brokenShutterList:
             if not self.config.brokenRedShutter.useAnalytic:
                 #
                 # If we're using the `r` arm subtract a neighbouring image if it's a bias
@@ -926,12 +927,12 @@ class PfsIsrTask(ipIsr.IsrTask):
            result : `lsst.pipe.base.Struct`
               Result struct;  see `lsst.ip.isr.isrTask.run`
         """
-        exposure = ccdExposure                         # argument must be called "ccdExposure"; PIPE2D-1093
+        pfsRaw = ccdExposure                         # argument must still be called "ccdExposure"; PIPE2D-1093
 
-        if exposure.getFilter().bandLabel == 'n':  # treat H4RGs specially
-            return self.runH4RG(exposure, **kwargs)
+        if pfsRaw.isNir():  # treat H4RGs specially
+            return self.runH4RG(pfsRaw, **kwargs)
         else:
-            return self.runCCD(exposure, **kwargs)
+            return self.runCCD(pfsRaw.exposure, **kwargs)
 
     def runCCD(self, ccdExposure, **kwargs):
         """Perform instrument signature removal on a CCD exposure.
@@ -1046,14 +1047,43 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         return results
 
-    def runH4RG(self, exposure, dark=None, flat=None, defects=None, detectorNum=None, **kwargs):
+    def _makeExposure(self, pfsRaw, image):
+        """Construct an Exposure from an Image. 
+
+        Only intended to be used at the end of H4 processing.
+
+        Parameters
+        ----------
+        pfsRaw : `lsst.obs.pfs.PfsRaw`
+            The raw exposure that we ran through ISR.
+        image : `lsst.afw.image.Image`
+            The output of H4 ISR processing.
+
+        Returns
+        -------
+        exposure : `lsst.afw.image.Exposure`
+            The corrected 2-d image
+        """
+        exposure = afwImage.makeExposure(afwImage.makeMaskedImage(image))
+        exposure.setDetector(pfsRaw.detector)
+        info = exposure.getInfo()
+        info.setVisitInfo(pfsRaw.visitInfo)
+        info.setId(pfsRaw.visitInfo.id)
+        info.setMetadata(pfsRaw.metadata)
+        info.setDetector(pfsRaw.detector)
+        arm = pfsRaw.obsInfo.ext_arm
+        info.setFilter(afwImage.FilterLabel(arm, arm))
+        return exposure
+
+    def runH4RG(self, pfsRaw, dark=None, flat=None, defects=None, detectorNum=None, **kwargs):
         """Specialist instrument signature removal for H4RG detectors
 
         Parameters
         ----------
-        exposure : `lsst.afw.image.Exposure`
+        pfsRaw : `lsst.obs.pfs.PfsRaw`
             The raw exposure that is to be run through ISR.  The
-            exposure is modified by this method.
+            exposure is modified by this method. With the PfsRaw we 
+            can get access the ramp cubes.
         dark : `lsst.afw.image.Exposure`, optional
             Dark exposure to subtract.
         flat : `lsst.afw.image.Exposure`, optional
@@ -1087,6 +1117,11 @@ class PfsIsrTask(ipIsr.IsrTask):
             raise RuntimeError("Must supply a flat exposure if config.doFlat=True.")
         if self.config.doDefect and defects is None:
             raise RuntimeError("Must supply defects if config.doDefect=True.")
+
+        # This is the call which needs to be replaced when using ramps, etc. -- CPL
+        image = pfsRaw.getImage()
+
+        exposure = self._makeExposure(pfsRaw, image)
         if self.config.doIPC:
             if defects is None:
                 raise RuntimeError("Must supply defects if config.doIPC=True.")
