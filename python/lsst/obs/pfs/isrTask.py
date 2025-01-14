@@ -729,154 +729,12 @@ class PfsIsrTask(ipIsr.IsrTask):
                     exposureMetadata[runKey] = runValue
                     exposureMetadata[idKey] = idValue
 
+        exposure = inputs["ccdExposure"]
+        if exposure.getFilter().bandLabel == "n" and self.config.doIPC:
+            inputs["ipcCoeffs"] = self.readIPC(exposure.getDetector().getName())
+
         outputs = self.run(**inputs)
         butlerQC.put(outputs, outputRefs)
-
-    @timeMethod
-    def runDataRef(self, sensorRef):
-        """Perform instrument signature removal on a ButlerDataRef of a Sensor.
-
-        This method contains the `CmdLineTask` interface to the ISR
-        processing.  All IO is handled here, freeing the `run()` method
-        to manage only pixel-level calculations.  The steps performed
-        are:
-        - Read in necessary detrending/isr/calibration data.
-        - Process raw exposure in `run()`.
-        - Persist the ISR-corrected exposure as "postISRCCD" if
-          config.doWrite=True.
-
-        Parameters
-        ----------
-        sensorRef : `daf.persistence.butlerSubset.ButlerDataRef`
-            DataRef of the detector data to be processed
-
-        Returns
-        -------
-        result : `lsst.pipe.base.Struct`
-            Result struct with component:
-            - ``exposure`` : `afw.image.Exposure`
-                The fully ISR corrected exposure.
-
-        Raises
-        ------
-        RuntimeError
-            Raised if a configuration option is set to True, but the
-            required calibration data does not exist.
-
-        """
-        self.log.info("Performing ISR on sensor %s" % (sensorRef.dataId))
-
-        ccdExposure = sensorRef.get(self.config.datasetType)
-        camera = sensorRef.get("camera")
-        if camera is None and self.config.doAddDistortionModel:
-            raise RuntimeError("config.doAddDistortionModel is True "
-                               "but could not get a camera from the butler")
-        isrData = self.readIsrData(sensorRef, ccdExposure)
-
-        result = self.run(ccdExposure, camera=camera, **isrData.getDict())
-        result.exposure.getMetadata().set("PFSCALIB", getCalibPath(sensorRef))
-
-        if self.config.doBrokenRedShutter and \
-           ccdExposure.getDetector().getName() in self.config.brokenRedShutter.brokenShutterList:
-            if not self.config.brokenRedShutter.useAnalytic:
-                #
-                # If we're using the `r` arm subtract a neighbouring image if it's a bias
-                #
-                # If the source of photons is stable, this corrects for the extra
-                # light accumulated during CCD wipe and readout
-                #
-                # We search for the bias in a window around the visit v0 in order
-                #   v0 + 1, v0 - 1, v0 + 2, v0 - 2, ...
-                # (if brokenRedShutter.causalWindow is True, only use v0 + 1, v0 + 2, ...)
-                #
-                # Don't fix a bias; this is especially important as if we do, it'll lead
-                # to an attempt to correct the bias we're using for the shutter correction
-                #
-                # N.b. we can't rely on the sensorRef.dataId because we adjusted the visit number
-                # before possibly calling this routine recursively to fetch the desired bias
-                md = sensorRef.get("raw_md")
-                if md.get('DATA-TYP', "").upper() != "BIAS":
-                    dataId = dict(arm=sensorRef.dataId["arm"],
-                                  filter=sensorRef.dataId["arm"],  # yes, this is necessary
-                                  spectrograph=sensorRef.dataId["spectrograph"])
-                    dataId0 = sensorRef.dataId
-
-                    for dv in sum([[i, -i] for i in range(1, self.config.brokenRedShutter.window + 1)], []):
-                        if self.config.brokenRedShutter.causalWindow and dv < 0:
-                            continue
-
-                        exp2 = None
-                        try:
-                            sensorRef.dataId = dataId
-                            dataId["visit"] = dataId0["visit"] + dv
-
-                            md = sensorRef.get("raw_md")
-                            if md.get('DATA-TYP', "").upper() == "BIAS":
-                                self.log.info("Reading visit %d for broken red shutter correction",
-                                              sensorRef.dataId["visit"])
-
-                                exp2 = self.runDataRef(sensorRef).exposure
-                        except Exception as e:
-                            self.log.warn("Unable to read %d %s%d for broken red shutter correction: %s",
-                                          sensorRef.dataId["visit"], sensorRef.dataId["arm"],
-                                          sensorRef.dataId["spectrograph"], e)
-                        finally:
-                            sensorRef.dataId = dataId0
-
-                        if exp2:
-                            self.log.info("Correcting for broken red shutter using visit %d", dataId["visit"])
-                            result.exposure.maskedImage -= exp2.maskedImage
-
-                            break
-
-                    if exp2 is None:
-                        self.log.warn("Unable to find bias frame for broken red shutter correction %s",
-                                      sensorRef.dataId)
-
-        if self.config.doWrite:
-            sensorRef.put(result.exposure, "postISRCCD")
-        if result.ossThumb is not None:
-            isrQa.writeThumbnail(sensorRef, result.ossThumb, "ossThumb")
-        if result.flattenedThumb is not None:
-            isrQa.writeThumbnail(sensorRef, result.flattenedThumb, "flattenedThumb")
-
-        return result
-
-    def readIsrData(self, dataRef, rawExposure):
-        """Retrieve necessary frames for instrument signature removal.
-
-        Pre-fetching all required ISR data products limits the IO
-        required by the ISR. Any conflict between the calibration data
-        available and that needed for ISR is also detected prior to
-        doing processing, allowing it to fail quickly.
-
-        Parameters
-        ----------
-        dataRef : `daf.persistence.butlerSubset.ButlerDataRef`
-            Butler reference of the detector data to be processed
-        rawExposure : `afw.image.Exposure`
-            The raw exposure that will later be corrected with the
-            retrieved calibration data; should not be modified in this
-            method.
-
-        Returns
-        -------
-        result : `lsst.pipe.base.Struct`
-            Struct containing the necessary calibs.
-        """
-        result = super().readIsrData(dataRef, rawExposure)
-
-        if dataRef.dataId["arm"] == "n" and self.config.doIPC:
-            try:
-                dateObs = rawExposure.getInfo().getVisitInfo().getDate().toPython().isoformat()
-            except RuntimeError:
-                dateObs = None
-
-            if self.config.doIPC:
-                result.ipcCoeffs = self.getIsrExposure(dataRef,
-                                                       self.config.ipcDataProductName, dateObs=dateObs)
-
-        return result
 
     def getIsrExposure(self, dataRef, datasetType, dateObs=None, immediate=True):
         """Retrieve a calibration dataset for removing instrument signature.
@@ -1046,7 +904,9 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         return results
 
-    def runH4RG(self, exposure, dark=None, flat=None, defects=None, detectorNum=None, **kwargs):
+    def runH4RG(
+        self, exposure, dark=None, flat=None, defects=None, detectorNum=None, ipcCoeffs=None, **kwargs
+    ):
         """Specialist instrument signature removal for H4RG detectors
 
         Parameters
@@ -1062,6 +922,8 @@ class PfsIsrTask(ipIsr.IsrTask):
             List of defects.
         detectorNum: `int`, optional
             The integer number for the detector to process.
+        ipcCoeffs : `dict` of `dict` of `float`, optional
+            IPC coefficients.  ipcCoeffs[dx][dy] is the fraction of flux at (dx, dy).
         kwargs : `dict` other keyword arguments specifying e.g. combined biases
             N.b. no values are currently valid
         Returns
@@ -1090,7 +952,8 @@ class PfsIsrTask(ipIsr.IsrTask):
         if self.config.doIPC:
             if defects is None:
                 raise RuntimeError("Must supply defects if config.doIPC=True.")
-            ipcCoeffs = self.readIPC(exposure.getDetector().getName())
+            if ipcCoeffs is None:
+                raise RuntimeError("Must supply IPC coefficients if config.doIPC=True.")
 
         # Think about the ordering here.
         # E.g. dark subtraction before defects (but then we'd have to rotate the dark,
@@ -1167,7 +1030,7 @@ class PfsIsrTask(ipIsr.IsrTask):
         arr = data.image.array
         nx, ny = arr.shape
 
-        ipcCoeffs = {}
+        ipcCoeffs: dict[int, dict[int, float]] = {}
         for ix in range(-(nx//2), nx//2 + 1):
             ipcCoeffs[ix] = {}
             for iy in range(-(ny//2), ny//2 + 1):
