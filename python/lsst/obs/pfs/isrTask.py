@@ -729,6 +729,10 @@ class PfsIsrTask(ipIsr.IsrTask):
                     exposureMetadata[runKey] = runValue
                     exposureMetadata[idKey] = idValue
 
+        exposure = inputs["ccdExposure"]
+        if exposure.getFilter().bandLabel == "n" and self.config.doIPC:
+            inputs["ipcCoeffs"] = self.readIPC(exposure.getDetector().getName())
+
         outputs = self.run(**inputs)
         butlerQC.put(outputs, outputRefs)
 
@@ -900,7 +904,9 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         return results
 
-    def runH4RG(self, exposure, dark=None, flat=None, defects=None, detectorNum=None, **kwargs):
+    def runH4RG(
+        self, exposure, dark=None, flat=None, defects=None, detectorNum=None, ipcCoeffs=None, **kwargs
+    ):
         """Specialist instrument signature removal for H4RG detectors
 
         Parameters
@@ -916,6 +922,8 @@ class PfsIsrTask(ipIsr.IsrTask):
             List of defects.
         detectorNum: `int`, optional
             The integer number for the detector to process.
+        ipcCoeffs : `dict` of `dict` of `float`, optional
+            IPC coefficients.  ipcCoeffs[dx][dy] is the fraction of flux at (dx, dy).
         kwargs : `dict` other keyword arguments specifying e.g. combined biases
             N.b. no values are currently valid
         Returns
@@ -944,7 +952,8 @@ class PfsIsrTask(ipIsr.IsrTask):
         if self.config.doIPC:
             if defects is None:
                 raise RuntimeError("Must supply defects if config.doIPC=True.")
-            ipcCoeffs = self.readIPC(exposure.getDetector().getName())
+            if ipcCoeffs is None:
+                raise RuntimeError("Must supply IPC coefficients if config.doIPC=True.")
 
         # Think about the ordering here.
         # E.g. dark subtraction before defects (but then we'd have to rotate the dark,
@@ -1021,7 +1030,7 @@ class PfsIsrTask(ipIsr.IsrTask):
         arr = data.image.array
         nx, ny = arr.shape
 
-        ipcCoeffs = {}
+        ipcCoeffs: dict[int, dict[int, float]] = {}
         for ix in range(-(nx//2), nx//2 + 1):
             ipcCoeffs[ix] = {}
             for iy in range(-(ny//2), ny//2 + 1):
