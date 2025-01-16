@@ -955,9 +955,11 @@ class PfsIsrTask(ipIsr.IsrTask):
             if ipcCoeffs is None:
                 raise RuntimeError("Must supply IPC coefficients if config.doIPC=True.")
 
-        # Think about the ordering here.
-        # E.g. dark subtraction before defects (but then we'd have to rotate the dark,
-        # either here or when writing it)
+        nQuarter = exposure.getDetector().getOrientation().getNQuarter()
+        if nQuarter != 0:
+            exposure.maskedImage = afwMath.rotateImageBy90(exposure.maskedImage, nQuarter)
+
+        # Think about the ordering here.  E.g. dark subtraction before defects
         assert len(exposure.getDetector()) == 1, "Fix me now we have multiple channels"
 
         channel = exposure.getDetector()[0]
@@ -968,20 +970,16 @@ class PfsIsrTask(ipIsr.IsrTask):
         var += 2*channel.getReadNoise()**2  # 2* comes from CDS
         exposure.variance = var
 
-        nQuarter = exposure.getDetector().getOrientation().getNQuarter()
-
         if self.config.doIPC:
             self.log.info("Applying IPC correction.")
             self.correctIPC(exposure, defects, ipcCoeffs, -nQuarter)
 
         if self.config.doDefect:
+            self.log.info("Masking defects.")
             super().maskAndInterpolateDefects(exposure, defects)
 
         if self.config.maskNegativeVariance:
             super().maskNegativeVariance(exposure)
-
-        if nQuarter != 0:
-            exposure.maskedImage = afwMath.rotateImageBy90(exposure.maskedImage, nQuarter)
 
         if self.config.doDark:
             self.log.info("Applying dark correction.")
