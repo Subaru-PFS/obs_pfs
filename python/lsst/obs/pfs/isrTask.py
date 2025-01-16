@@ -32,9 +32,7 @@ import lsst.afw.image as afwImage
 from lsst.afw.image import DecoratedImageF
 import lsst.ip.isr as ipIsr
 from lsst.ip.isr.assembleCcdTask import AssembleCcdTask
-from lsst.ip.isr import isrQa
 from lsst.ip.isr.defects import Defects
-from lsst.utils.timer import timeMethod
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base.connectionTypes import Input as InputConnection
 from lsst.pipe.base.connectionTypes import PrerequisiteInput as PrerequisiteConnection
@@ -42,7 +40,6 @@ from lsst.pipe.base.connectionTypes import Output as OutputConnection
 from lsst.pipe.base import Struct, PipelineTaskConnections
 from lsst.daf.butler import DimensionGraph
 
-from .utils import getCalibPath
 from pfs.drp.stella.crosstalk import PfsCrosstalkTask
 
 ___all__ = ["IsrTask", "IsrTaskConfig"]
