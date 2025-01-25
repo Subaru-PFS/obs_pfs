@@ -532,7 +532,7 @@ but if you have a sufficiently large cosmic ray flux you might want to reconside
         itemtype=str,
         default=dict(
             n1="pfsIpc-2025-01-19T02:39:30.529792-119504-n1.fits",
-            n2="pfsIpc-2023-11-27T13:21:09.707-102106-n2.fits",  # N.b. not updated in 2025-01
+            n2="pfsIpc-2024-10-17T07:27:37.087552-115600-n2.fits",
             n3="pfsIpc-2025-01-19T02:39:30.529792-119504-n3.fits",
             n4="pfsIpc-2025-01-19T02:39:30.529792-119504-n4.fits",
         ),
