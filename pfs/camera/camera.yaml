@@ -342,7 +342,7 @@ CCDs : &CCDs
 
         detectorType : 2                # H4RG
         id : 2
-        serial : "18660:229"            # value at MKO.  Detector:ASIC
+        serial : "18660:247"            # value at MKO.  Detector:ASIC
         offset : [-93.1, 65.1]          # mm
         yaw : 270.0                     # rotation in plane of camera (degrees)
 
@@ -648,7 +648,7 @@ CCDs : &CCDs
     n4:
       <<: *n1
       id: 11
-      serial : "18661:118"              # value at MKO.  Detector:ASIC
+      serial : "18661:245"              # value at MKO.  Detector:ASIC
       offset : [102.2, 65.1]           # mm
 
       amplifiers:                     # only 1 amplifier (well, really 16M amplifiers but treated as 1)
