@@ -531,10 +531,10 @@ but if you have a sufficiently large cosmic ray flux you might want to reconside
         keytype=str,
         itemtype=str,
         default=dict(
-            n1="pfsIpc-2023-04-17T13:21:09.707-090750-n1.fits",
-            n2="pfsIpc-2023-11-27T13:21:09.707-102106-n2.fits",
-            n3="pfsIpc-2023-07-15T00:10:01.950-096714-n3.fits",
-            n4="pfsIpc-2024-07-09T00:10:01.950-112241-n4.fits",
+            n1="pfsIpc-2025-01-19T02:39:30.529792-119504-n1.fits",
+            n2="pfsIpc-2023-11-27T13:21:09.707-102106-n2.fits",  # N.b. not updated in 2025-01
+            n3="pfsIpc-2025-01-19T02:39:30.529792-119504-n3.fits",
+            n4="pfsIpc-2025-01-19T02:39:30.529792-119504-n4.fits",
         ),
         doc="Mapping of detector name to IPC kernel filename",
     )
