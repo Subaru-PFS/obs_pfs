@@ -19,8 +19,10 @@ datastore:
     PfsFluxReference: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     PfsSingle: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     PfsObject: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
-    PfsCalibratedSpectra: lsst.obs.pfs.formatters.PfsCalibratedSpectraFormatter
-    PfsObjectSpectra: lsst.obs.pfs.formatters.PfsObjectSpectraFormatter
+    PfsCalibratedSpectra: lsst.obs.pfs.formatters.PfsCalibratedSpectraFormatter  # deprecated
+    PfsObjectSpectra: lsst.obs.pfs.formatters.PfsObjectSpectraFormatter  # deprecated
+    PfsCalibrated: lsst.obs.pfs.formatters.PfsCalibratedFormatter
+    PfsCoadd: lsst.obs.pfs.formatters.PfsCoaddFormatter
     SkyModel: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     FocalPlaneFunction: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     ArcLineSet: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
@@ -71,15 +73,33 @@ storageClasses:
     pytype: pfs.drp.stella.datamodel.PfsSingle
   PfsObject:
     pytype: pfs.drp.stella.datamodel.PfsObject
-  PfsCalibratedSpectra:
+  PfsCalibratedSpectra:  # deprecated in favor of PfsCalibrated
     pytype: pfs.drp.stella.datamodel.pfsTargetSpectra.PfsCalibratedSpectra
+    converters:
+      pfs.datamodel.drp.PfsCalibrated: pfs.drp.stella.datamodel.pfsTargetSpectra.PfsCalibratedSpectra.fromPfsCalibrated
     parameters:
       - objId  # Object identifier
       - obj_id  # Object identifier
     derivedComponents:
       single: PfsSingle  # Single spectrum; requires objId/obj_id
-  PfsObjectSpectra:
+  PfsObjectSpectra:  # deprecated in favor of PfsCoadd
     pytype: pfs.drp.stella.datamodel.pfsTargetSpectra.PfsObjectSpectra
+    converters:
+      pfs.datamodel.drp.PfsCoadd: pfs.drp.stella.datamodel.pfsTargetSpectra.PfsObjectSpectra.fromPfsCoadd
+    parameters:
+      - objId  # Object identifier
+      - obj_id  # Object identifier
+    derivedComponents:
+      single: PfsObject  # Single spectrum; requires objId/obj_id
+  PfsCalibrated:
+    pytype: pfs.datamodel.drp.PfsCalibrated
+    parameters:
+      - objId  # Object identifier
+      - obj_id  # Object identifier
+    derivedComponents:
+      single: PfsSingle  # Single spectrum; requires objId/obj_id
+  PfsCoadd:
+    pytype: pfs.datamodel.drp.PfsCoadd
     parameters:
       - objId  # Object identifier
       - obj_id  # Object identifier
