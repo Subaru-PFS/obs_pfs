@@ -503,9 +503,10 @@ elements:
 
   visit_group_join:
     doc: >
-      A many-to-many join table that relates exposures to the visits they
-      belong to.
-    requires: [visit, visit_group]
+      A join table that relates visits to the visit_groups they
+      belong to. Each visit may appear only once.
+    requires: [visit]
+    implies: [visit_group]
     always_join: true
     storage:
       cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
