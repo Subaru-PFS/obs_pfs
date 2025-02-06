@@ -106,24 +106,42 @@ class BlackSpots:
         ...
 
     def findNearest(self, x: ArrayLike, y: Optional[ArrayLike] = None) -> Struct:
-        distance, index = self.tree.query(x if y is None else np.array([x, y]).T, k=1)
-
-        # Deal with bad values
         if np.isscalar(x):
+            if y is not None:
+                x = np.array([x, y])
+            if np.any(~np.isfinite(x)):
+                return Struct(
+                    distance=np.nan, spotId=-1, x=np.nan, y=np.nan, r=np.nan
+                )
+            distance, index = self.tree.query(x, k=1)
             if index == self.tree.n:
                 return Struct(
                     distance=np.nan, spotId=-1, x=np.nan, y=np.nan, r=np.nan
                 )
-            else:
-                return Struct(
-                    distance=distance,
-                    spotId=self.spotId[index],
-                    x=self.x[index],
-                    y=self.y[index],
-                    r=self.r[index],
-                )
-        good = index != self.tree.n
-        if np.all(good):
+            return Struct(
+                distance=distance,
+                spotId=self.spotId[index],
+                x=self.x[index],
+                y=self.y[index],
+                r=self.r[index],
+            )
+
+        if y is not None:
+            x = np.array([x, y]).T
+        else:
+            x = np.array(x)
+        assert isinstance(x, np.ndarray)
+        goodInput = np.isfinite(x).all(axis=1)
+
+        result = self.tree.query(x[goodInput], k=1)
+
+        distance = np.full_like(x[:, 0], np.nan, dtype=float)
+        index = np.full_like(x[:, 0], self.tree.n, dtype=int)
+        distance[goodInput], index[goodInput] = result
+
+        # Deal with bad values
+        goodResult = index != self.tree.n
+        if np.all(goodResult):
             return Struct(
                 distance=distance,
                 spotId=self.spotId[index],
@@ -135,11 +153,11 @@ class BlackSpots:
         xx = np.full(index.shape, np.nan, dtype=float)
         yy = np.full(index.shape, np.nan, dtype=float)
         rr = np.full(index.shape, np.nan, dtype=float)
-        goodIndex = index[good]
-        spotId[good] = self.spotId[goodIndex]
-        xx[good] = self.x[goodIndex]
-        yy[good] = self.y[goodIndex]
-        rr[good] = self.r[goodIndex]
+        goodIndex = index[goodResult]
+        spotId[goodResult] = self.spotId[goodIndex]
+        xx[goodResult] = self.x[goodIndex]
+        yy[goodResult] = self.y[goodIndex]
+        rr[goodResult] = self.r[goodIndex]
         return Struct(distance=distance, spotId=spotId, x=xx, y=yy, r=rr)
 
 
