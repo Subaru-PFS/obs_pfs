@@ -1,5 +1,5 @@
 # Modifications of the contents of this file should also increment the version.
-version: 1
+version: 2
 namespace: pfs
 
 skypix:
@@ -245,6 +245,7 @@ elements:
       -
         name: lamps
         type: string
+        length: 64
         doc: >
           Comma-separated list of lamps.
     storage:
@@ -337,6 +338,7 @@ elements:
       -
         name: name
         type: string
+        length: 4
     requires: [instrument]
     storage:
       cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
@@ -354,13 +356,13 @@ elements:
 
   dither:
     doc: >
-      A slit offset in the spatial dimension.
+      A slit offset in the spatial dimension, quantized.
       Used in fiberFlat construction, where we want to iterate over exposures
       with the same dither setting.
     keys:
       -
         name: value
-        type: float
+        type: int
     requires: [instrument]
     storage:
       cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
@@ -383,6 +385,7 @@ elements:
       -
         name: name  # Symbolic name for the combination (easier to refer to than a big number)
         type: string
+        length: 64
       -
         name: pfs_visit_hash
         type: int  # Needs to be 64 bits, but "int" should be sufficient
@@ -414,6 +417,7 @@ elements:
       -
         name: run
         type: string
+        length: 64
     requires: [instrument]
     storage:
       cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
@@ -512,7 +516,7 @@ topology:
     skymap_regions: [patch, tract]
 
   temporal:
-    observation_timespans: [visit, detector]
+    observation_timespans: [visit]
 
 packers:
   visit_detector:

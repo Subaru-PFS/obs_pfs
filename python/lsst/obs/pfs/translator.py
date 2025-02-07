@@ -3,7 +3,7 @@ import os
 import numpy as np
 import astropy.units as u
 from astropy.coordinates import SkyCoord, AltAz
-from astropy.time import Time, TimeDelta
+from astropy.time import Time
 
 from astro_metadata_translator import SubaruTranslator, cache_translation, PropertyDefinition
 from astro_metadata_translator.translators.helpers import altaz_from_degree_headers
@@ -228,23 +228,3 @@ class PfsTranslator(SubaruTranslator):
         if value == "OBJECT":
             return "science"
         return value.lower()
-
-    @classmethod
-    def observing_date_to_offset(cls, observing_date: Time) -> TimeDelta | None:
-        """Return the offset to use when calculating the observing day.
-
-        Parameters
-        ----------
-        observing_date : `astropy.time.Time`
-            The date of the observation. Unused.
-
-        Returns
-        -------
-        offset : `astropy.time.TimeDelta`
-            The offset to apply. The offset is always 12 hours. PFS has
-            no defined observing day concept in its headers. To ensure that
-            observations from a single night all have the same observing_day,
-            adopt the same offset used by the Vera Rubin Observatory of
-            12 hours.
-        """
-        return TimeDelta(12 * 3600, format="sec", scale="tai"),

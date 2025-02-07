@@ -45,7 +45,7 @@ from lsst.pipe.base.connectionTypes import Input as InputConnection
 from lsst.pipe.base.connectionTypes import PrerequisiteInput as PrerequisiteConnection
 from lsst.pipe.base.connectionTypes import Output as OutputConnection
 from lsst.pipe.base import Struct, PipelineTaskConnections
-from lsst.daf.butler import DimensionGraph
+from lsst.daf.butler import DimensionGroup
 
 from pfs.drp.stella.crosstalk import PfsCrosstalkTask
 
@@ -255,7 +255,7 @@ def lookupBiasDark(datasetType, registry, dataId, collections):
     if dataId["arm"] not in "rm":
         return [registry.findDataset(datasetType, collections=collections, dataId=dataId, timespan=timespan)]
 
-    reducedGraph = DimensionGraph(dataId.universe, names=("instrument", "spectrograph"))
+    reducedGraph = DimensionGroup(dataId.universe, names=("instrument", "spectrograph"))
     reducedId = dataId.subset(reducedGraph)
     arm = dataId["arm"]
     spectrograph = dataId["spectrograph"]

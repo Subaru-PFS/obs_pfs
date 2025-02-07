@@ -9,6 +9,22 @@ from lsst.obs.base.ingest import _log_msg_counter
 from lsst.resources import ResourcePath
 
 
+def quantizeDither(dither: float) -> int:
+    """Quantize a dither value.
+
+    Parameters
+    ----------
+    dither : `float`
+        Dither value.
+
+    Returns
+    -------
+    quantized : `int`
+        Quantized dither value.
+    """
+    return int(dither * 1e4 + 0.5)
+
+
 class PfsRawIngestTask(RawIngestTask):
     """Driver Task for ingesting raw data into Gen3 Butler repositories.
 
@@ -91,7 +107,7 @@ class PfsRawIngestTask(RawIngestTask):
             `RawExposureData.dataId` attributes will be minimal (unexpanded)
             `~lsst.daf.butler.DataCoordinate` instances.
         """
-        exposureDimensions = self.universe["visit"].graph
+        exposureDimensions = self.universe["visit"].dimensions
         byExposure = defaultdict(list)
         for f in files:
             # Assume that the first dataset is representative for the file.
@@ -427,17 +443,14 @@ class PfsRawIngestTask(RawIngestTask):
             observation_reason=obsInfo.observation_reason,
             day_obs=obsInfo.observing_day,
             seq_num=obsInfo.observation_counter,
-            physical_filter=obsInfo.physical_filter,
             science_program=obsInfo.science_program,
             target_name=obsInfo.object,
             tracking_ra=ra,
             tracking_dec=dec,
             sky_angle=sky_angle,
             zenith_angle=zenith_angle,
-            arm=obsInfo.ext_arm,  # type: ignore[attr-defined]
-            spectrograph=obsInfo.ext_spectrograph,  # type: ignore[attr-defined]
             pfs_design_id=obsInfo.ext_pfs_design_id,  # type: ignore[attr-defined]
-            dither=obsInfo.ext_dither,  # type: ignore[attr-defined]
+            dither=quantizeDither(obsInfo.ext_dither),  # type: ignore[attr-defined]
             shift=obsInfo.ext_shift,  # type: ignore[attr-defined]
             focus=obsInfo.ext_focus,  # type: ignore[attr-defined]
             lamps=obsInfo.ext_lamps,  # type: ignore[attr-defined]
@@ -480,7 +493,7 @@ class PfsRawIngestTask(RawIngestTask):
             instrument=obsInfo.instrument,
         )
         dither = universe["dither"].RecordClass(
-            value=obsInfo.ext_dither,  # type: ignore[attr-defined]
+            value=quantizeDither(obsInfo.ext_dither),  # type: ignore[attr-defined]
             instrument=obsInfo.instrument,
         )
         pfs_design_id = universe["pfs_design_id"].RecordClass(
