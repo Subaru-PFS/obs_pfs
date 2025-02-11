@@ -55,7 +55,7 @@ def checkKeyword(header: astropy.io.fits.Header, keyword: str, expected: POD, co
     raise ValueError(f"No header keyword {keyword}")
 
 
-def checkRawHeader(filename: str, allowFix: bool = False):
+def checkRawHeader(filename: str, allowFix: bool = False, doNIR: bool = False):
     """Check that a PFS raw header includes the appropriate keywords
 
     These keywords include:
@@ -75,6 +75,10 @@ def checkRawHeader(filename: str, allowFix: bool = False):
         Name of file to check.
     allowFix : `bool`, optional
         Allow fixing the header if it is non-conformant; by default ``False``.
+    doNIR : `bool`, optional
+        Check NIR headers; by default ``False``. This is appropriate for
+        simulated data, since the simulator doesn't set all the NIR headers that
+        get set for real data.
     """
     data = parseRawFilename(filename)
     log.info(f"Checking {filename}")
@@ -114,6 +118,17 @@ def checkRawHeader(filename: str, allowFix: bool = False):
             if "MJD-STR" not in header:
                 mjd = Time(header["DATE-OBS"], scale="utc").mjd
                 modified |= checkKeyword(header, "MJD-STR", mjd, "Start time of exposure", allowFix)
+
+            if doNIR and data.arm == "n":
+                for keyword, default in (("W_H4IRPN", 1), ("W_H4NCHN", 1), ("W_H4IRPO", 0)):
+                    if keyword not in header:
+                        if allowFix:
+                            header[keyword] = (default, f"Default value for {keyword}")
+                            log.info(f"Added value of {keyword} = {repr(default)}")
+                            modified = True
+                        else:
+                            raise ValueError(f"No header keyword {keyword}")
+
         except ValueError as exc:
             raise ValueError(f"Bad header for {filename}") from exc
 

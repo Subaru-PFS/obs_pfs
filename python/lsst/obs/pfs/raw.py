@@ -1,11 +1,14 @@
-from typing import Literal, Optional, TYPE_CHECKING, Union
+from typing import Literal, Optional, TYPE_CHECKING, Union, Tuple
 
 import numpy as np
+
+import lsst.afw.math as afwMath
 
 from astro_metadata_translator import fix_header, ObservationInfo
 from lsst.geom import Box2I, Point2I, Extent2I
 from lsst.afw.fits import readMetadata
 from lsst.afw.image import DecoratedImageF, ImageU, ImageF, VisitInfo
+from lsst.afw.image import makeExposure, makeMaskedImage, ExposureF, FilterLabel
 from lsst.obs.base.makeRawVisitInfoViaObsInfo import MakeRawVisitInfoViaObsInfo
 
 from .loadCamera import loadCamera
@@ -31,16 +34,13 @@ class PfsRaw:
     rather than an actual cube, but that's a technicality). It is intended to be
     used as a helper to the Formatter.
 
-    We do NOT rotate the NIR images here, as that would invalidate the bad
-    pixel list used in ISR.
-
     Parameters
     ----------
     path : `str`
         Path to the raw data file.
     """
 
-    def __init__(self, path: str, pfsCategory: Union[None, Literal["F"], Literal["L"]]) -> None:
+    def __init__(self, path: str, pfsCategory: Union[None, Literal["F"], Literal["L"], Literal["J"]]) -> None:
         """Construct from a filename"""
         self.path = path
         self.pfsCategory = pfsCategory
@@ -55,7 +55,12 @@ class PfsRaw:
         if self._metadata is None:
             self._metadata = readMetadata(self.path)
             fix_header(self._metadata, translator_class=PfsTranslator, filename=self.path)
+
         return self._metadata
+
+    def getMetadata(self) -> "PropertyList":
+        """Hoist the .exposure.getMetadata() up"""
+        return self.metadata
 
     @property
     def detector(self) -> "Detector":
@@ -63,8 +68,10 @@ class PfsRaw:
         detId = self.metadata["DET-ID"]
         detector = loadCamera(self.pfsCategory)[detId]
         if self.isNir():
-            detector = detector.rebuild()   # returns a Detector Builder
+            detector = detector.rebuild()  # returns a Detector Builder
             gain = self.metadata["W_H4GAIN"]  # ASIC pre-amp gain (electrons per ADU)
+
+            # This will need work for non-32-channel ramps.
             for channel in detector.getAmplifiers():  # an H4RG/ROIC/SAM "channel", not really an amplifier
                 channel.setGain(channel.getGain() / gain)
             detector = detector.finish()
@@ -74,9 +81,7 @@ class PfsRaw:
     def obsInfo(self) -> ObservationInfo:
         """Return the ObservationInfo"""
         if self._obsInfo is None:
-            self._obsInfo = ObservationInfo(
-                self.metadata, translator_class=PfsTranslator, filename=self.path
-            )
+            self._obsInfo = ObservationInfo(self.metadata, translator_class=PfsTranslator, filename=self.path)
         return self._obsInfo
 
     @property
@@ -103,6 +108,43 @@ class PfsRaw:
         """Return the origin of the image"""
         return Point2I(0, 0)
 
+    @property
+    def nchan(self) -> int:
+        """Return the number of H4 readout channels"""
+        return self.metadata["W_H4NCHN"]
+
+    @property
+    def irpN(self) -> int:
+        """Return the ratio of data:IRP pixels."""
+        return self.metadata["W_H4IRPN"]
+
+    @property
+    def irpOffset(self) -> int:
+        """Return the offset of the IRP pixel in the block of irpN data pixels."""
+        return self.metadata["W_H4IRPO"]
+
+    @property
+    def h4Size(self) -> int:
+        return 4096
+
+    def getH4channelReadOrder(self) -> Tuple[bool, bool]:
+        """Return the temporal read directions for alternating channels
+
+        Returns
+        -------
+        evenChannels, oddChannels : `int`
+           if 1, channel is read out right-to-left.
+        """
+
+        # Mumble. The readout directions are not broken out in the H4 header.
+        """
+        SPI Register 13 contains:
+          HINVDIR field: bit 8 for even channels, bit 9 for odd.
+          with 0 = left to right, 1 = right to left
+        """
+        hinvdir = (self.metadata["W_4SPI13"] & 0x300) >> 8
+        return hinvdir & 1, (hinvdir >> 1) & 1
+
     def isNir(self) -> bool:
         """Return if this is NIR data"""
         return self.metadata.get("W_ARM") == 3
@@ -128,6 +170,34 @@ class PfsRaw:
             The image.
         """
         return self.getNirImage(bbox) if self.isNir() else self.getCcdImage(bbox)
+
+    def getExposure(self, bbox: Optional["Box2I"] = None) -> ExposureF:
+        """Return an Exposure
+
+        Wraps the image in an Exposure, setting the detector, visitInfo, and
+        metadata.
+
+        Parameters
+        ----------
+        bbox : `Box2I`
+            The bounding box to return.
+
+        Returns
+        -------
+        exposure : `ExposureF`
+            The Exposure.
+        """
+        image = self.getImage(bbox).convertF()
+        exposure = makeExposure(makeMaskedImage(image))
+        exposure.setDetector(self.detector)
+        info = exposure.getInfo()
+        info.setVisitInfo(self.visitInfo)
+        info.setId(self.visitInfo.id)
+        info.setMetadata(self.metadata)
+        info.setDetector(self.detector)
+        arm = self.obsInfo.ext_arm
+        info.setFilter(FilterLabel(arm, arm))
+        return exposure
 
     def getCcdImage(self, bbox: Optional["Box2I"] = None) -> ImageU:
         """Return the CCD image
@@ -172,7 +242,7 @@ class PfsRaw:
         return self.metadata.get("W_H4NRED") if self.isNir() else 1
 
     def getNirImage(self, bbox: Optional["Box2I"] = None) -> ImageF:
-        """Return the NIR image
+        """Return a quicklook estimate of the NIR image
 
         This is the "CDS" image (the last read minus the first read).
 
@@ -197,18 +267,87 @@ class PfsRaw:
         last -= first
         return last
 
+    def positiveIndex(self, n: int) -> int:
+        """Convert possibly negative index to always positive index."""
+        nums = range(0, self.getNumReads())
+        return nums[n]
+
+    def _readIdxToPFSBIdx(self, n: int) -> int:
+        """Convert possibly negative 0-indexed ramp read index into positive 1-indexed PFSB read index"""
+        return self.positiveIndex(n) + 1
+
+    def getRawDataImage(
+        self,
+        readNum: int,
+    ) -> ImageF:
+        """Get a data image.
+
+        Args
+        ----
+        readNum : `int`
+           the 0-indexed data image to read. If negative,
+           take from the end of the ramp.
+
+        Returns
+        -------
+        image : `afw.image.maskedImage`
+              'u2' by default.
+        """
+
+        readNum = self._readIdxToPFSBIdx(readNum)
+        return self.getNirRead(readNum, imageType="IMAGE")
+
+    def getRawIrpImage(
+        self,
+        readNum: int,
+    ) -> ImageF:
+        """Get an IRP ("reference") image.
+
+        Args
+        ----
+        readNum : `int`
+           the 0-indexed IRP image to read. If negative,
+           take from the end of the ramp.
+
+        Returns
+        -------
+        image : `afw.image.maskedImage`
+              'u2' by default.
+        """
+        readNum = self._readIdxToPFSBIdx(readNum)
+        return self.getNirRead(readNum, imageType="REF")
+
+    @staticmethod
+    def replaceNansWith0(image: ImageF) -> ImageF:
+        """REPLACE NaNs in an ImageF with 0 (the FITS BLANK value)
+
+        This is horrendous. Subaru requires us to have BLANK cards, and the Rubin reader replaces
+        matching pixels with NaNs. BLANKs are supposed to indicate undefined pixels, but 0 and 65535
+        are both valid pixel values from the H4s: there is no "undefined" value.
+
+        When we know we do not care and need numpy arrays (e.g. when building stacks)
+        call this to replace NaNs with 0.
+        """
+
+        arr = image.getImage().getArray()
+        nanmask = np.isnan(arr)
+        if nanmask.any():
+            arr[nanmask] = 0.0
+        return arr
+
     def getNirRead(
         self,
         readNum: int,
         imageType: Union[Literal["IMAGE"], Literal["REF"]] = "IMAGE",
         bbox: Optional["Box2I"] = None,
+        doRotate: bool = True,
     ) -> ImageF:
         """Return the image for the given read
 
         Parameters
         ----------
         readNum : `int`
-            The read number to return.
+            The read number to return. 1-indexed.
         imageType : `str`
             The type of image to return: ``IMAGE`` or ``REF``.
         bbox : `Box2I`
@@ -218,11 +357,12 @@ class PfsRaw:
         -------
         image : `ImageF`
             The image for the given read.
+            The image is rotated so that traces run vertically.
         """
         numReads = self.getNumReads()
         if not (1 <= readNum <= self.getNumReads()):
             raise RuntimeError(f"The read must be in the range 1..{numReads}; saw {readNum}")
-        hdu = 2*readNum - 1 + dict(IMAGE=0, REF=1)[imageType]
+        hdu = 2 * readNum - 1 + dict(IMAGE=0, REF=1)[imageType]
 
         hasResetFrame = self.metadata["W_4FMTVR"] >= 3  # extra IMG/REF HDUs for the initial reset frame
         if hasResetFrame:
@@ -236,7 +376,15 @@ class PfsRaw:
         if extname != expectExtname:
             raise RuntimeError(f"Expected to see EXTNAME = {expectExtname}; saw {extname}")
 
-        return image.getImage()
+        # The Subaru-required BLANK card does not work for H4s: we have to replace NaNs with 0.
+        self.replaceNansWith0(image)
+
+        if doRotate:
+            # Rotate immediately and always: completely hide the fact that the detector is physically rotated.
+            image = afwMath.rotateImageBy90(image.getImage(), self.detector.getOrientation().getNQuarter())
+        else:
+            image = image.getImage()
+        return image
 
     def getCorrectedNirRead(
         self,
