@@ -158,9 +158,12 @@ class PfsAssembleCcdTask(AssembleCcdTask):
             self.log.info("Flagging %d zero pixels", noData.sum())
 
         # Convert to electrons
+        metadata = exposure.getMetadata()
         for amp in exposure.getDetector():
             ampImage = exposure.maskedImage[amp.getBBox()]
             ampImage *= amp.getGain()
+            metadata[f"PFS AMP{amp.getName()} GAIN ORIG"] = amp.getGain()
+
         # Reset gain to unity
         detector = exposure.getDetector().rebuild()
         for amp in detector:
