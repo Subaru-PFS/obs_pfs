@@ -39,6 +39,7 @@ from lsst.afw.image import DecoratedImageF
 import lsst.ip.isr as ipIsr
 from lsst.ip.isr.assembleCcdTask import AssembleCcdTask
 from lsst.ip.isr.defects import Defects
+from lsst.ip.isr.isrFunctions import updateVariance
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base.connectionTypes import Input as InputConnection
 from lsst.pipe.base.connectionTypes import PrerequisiteInput as PrerequisiteConnection
@@ -157,9 +158,12 @@ class PfsAssembleCcdTask(AssembleCcdTask):
             self.log.info("Flagging %d zero pixels", noData.sum())
 
         # Convert to electrons
+        metadata = exposure.getMetadata()
         for amp in exposure.getDetector():
             ampImage = exposure.maskedImage[amp.getBBox()]
             ampImage *= amp.getGain()
+            metadata[f"PFS AMP{amp.getName()} GAIN ORIG"] = amp.getGain()
+
         # Reset gain to unity
         detector = exposure.getDetector().rebuild()
         for amp in detector:
@@ -833,6 +837,33 @@ class PfsIsrTask(ipIsr.IsrTask):
             return self.runH4RG(pfsRaw, **kwargs)
         else:
             return self.runCCD(pfsRaw.getExposure(), **kwargs)
+
+    def updateVariance(self, ampExposure, amp, overscanImage=None, ptcDataset=None):
+        """Set the variance plane using the gain and read noise
+
+        This override enforces a gain of unity, since we've already converted
+        the data to electrons in ``assembleCcd``. Unfortunately, the detector
+        passed to this method is not the updated detector with unit gains, so
+        we need to override the gains used here.
+
+        Parameters
+        ----------
+        ampExposure : `lsst.afw.image.Exposure`
+            Exposure to process.
+        amp : `lsst.afw.cameraGeom.Amplifier` or `FakeAmp`
+            Amplifier detector data.
+        overscanImage : `lsst.afw.image.MaskedImage`, optional.
+            Image of overscan, required only for empirical read noise.
+        ptcDataset : `lsst.ip.isr.PhotonTransferCurveDataset`, optional
+            PTC dataset containing the gains and read noise.
+        """
+        gain = 1.0
+        readNoise = amp.getReadNoise()
+
+        metadata = ampExposure.getMetadata()
+        metadata[f'LSST GAIN {amp.getName()}'] = gain
+        metadata[f'LSST READNOISE {amp.getName()}'] = readNoise
+        updateVariance(maskedImage=ampExposure.maskedImage, gain=gain, readNoise=readNoise)
 
     def runCCD(self, ccdExposure, **kwargs):
         """Perform instrument signature removal on a CCD exposure.
