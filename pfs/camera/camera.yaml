@@ -363,36 +363,36 @@ CCDs : &CCDs
       amplifiers:
         "0":
           <<: *A0
-          gain: 1.295
-          readNoise: 4.81
+          gain: 1.19
+          readNoise: 4.05
         "1":
           <<: *A1
-          gain: 2.596
-          readNoise: 7.15
+          gain: 2.37
+          readNoise: 5.01
         "2":
           <<: *A2
-          gain: 1.319
-          readNoise: 4.42
+          gain: 1.2
+          readNoise: 3.79
         "3":
           <<: *A3
-          gain: 1.345
-          readNoise: 4.42
+          gain: 1.23
+          readNoise: 3.84
         "4":
           <<: *A4
-          gain: 1.349
-          readNoise: 4.78
+          gain: 1.23
+          readNoise: 3.91
         "5":
           <<: *A5
-          gain: 1.333
-          readNoise: 4.67
+          gain: 1.22
+          readNoise: 3.8
         "6":
           <<: *A6
-          gain: 1.363
-          readNoise: 4.88
+          gain: 1.24
+          readNoise: 3.88
         "7":
           <<: *A7
-          gain: 1.326
-          readNoise: 4.57
+          gain: 1.22
+          readNoise: 3.99
     r2: &r2
       <<: *CCD
       detectorType : 0                # r CCD
@@ -402,36 +402,36 @@ CCDs : &CCDs
       amplifiers:
         "0":
           <<: *A0
-          gain: 1.090
-          readNoise: 3.84
+          gain: 1.03
+          readNoise: 3.59
         "1":
           <<: *A1
-          gain: 1.093
-          readNoise: 3.74
+          gain: 1.07
+          readNoise: 3.56
         "2":
           <<: *A2
-          gain: 1.084
-          readNoise: 3.78
+          gain: 1.06
+          readNoise: 3.63
         "3":
           <<: *A3
-          gain: 1.087
-          readNoise: 3.83
+          gain: 1.05
+          readNoise: 3.58
         "4":
           <<: *A4
-          gain: 1.043
-          readNoise: 3.70
+          gain: 1.04
+          readNoise: 3.61
         "5":
           <<: *A5
-          gain: 1.070
-          readNoise: 4.54
+          gain: 1.02
+          readNoise: 4.34
         "6":
           <<: *A6
-          gain: 1.065
-          readNoise: 4.61
+          gain: 1.04
+          readNoise: 4.11
         "7":
           <<: *A7
-          gain: 1.108
-          readNoise: 3.82
+          gain: 1.06
+          readNoise: 3.62
     n2:
       <<: *n1
       id: 5
