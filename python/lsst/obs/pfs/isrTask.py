@@ -1418,7 +1418,7 @@ class PfsIsrTask(ipIsr.IsrTask):
             return np.zeros(dtype=np.int16, shape=())
 
         with open(absFilename) as f:
-            cfg = yaml.safe_load(f)
+            cfg = yaml.YAML(typ="safe", pure=True).load(f)
 
         if detectorName not in cfg:
             self.log.warn(f'{detectorName} not defined in {absFilename}')
@@ -1514,7 +1514,7 @@ class PfsIsrTask(ipIsr.IsrTask):
         # Pad filter with zeros to same width as padded channel.
         ww_half = filterWidth//2
         padWidth = ww_half*2
-        filtCore = scipy.signal.hann(filterWidth)
+        filtCore = scipy.signal.windows.hann(filterWidth)
         filtCore /= filtCore.sum()
         filt1 = np.zeros(shape=(chan_w+padWidth, 1), dtype='f4')
         fc = (chan_w+filterWidth)//2
