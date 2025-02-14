@@ -6,7 +6,8 @@ import numpy as np
 from lsst.obs.base.formatters.fitsExposure import FitsExposureFormatter
 from lsst.obs.base.formatters.fitsGeneric import FitsGenericFormatter
 from lsst.obs.base import FitsRawFormatterBase
-from lsst.afw.image import makeExposure, makeMaskedImage, FilterLabel
+from lsst.afw.image import Exposure, makeExposure, makeMaskedImage, FilterLabel
+from lsst.resources import ResourcePath
 
 from .loadCamera import loadCamera
 from .filterDefinitions import pfsFilterDefinitions
@@ -28,9 +29,9 @@ class PfsRawFormatter(FitsRawFormatterBase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._raw = PfsRaw(self.fileDescriptor.location.path, self.pfsCategory)
+        self._raw = PfsRaw(self.file_descriptor.location.path, self.pfsCategory)
 
-    def read(self, component: Optional[str] = None):
+    def read_from_local_file(self, path: str, component: str | None = None, expected_size: int = -1) -> Any:
         # Docstring inherited.
         if component == "ramp":
             if (readNum := self.checked_parameters.get("readNum")) is None:
@@ -69,7 +70,7 @@ class PfsRawFormatter(FitsRawFormatterBase):
             return self._raw.xy0
         return self._raw
 
-    def write(self, inMemoryDatset: Any):
+    def write_local_file(self, in_memory_dataset: Any, uri: ResourcePath) -> None:
         # Docstring inherited.
         raise NotImplementedError("PfsRawFormatter does not support writing")
 
@@ -136,7 +137,7 @@ class PfsFitsExposureFormatter(FitsExposureFormatter):
         """
         return file_filter_label
 
-    def write(self, exposure: Any) -> None:
+    def write_local_file(self, in_memory_dataset: Any, uri: ResourcePath) -> None:
         """Write a Dataset.
 
         Workaround for DM-47152: FITS header keywords longer than 8 characters
@@ -148,6 +149,9 @@ class PfsFitsExposureFormatter(FitsExposureFormatter):
         exposure : `object`
             The Dataset to store.
         """
+        assert isinstance(in_memory_dataset, Exposure)
+        exposure = in_memory_dataset
+
         metadata = exposure.getMetadata()
         fixes = []
         for key in metadata:
@@ -158,7 +162,7 @@ class PfsFitsExposureFormatter(FitsExposureFormatter):
             comment = metadata.getComment(key)
             metadata.remove(key)
             metadata.add("HIERARCH " + key, value, comment)
-        return super().write(exposure)
+        return super().write_local_file(exposure, uri)
 
 
 class DetectorMapFormatter(FitsGenericFormatter):
@@ -166,10 +170,10 @@ class DetectorMapFormatter(FitsGenericFormatter):
 
     Provides components for the DetectorMap.
     """
-    def read(self, component: Optional[str] = None):
+    def read_from_local_file(self, path: str, component: str | None = None, expected_size: int = -1) -> Any:
         # Docstring inherited.
         from pfs.drp.stella import DetectorMap
-        path = self.fileDescriptor.location.path
+        path = self.file_descriptor.location.path
         detectorMap = DetectorMap.readFits(path)
         if component is None:
             return detectorMap
@@ -188,17 +192,17 @@ class PfsTargetSpectraFormatter(FitsGenericFormatter):
     """
     PfsTargetSpectraClass: str = ""  # Subclasses must override
 
-    def read(self, component: Optional[str] = None):
+    def read_from_local_file(self, path: str, component: str | None = None, expected_size: int = -1) -> Any:
         # Docstring inherited.
         module = import_module("pfs.drp.stella.datamodel.pfsTargetSpectra", )
         cls = getattr(module, self.PfsTargetSpectraClass)
 
-        path = self.fileDescriptor.location.path
+        path = self.file_descriptor.location.path
         spectra = cls.readFits(path)
         if component is None:
             return spectra
 
-        parameters = self.fileDescriptor.parameters
+        parameters = self.file_descriptor.parameters
         if parameters is None:
             parameters = {}
 
