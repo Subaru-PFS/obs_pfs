@@ -194,7 +194,11 @@ class PfsTargetSpectraFormatter(FitsGenericFormatter):
 
     def read_from_local_file(self, path: str, component: str | None = None, expected_size: int = -1) -> Any:
         # Docstring inherited.
-        module = import_module("pfs.drp.stella.datamodel.pfsTargetSpectra", )
+        if self.PfsTargetSpectraClass in ("PfsCalibratedSpectra", "PfsObjectSpectra"):
+            # These are deprecated, but we still need to support them
+            module = import_module("pfs.drp.stella.datamodel.pfsTargetSpectra", )
+        else:
+            module = import_module("pfs.datamodel.drp", )
         cls = getattr(module, self.PfsTargetSpectraClass)
 
         path = self.file_descriptor.location.path
@@ -221,9 +225,19 @@ class PfsTargetSpectraFormatter(FitsGenericFormatter):
         raise ValueError(f"Unknown component {component}")
 
 
+# Deprecated in favor of PfsCalibratedFormatter
 class PfsCalibratedSpectraFormatter(PfsTargetSpectraFormatter):
     PfsTargetSpectraClass = "PfsCalibratedSpectra"
 
 
+# Deprecated in favor of PfsCoaddFormatter
 class PfsObjectSpectraFormatter(PfsTargetSpectraFormatter):
     PfsTargetSpectraClass = "PfsObjectSpectra"
+
+
+class PfsCalibratedFormatter(PfsTargetSpectraFormatter):
+    PfsTargetSpectraClass = "PfsCalibrated"
+
+
+class PfsCoaddFormatter(PfsTargetSpectraFormatter):
+    PfsTargetSpectraClass = "PfsCoadd"
