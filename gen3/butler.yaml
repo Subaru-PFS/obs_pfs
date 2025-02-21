@@ -9,6 +9,7 @@ datastore:
 
     # PFS-specific dataset types
     PfsRaw: lsst.obs.pfs.formatters.PfsRawFormatter
+    PfsDark: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     PfsConfig: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     FiberProfileSet: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     FiberTraceSet: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
@@ -138,3 +139,8 @@ storageClasses:
       bbox: Box2I  # bounding box
       dimensions: Extent2I  # size of image
       xy0: Point2I  # bounding box origin
+  PfsDark:
+    pytype: lsst.obs.pfs.dark.PfsDark
+    converters:
+      lsst.afw.image.ExposureF: lsst.obs.pfs.dark.PfsDark.fromExposure
+      lsst.obs.pfs.dark.ImageCube: lsst.obs.pfs.dark.PfsDark.fromImageCube
