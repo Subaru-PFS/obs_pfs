@@ -18,7 +18,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import os
 import time
@@ -48,6 +48,10 @@ from lsst.pipe.base import Struct, PipelineTaskConnections
 from lsst.daf.butler import DimensionGroup
 
 from pfs.drp.stella.crosstalk import PfsCrosstalkTask
+
+if TYPE_CHECKING:
+    from lsst.afw.image import ExposureF
+    from .dark import ImageCube
 
 ___all__ = ["IsrTask", "IsrTaskConfig"]
 
@@ -124,6 +128,12 @@ class H4Config(pexConfig.Config):
             n4="pfsIpc-2024-07-09T00:10:01.950-112241-n4.fits",
         ),
         doc="Mapping of detector name to IPC kernel filename",
+    )
+
+    useDarkCube = pexConfig.Field(
+        dtype=bool,
+        default=False,
+        doc="Use dark cube for dark subtraction? Disable this to use traditional darks.",
     )
 
 
@@ -330,7 +340,7 @@ class PfsIsrConnections(PipelineTaskConnections, dimensions=("instrument", "visi
     dark = PrerequisiteConnection(
         name="dark",
         doc="Input dark calibration.",
-        storageClass="ExposureF",
+        storageClass="PfsDark",
         dimensions=["instrument", "arm", "spectrograph"],
         isCalibration=True,
         lookupFunction=lookupBiasDark,
@@ -911,6 +921,9 @@ class PfsIsrTask(ipIsr.IsrTask):
                           self.config.brokenRedShutter.maximumAllowedParallelOverscanFraction, flux,
                           ("" if doBrokenRedShutter else "; assuming not broken"))
 
+        if self.config.doDark:
+            kwargs["dark"] = kwargs["dark"].getCcdDark()
+
         detName = ccdExposure.getDetector().getName()
         darkBBoxes = self.config.darkBBoxes
         if self.config.doDark and detName in darkBBoxes:
@@ -1062,7 +1075,11 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         if self.config.doDark:
             self.log.info("Applying dark correction.")
-            super().darkCorrection(exposure, dark)
+            if self.config.h4.useDarkCube:
+                darkCube = dark.getNirDark()
+                self.nirDarkCorrection(exposure, darkCube)
+            else:
+                super().darkCorrection(exposure, dark.getCcdDark(True))
             super().debugView(exposure, "doDark")
 
         if self.config.doFlat:
@@ -2201,6 +2218,20 @@ class PfsIsrTask(ipIsr.IsrTask):
             Exposure to process.
         """
         pass
+
+    def nirDarkCorrection(self, exposure: "ExposureF", dark: "ImageCube") -> None:
+        """Apply NIR dark correction to the exposure
+
+        The NIR dark correction is applied to the exposure in place.
+
+        Parameters
+        ----------
+        exposure : `lsst.afw.image.ExposureF`
+            Exposure to correct.
+        dark : `lsst.obs.pfs.dark.ImageCube`
+            Dark correction to apply.
+        """
+        raise NotImplementedError("NIR dark correction not yet implemented")
 
     def _getMetadataName(self):
         return None                     # don't write metadata; requires fix to ip_isr
