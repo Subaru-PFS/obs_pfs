@@ -160,7 +160,7 @@ class ImageCube:
         for hdu in self.fits[1:]:
             self[self._getHduIndex(hdu.name)] = ImageF(hdu.data.astype(np.float32))
 
-    def write(self, path: str) -> None:
+    def writeFits(self, path: str) -> None:
         """Write the images
 
         Note that we only write images that have been explicitly read or set.
@@ -177,3 +177,19 @@ class ImageCube:
             fits.append(astropy.io.fits.ImageHDU(self._images[index].array, name=self._getHduName(index)))
         with open(path, "wb") as fd:
             fits.writeto(fd)
+
+    @classmethod
+    def readFits(cls, path: str) -> "ImageCube":
+        """Read the FITS file
+
+        Parameters
+        ----------
+        path : `str`
+            Path to the FITS file.
+
+        Returns
+        -------
+        cube : `ImageCube`
+            The image cube.
+        """
+        return cls.fromFile(path)

@@ -22,6 +22,7 @@ from typing import TYPE_CHECKING, Optional
 
 import os
 import time
+from functools import partial
 
 import numpy as np
 import scipy
@@ -238,7 +239,7 @@ def lookupCrosstalkSources(datasetType, registry, dataId, collections):
     return []
 
 
-def lookupBiasDark(datasetType, registry, dataId, collections):
+def lookupBiasDark(datasetType, registry, dataId, collections, allowEmpty=False):
     """Look up a bias or dark frame
 
     This is a lookup function for the IsrTaskConnections PrerequisiteConnection
@@ -287,6 +288,8 @@ def lookupBiasDark(datasetType, registry, dataId, collections):
             pass
 
     if ref1 is None and ref2 is None:
+        if allowEmpty:
+            return []
         raise RuntimeError(f"Unable to find {datasetType} for {dataId}")
     if ref1 is None:
         return [ref2]
@@ -340,10 +343,20 @@ class PfsIsrConnections(PipelineTaskConnections, dimensions=("instrument", "visi
     dark = PrerequisiteConnection(
         name="dark",
         doc="Input dark calibration.",
-        storageClass="PfsDark",
+        storageClass="ExposureF",
         dimensions=["instrument", "arm", "spectrograph"],
         isCalibration=True,
-        lookupFunction=lookupBiasDark,
+        lookupFunction=partial(lookupBiasDark, allowEmpty=True),
+        minimum=0,  # allowed to not exist, since we may use nirDark instead
+    )
+    nirDark = PrerequisiteConnection(
+        name="nirDark",
+        doc="Input dark calibration for NIR",
+        storageClass="ImageCube",
+        dimensions=["instrument", "arm", "spectrograph"],
+        isCalibration=True,
+        lookupFunction=partial(lookupBiasDark, allowEmpty=True),
+        minimum=0,  # allowed to not exist, since we may use dark instead
     )
     flat = PrerequisiteConnection(
         name="fiberFlat",
@@ -499,6 +512,7 @@ class PfsIsrConnections(PipelineTaskConnections, dimensions=("instrument", "visi
             self.prerequisiteInputs.remove("defects")
         if config.doDark is not True:
             self.prerequisiteInputs.remove("dark")
+            self.prerequisiteInputs.remove("nirDark")
         if config.doFlat is not True:
             self.prerequisiteInputs.remove("flat")
         if config.doFringe is not True:
@@ -788,8 +802,16 @@ class PfsIsrTask(ipIsr.IsrTask):
                     exposureMetadata[idKey] = idValue
 
         raw = inputs["ccdExposure"]  # Inheritance requires "ccdExposure", but it's actually a PfsRaw
-        if raw.isNir() and self.config.doIPC:
+        isNir = raw.isNir()
+        if isNir and self.config.doIPC:
             inputs["ipcCoeffs"] = self.readIPC(raw.detector.getName())
+
+        if self.config.doDark:
+            if isNir and self.config.h4.useDarkCube:
+                if inputs["nirDark"] is None:
+                    raise RuntimeError(f"No NIR dark frame found for {raw.detector.getName()}")
+            elif inputs["dark"] is None:
+                raise RuntimeError(f"No dark frame found for {raw.detector.getName()}")
 
         outputs = self.run(**inputs)
         butlerQC.put(outputs, outputRefs)
@@ -921,9 +943,6 @@ class PfsIsrTask(ipIsr.IsrTask):
                           self.config.brokenRedShutter.maximumAllowedParallelOverscanFraction, flux,
                           ("" if doBrokenRedShutter else "; assuming not broken"))
 
-        if self.config.doDark:
-            kwargs["dark"] = kwargs["dark"].getCcdDark()
-
         detName = ccdExposure.getDetector().getName()
         darkBBoxes = self.config.darkBBoxes
         if self.config.doDark and detName in darkBBoxes:
@@ -994,7 +1013,15 @@ class PfsIsrTask(ipIsr.IsrTask):
         return results
 
     def runH4RG(
-        self, pfsRaw, dark=None, flat=None, defects=None, detectorNum=None, ipcCoeffs=None, **kwargs
+        self,
+        pfsRaw,
+        dark=None,
+        nirDark=None,
+        flat=None,
+        defects=None,
+        detectorNum=None,
+        ipcCoeffs=None,
+        **kwargs,
     ):
         """Specialist instrument signature removal for H4RG detectors
 
@@ -1005,7 +1032,10 @@ class PfsIsrTask(ipIsr.IsrTask):
             exposure is modified by this method. With the PfsRaw we
             can get access the ramp cubes.
         dark : `lsst.afw.image.Exposure`, optional
-            Dark exposure to subtract.
+            Dark exposure to subtract (if ``config.h4.useDarkCube`` is
+            ``False``).
+        nirDark : `lsst.obs.pfs.imageCube.ImageCube`, optional
+            Dark cube to subtract (if ``config.h4.useDarkCube`` is ``True``).
         flat : `lsst.afw.image.Exposure`, optional
             Flat-field exposure to divide by.
         defects : `lsst.ip.isr.Defects`, optional
@@ -1033,8 +1063,16 @@ class PfsIsrTask(ipIsr.IsrTask):
                 if k not in ("camera", "crosstalk", "crosstalkSources", "linearizer"):
                     self.log.warn("Unexpected argument for runH4RG: %s", k)
 
-        if self.config.doDark and dark is None:
-            raise RuntimeError("Must supply a dark exposure if config.doDark=True.")
+        if self.config.doDark:
+            if self.config.h4.useDarkCube:
+                if nirDark is None:
+                    raise RuntimeError(
+                        "Must supply a dark cube if config.doDark=True and config.h4.useDarkCube=True."
+                    )
+            elif dark is None:
+                raise RuntimeError(
+                    "Must supply a dark exposure if config.doDark=True and config.h4.useDarkCube=False."
+                )
         if self.config.doFlat and flat is None:
             raise RuntimeError("Must supply a flat exposure if config.doFlat=True.")
         if self.config.doDefect and defects is None:
@@ -1076,10 +1114,9 @@ class PfsIsrTask(ipIsr.IsrTask):
         if self.config.doDark:
             self.log.info("Applying dark correction.")
             if self.config.h4.useDarkCube:
-                darkCube = dark.getNirDark()
-                self.nirDarkCorrection(exposure, darkCube)
+                self.nirDarkCorrection(exposure, nirDark)
             else:
-                super().darkCorrection(exposure, dark.getCcdDark(True))
+                super().darkCorrection(exposure, dark)
             super().debugView(exposure, "doDark")
 
         if self.config.doFlat:

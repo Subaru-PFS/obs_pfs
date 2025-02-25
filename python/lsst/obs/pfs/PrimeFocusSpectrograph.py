@@ -142,6 +142,13 @@ class PrimeFocusSpectrograph(Instrument):
             "DetectorMap",
             True,
         )
+        self.registerDatasetType(
+            registry,
+            "nirDark",
+            ["instrument", "arm", "spectrograph"],
+            "ImageCube",
+            True,
+        )
 
     def registerDatasetType(
         self,

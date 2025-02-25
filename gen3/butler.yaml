@@ -9,7 +9,6 @@ datastore:
 
     # PFS-specific dataset types
     PfsRaw: lsst.obs.pfs.formatters.PfsRawFormatter
-    PfsDark: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     PfsConfig: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     FiberProfileSet: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     FiberTraceSet: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
@@ -32,6 +31,7 @@ datastore:
     NevenPsf: lsst.daf.butler.formatters.pickle.PickleFormatter
     MultipagePdfFigure: pfs.drp.qa.formatters.PdfMatplotlibFormatter
     QaDict: lsst.daf.butler.formatters.pickle.PickleFormatter
+    ImageCube: lsst.daf.butler.formatters.fitsGeneric.FitsGenericFormatter
   templates:
     default: "{run:/}/{datasetType}.{component:?}/{visit.day_obs:?}/{visit:?}/{datasetType}_{component:?}_{instrument:?}_{visit:?}_{arm:?}{spectrograph:?}_{detector:?}_{run}"
     instrument+detector: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{detector:?}_{run}"  # used for defects
@@ -139,8 +139,5 @@ storageClasses:
       bbox: Box2I  # bounding box
       dimensions: Extent2I  # size of image
       xy0: Point2I  # bounding box origin
-  PfsDark:
-    pytype: lsst.obs.pfs.dark.PfsDark
-    converters:
-      lsst.afw.image.ExposureF: lsst.obs.pfs.dark.PfsDark.fromExposure
-      lsst.obs.pfs.dark.ImageCube: lsst.obs.pfs.dark.PfsDark.fromImageCube
+  ImageCube:
+    pytype: lsst.obs.pfs.imageCube.ImageCube
