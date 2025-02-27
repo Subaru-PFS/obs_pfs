@@ -247,7 +247,7 @@ class ImageCube:
 
         with astropy.io.fits.open(path, mode='append') as fits:
             header = astropyHeaderFromDict(metadata)
-            header['NREADS'] = self.nreads
+            header['NREADS'] = len(data)
             phdu = astropy.io.fits.PrimaryHDU(data=None, header=header)
             fits.append(phdu)
             for i in range(len(data)):
