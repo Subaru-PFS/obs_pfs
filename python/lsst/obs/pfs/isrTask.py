@@ -1069,7 +1069,7 @@ class PfsIsrTask(ipIsr.IsrTask):
             if defects is None:
                 raise RuntimeError("Must supply defects if config.h4.doIPC=True.")
             if ipcCoeffs is None:
-                raise RuntimeError("Must supply IPC coefficients if config.dh4.oIPC=True.")
+                raise RuntimeError("Must supply IPC coefficients if config.h4.doIPC=True.")
 
         # All 3-d ramp-based operations are hidden inside this call. After .makeNirExposure()
         # we operate on a 2-d image.
