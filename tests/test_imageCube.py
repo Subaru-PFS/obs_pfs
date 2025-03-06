@@ -24,7 +24,7 @@ class ImageCubeTestCase(lsst.utils.tests.TestCase):
             cube[ii] = ImageF(np.full(dimensions, float(ii), dtype=np.float32))
 
         with lsst.utils.tests.getTempFilePath(".fits") as filename:
-            cube.write(filename)
+            cube.writeFits(filename)
 
             with ImageCube.fromFile(filename) as new:
                 for name in metadata.names():
