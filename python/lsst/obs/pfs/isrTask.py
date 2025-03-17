@@ -48,11 +48,11 @@ from lsst.pipe.base.connectionTypes import Output as OutputConnection
 from lsst.pipe.base import Struct, PipelineTaskConnections
 from lsst.daf.butler import DimensionGroup
 
+from . import imageCube
 from pfs.drp.stella.crosstalk import PfsCrosstalkTask
 
 if TYPE_CHECKING:
     from lsst.afw.image import ExposureF
-    from .imageCube import ImageCube
     from .raw import PfsRaw
 
 ___all__ = ["IsrTask", "IsrTaskConfig"]
@@ -137,7 +137,11 @@ class H4Config(pexConfig.Config):
         default=True,
         doc="Use dark cube for dark subtraction? Disable this to use traditional darks.",
     )
-
+    doWriteRawCube = pexConfig.Field(
+        dtype=bool,
+        default=False,
+        doc="write out raw-ish ISRCube (UTR, e-, with IRP and CR corrections)",
+    )
 
 class PfsAssembleCcdTask(AssembleCcdTask):
     def assembleCcd(self, exposure):
@@ -471,6 +475,12 @@ class PfsIsrConnections(PipelineTaskConnections, dimensions=("instrument", "visi
         storageClass="Exposure",
         dimensions=["instrument", "visit", "arm", "spectrograph"],
     )
+    outputRawCube = OutputConnection(
+        name='rawISRCube',
+        doc="Output semi-ISR processed ramp cube.",
+        storageClass="ImageCube",
+        dimensions=["instrument", "visit", "arm", "spectrograph"],
+    )
     preInterpExposure = OutputConnection(
         name='preInterpISRCCD',
         doc="Output ISR processed exposure, with pixels left uninterpolated.",
@@ -543,10 +553,13 @@ class PfsIsrConnections(PipelineTaskConnections, dimensions=("instrument", "visi
 
         if config.doWrite is not True:
             self.outputs.remove("outputExposure")
+            self.outputs.remove("outputRawCube")
             self.outputs.remove("preInterpExposure")
             self.outputs.remove("outputFlattenedThumbnail")
             self.outputs.remove("outputOssThumbnail")
             self.outputs.remove("outputStatistics")
+        if config.h4.doWriteRawCube is not True:
+            self.outputs.remove("outputRawCube")
 
         if config.doSaveInterpPixels is not True:
             self.outputs.remove("preInterpExposure")
@@ -1073,7 +1086,7 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         # All 3-d ramp-based operations are hidden inside this call. After .makeNirExposure()
         # we operate on a 2-d image.
-        exposure = self.makeNirExposure(pfsRaw)
+        exposure, rawRamp = self.makeNirExposure(pfsRaw, self.config.h4.doWriteRawCube)
 
         assert len(exposure.getDetector()) == 1, "Fix me now we have multiple channels"
 
@@ -1084,6 +1097,10 @@ class PfsIsrTask(ipIsr.IsrTask):
         var = exposure.image.array.copy()  # assumes photon noise -- not true for the persistence
         var += 2*channel.getReadNoise()**2  # 2* comes from CDS
         exposure.variance.array[:] = var
+
+        if rawRamp is not None:
+            rawRamp *= gain
+            rawRamp = imageCube.ImageCube.fromCube(rawRamp, exposure.getMetadata())
 
         # darks correct for some defects, so we apply them first.
         if self.config.doDark:
@@ -1115,6 +1132,7 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         return pipeBase.Struct(exposure=exposure,
                                outputExposure=exposure,  # is this needed? Cargo culted from ip_isr isrTask.py
+                               outputRawCube=rawRamp,
                                flattenedThumb=None,
                                ossThumb=None,
                                )
@@ -1149,7 +1167,7 @@ class PfsIsrTask(ipIsr.IsrTask):
         info.setFilter(afwImage.FilterLabel(arm, arm))
         return exposure
 
-    def makeNirExposure(self, pfsRaw):
+    def makeNirExposure(self, pfsRaw, doReturnRawCube=False):
         """Construct a 2D image from the NIR ramp data.
 
         Parameters
@@ -1157,6 +1175,8 @@ class PfsIsrTask(ipIsr.IsrTask):
         pfsRaw : `lsst.obs.pfs.PfsRaw`
             Provides access to the ramp that is to be
             run through ISR.
+        doReturnRawCube : `bool`, optional
+            If True, return the raw ramp cube as well as the 2D image.
 
         Returns
         -------
@@ -1170,6 +1190,7 @@ class PfsIsrTask(ipIsr.IsrTask):
         if self.config.h4.quickCDS:
             self.log.info("creating quick CDS.")
             nirImage = self.makeCDS(pfsRaw)
+            nirCube = None
         else:
             self.log.info("reading full ramp...")
             deltas = self.makeUTRdeltas(pfsRaw)
@@ -1178,13 +1199,18 @@ class PfsIsrTask(ipIsr.IsrTask):
             # but do get them.
             deltas, posIdx, negIdx = self.correctCRs(pfsRaw, deltas)
 
-            # Eventually switch to using the weighted reads up-the-ramp,
-            # but for now simply integrate up the corrected reads.
+            # Eventually switch to weighting the up-the-ramp reads,
+            # but for now simply integrate up the corrected ramp.
             nirImage = np.sum(deltas, axis=0)
+
+            if doReturnRawCube:
+                nirCube = np.cumsum(deltas, axis=0)
+            else:
+                nirCube = None
 
         exposure = self._makeExposure(pfsRaw, nirImage)
 
-        return exposure
+        return exposure, nirCube
 
     def makeRawDataArray(self, pfsRaw, readNum, fromArray=None) -> np.ndarray:
         """Fetch a single data read."""
