@@ -31,6 +31,7 @@ datastore:
     NevenPsf: lsst.daf.butler.formatters.pickle.PickleFormatter
     MultipagePdfFigure: pfs.drp.qa.formatters.PdfMatplotlibFormatter
     QaDict: lsst.daf.butler.formatters.pickle.PickleFormatter
+    ImageCube: lsst.daf.butler.formatters.fitsGeneric.FitsGenericFormatter
   templates:
     default: "{run:/}/{datasetType}.{component:?}/{visit.day_obs:?}/{visit:?}/{datasetType}_{component:?}_{instrument:?}_{visit:?}_{arm:?}{spectrograph:?}_{detector:?}_{run}"
     instrument+detector: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{detector:?}_{run}"  # used for defects
@@ -138,3 +139,5 @@ storageClasses:
       bbox: Box2I  # bounding box
       dimensions: Extent2I  # size of image
       xy0: Point2I  # bounding box origin
+  ImageCube:
+    pytype: lsst.obs.pfs.imageCube.ImageCube

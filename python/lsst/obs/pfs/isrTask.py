@@ -18,10 +18,11 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import os
 import time
+from functools import partial
 
 import numpy as np
 import scipy
@@ -48,6 +49,11 @@ from lsst.pipe.base import Struct, PipelineTaskConnections
 from lsst.daf.butler import DimensionGroup
 
 from pfs.drp.stella.crosstalk import PfsCrosstalkTask
+
+if TYPE_CHECKING:
+    from lsst.afw.image import ExposureF
+    from .imageCube import ImageCube
+    from .raw import PfsRaw
 
 ___all__ = ["IsrTask", "IsrTaskConfig"]
 
@@ -109,7 +115,7 @@ class H4Config(pexConfig.Config):
     IRPfilter = pexConfig.Field(dtype=int, default=15,  # 15..31, probably.
                                 doc="width of smoothing window for IRP corrections. 0=no smoothing. Odd")
     doIRPbadPixels = pexConfig.Field(dtype=bool, default=True,
-                                     doc="Interpolate over known bad IRP row pixels"),
+                                     doc="Interpolate over known bad IRP row pixels")
     doIRPcrosstalk = pexConfig.Field(dtype=bool, default=False,
                                      doc="Correct for data->IRP crosstalk")
 
@@ -124,6 +130,12 @@ class H4Config(pexConfig.Config):
             n4="pfsIpc-2024-07-09T00:10:01.950-112241-n4.fits",
         ),
         doc="Mapping of detector name to IPC kernel filename",
+    )
+
+    useDarkCube = pexConfig.Field(
+        dtype=bool,
+        default=True,
+        doc="Use dark cube for dark subtraction? Disable this to use traditional darks.",
     )
 
 
@@ -228,7 +240,7 @@ def lookupCrosstalkSources(datasetType, registry, dataId, collections):
     return []
 
 
-def lookupBiasDark(datasetType, registry, dataId, collections):
+def lookupBiasDark(datasetType, registry, dataId, collections, allowEmpty=False):
     """Look up a bias or dark frame
 
     This is a lookup function for the IsrTaskConnections PrerequisiteConnection
@@ -277,6 +289,8 @@ def lookupBiasDark(datasetType, registry, dataId, collections):
             pass
 
     if ref1 is None and ref2 is None:
+        if allowEmpty:
+            return []
         raise RuntimeError(f"Unable to find {datasetType} for {dataId}")
     if ref1 is None:
         return [ref2]
@@ -333,7 +347,17 @@ class PfsIsrConnections(PipelineTaskConnections, dimensions=("instrument", "visi
         storageClass="ExposureF",
         dimensions=["instrument", "arm", "spectrograph"],
         isCalibration=True,
-        lookupFunction=lookupBiasDark,
+        lookupFunction=partial(lookupBiasDark, allowEmpty=True),
+        minimum=0,  # allowed to not exist, since we may use nirDark instead
+    )
+    nirDark = PrerequisiteConnection(
+        name="nirDark",
+        doc="Input dark calibration for NIR",
+        storageClass="ImageCube",
+        dimensions=["instrument", "arm", "spectrograph"],
+        isCalibration=True,
+        lookupFunction=partial(lookupBiasDark, allowEmpty=True),
+        minimum=0,  # allowed to not exist, since we may use dark instead
     )
     flat = PrerequisiteConnection(
         name="fiberFlat",
@@ -489,6 +513,7 @@ class PfsIsrConnections(PipelineTaskConnections, dimensions=("instrument", "visi
             self.prerequisiteInputs.remove("defects")
         if config.doDark is not True:
             self.prerequisiteInputs.remove("dark")
+            self.prerequisiteInputs.remove("nirDark")
         if config.doFlat is not True:
             self.prerequisiteInputs.remove("flat")
         if config.doFringe is not True:
@@ -575,20 +600,7 @@ but if you have a sufficiently large cosmic ray flux you might want to reconside
     h4 = pexConfig.ConfigField(
         dtype=H4Config, doc="H4 related configuration")
 
-    # Probably move to .h4, but check -- CPL
     crosstalk = pexConfig.ConfigurableField(target=PfsCrosstalkTask, doc="Inter-CCD crosstalk correction")
-    doIPC = pexConfig.Field(dtype=bool, default=True, doc="Correct for IPC?")
-    ipc = pexConfig.DictField(
-        keytype=str,
-        itemtype=str,
-        default=dict(
-            n1="pfsIpc-2025-01-19T02:39:30.529792-119504-n1.fits",
-            n2="pfsIpc-2024-10-17T07:27:37.087552-115600-n2.fits",
-            n3="pfsIpc-2025-01-19T02:39:30.529792-119504-n3.fits",
-            n4="pfsIpc-2025-01-19T02:39:30.529792-119504-n4.fits",
-        ),
-        doc="Mapping of detector name to IPC kernel filename",
-    )
 
     def setDefaults(self):
         super().setDefaults()
@@ -778,8 +790,16 @@ class PfsIsrTask(ipIsr.IsrTask):
                     exposureMetadata[idKey] = idValue
 
         raw = inputs["ccdExposure"]  # Inheritance requires "ccdExposure", but it's actually a PfsRaw
-        if raw.isNir() and self.config.doIPC:
+        isNir = raw.isNir()
+        if isNir and self.config.h4.doIPC:
             inputs["ipcCoeffs"] = self.readIPC(raw.detector.getName())
+
+        if self.config.doDark:
+            if isNir and self.config.h4.useDarkCube:
+                if inputs["nirDark"] is None:
+                    raise RuntimeError(f"No NIR dark frame found for {raw.detector.getName()}")
+            elif inputs["dark"] is None:
+                raise RuntimeError(f"No dark frame found for {raw.detector.getName()}")
 
         outputs = self.run(**inputs)
         butlerQC.put(outputs, outputRefs)
@@ -981,7 +1001,15 @@ class PfsIsrTask(ipIsr.IsrTask):
         return results
 
     def runH4RG(
-        self, pfsRaw, dark=None, flat=None, defects=None, detectorNum=None, ipcCoeffs=None, **kwargs
+        self,
+        pfsRaw,
+        dark=None,
+        nirDark=None,
+        flat=None,
+        defects=None,
+        detectorNum=None,
+        ipcCoeffs=None,
+        **kwargs,
     ):
         """Specialist instrument signature removal for H4RG detectors
 
@@ -992,7 +1020,10 @@ class PfsIsrTask(ipIsr.IsrTask):
             exposure is modified by this method. With the PfsRaw we
             can get access the ramp cubes.
         dark : `lsst.afw.image.Exposure`, optional
-            Dark exposure to subtract.
+            Dark exposure to subtract (if ``config.h4.useDarkCube`` is
+            ``False``).
+        nirDark : `lsst.obs.pfs.imageCube.ImageCube`, optional
+            Dark cube to subtract (if ``config.h4.useDarkCube`` is ``True``).
         flat : `lsst.afw.image.Exposure`, optional
             Flat-field exposure to divide by.
         defects : `lsst.ip.isr.Defects`, optional
@@ -1020,17 +1051,25 @@ class PfsIsrTask(ipIsr.IsrTask):
                 if k not in ("camera", "crosstalk", "crosstalkSources", "linearizer"):
                     self.log.warn("Unexpected argument for runH4RG: %s", k)
 
-        if self.config.doDark and dark is None:
-            raise RuntimeError("Must supply a dark exposure if config.doDark=True.")
+        if self.config.doDark:
+            if self.config.h4.useDarkCube:
+                if nirDark is None:
+                    raise RuntimeError(
+                        "Must supply a dark cube if config.doDark=True and config.h4.useDarkCube=True."
+                    )
+            elif dark is None:
+                raise RuntimeError(
+                    "Must supply a dark exposure if config.doDark=True and config.h4.useDarkCube=False."
+                )
         if self.config.doFlat and flat is None:
             raise RuntimeError("Must supply a flat exposure if config.doFlat=True.")
         if self.config.doDefect and defects is None:
             raise RuntimeError("Must supply defects if config.doDefect=True.")
         if self.config.h4.doIPC:
             if defects is None:
-                raise RuntimeError("Must supply defects if config.doIPC=True.")
+                raise RuntimeError("Must supply defects if config.h4.doIPC=True.")
             if ipcCoeffs is None:
-                raise RuntimeError("Must supply IPC coefficients if config.doIPC=True.")
+                raise RuntimeError("Must supply IPC coefficients if config.h4.doIPC=True.")
 
         # All 3-d ramp-based operations are hidden inside this call. After .makeNirExposure()
         # we operate on a 2-d image.
@@ -1046,6 +1085,15 @@ class PfsIsrTask(ipIsr.IsrTask):
         var += 2*channel.getReadNoise()**2  # 2* comes from CDS
         exposure.variance.array[:] = var
 
+        # darks correct for some defects, so we apply them first.
+        if self.config.doDark:
+            self.log.info("Applying dark correction.")
+            if self.config.h4.useDarkCube:
+                self.nirDarkCorrection(pfsRaw, exposure, nirDark)
+            else:
+                super().darkCorrection(exposure, dark)
+            super().debugView(exposure, "doDark")
+
         # Any nquarter stuff should be removed after PIPE2D-1200
         nQuarter = exposure.getDetector().getOrientation().getNQuarter()
 
@@ -1059,11 +1107,6 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         if self.config.maskNegativeVariance:
             super().maskNegativeVariance(exposure)
-
-        if self.config.doDark:
-            self.log.info("Applying dark correction.")
-            super().darkCorrection(exposure, dark)
-            super().debugView(exposure, "doDark")
 
         if self.config.doFlat:
             self.log.info("Applying flat correction.")
@@ -2201,6 +2244,50 @@ class PfsIsrTask(ipIsr.IsrTask):
             Exposure to process.
         """
         pass
+
+    def nirDarkCorrection(self, pfsRaw: "PfsRaw", exposure: "ExposureF", dark: "ImageCube") -> None:
+        """Apply NIR dark correction to the exposure
+
+        The NIR dark correction is applied to the exposure in place.
+
+        Parameters
+        ----------
+        pfsRaw : `lsst.obs.pfs.PfsRaw`
+            Access to the raw ramp
+        exposure : `lsst.afw.image.ExposureF`
+            Exposure to correct.
+        dark : `lsst.obs.pfs.dark.ImageCube`
+            Dark correction to apply.
+        """
+
+        nObjRead = pfsRaw.getNumReads()
+        nDarkRead = dark.getNumReads()
+        if nObjRead > nDarkRead:
+            darkScale = nObjRead/nDarkRead
+            self.log.warn(f"More reads in object ({nObjRead}) than dark ({nDarkRead}); "
+                          f"scaling dark by {darkScale:0.3f}")
+        else:
+            darkScale = 1.0
+            nDarkRead = nObjRead
+        try:
+            darkImage = dark[nDarkRead-1]
+        except Exception as e:
+            self.log.warn(f"No dark image available for NIR dark correction of read {nDarkRead}: {e}")
+            return
+
+        darkArray = darkImage.array.copy()
+        darkArray *= darkScale
+
+        # This should be pulled out into some NirDark class
+        # The dark imageCube itself has no variance, so we need to add it
+        # Readnoise needs to be worked out: the dark cube is from a stack of darks, and we use UTR to
+        #    get to our selected read. But as of 2025-03 there is observably more read noise than expected.
+        readNoise = dark.metadata["READNOISE"]
+        varArray = darkArray.copy()  # assumes photon noise
+        varArray += (readNoise/np.sqrt(nDarkRead))**2
+        darkImage = afwImage.makeMaskedImageFromArrays(darkArray, None, varArray)
+
+        exposure.maskedImage -= darkImage
 
     def _getMetadataName(self):
         return None                     # don't write metadata; requires fix to ip_isr
