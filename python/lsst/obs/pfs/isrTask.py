@@ -796,8 +796,10 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         if self.config.doDark:
             if isNir and self.config.h4.useDarkCube:
-                if inputs["nirDark"] is None:
-                    raise RuntimeError(f"No NIR dark frame found for {raw.detector.getName()}")
+                if inputs.get("nirDark") is None:
+                    raise RuntimeError(
+                        f"No NIR dark frame found for {raw.detector.getName()}; try h4.useDarkCube=False"
+                    )
             elif inputs["dark"] is None:
                 raise RuntimeError(f"No dark frame found for {raw.detector.getName()}")
 
