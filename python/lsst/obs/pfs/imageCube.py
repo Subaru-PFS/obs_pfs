@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 import astropy.io.fits
@@ -210,6 +210,48 @@ class ImageCube:
         """Read all images into cache"""
         for hdu in self.fits[1:]:
             self[self._getHduIndex(hdu.name)] = ImageF(hdu.data.astype(np.float32, copy=False))
+
+    def getReadArray(self, index: int) -> np.ndarray:
+        """Return the image for the given index, but do *not* cache it if it is not already cached
+
+        Parameters
+        ----------
+        index : `int`
+            The index of the image. 0-based.
+
+        Returns
+        -------
+        image : `np.ndarray`
+            The image.
+        """
+        if index in self._images:
+            return self._images[index].array
+        return self.fits[self._getHduName(index)].data.astype(np.float32, copy=False)
+
+    def getImageCube(self, nreads: Optional[int] = None) -> np.ndarray:
+        """Return the image cube as a 3D numpy array, trying not to cache new reads.
+
+        The images are stacked along the first axis, so the shape of the
+        returned array is (nreads, height, width).
+
+        Parameters
+        ----------
+        nreads : `int`
+            The number of reads to return. If None, return all reads.
+
+        Returns
+        -------
+        imageCube : `np.ndarray`
+            The (nreads, height, width) ndarray.
+        """
+
+        if nreads is None:
+            nreads = self.nreads
+        ret = np.empty((nreads, self.fits[1].data.shape[0], self.fits[1].data.shape[1]),
+                       dtype=np.float32)
+        for i in range(nreads):
+            ret[i] = self.getReadArray(i)
+        return ret
 
     def writeFits(self, path: str) -> None:
         """Write the images
