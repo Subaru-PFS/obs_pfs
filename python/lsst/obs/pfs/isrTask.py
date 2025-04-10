@@ -48,6 +48,7 @@ from lsst.pipe.base.connectionTypes import Output as OutputConnection
 from lsst.pipe.base import Struct, PipelineTaskConnections
 from lsst.daf.butler import DimensionGroup
 
+from . import imageCube
 from pfs.drp.stella.crosstalk import PfsCrosstalkTask
 
 if TYPE_CHECKING:
@@ -136,6 +137,16 @@ class H4Config(pexConfig.Config):
         dtype=bool,
         default=True,
         doc="Use dark cube for dark subtraction? Disable this to use traditional darks.",
+    )
+    applyUTRWeights = pexConfig.Field(
+        dtype=bool,
+        default=True,
+        doc="Apply UTR weights to the ramp cube? Disable this to use CDS.",
+    )
+    doWriteRawCube = pexConfig.Field(
+        dtype=bool,
+        default=False,
+        doc="write out raw-ish ISRCube (UTR, e-, with IRP and CR corrections)",
     )
 
 
@@ -471,6 +482,12 @@ class PfsIsrConnections(PipelineTaskConnections, dimensions=("instrument", "visi
         storageClass="Exposure",
         dimensions=["instrument", "visit", "arm", "spectrograph"],
     )
+    outputRawCube = OutputConnection(
+        name='rawISRCube',
+        doc="Output semi-ISR processed ramp cube.",
+        storageClass="ImageCube",
+        dimensions=["instrument", "visit", "arm", "spectrograph"],
+    )
     preInterpExposure = OutputConnection(
         name='preInterpISRCCD',
         doc="Output ISR processed exposure, with pixels left uninterpolated.",
@@ -543,10 +560,13 @@ class PfsIsrConnections(PipelineTaskConnections, dimensions=("instrument", "visi
 
         if config.doWrite is not True:
             self.outputs.remove("outputExposure")
+            self.outputs.remove("outputRawCube")
             self.outputs.remove("preInterpExposure")
             self.outputs.remove("outputFlattenedThumbnail")
             self.outputs.remove("outputOssThumbnail")
             self.outputs.remove("outputStatistics")
+        if config.h4.doWriteRawCube is not True:
+            self.outputs.remove("outputRawCube")
 
         if config.doSaveInterpPixels is not True:
             self.outputs.remove("preInterpExposure")
@@ -798,7 +818,7 @@ class PfsIsrTask(ipIsr.IsrTask):
             if isNir and self.config.h4.useDarkCube:
                 if inputs.get("nirDark") is None:
                     raise RuntimeError(
-                        f"No NIR dark frame found for {raw.detector.getName()}; try h4.useDarkCube=False"
+                        f"No NIR dark cube found for {raw.detector.getName()}; try h4.useDarkCube=False"
                     )
             elif inputs["dark"] is None:
                 raise RuntimeError(f"No dark frame found for {raw.detector.getName()}")
@@ -1063,6 +1083,8 @@ class PfsIsrTask(ipIsr.IsrTask):
                 raise RuntimeError(
                     "Must supply a dark exposure if config.doDark=True and config.h4.useDarkCube=False."
                 )
+        else:
+            nirDark = None
         if self.config.doFlat and flat is None:
             raise RuntimeError("Must supply a flat exposure if config.doFlat=True.")
         if self.config.doDefect and defects is None:
@@ -1075,7 +1097,7 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         # All 3-d ramp-based operations are hidden inside this call. After .makeNirExposure()
         # we operate on a 2-d image.
-        exposure = self.makeNirExposure(pfsRaw)
+        exposure, rawRamp = self.makeNirExposure(pfsRaw, nirDark, self.config.h4.doWriteRawCube)
 
         assert len(exposure.getDetector()) == 1, "Fix me now we have multiple channels"
 
@@ -1087,13 +1109,13 @@ class PfsIsrTask(ipIsr.IsrTask):
         var += 2*channel.getReadNoise()**2  # 2* comes from CDS
         exposure.variance.array[:] = var
 
-        # darks correct for some defects, so we apply them first.
-        if self.config.doDark:
-            self.log.info("Applying dark correction.")
-            if self.config.h4.useDarkCube:
-                self.nirDarkCorrection(pfsRaw, exposure, nirDark)
-            else:
-                super().darkCorrection(exposure, dark)
+        if rawRamp is not None:
+            rawRamp *= gain
+            rawRamp = imageCube.ImageCube.fromCube(rawRamp, exposure.getMetadata())
+
+        if self.config.doDark and not self.config.h4.useDarkCube:
+            self.log.info("Applying simple dark correction.")
+            super().darkCorrection(exposure, dark)
             super().debugView(exposure, "doDark")
 
         # Any nquarter stuff should be removed after PIPE2D-1200
@@ -1105,6 +1127,8 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         if self.config.doDefect:
             self.log.info("Masking defects.")
+            if not self.config.h4.useDarkCube:
+                self.log.warning("Masking defects, but dark cube not used")
             super().maskAndInterpolateDefects(exposure, defects)
 
         if self.config.maskNegativeVariance:
@@ -1117,6 +1141,7 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         return pipeBase.Struct(exposure=exposure,
                                outputExposure=exposure,  # is this needed? Cargo culted from ip_isr isrTask.py
+                               outputRawCube=rawRamp,
                                flattenedThumb=None,
                                ossThumb=None,
                                )
@@ -1151,7 +1176,105 @@ class PfsIsrTask(ipIsr.IsrTask):
         info.setFilter(afwImage.FilterLabel(arm, arm))
         return exposure
 
-    def makeNirExposure(self, pfsRaw):
+    def calcUTRWeights(self, nreads: int) -> np.ndarray:
+        """Compute the weights for linear UTR, per Eq 4.24 in RHL
+
+        Parameters
+        ----------
+        nreads : `int`
+            The number of reads to use in the UTR calculation.
+
+        Returns
+        -------
+        `np.ndarray`
+            The weights to apply to the reads.
+        """
+        n = float(nreads)
+        w = []
+        for i in range(nreads):
+            k = (12*i - 6*(n-1))/(n*(n*n - 1))
+            w.append(k)
+        return np.array(w)
+
+    def calcUTRrates(self, cube: np.ndarray, nreads: Optional[int] = None) -> np.ndarray:
+        """Apply UTR weights to the ramp reads to estimate a per-pixel arrival rate.
+
+        Parameters
+        ----------
+        cube : `np.ndarray`
+            The ramp cube to apply UTR to.
+        nreads : `int`, optional
+            The number of reads to use in the UTR calculation. default=all cube reads.
+
+        Returns
+        -------
+        `np.ndarray`
+            The estimated per-pixel arrival rate.
+        """
+        if nreads is None:
+            n_i = len(cube)
+        else:
+            n_i = nreads
+        rate_sum = np.zeros_like(cube[0])
+        weights = self.calcUTRWeights(n_i)
+        for i in range(n_i):
+            k = weights[i]
+            s1 = k*cube[i]
+            rate_sum += s1
+
+        return rate_sum
+
+    def getDarkCube(self, nirDark, nreads: Optional[int] = None) -> np.ndarray:
+        """Get the dark cube for the NIR ramp.
+
+        Parameters
+        ----------
+        nirDark : `lsst.obs.pfs.imageCube.ImageCube`
+            The unprocessed to subtract.
+
+        Returns
+        -------
+        `np.ndarray`
+            The dark cube to subtract.
+        """
+
+        #
+        cube = nirDark.getImageCube(nreads=nreads)
+        # If gain was applied, back it out. We used to apply darks to the
+        # 2-d image in e-, but have switch to applying it to the raw rampin ADU.
+        gain = nirDark.metadata.get("GAIN", 1.0)
+        if gain != 1.0:
+            cube /= gain
+        return cube
+
+    def getDarkRead(self, nirDark, readNum) -> np.ndarray:
+        """Get the dark read for the NIR ramp.
+
+        This wraps the fact that we switched from post-gain darks to
+        pre-gain darks.
+
+        Parameters
+        ----------
+        nirDark : `lsst.obs.pfs.imageCube.ImageCube`
+            The unprocessed dark cube.
+        readNum : `int`
+            The read number to get.
+
+        Returns
+        -------
+        `np.ndarray`
+            The dark read.
+        """
+
+        dark = nirDark[readNum].array
+
+        # If gain was applied, back it out.
+        gain = nirDark.metadata.get("GAIN", 1.0)
+        if gain != 1.0:
+            dark /= gain
+        return dark
+
+    def makeNirExposure(self, pfsRaw, nirDark=None, doReturnRawCube=False):
         """Construct a 2D image from the NIR ramp data.
 
         Parameters
@@ -1159,6 +1282,10 @@ class PfsIsrTask(ipIsr.IsrTask):
         pfsRaw : `lsst.obs.pfs.PfsRaw`
             Provides access to the ramp that is to be
             run through ISR.
+        nirDark : `lsst.obs.pfs.imageCube.ImageCube`, optional
+            Dark cube to subtract (if ``config.h4.useDarkCube`` is ``True``).
+        doReturnRawCube : `bool`, optional
+            If True, return the raw ramp cube as well as the 2D image.
 
         Returns
         -------
@@ -1167,26 +1294,47 @@ class PfsIsrTask(ipIsr.IsrTask):
         """
 
         if pfsRaw.irpN > 1:
-            raise NotImplementedError('can only deal with IRP1 for now')
+            raise NotImplementedError('have only tested IRP1 for now')
 
         if self.config.h4.quickCDS:
             self.log.info("creating quick CDS.")
             nirImage = self.makeCDS(pfsRaw)
+            flux = None
         else:
+            # Too many interacting switches for CDS/UTR/darks. Especially note 2-d doDark is still possible.
             self.log.info("reading full ramp...")
             deltas = self.makeUTRdeltas(pfsRaw)
 
             # We do not currently use the indices of the masked pixels,
-            # but do get them.
+            # but do get them for when we put in the effort.
             deltas, posIdx, negIdx = self.correctCRs(pfsRaw, deltas)
 
-            # Eventually switch to using the weighted reads up-the-ramp,
-            # but for now simply integrate up the corrected reads.
-            nirImage = np.sum(deltas, axis=0)
+            # Switch to accumulated flux for dark subtraction and
+            # UTR weighting. This is actually pretty expensive; should
+            # rethink.
+            # But do at least save memory by doing this in place
+            flux = np.nancumsum(deltas, axis=0, out=deltas)
+            del deltas  # Get rid of the name to avoid stupidities
+
+            if self.config.h4.applyUTRWeights:
+                if nirDark is not None:
+                    self.log.info("subtracting dark cube.")
+                    darkCube = self.getDarkCube(nirDark, len(flux))
+                    flux -= darkCube
+
+                self.log.info("applying UTR weights.")
+                rates = self.calcUTRrates(flux)
+                nirImage = rates * len(flux)
+            else:
+                # CDS, basically.
+                if nirDark is not None:
+                    nirImage = ((flux[-1] - self.getDarkRead(nirDark, len(flux)-1)) -
+                                (flux[0] - self.getDarkRead(nirDark, 0)))
+                else:
+                    nirImage = flux[-1] - flux[0]
 
         exposure = self._makeExposure(pfsRaw, nirImage)
-
-        return exposure
+        return exposure, flux if doReturnRawCube else None
 
     def makeRawDataArray(self, pfsRaw, readNum, fromArray=None) -> np.ndarray:
         """Fetch a single data read."""
@@ -1435,19 +1583,23 @@ class PfsIsrTask(ipIsr.IsrTask):
         posIdx = np.argmax(deltas, axis=0, keepdims=True)
         negIdx = np.argmin(deltas, axis=0, keepdims=True)
 
-        self.repairWithWindow(deltas, posIdx,
-                              corrRad, corrMin, corrMax,
-                              otherIgnore=negIdx)
-
-        # Need to correct for masking every max read. One way is to mask every
-        # min read. I hate this.
-        if True:
-            self.repairWithWindow(deltas, negIdx,
-                                  corrRad, corrMin, corrMax,
-                                  otherIgnore=posIdx)
+        if False:  # Instead of repairing pixels, mask them for later processing.
+            np.put_along_axis(deltas, posIdx, axis=0, values=np.nan)
+            np.put_along_axis(deltas, negIdx, axis=0, values=np.nan)
         else:
-            negIdx *= 0
-            self.log.warn('NOT accounting for min pixels in CR step.')
+            self.repairWithWindow(deltas, posIdx,
+                                  corrRad, corrMin, corrMax,
+                                  otherIgnore=negIdx)
+
+            # Need to correct for masking every max read. One way is to mask every
+            # min read. I hate this.
+            if True:
+                self.repairWithWindow(deltas, negIdx,
+                                      corrRad, corrMin, corrMax,
+                                      otherIgnore=posIdx)
+            else:
+                negIdx *= 0
+                self.log.warn('NOT accounting for min pixels in CR step.')
 
         # we mask/replace two reads for every single pixel. Let the caller decide
         # what to do about that, but return the indices of both.
