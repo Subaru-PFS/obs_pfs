@@ -241,3 +241,27 @@ class PfsCalibratedFormatter(PfsTargetSpectraFormatter):
 
 class PfsCoaddFormatter(PfsTargetSpectraFormatter):
     PfsTargetSpectraClass = "PfsCoadd"
+
+
+_pfsConfigEditor = None
+
+
+class PfsConfigFormatter(FitsGenericFormatter):
+    """Formatter for PfsConfig
+
+    Applies read-time updates to the pfsConfig object.
+    """
+    def read_from_local_file(self, path: str, component: str | None = None, expected_size: int = -1) -> Any:
+        # Docstring inherited.
+        from pfs.drp.stella.datamodel.pfsConfig import PfsConfig
+
+        path = self.file_descriptor.location.path
+        pfsConfig = PfsConfig.readFits(path)
+
+        global _pfsConfigEditor
+        if _pfsConfigEditor is None:
+            from .pfsConfigEditor import PfsConfigEditor
+            _pfsConfigEditor = PfsConfigEditor()
+
+        pfsConfig = _pfsConfigEditor(pfsConfig)
+        return pfsConfig
