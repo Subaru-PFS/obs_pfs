@@ -401,6 +401,18 @@ elements:
     storage:
       cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
 
+  obj_group:
+    doc: >
+      Groups of objects within the same catalog.
+      This serves to sub-divide a cat_id for a particular combination of visits.
+    keys:
+      -
+        name: id
+        type: int
+    requires: [combination, cat_id]
+    storage:
+      cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
+
   pfsConfig:
     doc: >
       A join table that provides the catId present in each visit. This
