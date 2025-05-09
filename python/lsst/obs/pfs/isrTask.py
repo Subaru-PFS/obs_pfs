@@ -624,7 +624,9 @@ but if you have a sufficiently large cosmic ray flux you might want to reconside
 
     def setDefaults(self):
         super().setDefaults()
-        self.overscan.fitType = "MEANCLIP"
+        self.overscan.fitType = "AKIMA_SPLINE"
+        self.overscan.order = 30
+        self.fwhm = 2.5
         self.doLinearize = False
         self.doCrosstalk = False
         self.doBrighterFatter = False
