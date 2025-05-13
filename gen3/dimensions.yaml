@@ -386,6 +386,7 @@ elements:
         name: name  # Symbolic name for the combination (easier to refer to than a big number)
         type: string
         length: 64
+    metadata:
       -
         name: pfs_visit_hash
         type: int  # Needs to be 64 bits, but "int" should be sufficient
