@@ -454,6 +454,8 @@ elements:
     storage:
       cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
 
+  # visit_group is deprecated: no longer needed since PIPE2D-1683
+  # It will be removed once we don't need data processed before 2025 June.
   visit_group:
     doc: >
       A group of visits to be processed together, comprised of one or
@@ -514,6 +516,7 @@ elements:
     storage:
       cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
 
+  # visit_group_join is deprecated: no longer needed since PIPE2D-1683
   visit_group_join:
     doc: >
       A many-to-many join table that relates exposures to the visits they
