@@ -31,7 +31,8 @@ datastore:
     NevenPsf: lsst.daf.butler.formatters.pickle.PickleFormatter
     MultipagePdfFigure: pfs.drp.qa.formatters.PdfMatplotlibFormatter
     QaDict: lsst.daf.butler.formatters.pickle.PickleFormatter
-    ImageCube: lsst.daf.butler.formatters.fitsGeneric.FitsGenericFormatter
+    ImageCube: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+    ObjectGroupMap: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
   templates:
     default: "{run:/}/{datasetType}.{component:?}/{visit.day_obs:?}/{visit:?}/{datasetType}_{component:?}_{instrument:?}_{visit:?}_{arm:?}{spectrograph:?}_{detector:?}_{run}"
     instrument+detector: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{detector:?}_{run}"  # used for defects
@@ -42,11 +43,13 @@ datastore:
     instrument+visit+arm: "{run:/}/{datasetType}.{component:?}/{visit.day_obs:?}/{visit:?}/{datasetType}_{component:?}_{instrument:?}_{visit:?}_{arm:?}_{run}"
     instrument+arm: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{arm:?}_{run}"
     instrument+combination+cat_id: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{combination:?}_{cat_id:?}_{run}"
+    instrument+combination+cat_id+obj_group: "{run:/}/{datasetType}.{component:?}/{cat_id:?}/{datasetType}_{component:?}_{instrument:?}_{combination:?}_{cat_id:?}_{obj_group:?}_{run}"
     instrument+profiles_run+profiles_group: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{profiles_run:?}_{profiles_group:?}_{run}"
     instrument+profiles_run+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{profiles_run:?}_{arm:?}{spectrograph:?}_{run}"
     instrument+profiles_run+profiles_group+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{profiles_run:?}_{profiles_group:?}_{arm:?}{spectrograph:?}_{run}"
     instrument+profiles_run+profiles_group+visit+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{visit.day_obs:?}/{visit:?}/{datasetType}_{component:?}_{instrument:?}_{profiles_run:?}_{profiles_group:?}_{visit:?}_{arm:?}{spectrograph:?}_{run}"
     instrument+visit_group+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{visit_group.day_obs:?}/{visit_group:?}/{datasetType}_{component:?}_{instrument:?}_{visit_group:?}_{arm:?}{spectrograph:?}_{run}"
+    instrument+combination: "{run:/}/{datasetType}.{component:?}/{combination:?}/{datasetType}_{component:?}_{instrument:?}_{combination:?}_{run}"
 
 registry:
   db: sqlite:///<butlerRoot>/gen3.sqlite3
@@ -141,3 +144,5 @@ storageClasses:
       xy0: Point2I  # bounding box origin
   ImageCube:
     pytype: lsst.obs.pfs.imageCube.ImageCube
+  ObjectGroupMap:
+    pytype: pfs.datamodel.objectGroupMap.ObjectGroupMap

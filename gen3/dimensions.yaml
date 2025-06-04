@@ -1,5 +1,5 @@
 # Modifications of the contents of this file should also increment the version.
-version: 2
+version: 3
 namespace: pfs
 
 skypix:
@@ -386,6 +386,7 @@ elements:
         name: name  # Symbolic name for the combination (easier to refer to than a big number)
         type: string
         length: 64
+    metadata:
       -
         name: pfs_visit_hash
         type: int  # Needs to be 64 bits, but "int" should be sufficient
@@ -398,6 +399,18 @@ elements:
       A join table for combinations of visits.
     requires: [combination, visit]
     always_join: true
+    storage:
+      cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
+
+  obj_group:
+    doc: >
+      Groups of objects within the same catalog.
+      This serves to sub-divide a cat_id for a particular combination of visits.
+    keys:
+      -
+        name: id
+        type: int
+    requires: [combination, cat_id]
     storage:
       cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
 
