@@ -107,7 +107,7 @@ class PfsRawIngestTask(RawIngestTask):
             `RawExposureData.dataId` attributes will be minimal (unexpanded)
             `~lsst.daf.butler.DataCoordinate` instances.
         """
-        exposureDimensions = self.universe["visit"].dimensions
+        exposureDimensions = self.universe["visit"].minimal_group
         byExposure = defaultdict(list)
         for f in files:
             # Assume that the first dataset is representative for the file.
@@ -436,19 +436,19 @@ class PfsRawIngestTask(RawIngestTask):
             group_id=obsInfo.visit_id,
             datetime_begin=obsInfo.datetime_begin,
             datetime_end=obsInfo.datetime_end,
-            exposure_time=obsInfo.exposure_time.to_value("s"),
+            exposure_time=float(obsInfo.exposure_time.to_value("s")),
             # we are not mandating that dark_time be calculable
-            dark_time=obsInfo.dark_time.to_value("s") if obsInfo.dark_time is not None else None,
+            dark_time=float(obsInfo.dark_time.to_value("s")) if obsInfo.dark_time is not None else None,
             observation_type=obsInfo.observation_type,
             observation_reason=obsInfo.observation_reason,
             day_obs=obsInfo.observing_day,
             seq_num=obsInfo.observation_counter,
             science_program=obsInfo.science_program,
             target_name=obsInfo.object,
-            tracking_ra=ra,
-            tracking_dec=dec,
+            tracking_ra=float(ra),
+            tracking_dec=float(dec),
             sky_angle=sky_angle,
-            zenith_angle=zenith_angle,
+            zenith_angle=float(zenith_angle),
             pfs_design_id=obsInfo.ext_pfs_design_id,  # type: ignore[attr-defined]
             dither=quantizeDither(obsInfo.ext_dither),  # type: ignore[attr-defined]
             shift=obsInfo.ext_shift,  # type: ignore[attr-defined]
