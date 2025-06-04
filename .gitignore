@@ -1,7 +1,7 @@
 *.pyc
 
-pfs/defects/defectRegistry.sqlite3
 python/lsst/obs/pfs/version.py
+python/lsst_obs_pfs.dist-info
 ups/obs_pfs.cfgc
 .sconf_temp
 .sconsign.dblite
