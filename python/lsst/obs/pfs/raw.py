@@ -437,7 +437,7 @@ class PfsRaw:
         if isBadVersion:
             xc, yc = 3280, 3545
             Rx, Ry = 40, 35
-            image.array[yc - Ry:yc + Ry + 1, xc - Rx:xc + Rx + 1] = np.NaN
+            image.array[yc - Ry:yc + Ry + 1, xc - Rx:xc + Rx + 1] = np.nan
 
         if bbox is not None:
             image = image[bbox]
