@@ -20,7 +20,7 @@
 
 """Gen3 Butler registry declarations for Prime Focus Spectrograph."""
 
-__all__ = ("PrimeFocusSpectrograph", "PfsSimulator", "PfsDevelopment")
+__all__ = ("PrimeFocusSpectrograph", "PfsSimulator", "PfsDevelopment", "PfsLab")
 
 import os
 
@@ -50,7 +50,7 @@ class PrimeFocusSpectrograph(Instrument):
     policyName = "pfs"
     obsDataPackage = "drp_pfs_data"
     filterDefinitions = pfsFilterDefinitions
-    pfsCategory: Optional[Literal["F", "L", "S"]] = None
+    pfsCategory: Optional[Literal["F", "J", "L", "S"]] = None
     standardCuratedDatasetTypes = frozenset(["defects"])
 
     def __init__(self, **kwargs):
@@ -75,7 +75,7 @@ class PrimeFocusSpectrograph(Instrument):
                 "instrument",
                 {
                     "name": instrument,
-                    "detector_max": 20,
+                    "detector_max": 24,
                     "visit_max": obsMax,
                     "class_name": get_full_type_name(self),
                 },
@@ -87,6 +87,7 @@ class PrimeFocusSpectrograph(Instrument):
                 2,
                 3,
                 4,
+                8,
             ):  # 0 means not really a spectrograph (e.g., guiders)
                 registry.syncDimensionData(
                     "spectrograph",
@@ -193,6 +194,7 @@ class PrimeFocusSpectrograph(Instrument):
         return {
             None: PfsRawFormatter,
             "S": PfsRawFormatter,
+            "J": PfsRawFormatter,
             "F": PfsSimulatorRawFormatter,
             "L": PfsDevelopmentRawFormatter,
         }[self.pfsCategory]
@@ -236,6 +238,13 @@ class PrimeFocusSpectrograph(Instrument):
         return os.path.join(
             cls.getObsDataPackageDir(), "curated", cls.policyName, datasetTypeName
         )
+
+
+class PfsLab(PrimeFocusSpectrograph):
+    """Instrument used for PFS lab data at JHU"""
+
+    pass
+    # pfsCategory = "J"
 
 
 class PfsSimulator(PrimeFocusSpectrograph):

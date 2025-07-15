@@ -1,4 +1,5 @@
 import os
+import pathlib
 
 import numpy as np
 import astropy.units as u
@@ -50,16 +51,13 @@ class PfsTranslator(SubaruTranslator):
         "detector_group": "W_SPMOD",
         "detector_serial": "DETECTOR",
         "detector_unique_name": "DETECTOR",
-        "exposure_id": "W_VISIT",
         "exposure_group": ("W_PFDSNM", dict(default="")),
         "exposure_time": ("EXPTIME", dict(unit=u.s)),
         "focus_z": ("FOC-VAL", dict(unit=u.um, default=np.nan)),
-        "observation_id": "W_VISIT",
         "pressure": ("OUT-PRS", dict(unit=u.hPa, default=np.nan)),
         "relative_humidity": ("OUT-HUM", dict(default=np.nan)),
         "science_program": ("PROP-ID", dict(default="unknown")),
         "temperature": ("OUT-TMP", dict(unit=u.K, default=np.nan)),
-        "visit_id": "W_VISIT",
         "ext_spectrograph": "W_SPMOD",
         "ext_pfs_design_id": "W_PFDSGN",
         "ext_dither": "W_ENFCAZ",
@@ -96,7 +94,8 @@ class PfsTranslator(SubaruTranslator):
             `True` if the header is recognized by this class. `False`
             otherwise.
         """
-        return "INSTRUME" in header and header["INSTRUME"] == "PFS"
+        return (("INSTRUME" in header and header["INSTRUME"] == "PFS") or
+                ("SLIT" in header and header["SLIT"] == "PFS"))
 
     def from_header_string(self, *keywords):
         """Return the first non-empty value from the header
@@ -122,6 +121,30 @@ class PfsTranslator(SubaruTranslator):
         return None
 
     @cache_translation
+    def to_visit_id(self):
+        if self._header["W_SITE"] == "J":
+            path = pathlib.Path(self.filename)
+            visit_id = int(path.stem[4:-2], base=10)
+        else:
+            visit_id = self._header["W_VISIT"]
+        return visit_id
+
+    @cache_translation
+    def to_exposure_id(self):
+        return self.to_visit_id()
+
+    @cache_translation
+    def to_observation_id(self):
+        if self._header["W_SITE"] == "J":
+            path = pathlib.Path(self.filename)
+            visit_id = path.stem[4:-2]
+        else:
+            visit_id = str(self._header["W_VISIT"])
+        return visit_id
+
+
+
+    @cache_translation
     def to_object(self):
         # IMAGETYP is to support the simulator, which doesn't set OBJECT
         value = self.from_header_string("OBJECT", "IMAGETYP")
@@ -129,8 +152,8 @@ class PfsTranslator(SubaruTranslator):
 
     @cache_translation
     def to_altaz_begin(self):
-        if "ALTITUDE" not in self._header or "AZIMUTH" not in self._header:
-            return AltAz(0.0*u.deg, 0.0*u.deg, obstime=self.to_datetime_begin(),
+        if "ALTITUDE" not in self._header or "AZIMUTH" not in self._header or self._header["ALTITUDE"] == 'no available value':
+            return AltAz(90.0*u.deg, 0.0*u.deg, obstime=self.to_datetime_begin(),
                          location=self.to_location())
         return altaz_from_degree_headers(self, (("ALTITUDE", "AZIMUTH"),),
                                          self.to_datetime_begin())
@@ -174,6 +197,10 @@ class PfsTranslator(SubaruTranslator):
         # Guess for what we'll use in the future
         ra = self._header["RA2000"] if "RA2000" in self._header else 0.0
         dec = self._header["DEC2000"] if "DEC2000" in self._header else 0.0
+        if ra == 'no available value':
+            ra = 0.0
+        if dec == 'no available value':
+            dec = 0.0
         radec = SkyCoord(ra, dec, frame="fk5", unit=(u.hourangle, u.deg),
                          obstime=self.to_datetime_begin(), location=self.to_location()).transform_to("icrs")
         self._used_these_cards("RA2000", "DEC2000")
@@ -183,7 +210,7 @@ class PfsTranslator(SubaruTranslator):
     def to_instrument(self):
         site = self._header["W_SITE"]
         self._used_these_cards("W_SITE")
-        return "PFS" if site == "S" else f"PFS-{site}"
+        return "PFS" if site in {"S", "J"} else f"PFS-{site}"
 
     @cache_translation
     def to_dark_time(self):
