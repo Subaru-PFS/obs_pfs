@@ -415,7 +415,9 @@ class PfsRawIngestTask(RawIngestTask):
         if obsInfo.altaz_begin is not None:
             zenith_angle = obsInfo.altaz_begin.zen.degree
             azimuth = obsInfo.altaz_begin.az.degree
-
+        else:
+            zenith_angle = 0.0
+            azimuth = 0.0
         extras: dict[str, Any] = {}
         for meta_key, info_key in (
             ("has_simulated", "has_simulated_content"),
