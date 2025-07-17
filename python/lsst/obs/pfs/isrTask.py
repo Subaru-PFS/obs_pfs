@@ -2224,7 +2224,8 @@ class PfsIsrTask(ipIsr.IsrTask):
         else:
             return fix_w
 
-    def makeUTRdeltas(self, pfsRaw, r0=0, r1=-1, nreads=None, bbox=None,
+    def makeUTRdeltas(self, pfsRaw, r0=0, r1=-1, nreads=None,
+                      bbox=None, selectPixels=None,
                       showTimes=False) -> np.ndarray:
         """Return all the fully IRP-corrected frames in a single 3d stack.
 
@@ -2253,6 +2254,8 @@ class PfsIsrTask(ipIsr.IsrTask):
             Whether to apply known corrections to the IRP images.
         bbox : `lsst.geom.Box2I`
             The region of the image to return. If None, return the whole image.
+        selectPixels : `(np.array,np.array)`
+            lists of (x, y) pixels to select instead of using a bbox.
 
         Returns
         -------
@@ -2277,7 +2280,7 @@ class PfsIsrTask(ipIsr.IsrTask):
         # from disk.
         #
         badChans = self.loadBadAsicChannels(pfsRaw.detector.getName())
-        if badChans is not None:
+        if badChans:
             rawData = self.makeRawDataCube(pfsRaw=pfsRaw, r0=r0, r1=r1, nreads=nreads)
             rawIrps = self.makeRawIrpNcube(pfsRaw=pfsRaw, r0=r0, r1=r1, nreads=nreads)
 
@@ -2299,10 +2302,13 @@ class PfsIsrTask(ipIsr.IsrTask):
         self.applyIRPcrosstalk(pfsRaw, irp0, data0)
 
         # We are not squirreling away the bbox, but really should for the final Exposure
-        if bbox is None:
-            stackShape = (nreads-1, *data0.shape)
-        else:
+        if bbox is not None:
             stackShape = (nreads-1, bbox.getHeight(), bbox.getWidth())
+        elif selectPixels is not None:
+            stackShape = (nreads-1, 1, len(selectPixels[0]))
+        else:
+            stackShape = (nreads-1, *data0.shape)
+
         stack = np.empty(shape=stackShape, dtype='f4')
         for r_idx, r_i in enumerate(reads):
             if r_idx == 0:
@@ -2319,11 +2325,13 @@ class PfsIsrTask(ipIsr.IsrTask):
             dirp = irp1 - irp0
             ddata = data1 - data0
             ddata -= self.getFinalDiffIrp(pfsRaw, dirp)
-            if bbox is None:
-                stack[r_idx-1, :, :] = ddata
-            else:
+            if bbox is not None:
                 stack[r_idx-1, :, :] = ddata[bbox.getBeginY():bbox.getEndY(),
                                              bbox.getBeginX():bbox.getEndX()]
+            elif selectPixels is not None:
+                stack[r_idx-1, 0, :] = ddata[selectPixels[1], selectPixels[0]]
+            else:
+                stack[r_idx-1, :, :] = ddata
             t2 = time.time()
             if showTimes:
                 print(f'cds {r_i} io1={t1-t0:0.3f} proc={t2-t1:0.3f}')
