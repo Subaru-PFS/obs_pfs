@@ -23,6 +23,7 @@ datastore:
     PfsObjectSpectra: lsst.obs.pfs.formatters.PfsObjectSpectraFormatter  # deprecated
     PfsCalibrated: lsst.obs.pfs.formatters.PfsCalibratedFormatter
     PfsCoadd: lsst.obs.pfs.formatters.PfsCoaddFormatter
+    PfsCoZCandidates: lsst.obs.pfs.formatters.PfsCoZCandidatesFormatter
     SkyModel: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     FocalPlaneFunction: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     ArcLineSet: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
@@ -109,6 +110,15 @@ storageClasses:
       - obj_id  # Object identifier
     derivedComponents:
       single: PfsObject  # Single spectrum; requires objId/obj_id
+  PfsCoZCandidates:
+    pytype: pfs.datamodel.pfsCoZCandidates.PfsCoZCandidates
+    parameters:
+      - objId  # Object identifier
+      - obj_id  # Object identifier
+    derivedComponents:
+      single: PfsZCandidates  # Single spectrum; requires objId/obj_id
+  PfsZCandidates:
+    pytype: pfs.datamodel.pfsZCandidates.PfsZCandidates
   SkyModel:
     pytype: pfs.drp.stella.sky2d.SkyModel
   FocalPlaneFunction:
