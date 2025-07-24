@@ -194,12 +194,9 @@ class PfsTargetSpectraFormatter(FitsGenericFormatter):
 
     def read_from_local_file(self, path: str, component: str | None = None, expected_size: int = -1) -> Any:
         # Docstring inherited.
-        if self.PfsTargetSpectraClass in ("PfsCalibratedSpectra", "PfsObjectSpectra"):
-            # These are deprecated, but we still need to support them
-            module = import_module("pfs.drp.stella.datamodel.pfsTargetSpectra", )
-        else:
-            module = import_module("pfs.datamodel.drp", )
-        cls = getattr(module, self.PfsTargetSpectraClass)
+        module_name, cls_name = self.PfsTargetSpectraClass.rsplit(".", 1)
+        module = import_module(module_name)
+        cls = getattr(module, cls_name)
 
         path = self.file_descriptor.location.path
         spectra = cls.readFits(path)
@@ -227,17 +224,22 @@ class PfsTargetSpectraFormatter(FitsGenericFormatter):
 
 # Deprecated in favor of PfsCalibratedFormatter
 class PfsCalibratedSpectraFormatter(PfsTargetSpectraFormatter):
-    PfsTargetSpectraClass = "PfsCalibratedSpectra"
+    PfsTargetSpectraClass = "pfs.drp.stella.datamodel.pfsTargetSpectra.PfsCalibratedSpectra"
 
 
 # Deprecated in favor of PfsCoaddFormatter
 class PfsObjectSpectraFormatter(PfsTargetSpectraFormatter):
-    PfsTargetSpectraClass = "PfsObjectSpectra"
+    PfsTargetSpectraClass = "pfs.drp.stella.datamodel.pfsTargetSpectra.PfsObjectSpectra"
 
 
 class PfsCalibratedFormatter(PfsTargetSpectraFormatter):
-    PfsTargetSpectraClass = "PfsCalibrated"
+    PfsTargetSpectraClass = "pfs.datamodel.drp.PfsCalibrated"
 
 
 class PfsCoaddFormatter(PfsTargetSpectraFormatter):
-    PfsTargetSpectraClass = "PfsCoadd"
+    PfsTargetSpectraClass = "pfs.datamodel.drp.PfsCoadd"
+
+
+# "PfsCoZCandidates" are not spectra, but the same formatter can be used.
+class PfsCoZCandidatesFormatter(PfsTargetSpectraFormatter):
+    PfsTargetSpectraClass = "pfs.datamodel.PfsCoZCandidates"
