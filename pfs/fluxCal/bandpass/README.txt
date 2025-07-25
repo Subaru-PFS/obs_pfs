@@ -51,3 +51,7 @@ Quoted from Table 3 in J. L. Tonry et al 2012 ApJ 750 99.
 
 "Gaia DR2 revised passbands and zeropoints"
 https://www.cosmos.esa.int/web/gaia/iow_20180316
+
+## fake
+
+This directory contains fake filters.
