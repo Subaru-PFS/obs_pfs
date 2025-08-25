@@ -24,7 +24,6 @@ import os
 import time
 from functools import partial
 
-import fitsio
 import numpy as np
 import scipy
 import ruamel.yaml as yaml
@@ -50,6 +49,7 @@ from lsst.pipe.base import Struct, PipelineTaskConnections
 from lsst.daf.butler import DimensionGroup
 
 from . import imageCube
+from . import nirLinearity
 from pfs.drp.stella.crosstalk import PfsCrosstalkTask
 
 if TYPE_CHECKING:
@@ -1100,8 +1100,8 @@ class PfsIsrTask(ipIsr.IsrTask):
             if ipcCoeffs is None:
                 raise RuntimeError("Must supply IPC coefficients if config.h4.doIPC=True.")
         if self.config.h4.doLinearize:
-            path, method = self.resolveNirLinearity(pfsRaw.detector.getName())
-            if path is None:
+            linearity = self.resolveNirLinearity(pfsRaw.detector.getName())
+            if linearity is None:
                 raise RuntimeError("Linearity corrections must be available if config.h4.doLinearize=True.")
 
         # All 3-d ramp-based operations are hidden inside this call. After .makeNirExposure()
@@ -1110,7 +1110,7 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         if self.config.h4.doLinearize:
             self.log.info("Correcting non-linearity.")
-            exposure = self.applyNirLinearity(pfsRaw, exposure)
+            exposure = self.applyNirLinearity(pfsRaw, exposure, linearity)
 
         assert len(exposure.getDetector()) == 1, "Fix me now we have multiple channels"
 
@@ -1190,7 +1190,7 @@ class PfsIsrTask(ipIsr.IsrTask):
         return exposure
 
     def resolveNirLinearity(self, cam):
-        """Get the full path and type of our linearity corrections.
+        """Get the full path for our linearity corrections.
 
         Parameters
         ----------
@@ -1201,31 +1201,25 @@ class PfsIsrTask(ipIsr.IsrTask):
         -------
         absFilename : `str`
            The full path of the linearity corrections file, or None if not found.
-        method : `str`
-           The linearity correction type, or None if no file.
         """
 
         filename = f'nirLinearity-{cam}.fits'
         absFilename = os.path.join(getPackageDir("drp_pfs_data"), "nirLinearity", filename)
         if not os.path.exists(absFilename):
             self.log.warn(f'no linearity available for {cam}: {absFilename} not found')
-            return None, None
+            return None
 
-        with fitsio.FITS(absFilename) as ff:
-            linMeta = ff[0].read_header()
-            method = linMeta['METHOD']
+        return nirLinearity.NirLinearity.readFits(absFilename)
 
-        return absFilename, method
-
-    def nirLinearityChebyshev(self, exposure, filepath):
+    def nirLinearityChebyshev(self, exposure, linearity):
         """Apply linearity corrections using numpy polynomials.
 
         Parameters
         ----------
         exposure : `lsst.afw.image.Exposure`
             exposure to correct.
-        filepath : `str`
-            path of the file with all parts of the corrections.
+        linearity : `nirLinearity.NirLinearity`
+            all parts of the corrections.
 
         Returns
         -------
@@ -1233,9 +1227,8 @@ class PfsIsrTask(ipIsr.IsrTask):
            the input exposure, corrected in place.
         """
 
-        with fitsio.FITS(filepath) as ff:
-            limits = ff['LIMITS'].read()
-            coeffs = ff['COEFFS'].read()
+        limits = linearity.limits
+        coeffs = linearity.coeffs
 
         # We only record the max valid range of the linearization.
         # Construct the "domains" and "scales" which numpy needs to
@@ -1248,14 +1241,12 @@ class PfsIsrTask(ipIsr.IsrTask):
         rawIm = exposure.image.array
         normIm = off + scl*rawIm
 
-        # Note that the corrections are only valid for flux >= 0. The
-        # chebyshevs are forced to 0 at flux=0 and are pretty low
-        # order, so can maybe extrapolate a bit. But we do skip
-        # corrections for flux<0. Should just apply the linear
-        # term. Hmm.
-        negPix = rawIm < 0
+        # Corrections are only valid for flux >= 0. The chebyshevs are
+        # forced to 0 at flux=0, and are pretty low order, and the
+        # negative values should be pretty small (for good pixels). We
+        # could pretend that the correction is symmetric across 0, but
+        # let it extrapolate instead. Hmm.
         corr = np.polynomial.chebyshev.chebval(normIm, coeffs, tensor=False)
-        corr[negPix] = rawIm[negPix]
 
         # Declare that all pixels above the linearization limits are
         # SATurated.  When we get real data at MKO this will actually
@@ -1270,7 +1261,7 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         return exposure
 
-    def applyNirLinearity(self, pfsRaw, exposure):
+    def applyNirLinearity(self, pfsRaw, exposure, linearity):
         """Apply NIR linearity corrections of some defined kind.
 
         Parameters
@@ -1279,22 +1270,22 @@ class PfsIsrTask(ipIsr.IsrTask):
             The raw exposure that we ran through ISR.
         exposure : `lsst.afw.image.Exposure`
             exposure to correct..
+        linearity : `nirLinearity.NirLinearity`
+            all parts of the linearity corrections
 
         Returns
         -------
         exposure : `lsst.afw.image.Exposure`
             input exposure, corrected in place.
         """
-        cam = pfsRaw.detector.getName()
-        absFilename, method = self.resolveNirLinearity(cam)
-        if absFilename is None:
-            # blow up here?
-            return None
+        method = linearity.method
 
         if method == 'identity':
             return exposure
         elif method == 'np.polynomial.chebyshev':
-            self.nirLinearityChebyshev(exposure, absFilename)
+            self.nirLinearityChebyshev(exposure, linearity)
+            exposure.metadata.set('PFS ISR LINEARITY METHOD', method)
+            # Need some SHA-like ID. And the filename.
         else:
             # blow up here?
             self.log.warn(f'ignoring unknown linearity method: {method}')
