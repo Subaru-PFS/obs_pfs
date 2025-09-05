@@ -49,6 +49,7 @@ from lsst.pipe.base import Struct, PipelineTaskConnections
 from lsst.daf.butler import DimensionGroup
 
 from . import imageCube
+from . import nirLinearity
 from pfs.drp.stella.crosstalk import PfsCrosstalkTask
 
 if TYPE_CHECKING:
@@ -148,6 +149,7 @@ class H4Config(pexConfig.Config):
         default=False,
         doc="write out raw-ish ISRCube (UTR, e-, with IRP and CR corrections)",
     )
+    doLinearize = pexConfig.Field(dtype=bool, default=True, doc="Apply linearity correction?")
 
 
 class PfsAssembleCcdTask(AssembleCcdTask):
@@ -781,7 +783,7 @@ class PfsIsrTask(ipIsr.IsrTask):
         inputs = butlerQC.get(inputRefs)
 
         assert self.config.doCrosstalk is False
-        assert self.config.doLinearize is False
+        assert self.config.doLinearize is False  # We're not set up to do CCD linearization yet
 
         if self.config.doDefect is True:
             if "defects" in inputs and inputs['defects'] is not None:
@@ -1073,7 +1075,7 @@ class PfsIsrTask(ipIsr.IsrTask):
                 if k == "fringes" and v.fringes is None:
                     continue
 
-                if k not in ("camera", "crosstalk", "crosstalkSources", "linearizer"):
+                if k in ("crosstalk", "crosstalkSources", "linearizer"):
                     self.log.warn("Unexpected argument for runH4RG: %s", k)
 
         if self.config.doDark:
@@ -1097,10 +1099,18 @@ class PfsIsrTask(ipIsr.IsrTask):
                 raise RuntimeError("Must supply defects if config.h4.doIPC=True.")
             if ipcCoeffs is None:
                 raise RuntimeError("Must supply IPC coefficients if config.h4.doIPC=True.")
+        if self.config.h4.doLinearize:
+            linearity = self.resolveNirLinearity(pfsRaw.detector.getName())
+            if linearity is None:
+                raise RuntimeError("Linearity corrections must be available if config.h4.doLinearize=True.")
 
         # All 3-d ramp-based operations are hidden inside this call. After .makeNirExposure()
         # we operate on a 2-d image.
         exposure, rawRamp = self.makeNirExposure(pfsRaw, nirDark, self.config.h4.doWriteRawCube)
+
+        if self.config.h4.doLinearize:
+            self.log.info("Correcting non-linearity.")
+            exposure = self.applyNirLinearity(pfsRaw, exposure, linearity)
 
         assert len(exposure.getDetector()) == 1, "Fix me now we have multiple channels"
 
@@ -1177,6 +1187,110 @@ class PfsIsrTask(ipIsr.IsrTask):
         info.setDetector(pfsRaw.detector)
         arm = pfsRaw.obsInfo.ext_arm
         info.setFilter(afwImage.FilterLabel(arm, arm))
+        return exposure
+
+    def resolveNirLinearity(self, cam):
+        """Get the full path for our linearity corrections.
+
+        Parameters
+        ----------
+        cam : `str`
+           The camera name.
+
+        Returns
+        -------
+        absFilename : `str`
+           The full path of the linearity corrections file, or None if not found.
+        """
+
+        filename = f'nirLinearity-{cam}.fits'
+        absFilename = os.path.join(getPackageDir("drp_pfs_data"), "nirLinearity", filename)
+        if not os.path.exists(absFilename):
+            self.log.warn(f'no linearity available for {cam}: {absFilename} not found')
+            return None
+
+        return nirLinearity.NirLinearity.readFits(absFilename)
+
+    def nirLinearityChebyshev(self, exposure, linearity):
+        """Apply linearity corrections using numpy polynomials.
+
+        Parameters
+        ----------
+        exposure : `lsst.afw.image.Exposure`
+            exposure to correct.
+        linearity : `nirLinearity.NirLinearity`
+            all parts of the corrections.
+
+        Returns
+        -------
+        exposure : `lsst.afw.image.Exposure`
+           the input exposure, corrected in place.
+        """
+
+        limits = linearity.limits
+        coeffs = linearity.coeffs
+
+        # We only record the max valid range of the linearization.
+        # Construct the "domains" and "scales" which numpy needs to
+        # normalize the exposure data. [0..maxValid] -> [-1..1]
+        domains = np.zeros(shape=(2, 4096, 4096), dtype='f4')
+        scales = np.ones(shape=(2, 4096, 4096), dtype='f4')
+        domains[1, :, :] = limits
+        scales[0, :, :] = -1
+        off, scl = np.polynomial.polyutils.mapparms(domains, scales)
+        rawIm = exposure.image.array
+        normIm = off + scl*rawIm
+
+        # Corrections are only valid for flux >= 0. The chebyshevs are
+        # forced to 0 at flux=0, and are pretty low order, and the
+        # negative values should be pretty small (for good pixels). We
+        # could pretend that the correction is symmetric across 0, but
+        # let it extrapolate instead. Hmm.
+        corr = np.polynomial.chebyshev.chebval(normIm, coeffs, tensor=False)
+
+        # Declare that all pixels above the linearization limits are
+        # SATurated.  When we get real data at MKO this will actually
+        # be correct. Some lab flats from JHU mask too many pixels,
+        # but we don't really care about the brightest ones.
+        saturated = rawIm > limits
+        corr[saturated] = limits[saturated]
+
+        exposure.image.array[:] = np.asarray(corr, dtype='f4')
+        exposure.mask.array[saturated] |= exposure.mask.getPlaneBitMask('SAT')
+        # variance is handled later...
+
+        return exposure
+
+    def applyNirLinearity(self, pfsRaw, exposure, linearity):
+        """Apply NIR linearity corrections of some defined kind.
+
+        Parameters
+        ----------
+        pfsRaw : `lsst.obs.pfs.PfsRaw`
+            The raw exposure that we ran through ISR.
+        exposure : `lsst.afw.image.Exposure`
+            exposure to correct..
+        linearity : `nirLinearity.NirLinearity`
+            all parts of the linearity corrections
+
+        Returns
+        -------
+        exposure : `lsst.afw.image.Exposure`
+            input exposure, corrected in place.
+        """
+        method = linearity.method
+
+        if method == 'identity':
+            return exposure
+        elif method == 'np.polynomial.chebyshev':
+            self.nirLinearityChebyshev(exposure, linearity)
+            exposure.metadata.set('PFS ISR LINEARITY METHOD', method)
+            # Need some SHA-like ID. And the filename.
+        else:
+            # blow up here?
+            self.log.warn(f'ignoring unknown linearity method: {method}')
+            return exposure
+
         return exposure
 
     def calcUTRWeights(self, nreads: int) -> np.ndarray:
@@ -1666,6 +1780,22 @@ class PfsIsrTask(ipIsr.IsrTask):
         badAsicChannels = dict(n3=(24,))
         return badAsicChannels.get(detectorName, ())
 
+    def getSimpleDiffIrp(self, pfsRaw, rawDiffIrp) -> np.ndarray:
+        """Return a diff IRP image which is just the median across the channel columns"""
+        nchan = pfsRaw.nchan
+        h, w = rawDiffIrp.shape
+        chan_w = h//nchan
+
+        out = np.zeros_like(rawDiffIrp)
+        for chan_i in range(nchan):
+            rowLow = chan_i*chan_w
+            rowHigh = (chan_i + 1)*chan_w
+            chan0 = rawDiffIrp[rowLow:rowHigh, :]
+
+            chanVec = np.nanmedian(chan0, axis=0, keepdims=True)
+            out[rowLow:rowHigh, :] = np.tile(chanVec, (h, 1))
+        return out
+
     def getFinalDiffIrp(self, pfsRaw, rawDiffIrp, useFft=True) -> np.ndarray:
         """Given a simple IRP difference image, return the final IRP image.
 
@@ -1687,6 +1817,8 @@ class PfsIsrTask(ipIsr.IsrTask):
             The raw difference IRP image. Full-size (i.e. IRP1)
         filterWidth : `int`
             The width of the smoothing filter to use. Should be odd.
+            If 0, do not apply any filter: simply return the input image
+            If -1, return an image where each channel is replaced by its per-col median.
 
         Returns
         -------
@@ -1701,6 +1833,8 @@ class PfsIsrTask(ipIsr.IsrTask):
         filterWidth = self.config.h4.IRPfilter
         if filterWidth == 0:
             return rawDiffIrp
+        if filterWidth == -1:
+            return self.getSimpleDiffIrp(pfsRaw, rawDiffIrp)
         if filterWidth % 2 == 0:
             raise ValueError(f'filterWidth must be odd: {filterWidth}')
         if skipChannels is None:

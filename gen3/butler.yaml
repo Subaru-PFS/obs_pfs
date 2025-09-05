@@ -34,6 +34,7 @@ datastore:
     QaDict: lsst.daf.butler.formatters.pickle.PickleFormatter
     ImageCube: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     ObjectGroupMap: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+    NirLinearity: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
   templates:
     default: "{run:/}/{datasetType}.{component:?}/{visit.day_obs:?}/{visit:?}/{datasetType}_{component:?}_{instrument:?}_{visit:?}_{arm:?}{spectrograph:?}_{detector:?}_{run}"
     instrument+detector: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{detector:?}_{run}"  # used for defects
@@ -156,3 +157,5 @@ storageClasses:
     pytype: lsst.obs.pfs.imageCube.ImageCube
   ObjectGroupMap:
     pytype: pfs.datamodel.objectGroupMap.ObjectGroupMap
+  NirLinearity:
+    pytype: lsst.obs.pfs.nirLinearity.NirLinearity
