@@ -233,11 +233,11 @@ class PfsObjectSpectraFormatter(PfsTargetSpectraFormatter):
 
 
 class PfsCalibratedFormatter(PfsTargetSpectraFormatter):
-    PfsTargetSpectraClass = "pfs.datamodel.drp.PfsCalibrated"
+    PfsTargetSpectraClass = "pfs.drp.stella.datamodel.drp.PfsCalibrated"
 
 
 class PfsCoaddFormatter(PfsTargetSpectraFormatter):
-    PfsTargetSpectraClass = "pfs.datamodel.drp.PfsCoadd"
+    PfsTargetSpectraClass = "pfs.drp.stella.datamodel.drp.PfsCoadd"
 
 
 # "PfsCoZCandidates" are not spectra, but the same formatter can be used.
