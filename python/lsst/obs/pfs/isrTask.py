@@ -1734,6 +1734,9 @@ class PfsIsrTask(ipIsr.IsrTask):
         with open(absFilename) as f:
             cfg = yaml.YAML(typ="safe", pure=True).load(f)
 
+        if detectorName == 'n8':
+            detectorName = 'n3'
+            self.log.warn(f'using {detectorName} to fetch badRefPixels')
         if detectorName not in cfg:
             self.log.warn(f'{detectorName} not defined in {absFilename}')
             return np.zeros(dtype=np.int16, shape=())
@@ -1784,16 +1787,16 @@ class PfsIsrTask(ipIsr.IsrTask):
         """Return a diff IRP image which is just the median across the channel columns"""
         nchan = pfsRaw.nchan
         h, w = rawDiffIrp.shape
-        chan_w = h//nchan
+        chan_h = h//nchan
 
         out = np.zeros_like(rawDiffIrp)
         for chan_i in range(nchan):
-            rowLow = chan_i*chan_w
-            rowHigh = (chan_i + 1)*chan_w
+            rowLow = chan_i*chan_h
+            rowHigh = (chan_i + 1)*chan_h
             chan0 = rawDiffIrp[rowLow:rowHigh, :]
 
             chanVec = np.nanmedian(chan0, axis=0, keepdims=True)
-            out[rowLow:rowHigh, :] = np.tile(chanVec, (h, 1))
+            out[rowLow:rowHigh, :] = np.tile(chanVec, (chan_h, 1))
         return out
 
     def getFinalDiffIrp(self, pfsRaw, rawDiffIrp, useFft=True) -> np.ndarray:
