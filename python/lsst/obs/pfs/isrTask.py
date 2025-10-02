@@ -50,6 +50,7 @@ from lsst.daf.butler import DimensionGroup
 
 from . import imageCube
 from . import nirLinearity
+from .overscan import PfsOverscanCorrectionTask
 from pfs.drp.stella.crosstalk import PfsCrosstalkTask
 
 if TYPE_CHECKING:
@@ -604,9 +605,6 @@ class PfsIsrTaskConfig(ipIsr.IsrTaskConfig, pipelineConnections=PfsIsrConnection
     brokenRedShutter = pexConfig.ConfigField(
         dtype=BrokenShutterConfig, doc="Broken shutter related configuration options."
     )
-    windowed = pexConfig.Field(dtype=bool, default=False,
-                               doc="Reduction of windowed data, for real-time acquisition? Implies "
-                               "overscanFitType=MEDIAN")
     darkBBoxes = pexConfig.DictField(
         keytype=str, itemtype=str,
         default=dict(r3="[geom.BoxI(geom.PointI(4045, 2660), geom.PointI(4095, 2910))]"),
@@ -623,6 +621,10 @@ but if you have a sufficiently large cosmic ray flux you might want to reconside
         dtype=H4Config, doc="H4 related configuration")
 
     crosstalk = pexConfig.ConfigurableField(target=PfsCrosstalkTask, doc="Inter-CCD crosstalk correction")
+    overscan = pexConfig.ConfigurableField(
+        target=PfsOverscanCorrectionTask,
+        doc="Overscan subtraction task for image segments.",
+    )
 
     def setDefaults(self):
         super().setDefaults()
@@ -640,8 +642,6 @@ but if you have a sufficiently large cosmic ray flux you might want to reconside
         self.doApplyGains = False
 
     def validate(self):
-        if self.windowed:
-            self.overscanFitType = "MEDIAN"
         if not self.doSaturationInterpolation and "SAT" in self.maskListToInterpolate:  # fixed on LSST master
             self.maskListToInterpolate.remove("SAT")
         super().validate()
