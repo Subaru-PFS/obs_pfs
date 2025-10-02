@@ -2,8 +2,6 @@
 Utilities for working with PFS data
 """
 
-import os
-
 from typing import Any, Mapping
 
 
@@ -111,30 +109,3 @@ def isWindowed(metadata: Mapping[str, Any], numRows: int = 0) -> bool:
         return window < numRows
     except KeyError:
         return False
-
-
-def getCalibPath(refOrButler):
-    """Attempt to figure out the calibration path
-
-    This only works with the Gen2 middleware, and involves digging in the
-    internals.
-
-    Parameters
-    ----------
-    refOrButler : `ButlerDataRef` or `Butler`
-        Data reference or data butler.
-
-    Returns
-    -------
-    path : `str`
-        Path for calibs, or ``UNKNOWN``.
-    """
-    from lsst.daf.persistence import ButlerDataRef
-    if isinstance(refOrButler, ButlerDataRef):
-        butler = refOrButler.getButler()
-    else:
-        butler = refOrButler
-    try:
-        return os.path.realpath(butler._repos.inputs()[-1].cfg.mapperArgs["calibRoot"])
-    except Exception:
-        return "UNKNOWN"
