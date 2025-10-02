@@ -4,6 +4,8 @@ Utilities for working with PFS data
 
 import os
 
+from typing import Any, Mapping
+
 
 def getLamps(md):
     """Return a list of lit lamps, according to the header
@@ -83,6 +85,32 @@ def getLampElements(md):
     }
     elements = [menu[key] for key in lamps]
     return {el for sublist in elements for el in sublist}
+
+
+def isWindowed(metadata: Mapping[str, Any], numRows: int = 0) -> bool:
+    """Return True if the image is windowed
+
+    Parameters
+    ----------
+    metadata : `dict`
+        Header metadata.
+    numRows : `int`, optional
+        Number of rows in the full image. If <= 0 (the default), use ``NAXIS2``
+        from the header (but this can often be stripped from the header, so it's
+        better to provide it explicitly if you can).
+
+    Returns
+    -------
+    isWindowed : `bool`
+        True if the image is windowed.
+    """
+    try:
+        window = metadata["W_CDROWN"] - metadata["W_CDROW0"] + 1
+        if numRows <= 0:
+            numRows = metadata["NAXIS2"]
+        return window < numRows
+    except KeyError:
+        return False
 
 
 def getCalibPath(refOrButler):
