@@ -2,7 +2,7 @@
 Utilities for working with PFS data
 """
 
-import os
+from typing import Any, Mapping
 
 
 def getLamps(md):
@@ -85,28 +85,27 @@ def getLampElements(md):
     return {el for sublist in elements for el in sublist}
 
 
-def getCalibPath(refOrButler):
-    """Attempt to figure out the calibration path
-
-    This only works with the Gen2 middleware, and involves digging in the
-    internals.
+def isWindowed(metadata: Mapping[str, Any], numRows: int = 0) -> bool:
+    """Return True if the image is windowed
 
     Parameters
     ----------
-    refOrButler : `ButlerDataRef` or `Butler`
-        Data reference or data butler.
+    metadata : `dict`
+        Header metadata.
+    numRows : `int`, optional
+        Number of rows in the full image. If <= 0 (the default), use ``NAXIS2``
+        from the header (but this can often be stripped from the header, so it's
+        better to provide it explicitly if you can).
 
     Returns
     -------
-    path : `str`
-        Path for calibs, or ``UNKNOWN``.
+    isWindowed : `bool`
+        True if the image is windowed.
     """
-    from lsst.daf.persistence import ButlerDataRef
-    if isinstance(refOrButler, ButlerDataRef):
-        butler = refOrButler.getButler()
-    else:
-        butler = refOrButler
     try:
-        return os.path.realpath(butler._repos.inputs()[-1].cfg.mapperArgs["calibRoot"])
-    except Exception:
-        return "UNKNOWN"
+        window = metadata["W_CDROWN"] - metadata["W_CDROW0"] + 1
+        if numRows <= 0:
+            numRows = metadata["NAXIS2"]
+        return window < numRows
+    except KeyError:
+        return False
