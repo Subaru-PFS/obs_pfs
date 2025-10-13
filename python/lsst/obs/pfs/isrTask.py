@@ -105,7 +105,7 @@ class H4Config(pexConfig.Config):
 
     quickCDS = pexConfig.Field(dtype=bool, default=False,
                                doc="Only consider last and first reads instead of the full ramp cube")
-    doCR = pexConfig.Field(dtype=bool, default=True,
+    doCR = pexConfig.Field(dtype=bool, default=False,
                            doc="Run ramp-based CR rejection. Requires quickCDS=False")
     crMinReads = pexConfig.Field(dtype=int, default=4,
                                  doc="Minimum number of dark or shutter-open reads for CR rejection")
@@ -122,7 +122,7 @@ class H4Config(pexConfig.Config):
     doIRPcrosstalk = pexConfig.Field(dtype=bool, default=False,
                                      doc="Correct for data->IRP crosstalk")
 
-    doIPC = pexConfig.Field(dtype=bool, default=True, doc="Correct for IPC?")
+    doIPC = pexConfig.Field(dtype=bool, default=False, doc="Correct for IPC?")
     ipc = pexConfig.DictField(
         keytype=str,
         itemtype=str,
@@ -151,6 +151,8 @@ class H4Config(pexConfig.Config):
         doc="write out raw-ish ISRCube (UTR, e-, with IRP and CR corrections)",
     )
     doLinearize = pexConfig.Field(dtype=bool, default=True, doc="Apply linearity correction?")
+    linearizeBeforeUTR = pexConfig.Field(dtype=bool, default=False,
+                                         doc="Apply linearity correction before UTR")
 
 
 class PfsAssembleCcdTask(AssembleCcdTask):
@@ -1103,11 +1105,16 @@ class PfsIsrTask(ipIsr.IsrTask):
             linearity = self.resolveNirLinearity(pfsRaw.detector.getName())
             if linearity is None:
                 raise RuntimeError("Linearity corrections must be available if config.h4.doLinearize=True.")
+            if defects is None:
+                self.log.warn('You usually want to supply defects when linearizing. Will avoid worst pixels.')
 
         # All 3-d ramp-based operations are hidden inside this call. After .makeNirExposure()
         # we operate on a 2-d image.
         exposure, rawRamp = self.makeNirExposure(pfsRaw, nirDark, self.config.h4.doWriteRawCube)
 
+        # We BAD mask the defects now, but do not interpolate.
+        if defects is not None:
+            super().maskDefect(exposure, defects)
         if self.config.h4.doLinearize:
             self.log.info("Correcting non-linearity.")
             exposure = self.applyNirLinearity(pfsRaw, exposure, linearity)
@@ -1240,23 +1247,53 @@ class PfsIsrTask(ipIsr.IsrTask):
         off, scl = np.polynomial.polyutils.mapparms(domains, scales)
         rawIm = exposure.image.array
         normIm = off + scl*rawIm
+        corr = np.zeros_like(rawIm)
+        BAD = exposure.mask.getPlaneBitMask('BAD')
+
+        # If defects were supplied we have a BAD pixel mask. Use it to
+        # avoid linearizing known defects. But in any case add in and
+        # avoid correcting the worst unmasked pixels.
+        badMask = 0 != (exposure.mask.array & BAD)
+        startingBADpixels = badMask.sum()
+
+        # For the moment, do not linearize significantly negative
+        # values. We currently mask most of these pixels externally,
+        # but leaks are bad.
+        assert len(exposure.getDetector()) == 1, "Fix me now we have multiple channels"
+        amp = exposure.detector.getAmplifiers()[0]
+        tooLow = rawIm < -amp.getReadNoise() * 10  # If permanent logic, add to config...
+        badMask[tooLow] |= True
+        corr[tooLow] = rawIm[tooLow]
+
+        # Declare that all pixels above the available linearization
+        # limits are SATurated.  When we get real data at MKO this
+        # will actually be correct. Some lab flats from JHU mask too
+        # many pixels, but we don't really care about the brightest
+        # ones.  We set the values to the limits found on the
+        # unlinearized flats, which is wrong but we cannot trust any
+        # linearization. We need to replace the coefficients for these
+        # pixels with more sane estimates before we can do anyting
+        # better.
+        saturated = rawIm > limits
+        badMask[saturated] |= True
+        corr[saturated] = limits[saturated]
+        exposure.mask.array[saturated] |= (exposure.mask.getPlaneBitMask('SAT'))
 
         # Corrections are only valid for flux >= 0. The chebyshevs are
         # forced to 0 at flux=0, and are pretty low order, and the
         # negative values should be pretty small (for good pixels). We
-        # could pretend that the correction is symmetric across 0, but
-        # let it extrapolate instead. Hmm.
-        corr = np.polynomial.chebyshev.chebval(normIm, coeffs, tensor=False)
+        # should pretend that the correction is symmetric across 0, but
+        # let it extrapolate instead. Hmm, CPL.
+        goodMask = ~badMask
+        corr[goodMask] = np.polynomial.chebyshev.chebval(normIm[goodMask],
+                                                         coeffs[:, goodMask],
+                                                         tensor=False)
+        exposure.image.array[:] = corr
+        exposure.mask.array[badMask] |= BAD
 
-        # Declare that all pixels above the linearization limits are
-        # SATurated.  When we get real data at MKO this will actually
-        # be correct. Some lab flats from JHU mask too many pixels,
-        # but we don't really care about the brightest ones.
-        saturated = rawIm > limits
-        corr[saturated] = limits[saturated]
+        endingBADpixels = badMask.sum()
+        self.log.info(f'linearization added {endingBADpixels - startingBADpixels} BAD pixels')
 
-        exposure.image.array[:] = np.asarray(corr, dtype='f4')
-        exposure.mask.array[saturated] |= exposure.mask.getPlaneBitMask('SAT')
         # variance is handled later...
 
         return exposure
