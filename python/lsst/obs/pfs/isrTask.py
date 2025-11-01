@@ -1128,7 +1128,13 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         exposure.image *= gain  # convert to electrons
         var = exposure.image.array.copy()  # assumes photon noise -- not true for the persistence
-        var += 2*channel.getReadNoise()**2  # 2* comes from CDS
+        if self.config.h4.quickCDS:
+            var += 2 * channel.getReadNoise()**2  # 2* comes from CDS
+        else:
+            nread = pfsRaw.getNumReads()
+            # noise estimate in UTR, per Eq 4.45 in RHL
+            var *= 6 * (nread * nread + 1) / (5 * nread * (nread + 1))
+            var += 12 * (nread - 1) / (nread * (nread + 1)) * channel.getReadNoise()**2
         exposure.variance.array[:] = var
 
         if rawRamp is not None:
