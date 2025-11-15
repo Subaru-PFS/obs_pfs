@@ -22,6 +22,8 @@ from typing import TYPE_CHECKING, Optional
 
 import os
 import time
+import warnings
+
 from functools import partial
 
 import numpy as np
@@ -1447,9 +1449,6 @@ class PfsIsrTask(ipIsr.IsrTask):
             The 2-d image from the ramp.
         """
 
-        if pfsRaw.irpN > 1:
-            raise NotImplementedError('have only tested IRP1 for now')
-
         if self.config.h4.quickCDS:
             self.log.info("creating quick CDS.")
             nirImage = self.makeCDS(pfsRaw)
@@ -1466,8 +1465,8 @@ class PfsIsrTask(ipIsr.IsrTask):
             # Switch to accumulated flux for dark subtraction and
             # UTR weighting. This is actually pretty expensive; should
             # rethink.
-            # But do at least save memory by doing this in place
-            flux = np.nancumsum(deltas, axis=0, out=deltas)
+            # But do at least save memory by doing this in place.
+            flux = np.cumsum(deltas, axis=0, out=deltas)
             del deltas  # Get rid of the name to avoid stupidities
 
             if self.config.h4.applyUTRWeights:
@@ -1614,12 +1613,12 @@ class PfsIsrTask(ipIsr.IsrTask):
 
     def makeRawIrpNcube(self, pfsRaw,
                         r0=0, r1=-1, nreads=None, bbox=None) -> np.ndarray:
-        """Return the raw IRP reads in a single 3d stack, but not IRP1, nor incremental.
+        """Return the raw IRP reads in a single 3d stack, but not incremental.
 
         This is used just for the ASIC glitch correction.
         """
         from functools import partial
-        reader = partial(self.makeRawIrpArray, forceIrp1=False)
+        reader = partial(self.makeRawIrpArray, forceIrp1=True)
         return self.makeSimpleStack(pfsRaw, reader=reader,
                                     r0=r0, r1=r1, nreads=nreads, bbox=bbox,
                                     doDeltas=False)
@@ -1793,7 +1792,7 @@ class PfsIsrTask(ipIsr.IsrTask):
         if not self.config.h4.doIRPbadPixels:
             return
         if pfsRaw.irpN != 1:
-            self.log.warn('Do not know how to correct for bad IRP pixels in non-IRP1 images')
+            warnings.warn('Do not know how to correct for bad IRP pixels in non-IRP1 images')
             return
 
         badPixels = self.loadBadIRPpixels(pfsRaw.detector.getName())
@@ -1927,8 +1926,8 @@ class PfsIsrTask(ipIsr.IsrTask):
         rawChan : array
            The raw IRP channel, with the columns possibly subsampled by a factor of self.irpN.
         doFlip : `bool`
-           Whether we need to treat this channel as read out R-to-L. Only meaningful if
-           we are filtering in time.
+           Whether we need to treat this channel as read out B-to-T (R-to-L in H4). Only
+           meaningful if we are filtering in time.
 
         Returns
         -------
@@ -1947,17 +1946,17 @@ class PfsIsrTask(ipIsr.IsrTask):
         temporalFilter = False
 
         irpHeight, irpWidth = rawChan.shape
-        refChan = np.empty(shape=(irpHeight, irpWidth * irpN), dtype=rawChan.dtype)
+        refChan = np.empty(shape=(irpHeight * irpN, irpWidth), dtype=rawChan.dtype)
 
         if doFlip and temporalFilter:
-            rawChan = rawChan[:, ::-1]
+            rawChan = rawChan[::-1, :]
 
         # For now, simply repeat reference pixels
         for i in range(0, irpN):
-            refChan[:, i::irpN] = rawChan
+            refChan[i::irpN, :] = rawChan
 
         if doFlip and temporalFilter:
-            refChan = refChan[:, ::-1]
+            refChan = refChan[::-1, :]
 
         return refChan
 
@@ -1998,22 +1997,23 @@ class PfsIsrTask(ipIsr.IsrTask):
         nchan = pfsRaw.nchan
 
         # If we are a full frame, no interpolation is necessary.
-        if width == pfsRaw.h4Size:
+        if height == pfsRaw.h4Size:
             return refImg
 
-        refChanWidth = width // nchan
+        refChanHeight = height // nchan
 
         refChans = []
         readOrders = pfsRaw.getH4channelReadOrder()
+        self.log.debug(f'filling out IRP{pfsRaw.h4Size // height} image, with {readOrders=}')
         for c_i in range(nchan):
-            rawChan = refImg[:, c_i*refChanWidth:(c_i+1)*refChanWidth]
+            rawChan = refImg[c_i*refChanHeight:(c_i+1)*refChanHeight, :]
             doFlip = readOrders[c_i%2]
 
             # This is where we would intelligently interpolate.
             refChan = self.interpolateChannelIrp(pfsRaw, rawChan, doFlip)
             refChans.append(refChan)
 
-        fullRefImg = np.hstack(refChans)
+        fullRefImg = np.vstack(refChans)
 
         return fullRefImg
 
