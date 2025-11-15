@@ -22,6 +22,8 @@ from typing import TYPE_CHECKING, Optional
 
 import os
 import time
+import warnings
+
 from functools import partial
 
 import numpy as np
@@ -105,7 +107,7 @@ class H4Config(pexConfig.Config):
 
     quickCDS = pexConfig.Field(dtype=bool, default=False,
                                doc="Only consider last and first reads instead of the full ramp cube")
-    doCR = pexConfig.Field(dtype=bool, default=True,
+    doCR = pexConfig.Field(dtype=bool, default=False,
                            doc="Run ramp-based CR rejection. Requires quickCDS=False")
     crMinReads = pexConfig.Field(dtype=int, default=4,
                                  doc="Minimum number of dark or shutter-open reads for CR rejection")
@@ -122,7 +124,7 @@ class H4Config(pexConfig.Config):
     doIRPcrosstalk = pexConfig.Field(dtype=bool, default=False,
                                      doc="Correct for data->IRP crosstalk")
 
-    doIPC = pexConfig.Field(dtype=bool, default=True, doc="Correct for IPC?")
+    doIPC = pexConfig.Field(dtype=bool, default=False, doc="Correct for IPC?")
     ipc = pexConfig.DictField(
         keytype=str,
         itemtype=str,
@@ -151,6 +153,8 @@ class H4Config(pexConfig.Config):
         doc="write out raw-ish ISRCube (UTR, e-, with IRP and CR corrections)",
     )
     doLinearize = pexConfig.Field(dtype=bool, default=True, doc="Apply linearity correction?")
+    linearizeBeforeUTR = pexConfig.Field(dtype=bool, default=False,
+                                         doc="Apply linearity correction before UTR")
 
 
 class PfsAssembleCcdTask(AssembleCcdTask):
@@ -1103,11 +1107,16 @@ class PfsIsrTask(ipIsr.IsrTask):
             linearity = self.resolveNirLinearity(pfsRaw.detector.getName())
             if linearity is None:
                 raise RuntimeError("Linearity corrections must be available if config.h4.doLinearize=True.")
+            if defects is None:
+                self.log.warn('You usually want to supply defects when linearizing. Will avoid worst pixels.')
 
         # All 3-d ramp-based operations are hidden inside this call. After .makeNirExposure()
         # we operate on a 2-d image.
         exposure, rawRamp = self.makeNirExposure(pfsRaw, nirDark, self.config.h4.doWriteRawCube)
 
+        # We BAD mask the defects now, but do not interpolate.
+        if defects is not None:
+            super().maskDefect(exposure, defects)
         if self.config.h4.doLinearize:
             self.log.info("Correcting non-linearity.")
             exposure = self.applyNirLinearity(pfsRaw, exposure, linearity)
@@ -1240,23 +1249,53 @@ class PfsIsrTask(ipIsr.IsrTask):
         off, scl = np.polynomial.polyutils.mapparms(domains, scales)
         rawIm = exposure.image.array
         normIm = off + scl*rawIm
+        corr = np.zeros_like(rawIm)
+        BAD = exposure.mask.getPlaneBitMask('BAD')
+
+        # If defects were supplied we have a BAD pixel mask. Use it to
+        # avoid linearizing known defects. But in any case add in and
+        # avoid correcting the worst unmasked pixels.
+        badMask = 0 != (exposure.mask.array & BAD)
+        startingBADpixels = badMask.sum()
+
+        # For the moment, do not linearize significantly negative
+        # values. We currently mask most of these pixels externally,
+        # but leaks are bad.
+        assert len(exposure.getDetector()) == 1, "Fix me now we have multiple channels"
+        amp = exposure.detector.getAmplifiers()[0]
+        tooLow = rawIm < -amp.getReadNoise() * 10  # If permanent logic, add to config...
+        badMask[tooLow] |= True
+        corr[tooLow] = rawIm[tooLow]
+
+        # Declare that all pixels above the available linearization
+        # limits are SATurated.  When we get real data at MKO this
+        # will actually be correct. Some lab flats from JHU mask too
+        # many pixels, but we don't really care about the brightest
+        # ones.  We set the values to the limits found on the
+        # unlinearized flats, which is wrong but we cannot trust any
+        # linearization. We need to replace the coefficients for these
+        # pixels with more sane estimates before we can do anyting
+        # better.
+        saturated = rawIm > limits
+        badMask[saturated] |= True
+        corr[saturated] = limits[saturated]
+        exposure.mask.array[saturated] |= (exposure.mask.getPlaneBitMask('SAT'))
 
         # Corrections are only valid for flux >= 0. The chebyshevs are
         # forced to 0 at flux=0, and are pretty low order, and the
         # negative values should be pretty small (for good pixels). We
-        # could pretend that the correction is symmetric across 0, but
-        # let it extrapolate instead. Hmm.
-        corr = np.polynomial.chebyshev.chebval(normIm, coeffs, tensor=False)
+        # should pretend that the correction is symmetric across 0, but
+        # let it extrapolate instead. Hmm, CPL.
+        goodMask = ~badMask
+        corr[goodMask] = np.polynomial.chebyshev.chebval(normIm[goodMask],
+                                                         coeffs[:, goodMask],
+                                                         tensor=False)
+        exposure.image.array[:] = corr
+        exposure.mask.array[badMask] |= BAD
 
-        # Declare that all pixels above the linearization limits are
-        # SATurated.  When we get real data at MKO this will actually
-        # be correct. Some lab flats from JHU mask too many pixels,
-        # but we don't really care about the brightest ones.
-        saturated = rawIm > limits
-        corr[saturated] = limits[saturated]
+        endingBADpixels = badMask.sum()
+        self.log.info(f'linearization added {endingBADpixels - startingBADpixels} BAD pixels')
 
-        exposure.image.array[:] = np.asarray(corr, dtype='f4')
-        exposure.mask.array[saturated] |= exposure.mask.getPlaneBitMask('SAT')
         # variance is handled later...
 
         return exposure
@@ -1410,9 +1449,6 @@ class PfsIsrTask(ipIsr.IsrTask):
             The 2-d image from the ramp.
         """
 
-        if pfsRaw.irpN > 1:
-            raise NotImplementedError('have only tested IRP1 for now')
-
         if self.config.h4.quickCDS:
             self.log.info("creating quick CDS.")
             nirImage = self.makeCDS(pfsRaw)
@@ -1429,8 +1465,8 @@ class PfsIsrTask(ipIsr.IsrTask):
             # Switch to accumulated flux for dark subtraction and
             # UTR weighting. This is actually pretty expensive; should
             # rethink.
-            # But do at least save memory by doing this in place
-            flux = np.nancumsum(deltas, axis=0, out=deltas)
+            # But do at least save memory by doing this in place.
+            flux = np.cumsum(deltas, axis=0, out=deltas)
             del deltas  # Get rid of the name to avoid stupidities
 
             if self.config.h4.applyUTRWeights:
@@ -1577,12 +1613,12 @@ class PfsIsrTask(ipIsr.IsrTask):
 
     def makeRawIrpNcube(self, pfsRaw,
                         r0=0, r1=-1, nreads=None, bbox=None) -> np.ndarray:
-        """Return the raw IRP reads in a single 3d stack, but not IRP1, nor incremental.
+        """Return the raw IRP reads in a single 3d stack, but not incremental.
 
         This is used just for the ASIC glitch correction.
         """
         from functools import partial
-        reader = partial(self.makeRawIrpArray, forceIrp1=False)
+        reader = partial(self.makeRawIrpArray, forceIrp1=True)
         return self.makeSimpleStack(pfsRaw, reader=reader,
                                     r0=r0, r1=r1, nreads=nreads, bbox=bbox,
                                     doDeltas=False)
@@ -1756,7 +1792,7 @@ class PfsIsrTask(ipIsr.IsrTask):
         if not self.config.h4.doIRPbadPixels:
             return
         if pfsRaw.irpN != 1:
-            self.log.warn('Do not know how to correct for bad IRP pixels in non-IRP1 images')
+            warnings.warn('Do not know how to correct for bad IRP pixels in non-IRP1 images')
             return
 
         badPixels = self.loadBadIRPpixels(pfsRaw.detector.getName())
@@ -1890,8 +1926,8 @@ class PfsIsrTask(ipIsr.IsrTask):
         rawChan : array
            The raw IRP channel, with the columns possibly subsampled by a factor of self.irpN.
         doFlip : `bool`
-           Whether we need to treat this channel as read out R-to-L. Only meaningful if
-           we are filtering in time.
+           Whether we need to treat this channel as read out B-to-T (R-to-L in H4). Only
+           meaningful if we are filtering in time.
 
         Returns
         -------
@@ -1910,17 +1946,17 @@ class PfsIsrTask(ipIsr.IsrTask):
         temporalFilter = False
 
         irpHeight, irpWidth = rawChan.shape
-        refChan = np.empty(shape=(irpHeight, irpWidth * irpN), dtype=rawChan.dtype)
+        refChan = np.empty(shape=(irpHeight * irpN, irpWidth), dtype=rawChan.dtype)
 
         if doFlip and temporalFilter:
-            rawChan = rawChan[:, ::-1]
+            rawChan = rawChan[::-1, :]
 
         # For now, simply repeat reference pixels
         for i in range(0, irpN):
-            refChan[:, i::irpN] = rawChan
+            refChan[i::irpN, :] = rawChan
 
         if doFlip and temporalFilter:
-            refChan = refChan[:, ::-1]
+            refChan = refChan[::-1, :]
 
         return refChan
 
@@ -1961,22 +1997,23 @@ class PfsIsrTask(ipIsr.IsrTask):
         nchan = pfsRaw.nchan
 
         # If we are a full frame, no interpolation is necessary.
-        if width == pfsRaw.h4Size:
+        if height == pfsRaw.h4Size:
             return refImg
 
-        refChanWidth = width // nchan
+        refChanHeight = height // nchan
 
         refChans = []
         readOrders = pfsRaw.getH4channelReadOrder()
+        self.log.debug(f'filling out IRP{pfsRaw.h4Size // height} image, with {readOrders=}')
         for c_i in range(nchan):
-            rawChan = refImg[:, c_i*refChanWidth:(c_i+1)*refChanWidth]
+            rawChan = refImg[c_i*refChanHeight:(c_i+1)*refChanHeight, :]
             doFlip = readOrders[c_i%2]
 
             # This is where we would intelligently interpolate.
             refChan = self.interpolateChannelIrp(pfsRaw, rawChan, doFlip)
             refChans.append(refChan)
 
-        fullRefImg = np.hstack(refChans)
+        fullRefImg = np.vstack(refChans)
 
         return fullRefImg
 
