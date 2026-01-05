@@ -52,7 +52,7 @@ class PfsTranslator(SubaruTranslator):
         "detector_unique_name": "DETECTOR",
         "exposure_id": "W_VISIT",
         "exposure_group": ("W_PFDSNM", dict(default="")),
-        "exposure_time": ("EXPTIME", dict(unit=u.s)),
+        "exposure_time": ("EXPTIME", dict(unit=u.s, default=0.0)),
         "focus_z": ("FOC-VAL", dict(unit=u.um, default=np.nan)),
         "observation_id": "W_VISIT",
         "pressure": ("OUT-PRS", dict(unit=u.hPa, default=np.nan)),
