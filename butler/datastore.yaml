@@ -1,0 +1,52 @@
+formatters:
+  # Override the default Exposure formatter
+  DecoratedImageU: lsst.obs.pfs.formatters.PfsFitsExposureFormatter
+  Exposure: lsst.obs.pfs.formatters.PfsFitsExposureFormatter
+  ExposureF: lsst.obs.pfs.formatters.PfsFitsExposureFormatter
+  ExposureI: lsst.obs.pfs.formatters.PfsFitsExposureFormatter
+
+  # PFS-specific dataset types
+  PfsRaw: lsst.obs.pfs.formatters.PfsRawFormatter
+  PfsConfig: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+  FiberProfileSet: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+  FiberTraceSet: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+  PfsFiberNorms: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+  DetectorMap: lsst.obs.pfs.formatters.DetectorMapFormatter
+  PfsArm: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+  PfsMerged: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+  PfsFluxReference: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+  PfsSingle: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+  PfsObject: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+  PfsCalibratedSpectra: lsst.obs.pfs.formatters.PfsCalibratedSpectraFormatter  # deprecated
+  PfsObjectSpectra: lsst.obs.pfs.formatters.PfsObjectSpectraFormatter  # deprecated
+  PfsCalibrated: lsst.obs.pfs.formatters.PfsCalibratedFormatter
+  PfsCoadd: lsst.obs.pfs.formatters.PfsCoaddFormatter
+  PfsCoZCandidates: lsst.obs.pfs.formatters.PfsCoZCandidatesFormatter
+  SkyModel: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+  FocalPlaneFunction: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+  ArcLineSet: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+  LsfDict: lsst.daf.butler.formatters.pickle.PickleFormatter
+  Lsf: lsst.daf.butler.formatters.pickle.PickleFormatter
+  NevenPsf: lsst.daf.butler.formatters.pickle.PickleFormatter
+  MultipagePdfFigure: pfs.drp.qa.formatters.PdfMatplotlibFormatter
+  QaDict: lsst.daf.butler.formatters.pickle.PickleFormatter
+  ImageCube: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+  ObjectGroupMap: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+  NirLinearity: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+templates:
+  default: "{run:/}/{datasetType}.{component:?}/{visit.day_obs:?}/{visit:?}/{datasetType}_{component:?}_{instrument:?}_{visit:?}_{arm:?}{spectrograph:?}_{detector:?}_{run}"
+  instrument+detector: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{detector:?}_{run}"  # used for defects
+  instrument+arm+spectrograph+dither: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{arm:?}{spectrograph:?}_{dither:?}_{run}"
+  instrument+arm+spectrograph+pfs_design_id: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{arm:?}{spectrograph:?}_{pfs_design_id:?}_{run}"
+  instrument+visit+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{visit.day_obs:?}/{visit:?}/{datasetType}_{component:?}_{instrument:?}_{visit:?}_{arm:?}{spectrograph:?}_{run}"
+  instrument+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{arm:?}{spectrograph:?}_{run}"
+  instrument+visit+arm: "{run:/}/{datasetType}.{component:?}/{visit.day_obs:?}/{visit:?}/{datasetType}_{component:?}_{instrument:?}_{visit:?}_{arm:?}_{run}"
+  instrument+arm: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{arm:?}_{run}"
+  instrument+combination+cat_id: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{combination:?}_{cat_id:?}_{run}"
+  instrument+combination+cat_id+obj_group: "{run:/}/{datasetType}.{component:?}/{cat_id:?}/{datasetType}_{component:?}_{instrument:?}_{combination:?}_{cat_id:?}_{obj_group:?}_{run}"
+  instrument+profiles_run+profiles_group: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{profiles_run:?}_{profiles_group:?}_{run}"
+  instrument+profiles_run+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{profiles_run:?}_{arm:?}{spectrograph:?}_{run}"
+  instrument+profiles_run+profiles_group+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{profiles_run:?}_{profiles_group:?}_{arm:?}{spectrograph:?}_{run}"
+  instrument+profiles_run+profiles_group+visit+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{visit.day_obs:?}/{visit:?}/{datasetType}_{component:?}_{instrument:?}_{profiles_run:?}_{profiles_group:?}_{visit:?}_{arm:?}{spectrograph:?}_{run}"
+  instrument+visit_group+arm+spectrograph: "{run:/}/{datasetType}.{component:?}/{visit_group.day_obs:?}/{visit_group:?}/{datasetType}_{component:?}_{instrument:?}_{visit_group:?}_{arm:?}{spectrograph:?}_{run}"
+  instrument+combination: "{run:/}/{datasetType}.{component:?}/{combination:?}/{datasetType}_{component:?}_{instrument:?}_{combination:?}_{run}"

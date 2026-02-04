@@ -1,0 +1,104 @@
+storageClasses:
+  PfsConfig:
+    pytype: pfs.drp.stella.datamodel.PfsConfig
+  FiberProfileSet:
+    pytype: pfs.drp.stella.FiberProfileSet
+  FiberTraceSet:
+    pytype: pfs.drp.stella.FiberTraceSet
+  PfsFiberNorms:
+    pytype: pfs.drp.stella.datamodel.PfsFiberNorms
+  DetectorMap:
+    pytype: pfs.drp.stella.DetectorMap
+    derivedComponents:
+      slitOffsets: NumpyArray  # Slit offsets
+      bbox: Box2I  # Bounding box
+  PfsArm:
+    pytype: pfs.drp.stella.datamodel.PfsArm
+  PfsMerged:
+    pytype: pfs.drp.stella.datamodel.PfsMerged
+  PfsFluxReference:
+    pytype: pfs.datamodel.pfsFluxReference.PfsFluxReference
+  PfsSingle:
+    pytype: pfs.drp.stella.datamodel.PfsSingle
+  PfsObject:
+    pytype: pfs.drp.stella.datamodel.PfsObject
+  PfsCalibratedSpectra:  # deprecated in favor of PfsCalibrated
+    pytype: pfs.drp.stella.datamodel.pfsTargetSpectra.PfsCalibratedSpectra
+    converters:
+      pfs.datamodel.drp.PfsCalibrated: pfs.drp.stella.datamodel.pfsTargetSpectra.PfsCalibratedSpectra.fromPfsCalibrated
+    parameters:
+      - objId  # Object identifier
+      - obj_id  # Object identifier
+    derivedComponents:
+      single: PfsSingle  # Single spectrum; requires objId/obj_id
+  PfsObjectSpectra:  # deprecated in favor of PfsCoadd
+    pytype: pfs.drp.stella.datamodel.pfsTargetSpectra.PfsObjectSpectra
+    converters:
+      pfs.datamodel.drp.PfsCoadd: pfs.drp.stella.datamodel.pfsTargetSpectra.PfsObjectSpectra.fromPfsCoadd
+    parameters:
+      - objId  # Object identifier
+      - obj_id  # Object identifier
+    derivedComponents:
+      single: PfsObject  # Single spectrum; requires objId/obj_id
+  PfsCalibrated:
+    pytype: pfs.datamodel.drp.PfsCalibrated
+    parameters:
+      - objId  # Object identifier
+      - obj_id  # Object identifier
+    derivedComponents:
+      single: PfsSingle  # Single spectrum; requires objId/obj_id
+  PfsCoadd:
+    pytype: pfs.datamodel.drp.PfsCoadd
+    parameters:
+      - objId  # Object identifier
+      - obj_id  # Object identifier
+    derivedComponents:
+      single: PfsObject  # Single spectrum; requires objId/obj_id
+  PfsCoZCandidates:
+    pytype: pfs.datamodel.pfsCoZCandidates.PfsCoZCandidates
+    parameters:
+      - objId  # Object identifier
+      - obj_id  # Object identifier
+    derivedComponents:
+      single: PfsZCandidates  # Single spectrum; requires objId/obj_id
+  PfsZCandidates:
+    pytype: pfs.datamodel.pfsZCandidates.PfsZCandidates
+  SkyModel:
+    pytype: pfs.drp.stella.sky2d.SkyModel
+  FocalPlaneFunction:
+    pytype: pfs.drp.stella.focalPlaneFunction.FocalPlaneFunction
+  ArcLineSet:
+    pytype: pfs.drp.stella.arcLine.ArcLineSet
+  LsfDict:
+    pytype: pfs.drp.stella.lsf.LsfDict
+  Lsf:
+    pytype: pfs.drp.stella.lsf.Lsf
+  NevenPsf:
+    pytype: pfs.drp.stella.NevenPsfContinued.NevenPsf
+  MultipagePdfFigure:
+    pytype: pfs.drp.qa.storageClasses.MultipagePdfFigure
+  QaDict:
+    pytype: pfs.drp.qa.storageClasses.QaDict
+  PfsRaw:
+    pytype: lsst.obs.pfs.raw.PfsRaw
+    parameters:
+      - bbox  # Bounding box to read (Box2I)
+      - readNum  # Read number of NIR ramp (int)
+    components:
+      exposure: Exposure  # CCD image or NIR CDS image, as an Exposure (like for a "raw")
+      image: Image  # CCD image or NIR CDS image
+      ramp: Image  # NIR ramp read image; requires readNum
+      numReads: int  # Number of NIR ramp reads
+      metadata: PropertyList  # header
+      visitInfo: VisitInfo  # parsed visit information
+      detector: Detector
+      id: int  # exposure ID
+      bbox: Box2I  # bounding box
+      dimensions: Extent2I  # size of image
+      xy0: Point2I  # bounding box origin
+  ImageCube:
+    pytype: lsst.obs.pfs.imageCube.ImageCube
+  ObjectGroupMap:
+    pytype: pfs.datamodel.objectGroupMap.ObjectGroupMap
+  NirLinearity:
+    pytype: lsst.obs.pfs.nirLinearity.NirLinearity
