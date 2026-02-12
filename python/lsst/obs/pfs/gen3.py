@@ -428,6 +428,8 @@ class PfsRawIngestTask(RawIngestTask):
         if (k := "azimuth") in supported:
             extras[k] = azimuth
 
+        expTime = float(obsInfo.exposure_time.to_value("s")) if obsInfo.exposure_time is not None else None
+
         return dimension.RecordClass(
             instrument=obsInfo.instrument,
             id=obsInfo.exposure_id,
@@ -436,7 +438,7 @@ class PfsRawIngestTask(RawIngestTask):
             group_id=obsInfo.visit_id,
             datetime_begin=obsInfo.datetime_begin,
             datetime_end=obsInfo.datetime_end,
-            exposure_time=float(obsInfo.exposure_time.to_value("s")),
+            exposure_time=expTime,
             # we are not mandating that dark_time be calculable
             dark_time=float(obsInfo.dark_time.to_value("s")) if obsInfo.dark_time is not None else None,
             observation_type=obsInfo.observation_type,
