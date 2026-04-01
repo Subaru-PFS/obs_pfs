@@ -610,15 +610,19 @@ class PfsIsrConnections(PipelineTaskConnections, dimensions=("instrument", "visi
 
     def adjustQuantum(self, inputs, outputs, label, dataId):
         """Adjust the quantum graph to remove arm=n biases"""
-        expRefs = inputs["ccdExposure"][1][0]
-        arm = expRefs.dataId["arm"]
+
         adjusted = {}
+        arm = dataId["arm"]
         if arm == "n":
             # We don't want the bias for arm=n
-            connection, oldRefs = inputs["bias"]
-            newRefs = [ref for ref in oldRefs if ref.dataId["arm"] != "n"]
-            adjusted["bias"] = (connection, newRefs)
-            inputs.update(adjusted)
+            try:
+                connection, oldRefs = inputs["bias"]
+                newRefs = [ref for ref in oldRefs if arm != "n"]
+                adjusted["bias"] = (connection, newRefs)
+            except KeyError:
+                pass
+
+        inputs.update(adjusted)
         super().adjustQuantum(inputs, outputs, label, dataId)
         return adjusted, {}
 
@@ -1876,7 +1880,7 @@ class PfsIsrTask(ipIsr.IsrTask):
             cfg = yaml.YAML(typ="safe", pure=True).load(f)
 
         if detectorName == 'n8':
-            detectorName = 'n3'
+            detectorName = 'n1'
             self.log.warn(f'using {detectorName} to fetch badRefPixels')
         if detectorName not in cfg:
             self.log.warn(f'{detectorName} not defined in {absFilename}')
@@ -2457,7 +2461,7 @@ class PfsIsrTask(ipIsr.IsrTask):
         if bbox is not None:
             stackShape = (nreads-1, bbox.getHeight(), bbox.getWidth())
         elif selectPixels is not None:
-            stackShape = (nreads-1, 1, len(selectPixels[0]))
+            stackShape = (nreads-1, len(selectPixels[1]), len(selectPixels[0]))
         else:
             stackShape = (nreads-1, *data0.shape)
 
@@ -2481,7 +2485,7 @@ class PfsIsrTask(ipIsr.IsrTask):
                 stack[r_idx-1, :, :] = ddata[bbox.getBeginY():bbox.getEndY(),
                                              bbox.getBeginX():bbox.getEndX()]
             elif selectPixels is not None:
-                stack[r_idx-1, 0, :] = ddata[selectPixels[1], selectPixels[0]]
+                stack[r_idx-1, :, :] = ddata[selectPixels[1], :][:, selectPixels[0]]
             else:
                 stack[r_idx-1, :, :] = ddata
             t2 = time.time()
