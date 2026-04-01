@@ -2056,7 +2056,7 @@ class PfsIsrTask(ipIsr.IsrTask):
         return ref
 
     def borderCorrect(self, pfsRaw, image, colWindow=4,
-                      doRows=True, doCols=True):
+                      doEdges=True, doChannels=True):
         """This is the "standard" Teledyne 'refPixel4' border reference pixel scheme.
 
         Step 1:
@@ -2070,6 +2070,8 @@ class PfsIsrTask(ipIsr.IsrTask):
         The output is not lovely but is functional. We are mainly here just to duplicate their
         standard logic. So please do *not* modify/improve this particular routine: we want to have
         it for any support discussions. Ok, maybe this should have been named 'borderCorrectRefPixel4'.
+
+        OK, one change: do swap rows/columns.
         """
         refPix = 4
 
@@ -2077,35 +2079,35 @@ class PfsIsrTask(ipIsr.IsrTask):
         if imHeight != pfsRaw.h4Size or imWidth != pfsRaw.h4Size:
             raise RuntimeError('not ready to deal with non-full images')
 
-        if doCols:
-            top = image[imHeight-refPix:, :]
-            bottom = image[:refPix, :]
+        if doChannels:
+            chanEdge1 = image[:, imHeight-refPix:]
+            chanEdge2 = image[:, :refPix]
 
-            chanWidth = imWidth // pfsRaw.nchan
+            chanHeight = imHeight // pfsRaw.nchan
             for c_i in range(pfsRaw.nchan):
-                xlow = c_i * chanWidth
-                xhigh = xlow + chanWidth
+                ylow = c_i * chanHeight
+                yhigh = ylow + chanHeight
                 # Leave ref columns unmolested.
                 if c_i == 0:
-                    xlow = refPix
+                    ylow = refPix
                 elif c_i == pfsRaw.nchan-1:
-                    xhigh = imWidth-refPix
-                ichan = image[:, xlow:xhigh]
+                    yhigh = imWidth-refPix
+                ichan = image[ylow:yhigh, :]
 
-                chanOffset = (top[:, xlow:xhigh].mean()
-                              + bottom[:, xlow:xhigh].mean()) / 2
+                chanOffset = (chanEdge1[ylow:yhigh, :].mean()
+                              + chanEdge2[ylow:yhigh, :].mean()) / 2
                 ichan -= chanOffset
 
-        if doRows:
-            sideRefImage = np.ndarray((imHeight, refPix*2), dtype=image.dtype)
-            sideRefImage[:, :refPix] = image[:, :refPix]
-            sideRefImage[:, refPix:] = image[:, imWidth-refPix:]
-            sideCorr = np.zeros((imHeight, 1))
+        if doEdges:
+            edgeRefImage = np.ndarray((refPix*2, imHeight), dtype=image.dtype)
+            edgeRefImage[:refPix, :] = image[:refPix, :]
+            edgeRefImage[refPix:, :] = image[imWidth-refPix:, :]
+            edgeCorr = np.zeros(imHeight, dtype=image.dtype)
 
             # Not quite right at the ends -- should not be including the reference rows.
-            for row_i in range(colWindow, imHeight-colWindow+1):
-                sideCorr[row_i] = sideRefImage[row_i-colWindow:row_i+colWindow, :].mean()
-                image[row_i, :] -= sideCorr[row_i]
+            for edgeCol_i in range(colWindow, imHeight-colWindow+1):
+                edgeCorr[edgeCol_i] = edgeRefImage[:, edgeCol_i-colWindow:edgeCol_i+colWindow].mean()
+                image[:, edgeCol_i] -= edgeCorr[edgeCol_i]
 
         return image
 
