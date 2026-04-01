@@ -364,9 +364,10 @@ class PfsRaw:
             raise RuntimeError(f"The read must be in the range 1..{numReads}; saw {readNum}")
         hdu = 2 * readNum - 1 + dict(IMAGE=0, REF=1)[imageType]
 
-        hasResetFrame = self.metadata["W_4FMTVR"] >= 3  # extra IMG/REF HDUs for the initial reset frame
-        if hasResetFrame:
-            hdu += 2
+        if self.metadata["W_4FMTVR"] >= 3:
+            nResetFrame = self.metadata["W_H4NRST"]  # extra IMG/REF HDUs for the initial reset frame
+            if nResetFrame > 0:
+                hdu += 2 * nResetFrame
 
         args = [bbox] if bbox is not None else []
         image = DecoratedImageF(self.path, hdu, *args)
