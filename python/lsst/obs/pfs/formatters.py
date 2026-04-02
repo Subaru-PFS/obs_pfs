@@ -25,7 +25,7 @@ __all__ = (
 class PfsRawFormatter(FitsRawFormatterBase):
     translatorClass = PfsTranslator
     filterDefinitions = pfsFilterDefinitions
-    pfsCategory: Optional[Literal["F", "L", "S"]] = None
+    pfsCategory: Optional[Literal["F", "L", "J", "S"]] = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
