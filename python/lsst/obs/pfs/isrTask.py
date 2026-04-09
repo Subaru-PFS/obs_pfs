@@ -1112,7 +1112,9 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         # All 3-d ramp-based operations are hidden inside this call. After .makeNirExposure()
         # we operate on a 2-d image.
-        exposure, rawRamp = self.makeNirExposure(pfsRaw, nirDark, self.config.h4.doWriteRawCube)
+        exposure, rawRamp = self.makeNirExposure(pfsRaw, nirDark,
+                                                 defects=None,
+                                                 doReturnRawCube=self.config.h4.doWriteRawCube)
 
         # We BAD mask the defects now, but do not interpolate.
         if defects is not None:
@@ -1430,7 +1432,11 @@ class PfsIsrTask(ipIsr.IsrTask):
             dark /= gain
         return dark
 
-    def makeNirExposure(self, pfsRaw, nirDark=None, doReturnRawCube=False):
+    def makeNirExposure(self,
+                        pfsRaw,
+                        nirDark=None,
+                        defects=None,
+                        doReturnRawCube=False):
         """Construct a 2D image from the NIR ramp data.
 
         Parameters
@@ -1456,7 +1462,7 @@ class PfsIsrTask(ipIsr.IsrTask):
         else:
             # Too many interacting switches for CDS/UTR/darks. Especially note 2-d doDark is still possible.
             self.log.info("reading full ramp...")
-            deltas = self.makeUTRdeltas(pfsRaw)
+            deltas = self.makeUTRdeltas(pfsRaw, defects=defects)
 
             # We do not currently use the indices of the masked pixels,
             # but do get them for when we put in the effort.
@@ -1916,6 +1922,116 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         return out
 
+    def loadExtraChannelOrders(self, detectorName: str) -> dict[int, int]:
+        # Yes, yes, get this from a config file...
+        channelOrders = dict(n2={16:13})
+        return channelOrders.get(detectorName, dict())
+
+    def ampIm(self, im, chanNum, nChannels=32, doTrim=True):
+        """Get the pixels for an amp. """
+
+        refPix = 4
+        if doTrim:
+            xx = np.arange(refPix, 4096-refPix)
+        else:
+            xx = np.arange(4096)
+
+        chanWidth = 4096 // nChannels
+        y0 = chanNum*chanWidth
+        if doTrim and chanNum == 0:
+            y0 = refPix
+        y1 = (chanNum+1)*chanWidth
+        if doTrim and chanNum == (nChannels-1):
+            y1 -= refPix
+        ampIm = im[y0:y1, xx]
+        return ampIm, y0, y1
+
+
+    def deslopeAmps(self,
+                    im: np.ndarray,
+                    mask: Optional[np.ndarray]=None,
+                    order: int=9):
+
+        # We are modifying the pixels in place.
+        im = im.copy()
+        refPix = 4
+        xx = np.arange(refPix, 4096-refPix)
+
+        channelOrders = self.loadExtraChannelOrders('n2')#pfsRaw.detector.getName())
+
+        for c in range(32):
+            order1 = channelOrders.get(c, order)
+            amp, y0, y1 = self.ampIm(im, c)
+            if mask is not None:
+                ampMask = mask[y0:y1, xx] != 0
+                maskedAmp = np.ma.array(amp, mask=ampMask)
+                ampVec = np.ma.median(maskedAmp, axis=0)
+            else:
+                ampVec = np.nanmedian(amp, axis=0)
+            lf = np.polyfit(xx, ampVec, order1)
+            slope = np.polyval(lf, xx)
+            im[y0:y1, xx] -= slope[np.newaxis, :]
+        return im
+
+    def getFinalIrp(self,
+                    irp: np.ndarray,
+                    data: np.ndarray,
+                    defectMask: Optional[np.ndarray],
+                    order=9, leakFactor=0.005
+                    ) -> np.ndarray:
+        """Given an IRP and a data image, return the correction image for the data array.
+
+        We believe that the correction from the IRP frame is a single
+        level per readout row: that there is some common external
+        source of noise, like a power supply, whose output varies
+        pretty slowly.
+
+        Parameters
+        ----------
+        irp : `numpy.ndarray`
+           The raw IRP read, always full-frame
+        data : `numpy.ndarray`
+           The raw data read. The IRP image will be affected by crosstalk from this.
+        defectMask : `numpy.ndarray`
+           Pixels to ignore due to data crosstalk
+        order : `int`
+           The polynomial order to flatten the channels with
+        leakFactor : `float`
+           How much of the `data` image to subtract from the IRP image.
+
+        Returns
+        -------
+        finalIrp : `numpy.ndarray`
+           The processed IRP1 image.
+        """
+
+        refPix = 4
+
+        irp1 = irp.copy()
+        if data is not None and leakFactor != 0:
+            data1 = data - np.median(data)
+            irp1 -= data1*leakFactor
+
+        # Subtract the per-pixel IRP row offsets (~1000 ADU)
+        irp1 -= np.median(irp1, axis=1, keepdims=True)
+
+        # Flatten the per-channel slopes in the IRP image (~100 ADU)
+        # Note that most channels are well modelled by order 2 or 3, but
+        # some have pretty sharp features at the edge. So we use order=9
+        # by default.
+        irp1 = self.deslopeAmps(irp1, mask=defectMask, order=order)
+
+        # Construct the correction vector by medianing as many rows as
+        # we can use.
+        irpCorr = np.median(irp1, axis=0, keepdims=True)
+
+        # Do not correct the border pixels
+        irpCorr[:refPix] = 0
+        irpCorr[-refPix:] = 0
+
+        return irpCorr
+
+
     def interpolateChannelIrp(self, pfsRaw,
                               rawChan: np.ndarray,
                               doFlip: bool) -> np.ndarray:
@@ -2263,9 +2379,11 @@ class PfsIsrTask(ipIsr.IsrTask):
         else:
             return fix_w
 
-    def makeUTRdeltas(self, pfsRaw, r0=0, r1=-1, nreads=None, bbox=None,
-                      showTimes=False) -> np.ndarray:
+    def makeDiffUTRdeltas(self, pfsRaw, r0=0, r1=-1, nreads=None, bbox=None,
+                          showTimes=False) -> np.ndarray:
         """Return all the fully IRP-corrected frames in a single 3d stack.
+
+        [ This routine is probably obsolete. ]
 
         Given two raw data images d0 and d1, and two raw IRP images i0 and i1, the net CDS image
         can be either (d1 - i1) - (d0 - i0), or (d1 - d0) - (i1 - i0). The IRP row has various
@@ -2370,6 +2488,135 @@ class PfsIsrTask(ipIsr.IsrTask):
         # Warning: prepend=0 causes promotion to float64
         # This should arguably be constructed on-the-fly, read by read.
         return np.diff(stack, axis=0, prepend=np.zeros_like(stack[0:1]))
+
+
+    def makeUTRflux(self, pfsRaw, defects=None, r0=0, r1=-1, nreads=None,
+                    bbox=None, selectPixels=None,
+                    showTimes=False) -> np.ndarray:
+        """Return all the fully IRP-corrected frames in a single 3d stack.
+
+        Correct the data reads using the IRP reads, read-by-read.
+
+        Parameters
+        ----------
+        pfsRaw : `lsst.obs.pfs.PfsRaw`
+          Access to the raw ramp
+        defects : `lsst.ip.isr.Defects`
+          Gets us the known bad pixels.
+        r0 : `int`
+          The 0-indexed read to start from.
+        r1 : `int`
+          The 0-indexed read to end with. Inclusive.
+        nreads : `int`, optional.
+          The number of reads to return, spaced ~evenly between r0 and r1.
+        bbox : `lsst.geom.Box2I`
+            The region of the image to return. If None, return the whole image.
+        selectPixels : `(np.array,np.array)`
+            lists of (x, y) pixels to select instead of using a bbox.
+
+        Returns
+        -------
+        flux : 3-d float32 numpy array
+           the UTR stack, with axis 0 being the reads up the ramp.
+        """
+
+        r0 = pfsRaw.positiveIndex(r0)
+        r1 = pfsRaw.positiveIndex(r1)
+        if r1-r0 < 1:
+            raise ValueError(f'r1 ({r1}) must be greater than r0 ({r0}) + 1:')
+        if nreads is None:
+            nreads = r1 - r0 + 1
+        reads = np.linspace(r0, r1, nreads, dtype='i2')
+
+        if defects is None:
+            self.log.warning('!!!!!!!!!!!!!!!!!CPL HACKING n2/18734 defects from file!!!!!!!!!!!!!!!!')
+            import lsst.ip.isr.defects as isrDefects
+            defects = isrDefects.Defects.readText('/data/ramps/notebooks/defects/n2/20260126T072353.ecsv')
+        if defects is not None:
+            mask = afwImage.Mask(4096, 4096)
+            defects.maskPixels(mask)
+            maskImage = mask.getArray()
+
+        # n3/18321 channel 24 is covered with pixels which have spikes
+        # from the ASIC.  We need to repair both the data and IRP
+        # pixels separately, and furthermore want to repair the
+        # non-interpolated IRP images. So read both in first and
+        # correct them before building the proper deltas. Since I/O is
+        # significant, we keep the raw data and IRP cubes, then
+        # re-read from those instead of from disk.
+        #
+        badChans = self.loadBadAsicChannels(pfsRaw.detector.getName())
+        if badChans:
+            rawData = self.makeRawDataCube(pfsRaw=pfsRaw, r0=r0, r1=r1, nreads=nreads)
+            rawIrps = self.makeRawIrpNcube(pfsRaw=pfsRaw, r0=r0, r1=r1, nreads=nreads)
+
+            for badChan in badChans:
+                fixedData_w = self.repairAsicSpikes(pfsRaw, rawData, badChan)
+                fixedIrp_w = self.repairAsicSpikes(pfsRaw, rawIrps, badChan)
+                self.log.info(f'repaired {len(fixedData_w[0])} data and {len(fixedIrp_w[0])} IRP '
+                              f'ASIC pixels in channel {badChan}')
+        else:
+            rawData = rawIrps = None
+
+        # We are not squirreling away the bbox, but really should for the final Exposure
+        if bbox is not None:
+            stackShape = (nreads, bbox.getHeight(), bbox.getWidth())
+        elif selectPixels is not None:
+            if len(selectPixels[0]) != len(selectPixels[1]):
+                raise ValueError('both selectPixels arrays must have the same length')
+            stackShape = (nreads-1, 1, len(selectPixels[1]))
+            self.log.warn(f'trimming pixels to {stackShape}')
+        else:
+            stackShape = (nreads, 4096, 4096)
+        stack = np.empty(shape=stackShape, dtype='f4')
+        for r_idx, r_i in enumerate(reads):
+            t0 = time.time()
+            if rawData is not None:
+                data1 = self.makeRawDataArray(pfsRaw, r_idx, fromArray=rawData)
+                irp1 = self.makeRawIrpArray(pfsRaw, r_idx, fromArray=rawIrps)
+            else:
+                data1 = self.makeRawDataArray(pfsRaw, r_i, fromArray=rawData)
+                irp1 = self.makeRawIrpArray(pfsRaw, r_i, fromArray=rawIrps)
+            t1 = time.time()
+
+            irpCorr = self.getFinalIrp(irp=irp1,
+                                       data=data1,
+                                       defectMask=maskImage)
+            data1 -= irpCorr
+            if bbox is not None:
+                stack[r_idx, :, :] = data1[bbox.getBeginY():bbox.getEndY(),
+                                           bbox.getBeginX():bbox.getEndX()]
+            elif selectPixels is not None:
+                stack[r_idx-1, 0, :] = data1[selectPixels[1], selectPixels[0]]
+            else:
+                stack[r_idx, :, :] = data1
+            t2 = time.time()
+            if showTimes:
+                print(f'cds {r_i} io1={t1-t0:0.3f} proc={t2-t1:0.3f}')
+
+        return stack
+
+    def makeUTRdeltas(self, pfsRaw, defects=None, r0=0, r1=-1, nreads=None,
+                      selectPixels=None, bbox=None,
+                      showTimes=False) -> np.ndarray:
+        """Return the fully IRP-corrected frames in a singe 3d stack.
+
+        Simply call .makeUTRflux() and return the running diffs from that.
+        """
+
+        fluxStack = self.makeUTRflux(pfsRaw, defects=defects,
+                                     r0=r0, r1=r1, nreads=nreads,
+                                     selectPixels=selectPixels,
+                                     bbox=bbox, showTimes=showTimes)
+
+        # Warning: prepend=0 causes promotion to float64
+        # This should arguably be constructed on-the-fly, read by read.
+        #return np.diff(stack, axis=0, prepend=np.zeros_like(stack[0:1]))
+        #return np.diff(stack, axis=0, prepend=stack[0:1])
+
+        #After switching to fitting through individual reads, we do not want to
+        #pad with a 0-level read0.
+        return np.diff(fluxStack, axis=0)
 
     def readIPC(self, detectorName: str) -> dict[int, dict[int, float]]:
         """Read IPC coefficients from file
