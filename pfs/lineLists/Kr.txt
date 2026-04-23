@@ -261,7 +261,7 @@
 585.44974            5.00    KrI          0 UNKNOWN   0
 585.68000             nan    KrI          0 UNKNOWN   0
 585.89400            1.00    KrI          0 UNKNOWN   0
-586.83763           50.00    KrI          0 UNKNOWN   0
+586.83763           50.00    KrI          4 UNKNOWN   0
 587.25432         3000.00    KrI          0 UNKNOWN   0
 588.15300           50.00    KrI          0 UNKNOWN   0
 588.28100            2.00    KrI          0 UNKNOWN   0
@@ -279,7 +279,7 @@
 601.38206           50.00    KrI          0 UNKNOWN   0
 603.75053           15.00    KrI          0 UNKNOWN   0
 605.10300            3.00    KrI          0 UNKNOWN   0
-605.78031           60.00    KrI          0 UNKNOWN   0
+605.78031           60.00    KrI          4 UNKNOWN   0
 607.69371           20.00    KrI          0 UNKNOWN   0
 608.45452           40.00    KrI          0 UNKNOWN   0
 608.96900            2.00    KrI          0 UNKNOWN   0
