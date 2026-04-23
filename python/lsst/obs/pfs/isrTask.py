@@ -820,8 +820,11 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         raw = inputs["ccdExposure"]  # Inheritance requires "ccdExposure", but it's actually a PfsRaw
         isNir = raw.isNir()
-        if isNir and self.config.h4.doIPC:
-            inputs["ipcCoeffs"] = self.readIPC(raw.detector.getName())
+        if isNir:
+            if self.config.h4.doIPC:
+                inputs["ipcCoeffs"] = self.readIPC(raw.detector.getName())
+            if self.config.doLinearize:
+                raise RuntimeError('For H4, use config.h4.doLinearize')
 
         if self.config.doDark:
             if isNir and self.config.h4.useDarkCube:
@@ -1436,7 +1439,8 @@ class PfsIsrTask(ipIsr.IsrTask):
                         pfsRaw,
                         nirDark=None,
                         defects=None,
-                        doReturnRawCube=False):
+                        doReturnRawCube=False,
+                        r0=0, r1=-1):
         """Construct a 2D image from the NIR ramp data.
 
         Parameters
@@ -1448,6 +1452,10 @@ class PfsIsrTask(ipIsr.IsrTask):
             Dark cube to subtract (if ``config.h4.useDarkCube`` is ``True``).
         doReturnRawCube : `bool`, optional
             If True, return the raw ramp cube as well as the 2D image.
+        r0 : `int`
+            Starting read to process
+        r1 : `int`
+            Ending read to process
 
         Returns
         -------
@@ -1457,12 +1465,12 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         if self.config.h4.quickCDS:
             self.log.info("creating quick CDS.")
-            nirImage = self.makeCDS(pfsRaw)
+            nirImage = self.makeCDS(pfsRaw, r0=r0, r1=r1)
             flux = None
         else:
             # Too many interacting switches for CDS/UTR/darks. Especially note 2-d doDark is still possible.
             self.log.info("reading full ramp...")
-            deltas = self.makeUTRdeltas(pfsRaw, defects=defects)
+            deltas = self.makeUTRdeltas(pfsRaw, defects=defects, r0=r0, r1=r1)
 
             # We do not currently use the indices of the masked pixels,
             # but do get them for when we put in the effort.
