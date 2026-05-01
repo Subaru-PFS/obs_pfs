@@ -38,6 +38,14 @@ def getLamps(md):
         "W_ENIHGA": "HgAr_eng",
         "W_ENIKRY": "Kr_eng",
         "W_ENINEO": "Ne_eng",
+        # New IIS lamps/source/actor
+        "W_IISARG": "Ar_eng",
+        "W_IISQTH": "Quartz_eng",
+        "W_IISHGA": "HgAr_eng",
+        "W_IISKRY": "Kr_eng",
+        "W_IISNEO": "Ne_eng",
+        "W_IISHYD": "H_eng",
+        "W_IISHE": "He_eng",
         # Modern "short" headers
         "W_AITNEO": "Ne",
         "W_AITXEN": "Xe",
@@ -72,6 +80,8 @@ def getLampElements(md):
         "HgAr_eng": ["Hg_eng", "Ar_eng"],
         "Kr_eng": ["Kr_eng"],
         "Ne_eng": ["Ne_eng"],
+        "H_eng": ["H_eng"],
+        "He_eng": ["He_eng"],
         # Science fibres
         "Quartz": [],
         "Ar": ["Ar"],
