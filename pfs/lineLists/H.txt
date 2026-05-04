@@ -1,0 +1,40 @@
+# File originally generated using Claude
+#
+# Columns:
+# 1: wavelength (nm)
+# 2: intensity (arbitrary units)
+# 3: description (ionic species)
+# 4: status (bitmask)
+#
+# Status bitmask elements:
+# GOOD=0: Line is good
+# NOT_VISIBLE=1: Line is not typically visible in PFS (maybe too faint)
+# BLEND=2: Line is blended with other line(s)
+# SUSPECT=4: Line is of suspect quality
+# REJECTED=8: Line has been rejected from use in PFS
+# BROAD=16: Line is broader than normal
+#
+# H I vacuum wavelengths (300-1270 nm)
+# Ritz wavelengths from NIST Atomic Spectra Database
+# Lyman series (n→1):
+94.97200             1.00    HI           1
+102.57200            1.00    HI           1
+121.50200            2.00    HI           1
+# Balmer series (n→2):
+364.56700           80.00    HI           0
+410.17340         1000.00    HI           0
+434.04720          800.00    HI           0
+486.13270         2000.00    HI           0
+656.29210         5000.00    HI           0
+# Paschen series (n→3):
+818.40100          300.00    HI           0
+875.02000          250.00    HI           0
+954.59500          180.00    HI           0
+1093.60000          350.00    HI           0
+# Brackett series (n→4):
+1281.80000          200.00    HI           0
+1458.00000          150.00    HI           0
+1687.00000          120.00    HI           0
+# Pfund series (n→5):
+1944.00000          100.00    HI           0
+2166.00000           80.00    HI           0
