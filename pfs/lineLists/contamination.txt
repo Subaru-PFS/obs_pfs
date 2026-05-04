@@ -6,6 +6,8 @@
 # 2: intensity (arbitrary units)
 # 3: description (ionic species)
 # 4: status (bitmask)
+# 5: transition
+# 6: source reference
 #
 # Status bitmask elements:
 # GOOD=0: Line is good
@@ -15,7 +17,6 @@
 # REJECTED=8: Line has been rejected from use in PFS
 # BROAD=16: Line is broader than normal
 #
-#
 # Source bitmask elements:
 # NONE=0: No source information available
 # MANUAL=1: Lines added or modified by hand
@@ -24,10 +25,8 @@
 # ROUSSELOT2000=8: Rousselot+2000 (2000A&A...354.1134R)
 # SDSS=16: Lines taken from SDSS (https://www.sdss.org/dr14/spectro/spectro_basics)
 #
-777.417		     10	   OI		2   XXX 2
-777.630		     10	   OI		2   XXX 2
-777.753		     10	   OI		2   XXX 2
-844.875		     15	   OI		0   XXX 2
-1129.04		     15	   OI		0   XXX 2
-
-
+777.417              10.00    OI           2    3p->3s                      2
+777.630              10.00    OI           2    3p->3s                      2
+777.753              10.00    OI           2    3p->3s                      2
+844.875              15.00    OI           0    4p->4s                      2
+1129.04              15.00    OI           0    3p->3s                      2
