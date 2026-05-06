@@ -52,6 +52,7 @@ from lsst.daf.butler import DimensionGroup
 
 from . import imageCube
 from . import nirLinearity
+from . import linearity
 from .overscan import PfsOverscanCorrectionTask
 from pfs.drp.stella.crosstalk import PfsCrosstalkTask
 
@@ -153,7 +154,7 @@ class H4Config(pexConfig.Config):
         doc="write out raw-ish ISRCube (UTR, e-, with IRP and CR corrections)",
     )
     doLinearize = pexConfig.Field(dtype=bool, default=True, doc="Apply linearity correction?")
-    linearizeBeforeUTR = pexConfig.Field(dtype=bool, default=False,
+    linearizeBeforeUTR = pexConfig.Field(dtype=bool, default=True,
                                          doc="Apply linearity correction before UTR")
 
 
@@ -1109,17 +1110,18 @@ class PfsIsrTask(ipIsr.IsrTask):
                 raise RuntimeError("Linearity corrections must be available if config.h4.doLinearize=True.")
             if defects is None:
                 self.log.warn('You usually want to supply defects when linearizing. Will avoid worst pixels.')
-
+        else:
+            linearity = None
         # All 3-d ramp-based operations are hidden inside this call. After .makeNirExposure()
         # we operate on a 2-d image.
-        exposure, rawRamp = self.makeNirExposure(pfsRaw, nirDark, self.config.h4.doWriteRawCube)
+        exposure, rawRamp = self.makeNirExposure(pfsRaw, nirDark,
+                                                 linearity=linearity,
+                                                 defects=defects,
+                                                 doReturnRawCube=self.config.h4.doWriteRawCube)
 
         # We BAD mask the defects now, but do not interpolate.
         if defects is not None:
             super().maskDefect(exposure, defects)
-        if self.config.h4.doLinearize:
-            self.log.info("Correcting non-linearity.")
-            exposure = self.applyNirLinearity(pfsRaw, exposure, linearity)
 
         assert len(exposure.getDetector()) == 1, "Fix me now we have multiple channels"
 
@@ -1212,13 +1214,20 @@ class PfsIsrTask(ipIsr.IsrTask):
            The full path of the linearity corrections file, or None if not found.
         """
 
+        CPLhacking = True
+
         filename = f'nirLinearity-{cam}.fits'
         absFilename = os.path.join(getPackageDir("drp_pfs_data"), "nirLinearity", filename)
         if not os.path.exists(absFilename):
             self.log.warn(f'no linearity available for {cam}: {absFilename} not found')
             return None
 
-        return nirLinearity.NirLinearity.readFits(absFilename)
+        # Should look at the header and distinguish
+        if CPLhacking:
+            self.log.warn('CPL hacking on linearity')
+            return linearity.loadFits(absFilename)
+        else:
+            return nirLinearity.NirLinearity.readFits(absFilename)
 
     def nirLinearityChebyshev(self, exposure, linearity):
         """Apply linearity corrections using numpy polynomials.
@@ -1430,7 +1439,12 @@ class PfsIsrTask(ipIsr.IsrTask):
             dark /= gain
         return dark
 
-    def makeNirExposure(self, pfsRaw, nirDark=None, doReturnRawCube=False):
+    def makeNirExposure(self,
+                        pfsRaw,
+                        nirDark=None,
+                        linearity=None,
+                        defects=None,
+                        doReturnRawCube=False):
         """Construct a 2D image from the NIR ramp data.
 
         Parameters
@@ -1475,6 +1489,24 @@ class PfsIsrTask(ipIsr.IsrTask):
                     darkCube = self.getDarkCube(nirDark, len(flux))
                     flux -= darkCube
 
+            if self.config.h4.doLinearize and linearity is not None:
+                self.log.info("Correcting non-linearity.")
+                if defects is not None:
+                    mi = afwImage.MaskedImageF(geom.Extent2I(4096,4096))
+                    defects.maskPixels(mi)
+                    defectMask = (mi.mask.array>0)
+                    self.log.info(f"   starting with {defectMask.sum()} defect pixels")
+                else:
+                    defectMask = None
+                
+                ramp = nirLinearity.Ramp(reads=flux, validMask=defectMask)
+                linearizedRamp = nirLinearity.apply(linearity, ramp)
+                flux = linearizedRamp.cumulativeLinear
+                newMask = linearizedRamp.badPixelMask
+            else:
+                newMask = None
+                
+            if self.config.h4.applyUTRWeights:
                 self.log.info("applying UTR weights.")
                 rates = self.calcUTRrates(flux)
                 nirImage = rates * len(flux)
@@ -1487,6 +1519,26 @@ class PfsIsrTask(ipIsr.IsrTask):
                     nirImage = flux[-1] - flux[0]
 
         exposure = self._makeExposure(pfsRaw, nirImage)
+        if newMask is not None:
+            # Declare that all pixels above the available linearization
+            # limits are SATurated.
+            saturated = (newMask & nirLinearity.ABOVE_VALID_RANGE) > 0
+            exposure.mask.array[saturated] |= exposure.mask.getPlaneBitMask('SAT')
+
+            # Declare that everything else is BAD. Note that this gets the border pixels. We
+            # no not want to do that, but they are causing trouble downstream so we mark them
+            # here for now.
+            lowVal = (newMask & nirLinearity.BELOW_VALID_RANGE) > 0
+            badMask = (newMask & ~saturated & ~lowVal) > 0
+            exposure.mask.array[badMask] |= exposure.mask.getPlaneBitMask('BAD')
+
+            defectMask2 = (newMask & nirLinearity.MASKED_BY_INPUT) > 0
+            self.log.info(f'nSat={saturated.sum()} '
+                          f'nLow={lowVal.sum()} '
+                          f'nBad={badMask.sum()} '
+                          f'nDefects={"none" if defectMask is None else defectMask.sum()} '
+                          f'nDefects2={defectMask2.sum()}')
+
         return exposure, flux if doReturnRawCube else None
 
     def makeRawDataArray(self, pfsRaw, readNum, fromArray=None) -> np.ndarray:
