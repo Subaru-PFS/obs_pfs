@@ -98,6 +98,8 @@ def _makeDefaultIsrTask(doLinearize: bool):
     config.h4.doIPC = False
     config.h4.doWriteRawCube = True
     config.h4.doLinearize = doLinearize
+    # Rate-based CR rejection requires linearization to have run.
+    config.h4.doRateCR = doLinearize
 
     config.validate()
     return pfsIsrTask.PfsIsrTask(config=config)
@@ -110,6 +112,7 @@ def _ensureIsrTask(isrTask, doLinearize: bool):
 
     needsRebuild = (
         bool(isrTask.config.h4.doLinearize) != bool(doLinearize)
+        or bool(isrTask.config.h4.doRateCR) != bool(doLinearize)
         or not bool(isrTask.config.h4.doWriteRawCube)
         or bool(isrTask.config.h4.quickCDS)
     )
