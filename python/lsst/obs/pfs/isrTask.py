@@ -157,6 +157,29 @@ class H4Config(pexConfig.Config):
     linearizeBeforeUTR = pexConfig.Field(dtype=bool, default=True,
                                          doc="Apply linearity correction before UTR")
 
+    doRateCR = pexConfig.Field(
+        dtype=bool, default=False,
+        doc="Detect and repair single-read positive rate outliers (CRs) after linearization. "
+            "Replaces the older delta-space correctCRs path on H4 ramps.",
+    )
+    rateCRnSigma = pexConfig.Field(
+        dtype=float, default=4.0,
+        doc="Per-pixel sigma threshold for rate-based CR detection.",
+    )
+    rateCRsigmaFloorADU = pexConfig.Field(
+        dtype=float, default=8.0,
+        doc="Minimum sigma in ADU/read; protects faint pixels from collapsing the threshold "
+            "to MAD-noise.",
+    )
+    rateCRexcessFloorADU = pexConfig.Field(
+        dtype=float, default=15.0,
+        doc="Minimum (max_delta - median) excess in ADU/read required to flag a CR.",
+    )
+    rateCRminReads = pexConfig.Field(
+        dtype=int, default=8,
+        doc="Skip rate-based CR detection on ramps shorter than this many reads.",
+    )
+
 
 class PfsAssembleCcdTask(AssembleCcdTask):
     def assembleCcd(self, exposure):
@@ -1503,9 +1526,32 @@ class PfsIsrTask(ipIsr.IsrTask):
                 linearizedRamp = h4Linearity.apply(linearity, ramp)
                 flux = linearizedRamp.cumulativeLinear
                 newMask = linearizedRamp.badPixelMask
+
+                if self.config.h4.doRateCR:
+                    crGood = (newMask == 0)
+                    if defectMask is not None:
+                        crGood &= ~defectMask
+                    crResult = h4Linearity.cr.detectAndRepair(
+                        flux,
+                        goodPixelMask=crGood,
+                        nSigma=self.config.h4.rateCRnSigma,
+                        sigmaFloorADU=self.config.h4.rateCRsigmaFloorADU,
+                        excessFloorADU=self.config.h4.rateCRexcessFloorADU,
+                        minReads=self.config.h4.rateCRminReads,
+                    )
+                    self.log.info(
+                        f"rate-CR step: flagged {crResult.nFlagged} pixels "
+                        f"(nSigma={self.config.h4.rateCRnSigma}, "
+                        f"sigmaFloor={self.config.h4.rateCRsigmaFloorADU} ADU, "
+                        f"excessFloor={self.config.h4.rateCRexcessFloorADU} ADU)."
+                    )
+                else:
+                    crResult = None
             else:
                 newMask = None
-                
+                crResult = None
+
+
             if self.config.h4.applyUTRWeights:
                 self.log.info("applying UTR weights.")
                 rates = self.calcUTRrates(flux)
@@ -1534,11 +1580,16 @@ class PfsIsrTask(ipIsr.IsrTask):
 
             defectMask2 = (newMask & h4Linearity.MASKED_BY_INPUT) > 0
             exposure.mask.array[defectMask2]  |= exposure.mask.getPlaneBitMask('BAD')
+            nCR = crResult.nFlagged if crResult is not None else 0
             print(f'nSat={saturated.sum()} '
                           f'nLow={lowVal.sum()} '
                           f'nBad={badMask.sum()} '
                           f'nDefects={"none" if defectMask is None else defectMask.sum()} '
-                          f'nDefects2={defectMask2.sum()}')
+                          f'nDefects2={defectMask2.sum()} '
+                          f'nCR={nCR}')
+
+        if crResult is not None and crResult.nFlagged > 0:
+            exposure.mask.array[crResult.flagMask] |= exposure.mask.getPlaneBitMask("CR")
 
         return exposure, flux if doReturnRawCube else None
 
