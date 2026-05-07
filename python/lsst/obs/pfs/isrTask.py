@@ -52,7 +52,7 @@ from lsst.daf.butler import DimensionGroup
 
 from . import imageCube
 from . import nirLinearity
-from . import linearity
+from . import h4Linearity
 from .overscan import PfsOverscanCorrectionTask
 from pfs.drp.stella.crosstalk import PfsCrosstalkTask
 
@@ -1225,7 +1225,7 @@ class PfsIsrTask(ipIsr.IsrTask):
         # Should look at the header and distinguish
         if CPLhacking:
             self.log.warn('CPL hacking on linearity')
-            return linearity.loadFits(absFilename)
+            return h4Linearity.loadFits(absFilename)
         else:
             return nirLinearity.NirLinearity.readFits(absFilename)
 
@@ -1499,8 +1499,8 @@ class PfsIsrTask(ipIsr.IsrTask):
                 else:
                     defectMask = None
                 
-                ramp = nirLinearity.Ramp(reads=flux, validMask=defectMask)
-                linearizedRamp = nirLinearity.apply(linearity, ramp)
+                ramp = h4Linearity.Ramp(reads=flux, validMask=defectMask)
+                linearizedRamp = h4Linearity.apply(linearity, ramp)
                 flux = linearizedRamp.cumulativeLinear
                 newMask = linearizedRamp.badPixelMask
             else:
@@ -1522,18 +1522,19 @@ class PfsIsrTask(ipIsr.IsrTask):
         if newMask is not None:
             # Declare that all pixels above the available linearization
             # limits are SATurated.
-            saturated = (newMask & nirLinearity.ABOVE_VALID_RANGE) > 0
+            saturated = (newMask & h4Linearity.ABOVE_VALID_RANGE) > 0
             exposure.mask.array[saturated] |= exposure.mask.getPlaneBitMask('SAT')
 
             # Declare that everything else is BAD. Note that this gets the border pixels. We
             # no not want to do that, but they are causing trouble downstream so we mark them
             # here for now.
-            lowVal = (newMask & nirLinearity.BELOW_VALID_RANGE) > 0
+            lowVal = (newMask & h4Linearity.BELOW_VALID_RANGE) > 0
             badMask = (newMask & ~saturated & ~lowVal) > 0
             exposure.mask.array[badMask] |= exposure.mask.getPlaneBitMask('BAD')
 
-            defectMask2 = (newMask & nirLinearity.MASKED_BY_INPUT) > 0
-            self.log.info(f'nSat={saturated.sum()} '
+            defectMask2 = (newMask & h4Linearity.MASKED_BY_INPUT) > 0
+            exposure.mask.array[defectMask2]  |= exposure.mask.getPlaneBitMask('BAD')
+            print(f'nSat={saturated.sum()} '
                           f'nLow={lowVal.sum()} '
                           f'nBad={badMask.sum()} '
                           f'nDefects={"none" if defectMask is None else defectMask.sum()} '
