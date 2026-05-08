@@ -34,6 +34,8 @@ import numpy as np
 
 from lsst.obs.pfs import isrTask as pfsIsrTask
 
+from . import cr
+
 
 SUPPORTED_LINEARITY_CAMS = ("n3",)
 
@@ -807,6 +809,145 @@ def plotOutlierTraces(
     cbar.set_label("relDiff")
 
     return fig, coords
+
+
+def runCRDiagnostics(
+    butler,
+    dataId,
+    *,
+    cam: Optional[str] = None,
+    nSigma: float = cr.DEFAULT_N_SIGMA,
+    sigmaFloorADU: float = cr.DEFAULT_SIGMA_FLOOR_ADU,
+    excessFloorADU: float = cr.DEFAULT_EXCESS_FLOOR_ADU,
+    minReads: int = cr.DEFAULT_MIN_READS,
+    log=None,
+):
+    """Run linearization with the in-ISR CR step disabled, then call
+    ``cr.detectAndRepair(returnDiagnostics=True)`` on the resulting cube.
+
+    Useful when triaging threshold behavior: the returned ``CRRepairResult``
+    has ``candidateMask``, ``medianDelta``, and ``sigma`` populated so you
+    can plot histograms of the per-pixel state directly.
+
+    Returns
+    -------
+    crResult : cr.CRRepairResult
+    cube : np.ndarray
+        The pre-CR linearized cumulative ramp. ``crResult`` was computed
+        on a copy of this cube, so ``cube`` itself is unmodified.
+    exposure : `lsst.afw.image.Exposure`
+        The post-linearization exposure. CR mask bits are NOT stamped on
+        ``exposure.mask``; if you want them, OR
+        ``crResult.flagMask`` into ``exposure.mask`` yourself.
+    """
+    cam, raw = _resolveCam(cam, None, butler, dataId)
+    if cam not in SUPPORTED_LINEARITY_CAMS:
+        raise RuntimeError(
+            f"Linearity corrections only available for {SUPPORTED_LINEARITY_CAMS}; got cam={cam!r}."
+        )
+
+    isrTask = _makeDefaultIsrTask(doLinearize=True)
+    # Bypass the in-ISR CR step; we run cr.detectAndRepair below on a copy of the cube.
+    isrTask.config.h4.doRateCR = False
+
+    if log is None:
+        log = isrTask.log
+    log.info(f"runCRDiagnostics: cam={cam} visit={dataId.get('visit', '?')}")
+
+    if raw is None:
+        raw = butler.get("raw", dataId)
+    nirDark = butler.get("nirDark", dataId)
+    defects = butler.get("defects", dataId)
+    linearity = isrTask.resolveNirLinearity(cam)
+    if linearity is None:
+        raise RuntimeError(f"resolveNirLinearity({cam!r}) returned None.")
+
+    exp, cube = isrTask.makeNirExposure(
+        raw, nirDark=nirDark, defects=defects, linearity=linearity, doReturnRawCube=True,
+    )
+    if cube is None:
+        raise RuntimeError(
+            "makeNirExposure returned no cube; check h4.doWriteRawCube and h4.quickCDS."
+        )
+    if defects is not None:
+        defects.maskPixels(exp.mask, "BAD")
+
+    goodPixelMask = exp.mask.array == 0
+
+    diagCube = cube.copy()
+    crResult = cr.detectAndRepair(
+        diagCube,
+        goodPixelMask=goodPixelMask,
+        nSigma=nSigma,
+        sigmaFloorADU=sigmaFloorADU,
+        excessFloorADU=excessFloorADU,
+        minReads=minReads,
+        returnDiagnostics=True,
+    )
+    log.info(
+        f"runCRDiagnostics: candidates={int(crResult.candidateMask.sum())} "
+        f"flagged={crResult.nFlagged}"
+    )
+    return crResult, cube, exp
+
+
+def summarizeCRDiagnostics(
+    crResult,
+    *,
+    nSigma: float = cr.DEFAULT_N_SIGMA,
+    sigmaFloorADU: float = cr.DEFAULT_SIGMA_FLOOR_ADU,
+    excessFloorADU: float = cr.DEFAULT_EXCESS_FLOOR_ADU,
+    pcts=(50, 84, 95, 99, 99.9),
+):
+    """Print a concise text summary of CR-detection diagnostics.
+
+    The CR result must have been produced with ``returnDiagnostics=True``.
+    """
+    if crResult.candidateMask is None:
+        raise ValueError(
+            "CRRepairResult lacks diagnostic arrays; call detectAndRepair "
+            "with returnDiagnostics=True (e.g. via runCRDiagnostics)."
+        )
+
+    cm = crResult.candidateMask
+    fm = crResult.flagMask
+    nCand = int(cm.sum())
+    nFlag = int(fm.sum())
+    print(
+        f"candidates: {nCand:,}    flagged: {nFlag:,}    "
+        f"selectivity (flag/cand): {nFlag / max(nCand, 1):.4f}"
+    )
+    if nCand == 0:
+        return
+
+    s = crResult.sigma[cm]
+    e = crResult.excess[cm]
+    pcts = list(pcts)
+    print(f"\ncandidate stats over {nCand:,} pixels:")
+    print(f"  sigma          pct {pcts}: {np.percentile(s, pcts).round(2)}")
+    print(f"  excess         pct {pcts}: {np.percentile(e, pcts).round(2)}")
+    print(f"  excess/sigma   pct {pcts}: {np.percentile(e / s, pcts).round(2)}")
+    nAtFloor = int((s <= float(sigmaFloorADU) + 1e-3).sum())
+    print(f"  sigma at floor ({sigmaFloorADU}): {nAtFloor:,} ({100 * nAtFloor / nCand:.1f}%)")
+
+    if nFlag == 0:
+        return
+    sf = crResult.sigma[fm]
+    ef = crResult.excess[fm]
+    print(f"\nflagged stats over {nFlag:,} pixels:")
+    print(f"  sigma          pct {pcts}: {np.percentile(sf, pcts).round(2)}")
+    print(f"  excess         pct {pcts}: {np.percentile(ef, pcts).round(2)}")
+    print(f"  excess/sigma   pct {pcts}: {np.percentile(ef / sf, pcts).round(2)}")
+    # Which criterion was the closer call (the binding one)?
+    ratioToFloor = ef / float(excessFloorADU)
+    ratioToSigma = ef / (float(nSigma) * sf)
+    floorBinding = ratioToFloor < ratioToSigma
+    print(
+        f"  binding criterion: floor={int(floorBinding.sum()):,} "
+        f"({100 * floorBinding.sum() / nFlag:.1f}%)  "
+        f"sigma={int((~floorBinding).sum()):,} "
+        f"({100 * (~floorBinding).sum() / nFlag:.1f}%)"
+    )
 
 
 def plotComparison(
