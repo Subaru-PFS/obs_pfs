@@ -1528,6 +1528,7 @@ class PfsIsrTask(ipIsr.IsrTask):
                 newMask = linearizedRamp.badPixelMask
 
                 if self.config.h4.doRateCR:
+                    self.log.info("Correcting CRs.")
                     crGood = (newMask == 0)
                     if defectMask is not None:
                         crGood &= ~defectMask
@@ -1581,7 +1582,7 @@ class PfsIsrTask(ipIsr.IsrTask):
             defectMask2 = (newMask & h4Linearity.MASKED_BY_INPUT) > 0
             exposure.mask.array[defectMask2]  |= exposure.mask.getPlaneBitMask('BAD')
             nCR = crResult.nFlagged if crResult is not None else 0
-            print(f'nSat={saturated.sum()} '
+            self.log.info(f'nSat={saturated.sum()} '
                           f'nLow={lowVal.sum()} '
                           f'nBad={badMask.sum()} '
                           f'nDefects={"none" if defectMask is None else defectMask.sum()} '
