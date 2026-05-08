@@ -149,6 +149,55 @@ class CRDetectAndRepairTestCase(lsst.utils.tests.TestCase):
                 goodPixelMask=np.ones((4, 4), dtype=bool),
             )
 
+    def testWithoutDiagnosticsReturnsNoneFields(self):
+        flux = _flatRamp(nReads=16, rate=10.0)
+        _injectCR(flux, y=3, x=4, k=7, amount=200.0)
+        good = np.ones(flux.shape[1:], dtype=bool)
+
+        result = cr.detectAndRepair(flux, goodPixelMask=good)
+
+        self.assertIsNone(result.candidateMask)
+        self.assertIsNone(result.medianDelta)
+        self.assertIsNone(result.sigma)
+
+    def testReturnDiagnosticsPopulatesCandidateOnlyArrays(self):
+        flux = _flatRamp(nReads=16, rate=10.0)
+        _injectCR(flux, y=3, x=4, k=7, amount=200.0)
+        good = np.ones(flux.shape[1:], dtype=bool)
+
+        result = cr.detectAndRepair(flux, goodPixelMask=good, returnDiagnostics=True)
+
+        self.assertIsNotNone(result.candidateMask)
+        self.assertIsNotNone(result.medianDelta)
+        self.assertIsNotNone(result.sigma)
+        # The CR pixel passed pre-screen and was flagged.
+        self.assertTrue(result.candidateMask[3, 4])
+        self.assertTrue(result.flagMask[3, 4])
+        # Non-CR pixels (max delta = rate = 10 < excessFloorADU=15) are not candidates.
+        self.assertFalse(result.candidateMask[0, 0])
+        # Per-candidate fields populated where candidate is True.
+        self.assertAlmostEqual(float(result.medianDelta[3, 4]), 10.0, delta=1.0)
+        # And zero elsewhere.
+        self.assertEqual(float(result.medianDelta[0, 0]), 0.0)
+        self.assertEqual(float(result.sigma[0, 0]), 0.0)
+
+    def testPreScreenSkipsBelowFloorPixels(self):
+        """Flat ramp with rate above excessFloorADU should produce candidates but no flags;
+        flat ramp at rate=1 should produce no candidates at all."""
+        # Rate above floor: every pixel is a candidate, but no CR was injected.
+        flux = _flatRamp(nReads=16, rate=20.0)
+        good = np.ones(flux.shape[1:], dtype=bool)
+        result = cr.detectAndRepair(flux, goodPixelMask=good, returnDiagnostics=True)
+        self.assertEqual(result.nFlagged, 0)
+        # Some pixels passed the pre-screen (max_delta == 20 > 15).
+        self.assertGreater(int(result.candidateMask.sum()), 0)
+
+        # Rate below floor: no pixel passes pre-screen.
+        flux = _flatRamp(nReads=16, rate=5.0)
+        result = cr.detectAndRepair(flux, goodPixelMask=good, returnDiagnostics=True)
+        self.assertEqual(int(result.candidateMask.sum()), 0)
+        self.assertEqual(result.nFlagged, 0)
+
 
 class TestMemory(lsst.utils.tests.MemoryTestCase):
     pass

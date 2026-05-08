@@ -11,6 +11,7 @@ The pure-numpy algorithm is here; the wrapper that integrates with
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Optional
 
 import numpy as np
 
@@ -32,17 +33,32 @@ class CRRepairResult:
         Boolean ``(H, W)``; True where a CR was flagged.
     crReadIdx : np.ndarray
         Int ``(H, W)``; per-pixel index ``k`` into ``deltas`` of the
-        flagged read. Only meaningful where ``flagMask`` is True.
+        per-pixel max-delta read. Always populated.
     excess : np.ndarray
         Float ``(H, W)``; ``max_delta - median_delta`` (i.e., the amount
-        subtracted from cumulative reads ``>= k+1``). Only meaningful
-        where ``flagMask`` is True.
+        subtracted from cumulative reads ``>= k+1``). Populated for every
+        candidate (pixel that passed the pre-screen); zero elsewhere.
+    candidateMask : np.ndarray, optional
+        Diagnostics-only. Boolean ``(H, W)``; True for pixels that passed
+        the cheap pre-screen and had per-pixel statistics computed.
+        ``None`` unless ``returnDiagnostics=True``.
+    medianDelta : np.ndarray, optional
+        Diagnostics-only. Float ``(H, W)``; per-pixel median delta.
+        Populated only at candidate pixels; zero elsewhere. ``None``
+        unless ``returnDiagnostics=True``.
+    sigma : np.ndarray, optional
+        Diagnostics-only. Float ``(H, W)``; per-pixel
+        ``max(1.4826 * MAD, sigmaFloorADU)``. Populated only at candidate
+        pixels; zero elsewhere. ``None`` unless ``returnDiagnostics=True``.
     """
 
     nFlagged: int
     flagMask: np.ndarray
     crReadIdx: np.ndarray
     excess: np.ndarray
+    candidateMask: Optional[np.ndarray] = None
+    medianDelta: Optional[np.ndarray] = None
+    sigma: Optional[np.ndarray] = None
 
 
 def detectAndRepair(
@@ -53,6 +69,7 @@ def detectAndRepair(
     sigmaFloorADU: float = DEFAULT_SIGMA_FLOOR_ADU,
     excessFloorADU: float = DEFAULT_EXCESS_FLOOR_ADU,
     minReads: int = DEFAULT_MIN_READS,
+    returnDiagnostics: bool = False,
 ) -> CRRepairResult:
     """Detect and repair single-read positive rate outliers in-place.
 
@@ -67,6 +84,13 @@ def detectAndRepair(
     floor keeps the threshold from collapsing on faint pixels whose
     empirical scatter is read-noise-limited.
 
+    Pre-screen: pixels whose ``max_delta`` is at or below ``excessFloorADU``
+    cannot satisfy the (excess > floor) criterion (since
+    ``excess <= max_delta`` whenever ``median >= 0``), so the per-pixel
+    median/MAD computation is skipped for them. On a typical dark frame
+    this filters out ~99% of pixels, giving a large speedup on the
+    median-along-axis-0 step that otherwise dominates.
+
     Repair: subtract ``(max_delta - median_delta)`` from cumulative reads
     ``>= k + 1``, equivalent to replacing the outlier delta with the
     per-pixel median.
@@ -80,6 +104,11 @@ def detectAndRepair(
         candidates for CR flagging.
     nSigma, sigmaFloorADU, excessFloorADU, minReads
         See module-level defaults.
+    returnDiagnostics : bool
+        If True, populate ``candidateMask``, ``medianDelta``, and
+        ``sigma`` on the returned result so the threshold behavior can be
+        inspected (histograms etc.). Off by default to keep the
+        production path light.
 
     Returns
     -------
@@ -93,41 +122,72 @@ def detectAndRepair(
         )
 
     nReads, H, W = flux.shape
-    empty = CRRepairResult(
-        nFlagged=0,
-        flagMask=np.zeros((H, W), dtype=bool),
-        crReadIdx=np.zeros((H, W), dtype=np.int32),
-        excess=np.zeros((H, W), dtype=np.float32),
-    )
+
+    def _empty(candidateMask=None, medianDelta=None, sigma=None):
+        return CRRepairResult(
+            nFlagged=0,
+            flagMask=np.zeros((H, W), dtype=bool),
+            crReadIdx=np.zeros((H, W), dtype=np.int32),
+            excess=np.zeros((H, W), dtype=np.float32),
+            candidateMask=candidateMask,
+            medianDelta=medianDelta,
+            sigma=sigma,
+        )
+
     if nReads < minReads:
-        return empty
+        return _empty()
 
     deltas = np.diff(flux, axis=0)
-    median = np.median(deltas, axis=0)
-    mad = np.median(np.abs(deltas - median), axis=0)
-    sigma = np.maximum(1.4826 * mad, np.float32(sigmaFloorADU))
-
     kCR = np.argmax(deltas, axis=0).astype(np.int32)
     maxDelta = np.take_along_axis(deltas, kCR[None], axis=0)[0]
-    excess = (maxDelta - median).astype(np.float32)
 
-    flag = (excess > nSigma * sigma) & (excess > excessFloorADU) & goodPixelMask
+    candidateMask = (maxDelta > excessFloorADU) & goodPixelMask
 
-    nFlagged = int(flag.sum())
-    if nFlagged == 0:
-        return empty
+    medianFull = np.zeros((H, W), dtype=np.float32) if returnDiagnostics else None
+    sigmaFull = np.zeros((H, W), dtype=np.float32) if returnDiagnostics else None
+    excessFull = np.zeros((H, W), dtype=np.float32)
+    flag = np.zeros((H, W), dtype=bool)
 
-    ys, xs = np.where(flag)
-    ks = kCR[ys, xs]
-    exc = excess[ys, xs].astype(flux.dtype)
-    for r in range(nReads):
-        sel = ks < r
-        if sel.any():
-            flux[r, ys[sel], xs[sel]] -= exc[sel]
+    nCand = int(candidateMask.sum())
+    if nCand == 0:
+        return _empty(
+            candidateMask=candidateMask if returnDiagnostics else None,
+            medianDelta=medianFull,
+            sigma=sigmaFull,
+        )
+
+    ys, xs = np.where(candidateMask)
+    candDeltas = deltas[:, ys, xs]
+    candMedian = np.median(candDeltas, axis=0)
+    candMAD = np.median(np.abs(candDeltas - candMedian), axis=0)
+    candSigma = np.maximum(1.4826 * candMAD, np.float32(sigmaFloorADU))
+    candExcess = (maxDelta[ys, xs] - candMedian).astype(np.float32)
+    excessFull[ys, xs] = candExcess
+
+    if returnDiagnostics:
+        medianFull[ys, xs] = candMedian.astype(np.float32)
+        sigmaFull[ys, xs] = candSigma.astype(np.float32)
+
+    candFlag = (candExcess > nSigma * candSigma) & (candExcess > excessFloorADU)
+    flag[ys[candFlag], xs[candFlag]] = True
+    nFlagged = int(candFlag.sum())
+
+    if nFlagged > 0:
+        ysF = ys[candFlag]
+        xsF = xs[candFlag]
+        ksF = kCR[ysF, xsF]
+        excF = candExcess[candFlag].astype(flux.dtype)
+        for r in range(nReads):
+            sel = ksF < r
+            if sel.any():
+                flux[r, ysF[sel], xsF[sel]] -= excF[sel]
 
     return CRRepairResult(
         nFlagged=nFlagged,
         flagMask=flag,
         crReadIdx=kCR,
-        excess=excess,
+        excess=excessFull,
+        candidateMask=candidateMask if returnDiagnostics else None,
+        medianDelta=medianFull,
+        sigma=sigmaFull,
     )
