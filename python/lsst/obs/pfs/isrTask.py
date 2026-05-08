@@ -1880,7 +1880,7 @@ class PfsIsrTask(ipIsr.IsrTask):
             cfg = yaml.YAML(typ="safe", pure=True).load(f)
 
         if detectorName == 'n8':
-            detectorName = 'n1'
+            detectorName = 'n3'
             self.log.warn(f'using {detectorName} to fetch badRefPixels')
         if detectorName not in cfg:
             self.log.warn(f'{detectorName} not defined in {absFilename}')
@@ -1925,6 +1925,9 @@ class PfsIsrTask(ipIsr.IsrTask):
 
     def loadBadAsicChannels(self, detectorName: str) -> tuple:
         # Yes, yes, get this from a config file...
+        if detectorName == 'n8':
+            detectorName = 'n3'
+            self.log.warn(f'using {detectorName} to fetch badAsicChannels')
         badAsicChannels = dict(n3=(24,))
         return badAsicChannels.get(detectorName, ())
 
@@ -2332,7 +2335,7 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         if sigClip is None:
             sigClip = self.config.h4.repairAsicSpikesSigma
-        badChan = cube[:, channel*128:(channel+1)*128, :]
+        badChan = cube[:, channel*128:(channel+1)*128, 4:-4]
 
         diffChan = np.diff(badChan, axis=0, prepend=np.zeros_like(badChan[0:1]))
         p25, meds, p75 = np.percentile(diffChan, [25, 50, 75], axis=0)
@@ -2373,6 +2376,7 @@ class PfsIsrTask(ipIsr.IsrTask):
         else:     # Use the median of the entire ramp
             repairVals = meds1[fix_w[1:]]
         badChan[fix_w] = repairVals
+        cube[:, channel*128:(channel+1)*128, 4:-4] = badChan
 
         # Return for testing
         if doTest:
@@ -2443,7 +2447,7 @@ class PfsIsrTask(ipIsr.IsrTask):
             for badChan in badChans:
                 fixedData_w = self.repairAsicSpikes(pfsRaw, rawData, badChan)
                 fixedIrp_w = self.repairAsicSpikes(pfsRaw, rawIrps, badChan)
-                self.log.info(f'repaired {len(fixedData_w[0])} data and {len(fixedIrp_w[0])} IRP '
+                self.log.warn(f'repaired {len(fixedData_w[0])} data and {len(fixedIrp_w[0])} IRP '
                               f'ASIC pixels in channel {badChan}')
         else:
             rawData = rawIrps = None
