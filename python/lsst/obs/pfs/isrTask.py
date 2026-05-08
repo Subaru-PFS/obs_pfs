@@ -2339,16 +2339,23 @@ class PfsIsrTask(ipIsr.IsrTask):
         bright_w = np.where(brightMask)
 
         # Todo: Handle spikes at the ends of the ramp separately -- CPL
-        atEnd = (bright_w[0] >= len(diffChan)-1 | (bright_w[0] == 0))
+        atEnd = (bright_w[0] >= len(diffChan)-1) | (bright_w[0] == 0)
         bright_w1 = bright_w[0][~atEnd], bright_w[1][~atEnd], bright_w[2][~atEnd]
         next_w1 = (bright_w1[0]+1), bright_w1[1], bright_w1[2]
 
         peaks1 = diffChan[bright_w1]
         next1 = diffChan[next_w1]
-        diffs = peaks1 + next1
 
         meds1 = meds[bright_w1[1:]]
         iqrSig1 = iqrSig[bright_w1[1:]]
+
+        # For a single-read spike at index k on a ramp with per-read rate R:
+        #   delta[k]   = R + S       (the spike)
+        #   delta[k+1] = R - S       (recovery to the linear trend)
+        # so peaks1 + next1 = 2 R, not ≈ 0. Subtract 2 * meds1 so the recovery
+        # check works for any rate (it previously fired only for IRP-like
+        # cubes where R ≈ 0).
+        diffs = peaks1 + next1 - 2 * meds1
 
         fix_i = np.abs(diffs) < (meds1 + sigClip*iqrSig1)
         fix_w = tuple([w1[fix_i] for w1 in bright_w1])
