@@ -20,8 +20,58 @@ def _packageVersion() -> str:
         return "unknown"
 
 
+def isH4LinearityFile(path: str | Path) -> bool:
+    """Predicate: does the FITS file at ``path`` look like an h4Linearity file?
+
+    Cheap header-only check: the primary HDU must carry a ``MODEL``
+    keyword whose value names a model that's registered in
+    ``MODEL_REGISTRY``. Files written by :func:`saveFits` always pass;
+    legacy ``nirLinearity.NirLinearity`` files (and anything else)
+    fail.
+
+    Returns False on any failure (missing path, not FITS, missing
+    ``MODEL`` key, unknown model name) — predicates should be quiet.
+    """
+    path = Path(path)
+    if not path.is_file():
+        return False
+    try:
+        with fits.open(path) as hdul:
+            model = hdul[0].header.get("MODEL")
+    except (OSError, fits.verify.VerifyError):
+        return False
+    return isinstance(model, str) and model in MODEL_REGISTRY
+
+
 def saveFits(path: str | Path, correction: LinearityCorrection) -> None:
-    """Write a ``LinearityCorrection`` to a FITS file."""
+    """Write a ``LinearityCorrection`` to a FITS file.
+
+    Layout:
+
+    - **PRIMARY HDU** (header-only). Contains ``MODEL`` (model name —
+      used by :func:`isH4LinearityFile` to sniff the file format and by
+      :func:`loadFits` to look up the model class), ``FITDATE``
+      (ISO-8601 UTC), ``RELINVER`` (package version), and scalar
+      ``correction.diagnostics.summary`` entries. Long Python keys
+      become HIERARCH cards (case-preserved); short keys are uppercased
+      by FITS and the original Python key is stored in the card comment
+      so the dict round-trips through :func:`loadFits` unchanged.
+    - **Model-specific HDUs**, contributed by ``model.toFitsHdus()``
+      (e.g. polynomial coefficients).
+    - **Standard image HDUs** (one per :class:`Diagnostics` array):
+      ``FITMIN``, ``FITMAX``, ``BPMASK``, ``RESRMS``, ``RESMAX``,
+      ``NPOINTS``, ``MONOTON``, ``CONDNUM``.
+
+    CHECKSUM/DATASUM are added to every image HDU. The file is
+    overwritten unconditionally.
+
+    Parameters
+    ----------
+    path : str or Path
+        Destination FITS file.
+    correction : LinearityCorrection
+        Object to persist.
+    """
     path = Path(path)
 
     # Build PRIMARY header.
@@ -86,7 +136,31 @@ def saveFits(path: str | Path, correction: LinearityCorrection) -> None:
 
 
 def loadFits(path: str | Path) -> LinearityCorrection:
-    """Read a FITS file written by :func:`saveFits`."""
+    """Read a FITS file written by :func:`saveFits`.
+
+    Reverses :func:`saveFits`. Looks up the model class via the primary
+    ``MODEL`` keyword in :data:`MODEL_REGISTRY`, then asks the model to
+    rebuild itself + coefficients from the model-specific HDUs.
+    Recovers the standard arrays (``FITMIN`` / ``FITMAX`` / ``BPMASK`` /
+    ``RESRMS`` / ``RESMAX`` / ``NPOINTS`` / ``MONOTON`` / ``CONDNUM``)
+    and the diagnostics-summary dict from primary-header cards.
+
+    Parameters
+    ----------
+    path : str or Path
+        FITS file produced by :func:`saveFits`.
+
+    Returns
+    -------
+    LinearityCorrection
+
+    Raises
+    ------
+    ValueError
+        If the file's ``MODEL`` value isn't in :data:`MODEL_REGISTRY`.
+        (For a quiet predicate over an arbitrary path, use
+        :func:`isH4LinearityFile` first.)
+    """
     path = Path(path)
     with fits.open(path) as hdul:
         primary = hdul[0]

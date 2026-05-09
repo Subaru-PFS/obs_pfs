@@ -9,7 +9,27 @@ MODEL_REGISTRY: dict[str, type[Model]] = {}
 
 
 def registerModel(modelClass: type[Model], *, overwrite: bool = False) -> None:
-    """Register a model class under its ``modelName`` attribute."""
+    """Register a model class under its ``modelName`` attribute.
+
+    Once registered, ``saveFits`` / ``loadFits`` can round-trip a
+    correction that uses the model — :func:`loadFits` looks up the
+    class by the ``MODEL`` keyword in the PRIMARY FITS header.
+
+    Parameters
+    ----------
+    modelClass : type[Model]
+        Class implementing the :class:`Model` protocol. Its
+        ``modelName`` class attribute is used as the registry key.
+    overwrite : bool, optional
+        Allow replacing an existing registration under the same name.
+        Default ``False`` (raises ``ValueError`` on collision).
+
+    Raises
+    ------
+    ValueError
+        If ``modelClass.modelName`` is already registered and
+        ``overwrite=False``.
+    """
     name = modelClass.modelName  # type: ignore[attr-defined]
     if name in MODEL_REGISTRY and not overwrite:
         raise ValueError(

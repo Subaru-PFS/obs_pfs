@@ -12,14 +12,18 @@ from .types import Ramp
 def loadNpz(path: str | Path) -> tuple[Ramp, np.ndarray]:
     """Load a ``.npz`` with ``deltas`` and ``photodiode`` arrays.
 
-    The on-disk format stores per-read deltas; this loader converts to
-    cumulative flux (``np.cumsum``) before constructing the :class:`Ramp`.
-    The caller is expected to apply the photodiode correction before
-    passing the ramp into :func:`nirLinearity.fit.fit`.
+    The on-disk format stores per-read deltas with an implicit read0 = 0.
+    This loader prepends the zero read and accumulates, yielding ``N+1``
+    cumulative reads from ``N`` deltas. The caller is expected to apply
+    the photodiode correction before passing the ramp into
+    :func:`nirLinearity.fit.fit`.
     """
     path = Path(path)
     with np.load(path) as data:
         deltas = np.asarray(data["deltas"], dtype=np.float32)
         photodiode = np.asarray(data["photodiode"])
-    reads = np.cumsum(deltas, axis=0)
+    nDeltas, h, w = deltas.shape
+    reads = np.empty((nDeltas + 1, h, w), dtype=np.float32)
+    reads[0] = 0.0
+    np.cumsum(deltas, axis=0, out=reads[1:])
     return Ramp(reads=reads), photodiode

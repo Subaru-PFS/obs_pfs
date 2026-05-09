@@ -55,7 +55,7 @@ def _resolveWorkerCount(workers: int | None, H: int, W: int) -> int:
 def fit(
     ramps: Sequence[Ramp],
     model: Model | None = None,
-    blockSize: tuple[int, int] = (512, 512),
+    blockSize: tuple[int, int] = (128, 128),
     workers: int | None = None,
     conditionNumberLimit: float = 1e12,
     deviationLimit: float | None = None,
@@ -79,8 +79,9 @@ def fit(
         Model to fit. Defaults to ``PolynomialModel(order=4)``.
     blockSize : (int, int), optional
         Tile size in pixels for the per-tile normal-equations fit.
-        Default is ``(512, 512)``. Smaller tiles reduce peak memory;
-        larger tiles reduce per-tile overhead.
+        Default is ``(128, 128)``, chosen by sweep on a 4096×4096×29
+        reference workload with the auto worker count. Smaller tiles
+        reduce peak memory; larger tiles reduce per-tile overhead.
     workers : int or None, optional
         Number of worker threads for the tile loop.
 
@@ -171,21 +172,29 @@ def fit(
     # Per-ramp precomputation.
     cumulatives: list[np.ndarray] = []
     targets: list[np.ndarray] = []
+    rates: list[float] = []
     for ramp in ramps:
         m = ramp.reads.astype(np.float32)
         cumulatives.append(m)
-        # Rate R_k: median of first read (= first delta) over allowed pixels.
-        firstRead = m[0]
+        Nk = ramp.reads.shape[0]
+        if Nk < 3:
+            raise ValueError(
+                f"ramp must have at least 3 reads (incl. implicit read0); got {Nk}"
+            )
+        # Rate R: median of the second .npz delta (m[2] - m[1]) over allowed
+        # pixels. Skipping the first delta avoids any reset-frame transient.
+        refRead = m[2] - m[1]
         if ramp.validMask is not None:
             allowed = ramp.validMask == 0
             if allowed.any():
-                rate = float(np.median(firstRead[allowed]))
+                rate = float(np.median(refRead[allowed]))
             else:
-                rate = float(np.median(firstRead))
+                rate = float(np.median(refRead))
         else:
-            rate = float(np.median(firstRead))
-        Nk = ramp.reads.shape[0]
-        targets.append(rate * np.arange(1, Nk + 1, dtype=np.float32))
+            rate = float(np.median(refRead))
+        rates.append(rate)
+        # Target ramp matches the new reads convention: target[0] = 0.
+        targets.append(rate * np.arange(Nk, dtype=np.float32))
 
     # Deviation-based clipping: for each ramp, mask reads where the measured
     # cumulative deviates from the target by more than deviationLimit.
@@ -207,32 +216,33 @@ def fit(
             v[:, :, :borderWidth] = False
             v[:, :, -borderWidth:] = False
 
-        # Recover per-read deltas for deviation and low-flux checks.
+        # Per-read deltas (the original .npz deltas). Length Nk-1; deltas[i]
+        # corresponds to the transition from read i to read i+1.
         m = cumulatives[k]
-        deltas = np.empty_like(m)
-        deltas[0] = m[0]
-        deltas[1:] = np.diff(m, axis=0)
-        nRef = min(nRefReads, Nk)
+        deltas = np.diff(m, axis=0)  # (Nk-1, H, W)
+        nRef = min(nRefReads, deltas.shape[0])
         refDelta = np.median(deltas[:nRef], axis=0)  # (H, W)
 
         # Reject low-flux pixels: mask all reads for pixels whose
         # reference delta is below lowFluxFraction * global median rate.
-        rate = float(targets[k][0])  # targets[k][0] = rate * 1
-        lowFluxThreshold = lowFluxFraction * rate
+        lowFluxThreshold = lowFluxFraction * rates[k]
         lowFlux = refDelta < lowFluxThreshold  # (H, W)
         v[:, lowFlux] = False
 
         if deviationLimit is not None:
-            startRead = int(Nk * deviationStart)
+            nDelta = deltas.shape[0]  # = Nk - 1
+            startDelta = int(nDelta * deviationStart)
             with np.errstate(divide="ignore", invalid="ignore"):
                 frac = np.abs(deltas - refDelta[None]) / np.abs(refDelta[None])
             frac = np.where(np.isfinite(frac), frac, 0.0)
-            exceeds = frac > deviationLimit  # (Nk, H, W)
-            # Only apply from startRead onward (early reads are not
+            exceeds = frac > deviationLimit  # (Nk-1, H, W)
+            # Only apply from startDelta onward (early deltas are not
             # near saturation and shouldn't trigger the limit).
-            exceeds[:startRead] = False
+            exceeds[:startDelta] = False
             exceeds = np.maximum.accumulate(exceeds, axis=0)
-            v[exceeds] = False
+            # delta i excessive → mask reads i+1 onward; the implicit
+            # zero read 0 is never excluded by this test.
+            v[1:][exceeds] = False
 
         if saturationLevel is not None:
             m = cumulatives[k]  # (Nk, H, W)
@@ -315,8 +325,8 @@ def fit(
         # compute on independent numpy arrays (no shared mutable state).
         # Note: ThreadPoolExecutor.submit has no back-pressure, so all
         # tiles' assembled (mTile, validTile) arrays coexist in memory
-        # until their futures complete. On 4096x4096 with blockSize=(512,
-        # 512), that is 64 tiles of roughly tile-sized float32 plus a
+        # until their futures complete. On 4096x4096 with blockSize=(128,
+        # 128), that is 1024 tiles of roughly tile-sized float32 plus a
         # small bool array each — manageable on the reference workload
         # but worth keeping in mind if tile size grows.
         with _executorFactory(max_workers=effectiveWorkers) as executor:
