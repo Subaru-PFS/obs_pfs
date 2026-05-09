@@ -13,16 +13,30 @@ from ..types import FIT_FAILED, INSUFFICIENT_POINTS, NON_MONOTONIC
 
 @dataclass(frozen=True)
 class PolynomialModel:
-    """Pluggable Chebyshev polynomial-fit model. Default 4th order."""
+    """Pluggable Chebyshev polynomial-fit model. Default 4th order.
+
+    ``fitMinMargin`` (default 100 DN) lowers the per-pixel ``fitMin`` by
+    an absolute DN amount so that apply() does not flag BELOW_VALID_RANGE
+    for read noise, kTC, or modest bias-level offsets that push slightly
+    below the measured range. Sized by detector physics (noise & bias),
+    not signal level. The polynomial near read 0 is locally linear
+    (anchored by the implicit zero read), so extrapolating through this
+    margin remains accurate.
+    """
 
     order: int = 4
     modelName: str = "CHEBYSHEV"
+    fitMinMargin: float = 100.0
 
     def __post_init__(self) -> None:
         if not isinstance(self.order, int) or isinstance(self.order, bool):
             raise ValueError(f"order must be an int, got {type(self.order).__name__}")
         if self.order < 1:
             raise ValueError(f"order must be >= 1, got {self.order}")
+        if self.fitMinMargin < 0:
+            raise ValueError(
+                f"fitMinMargin must be >= 0, got {self.fitMinMargin}"
+            )
 
     def evaluate(self, coefficients: np.ndarray, x: np.ndarray) -> np.ndarray:
         """Evaluate the per-pixel Chebyshev series via Clenshaw's algorithm.
@@ -152,6 +166,14 @@ class PolynomialModel:
             fitMax = np.nanmax(mMasked, axis=0)
         fitMin = np.where(np.isnan(fitMin), 0.0, fitMin)
         fitMax = np.where(np.isnan(fitMax), 0.0, fitMax)
+        # Extend fitMin downward by an absolute DN margin so apply()
+        # does not flag noise / bad bias-level offsets below the
+        # measured range. The size of the margin is driven by detector
+        # physics (read noise, kTC, bias variation), not signal level.
+        # The polynomial near read 0 (anchored by the implicit zero
+        # read) is locally linear, so extrapolating through this margin
+        # stays accurate.
+        fitMin = fitMin - self.fitMinMargin
 
         # Affine map m → x ∈ [-1, 1]: x = 2*(m - fitMin)/(fitMax - fitMin) - 1
         denom = fitMax - fitMin
@@ -274,28 +296,42 @@ class PolynomialModel:
             except np.linalg.LinAlgError:
                 continue
 
-            # Check monotonicity of retried fits.
-            for si, ri in enumerate(solveIdx):
-                pxR, pxC = rr[ri], rc[ri]
-                trialCoefs = np.zeros((nCoefs, 1, 1), dtype=np.float32)
-                for k in range(retryNCoefs):
-                    trialCoefs[k, 0, 0] = rSol[si, k]
-                fm = fitMin[pxR, pxC].astype(np.float32).reshape(1, 1)
-                fM = fitMax[pxR, pxC].astype(np.float32).reshape(1, 1)
-                if self.isMonotonic(trialCoefs, fm, fM)[0, 0]:
-                    for k in range(nCoefs):
-                        coefficients[k, pxR, pxC] = trialCoefs[k, 0, 0]
-                    monotonic[pxR, pxC] = True
-                    nonMono[pxR, pxC] = False
-                    conditionNumber[pxR, pxC] = rCond[ri]
-                    # Recompute residuals for this pixel.
-                    xPx = x[:, pxR, pxC].astype(np.float32).reshape(-1, 1, 1)
-                    tPredPx = self.evaluate(trialCoefs, xPx)[:, 0, 0]
-                    vPx = valid[:, pxR, pxC]
-                    resPx = (t.astype(np.float32) - tPredPx) * vPx
-                    nPx = max(int(nPointsUsed[pxR, pxC]), 1)
-                    residualRms[pxR, pxC] = np.sqrt((resPx ** 2).sum() / nPx)
-                    maxAbsResidual[pxR, pxC] = np.abs(resPx).max()
+            # Vectorized monotonicity check across all good-conditioned
+            # retry pixels. Layout the candidate batch as (nCoefs, 1, nGood)
+            # so isMonotonic / evaluate can run once instead of per-pixel.
+            nGood = len(solveIdx)
+            goodPxR = rr[solveIdx]
+            goodPxC = rc[solveIdx]
+            trialCoefsBatch = np.zeros((nCoefs, 1, nGood), dtype=np.float32)
+            trialCoefsBatch[:retryNCoefs, 0, :] = rSol.T.astype(np.float32, copy=False)
+
+            fmBatch = fitMin[goodPxR, goodPxC].astype(np.float32, copy=False).reshape(1, nGood)
+            fMBatch = fitMax[goodPxR, goodPxC].astype(np.float32, copy=False).reshape(1, nGood)
+            goodMono = self.isMonotonic(trialCoefsBatch, fmBatch, fMBatch)[0]
+
+            if not goodMono.any():
+                continue
+
+            accPxR = goodPxR[goodMono]
+            accPxC = goodPxC[goodMono]
+            acceptedCoefs = trialCoefsBatch[:, 0, goodMono]  # (nCoefs, nAcc)
+
+            coefficients[:, accPxR, accPxC] = acceptedCoefs
+            monotonic[accPxR, accPxC] = True
+            nonMono[accPxR, accPxC] = False
+            conditionNumber[accPxR, accPxC] = rCond[solveIdx[goodMono]]
+
+            # Recompute residuals for accepted pixels in one batched evaluate.
+            xAcc = x[:, accPxR, accPxC].astype(np.float32, copy=False)[:, None, :]
+            coefForEval = acceptedCoefs[:, None, :]                     # (nCoefs, 1, nAcc)
+            tPredAcc = self.evaluate(coefForEval, xAcc)[:, 0, :]         # (N, nAcc)
+            vAcc = valid[:, accPxR, accPxC]
+            resAcc = (t.astype(np.float32, copy=False)[:, None] - tPredAcc) * vAcc
+            nAccPts = np.maximum(nPointsUsed[accPxR, accPxC], 1).astype(np.float32, copy=False)
+            residualRms[accPxR, accPxC] = np.sqrt(
+                (resAcc ** 2).sum(axis=0) / nAccPts
+            )
+            maxAbsResidual[accPxR, accPxC] = np.abs(resAcc).max(axis=0)
 
         badMask[nonMono] |= NON_MONOTONIC
 
