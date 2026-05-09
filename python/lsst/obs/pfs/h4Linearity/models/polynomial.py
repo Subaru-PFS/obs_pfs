@@ -26,6 +26,8 @@ class PolynomialModel:
 
     order: int = 4
     modelName: str = "CHEBYSHEV"
+    # Preliminary guess; needs a better-justified value derived from
+    # detector noise/bias measurements.
     fitMinMargin: float = 100.0
 
     def __post_init__(self) -> None:
