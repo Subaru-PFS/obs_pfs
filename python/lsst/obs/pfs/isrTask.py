@@ -25,6 +25,7 @@ import time
 import warnings
 
 from functools import partial
+from types import SimpleNamespace
 
 import numpy as np
 import scipy
@@ -108,16 +109,8 @@ class H4Config(pexConfig.Config):
 
     quickCDS = pexConfig.Field(dtype=bool, default=False,
                                doc="Only consider last and first reads instead of the full ramp cube")
-    doCR = pexConfig.Field(dtype=bool, default=False,
-                           doc="Run ramp-based CR rejection. Requires quickCDS=False")
-    crMinReads = pexConfig.Field(dtype=int, default=4,
-                                 doc="Minimum number of dark or shutter-open reads for CR rejection")
     useIRP = pexConfig.Field(dtype=bool, default=True,
                              doc="Use Interleaved Reference Pixel planes if available")
-    repairAsicSpikes = pexConfig.Field(dtype=bool, default=True,
-                                       doc="Detect and mask single-pixel, single-read ASIC glitches")
-    repairAsicSpikesSigma = pexConfig.Field(dtype=float, default=3.0,
-                                            doc="Sigma threshold from reads for detecting ASIC glitches")
     IRPfilter = pexConfig.Field(dtype=int, default=15,  # 15..31, probably.
                                 doc="width of smoothing window for IRP corrections. 0=no smoothing. Odd")
     doIRPbadPixels = pexConfig.Field(dtype=bool, default=True,
@@ -154,8 +147,68 @@ class H4Config(pexConfig.Config):
         doc="write out raw-ish ISRCube (UTR, e-, with IRP and CR corrections)",
     )
     doLinearize = pexConfig.Field(dtype=bool, default=True, doc="Apply linearity correction?")
-    linearizeBeforeUTR = pexConfig.Field(dtype=bool, default=True,
-                                         doc="Apply linearity correction before UTR")
+
+    doCR = pexConfig.Field(
+        dtype=bool, default=True,
+        doc="Run the iterative UTR-rate-based CR + ASIC-glitch detector on "
+            "the linearized cube after dark subtraction. Replaces all prior "
+            "H4 CR-correction code paths.",
+    )
+    rateCRnSigma = pexConfig.Field(
+        dtype=float, default=5.0,
+        doc="Per-pixel sigma threshold for the iterative CR/glitch detector.",
+    )
+    rateCRsigmaFloorADU = pexConfig.Field(
+        dtype=float, default=8.0,
+        doc="Minimum sigma in ADU/read; protects faint pixels from collapsing the threshold "
+            "to MAD-noise.",
+    )
+    doDeglitch = pexConfig.Field(
+        dtype=bool, default=True,
+        doc="Detect ASIC glitches alongside CRs in the iterative detector. "
+            "Default True: run glitch detection on all pixels, all channels. "
+            "Detection is needed even when glitches are not corrected — a "
+            "glitch up-spike must be recognized as part of a pair so it is "
+            "not misclassified as a CR. Set False to disable glitch detection "
+            "entirely; CRs are still detected. Whether detected glitches are "
+            "*corrected* is controlled separately by ``correctGlitches``. "
+            "Only meaningful when ``doCR`` is True.",
+    )
+    deglitchAmplitudeMinADU = pexConfig.Field(
+        dtype=float, default=0.0,
+        doc="Minimum residual amplitude (in ADU) required for an ASIC-glitch "
+            "pair to be classified. 0 (default) means the only floor is the "
+            "CR threshold (``nSigma * sigma``). Set higher (e.g. 100) to "
+            "suppress faint-end deglitching where the classifier is less "
+            "reliable; bright glitches above this floor are still picked up. "
+            "Implemented as: at least one of the two deltas in the pair must "
+            "have |residual| above this value.",
+    )
+    correctGlitches = pexConfig.Field(
+        dtype=bool, default=False,
+        doc="Correct interior ASIC-glitch pairs: subtract them from the "
+            "linearized cube and exclude their deltas from the UTR rate. "
+            "Default False — interior pairs are still detected (``ASIC_GLITCH`` "
+            "stamped, up-spike not misclassified as a CR) but left in place; "
+            "a real symmetric +A/-A pair cancels on its own in the mean rate, "
+            "so not correcting avoids acting on an unreliable glitch "
+            "classification. End glitches (a lone glitch at the first or last "
+            "delta, with no pair partner) are always corrected regardless of "
+            "this flag. Only meaningful when ``doDeglitch`` is True.",
+    )
+    rateCRiterMax = pexConfig.Field(
+        dtype=int, default=5,
+        doc="Maximum iteration count for the iterative UTR CR detector.",
+    )
+
+    firstRead = pexConfig.Field(
+        dtype=int, default=0,
+        doc="0-indexed first read of the ramp to include (inclusive). 0 = full ramp.",
+    )
+    lastRead = pexConfig.Field(
+        dtype=int, default=-1,
+        doc="0-indexed last read of the ramp to include (inclusive). -1 = last read in ramp.",
+    )
 
 
 class PfsAssembleCcdTask(AssembleCcdTask):
@@ -202,6 +255,57 @@ class PfsAssembleCcdTask(AssembleCcdTask):
         exposure.setDetector(detector.finish())
 
         return exposure
+
+
+def _stampBorderMask(exposure, *, borderWidth: int = 4) -> None:
+    """Stamp the BORDER + BAD mask planes on the outer ``borderWidth``-pixel ring.
+
+    Registers a new ``BORDER`` plane on first use and ORs it into the
+    border rows/cols on top, bottom, left, right of the exposure mask.
+    The BAD bit is set as well so downstream code that skips BAD pixels
+    keeps working; BORDER is the additive informational distinction
+    between "edge" and "broken-mid-detector" pixels.
+
+    Width defaults to 4 to match ``h4Linearity.BORDER_PIX`` placement in
+    ``h4Linearity/fit.py``.
+    """
+    if "BORDER" not in exposure.mask.getMaskPlaneDict():
+        exposure.mask.addMaskPlane("BORDER")
+        afwDisplay.setDefaultMaskPlaneColor("BORDER", "CYAN")
+    borderBit = exposure.mask.getPlaneBitMask("BORDER")
+    badBit = exposure.mask.getPlaneBitMask("BAD")
+    bits = exposure.mask.array.dtype.type(borderBit | badBit)
+    exposure.mask.array[:borderWidth, :] |= bits
+    exposure.mask.array[-borderWidth:, :] |= bits
+    exposure.mask.array[:, :borderWidth] |= bits
+    exposure.mask.array[:, -borderWidth:] |= bits
+
+
+def _stampReadRangeMetadata(exposure, *, r0, r1, nTotal, applyUTRWeights):
+    """Add H4 read-range header keys to ``exposure.metadata``.
+
+    Round-trips into the FITS header on persist, so downstream code (and
+    humans inspecting an exposure) can tell a partial-ramp postISRCCD
+    apart from a full-ramp one.
+
+    Parameters
+    ----------
+    exposure : `lsst.afw.image.Exposure`
+        Modified in place.
+    r0, r1 : int
+        First/last reads used, absolute 0-indexed, inclusive.
+    nTotal : int
+        Total read count of the original ramp on disk (``pfsRaw.getNumReads()``).
+    applyUTRWeights : bool
+        Whether the image is UTR-weighted (True) or CDS-style (False).
+    """
+    md = exposure.getMetadata()
+    md.set('H4READ0', int(r0), 'First H4 read used (absolute, 0-indexed)')
+    md.set('H4READ1', int(r1), 'Last H4 read used (absolute, 0-indexed, inclusive)')
+    md.set('H4NREAD', int(r1 - r0 + 1), 'Number of H4 reads spanned by this exposure')
+    md.set('H4NTOT', int(nTotal), 'Total H4 reads in the original ramp')
+    md.set('H4UTRWT', bool(applyUTRWeights),
+           'applyUTRWeights state (True=UTR-weighted image, False=CDS)')
 
 
 def lookupDefects(datasetType, registry, dataId, collections):
@@ -1214,20 +1318,18 @@ class PfsIsrTask(ipIsr.IsrTask):
            The full path of the linearity corrections file, or None if not found.
         """
 
-        CPLhacking = True
-
         filename = f'nirLinearity-{cam}.fits'
         absFilename = os.path.join(getPackageDir("drp_pfs_data"), "nirLinearity", filename)
         if not os.path.exists(absFilename):
             self.log.warn(f'no linearity available for {cam}: {absFilename} not found')
             return None
 
-        # Should look at the header and distinguish
-        if CPLhacking:
-            self.log.warn('CPL hacking on linearity')
+        # Discriminate h4Linearity files (carrying a MODEL keyword whose
+        # value is in h4Linearity.MODEL_REGISTRY) from the legacy
+        # nirLinearity.NirLinearity format by inspecting the primary header.
+        if h4Linearity.isH4LinearityFile(absFilename):
             return h4Linearity.loadFits(absFilename)
-        else:
-            return nirLinearity.NirLinearity.readFits(absFilename)
+        return nirLinearity.NirLinearity.readFits(absFilename)
 
     def nirLinearityChebyshev(self, exposure, linearity):
         """Apply linearity corrections using numpy polynomials.
@@ -1389,22 +1491,32 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         return rate_sum
 
-    def getDarkCube(self, nirDark, nreads: Optional[int] = None) -> np.ndarray:
+    def getDarkCube(self, nirDark, nreads: Optional[int] = None, r0: int = 0) -> np.ndarray:
         """Get the dark cube for the NIR ramp.
 
         Parameters
         ----------
         nirDark : `lsst.obs.pfs.imageCube.ImageCube`
             The unprocessed to subtract.
+        nreads : `int`, optional
+            Number of dark frames to return. If None, return all from ``r0``.
+        r0 : `int`
+            0-indexed offset into the dark cube. Returns ``dark[r0:r0+nreads]``.
+            Used when processing a sub-range of the data ramp; the dark slice
+            then aligns with the data reads being processed.
 
         Returns
         -------
         `np.ndarray`
-            The dark cube to subtract.
+            The dark cube to subtract, shape ``(nreads, H, W)``.
         """
 
-        #
-        cube = nirDark.getImageCube(nreads=nreads)
+        if r0 > 0:
+            end = nirDark.nreads if nreads is None else r0 + nreads
+            full = nirDark.getImageCube(nreads=end)
+            cube = full[r0:end].copy()
+        else:
+            cube = nirDark.getImageCube(nreads=nreads)
         # If gain was applied, back it out. We used to apply darks to the
         # 2-d image in e-, but have switch to applying it to the raw rampin ADU.
         gain = nirDark.metadata.get("GAIN", 1.0)
@@ -1444,7 +1556,8 @@ class PfsIsrTask(ipIsr.IsrTask):
                         nirDark=None,
                         linearity=None,
                         defects=None,
-                        doReturnRawCube=False):
+                        doReturnRawCube=False,
+                        intermediates=None):
         """Construct a 2D image from the NIR ramp data.
 
         Parameters
@@ -1463,31 +1576,51 @@ class PfsIsrTask(ipIsr.IsrTask):
             The 2-d image from the ramp.
         """
 
+        # Resolve the configured read range to absolute, 0-indexed inclusive bounds.
+        r0 = pfsRaw.positiveIndex(self.config.h4.firstRead)
+        r1 = pfsRaw.positiveIndex(self.config.h4.lastRead)
+        if r1 - r0 < 1:
+            raise ValueError(
+                f"firstRead={self.config.h4.firstRead} (->{r0}) and "
+                f"lastRead={self.config.h4.lastRead} (->{r1}) leave no readable range "
+                f"(need r1 > r0)."
+            )
         if self.config.h4.quickCDS:
-            self.log.info("creating quick CDS.")
-            nirImage = self.makeCDS(pfsRaw)
+            self.log.info(f"creating quick CDS over reads [{r0}, {r1}].")
+            # makeCDS already returns flux accumulated during (r0, r1] only —
+            # disjoint sub-ranges are additive by construction.
+            nirImage = self.makeCDS(pfsRaw, r0=r0, r1=r1)
             flux = None
         else:
             # Too many interacting switches for CDS/UTR/darks. Especially note 2-d doDark is still possible.
-            self.log.info("reading full ramp...")
-            deltas = self.makeUTRdeltas(pfsRaw)
+            self.log.info(f"reading ramp over reads [{r0}, {r1}]...")
+            # ``flux`` is the cumulative IRP-corrected ramp zero-anchored
+            # at r0 — no diff→cumsum roundtrip; makeUTRcumulative returns
+            # it directly.
+            flux = self.makeUTRcumulative(pfsRaw, r0=r0, r1=r1)
 
-            # We do not currently use the indices of the masked pixels,
-            # but do get them for when we put in the effort.
-            deltas, posIdx, negIdx = self.correctCRs(pfsRaw, deltas)
+            # makeUTRcumulative zero-anchors at r0, so flux[i] = read[r0+i+1] - read[r0].
+            # Add the cumulative flux from read 0 to read r0 so flux is bias-relative
+            # absolute (read[r0+i+1] - read[0]). Linearity is calibrated on absolute
+            # cumulative ADU, so this anchoring is required for correctness when r0>0.
+            offsetRaw = None
+            if r0 > 0:
+                self.log.info(f"adding absolute baseline from reads [0, {r0}].")
+                offsetRaw = self.makeCDS(pfsRaw, r0=0, r1=r0).astype(flux.dtype, copy=False)
+                flux += offsetRaw[None]
 
-            # Switch to accumulated flux for dark subtraction and
-            # UTR weighting. This is actually pretty expensive; should
-            # rethink.
-            # But do at least save memory by doing this in place.
-            flux = np.cumsum(deltas, axis=0, out=deltas)
-            del deltas  # Get rid of the name to avoid stupidities
+            if intermediates is not None:
+                intermediates['raw'] = flux.copy()  # absolute cumulative, pre-dark
 
             if self.config.h4.applyUTRWeights:
                 if nirDark is not None:
                     self.log.info("subtracting dark cube.")
-                    darkCube = self.getDarkCube(nirDark, len(flux))
+                    darkCube = self.getDarkCube(nirDark, nreads=len(flux), r0=r0)
                     flux -= darkCube
+                    del darkCube  # ~2.4 GB on a 4096²×40 ramp; no longer needed
+
+            if intermediates is not None:
+                intermediates['darkSubbed'] = flux.copy()  # input to linearity
 
             if self.config.h4.doLinearize and linearity is not None:
                 self.log.info("Correcting non-linearity.")
@@ -1498,27 +1631,172 @@ class PfsIsrTask(ipIsr.IsrTask):
                     self.log.info(f"   starting with {defectMask.sum()} defect pixels")
                 else:
                     defectMask = None
-                
+
                 ramp = h4Linearity.Ramp(reads=flux, validMask=defectMask)
                 linearizedRamp = h4Linearity.apply(linearity, ramp)
                 flux = linearizedRamp.cumulativeLinear
                 newMask = linearizedRamp.badPixelMask
+                # The pre-linearization cube is now superseded by the
+                # linearized output. Drop the Ramp / LinearizedRamp
+                # holders so the input (~2.4 GB) can be GC'd before the
+                # CR/glitch detector copies a fresh ``cubeOriginal``.
+                del ramp, linearizedRamp
+
+                # Re-anchor the linearized cube at r0: subtract the linearized value
+                # at read r0 from every read so the output represents only the flux
+                # accumulated during (r0, r1]. Without this rebase, postISRCCD over
+                # disjoint sub-ranges would not sum to the full-ramp postISRCCD.
+                # No-op for r0=0 because the linearity model maps 0 -> 0.
+                if r0 > 0 and offsetRaw is not None:
+                    self.log.info(f"re-anchoring linearized cube at read {r0}.")
+                    if nirDark is not None and self.config.h4.applyUTRWeights:
+                        # Linearization saw flux already dark-subtracted; the rebase
+                        # offset must match. offsetRaw is the absolute cumulative
+                        # at read r0, so its dark is nirDark[r0-1] (nirDark[j] is
+                        # the dark for read j+1 — the same k->k-1 indexing
+                        # getDarkCube uses).
+                        offsetForLin = offsetRaw - self.getDarkRead(nirDark, r0 - 1)
+                    else:
+                        offsetForLin = offsetRaw
+                    linearizedOffset, _ = h4Linearity.applyFrame(linearity, offsetForLin)
+                    flux -= linearizedOffset[None]
+
+                if intermediates is not None:
+                    intermediates['linearized'] = flux.copy()  # post-lin, pre-CR
+
+                # Switch from cumulative flux to delta-space for everything
+                # downstream of linearization. The CR/glitch detector
+                # operates on deltas directly (no diff/cumsum dance inside),
+                # and the science 2-D image is just ``deltas.sum(axis=0)``
+                # — for linearized data the per-pixel mean of deltas IS
+                # the optimal UTR rate. We only reconstruct the cumulative
+                # cube on demand (intermediates / doReturnRawCube).
+                read0 = flux[0:1].copy()
+                deltas = np.diff(flux, axis=0)
+                del flux
+                iterResult = None  # filled in if doCR runs
+
+                if self.config.h4.doCR:
+                    crGood = (newMask == 0)
+                    if defectMask is not None:
+                        crGood &= ~defectMask
+
+                    if self.config.h4.doDeglitch:
+                        self.log.info("Correcting CRs and ASIC glitches.")
+                        # Glitch detection runs on all pixels. The matched-pair
+                        # cancellation criterion (opposite signs, sum within
+                        # threshold) is what discriminates a glitch from a CR;
+                        # restricting by ASIC channel misses glitches on
+                        # channels other than the historically-noted ones.
+                        glitchChanMask = np.ones(deltas.shape[1:], dtype=bool)
+                    else:
+                        self.log.info("Correcting CRs (ASIC deglitching disabled).")
+                        glitchChanMask = None
+                    iterResult = h4Linearity.cr.iterativeUtrDetectAndRepair(
+                        deltas,
+                        goodPixelMask=crGood,
+                        glitchPixelMask=glitchChanMask,
+                        sigmaFloorADU=self.config.h4.rateCRsigmaFloorADU,
+                        nSigma=self.config.h4.rateCRnSigma,
+                        maxIterations=self.config.h4.rateCRiterMax,
+                        correctGlitches=self.config.h4.correctGlitches,
+                        glitchAmplitudeMinADU=self.config.h4.deglitchAmplitudeMinADU,
+                    )
+                    crFlagMask2D = iterResult.crFlagMask.any(axis=0)
+                    glitchFlagMask2D = iterResult.glitchFlagMask.any(axis=0)
+                    crResult = SimpleNamespace(
+                        flagMask=crFlagMask2D,
+                        nFlagged=int(crFlagMask2D.sum()),
+                        glitchFlagMask=glitchFlagMask2D,
+                        nGlitchFlagged=int(glitchFlagMask2D.sum()),
+                    )
+                    self.log.info(
+                        f"iterative CR/glitch step: "
+                        f"{iterResult.nCRs} CR flag entries, "
+                        f"{iterResult.nGlitchPairs} glitch pairs, "
+                        f"{crResult.nFlagged} unique CR pixels, "
+                        f"{crResult.nGlitchFlagged} unique glitch pixels "
+                        f"in {iterResult.nIterations} iterations."
+                    )
+                else:
+                    crResult = None
+
+                # Reconstruct the cumulative cube ONLY when the debug
+                # ``intermediates`` dict or ``doReturnRawCube`` asks for
+                # it. The default production path is delta-only from
+                # here on, which is the whole point of this restructure.
+                flux = None
+                if (intermediates is not None) or doReturnRawCube:
+                    flux = np.empty(
+                        (deltas.shape[0] + 1,) + deltas.shape[1:],
+                        dtype=deltas.dtype,
+                    )
+                    flux[0:1] = read0
+                    np.cumsum(deltas, axis=0, out=flux[1:])
+                    flux[1:] += read0
+                    if intermediates is not None:
+                        intermediates['crCorrected'] = flux.copy()  # post-CR
             else:
                 newMask = None
-                
-            if self.config.h4.applyUTRWeights:
+                crResult = None
+                # No linearization → no delta-space switch. Leave flux
+                # as-is (post-dark cumulative); fall through to the
+                # legacy flux-based nirImage path below.
+                deltas = None
+                read0 = None
+
+            if deltas is not None:
+                # Delta-space science image: total accumulated flux is
+                # the per-pixel UTR rate times the number of deltas.
+                # On linearized deltas the UTR weights collapse to
+                # uniform, so the optimal rate is just the median/mean
+                # of the repaired deltas — which the CR iteration
+                # already produced as ``iterResult.rate`` (or
+                # equivalently the median saved in ``rateFull``).
+                # Skipping a separate ``deltas.sum(axis=0)`` saves one
+                # full-cube reduction on the (N-1, H, W) buffer.
+                if self.config.h4.doCR and iterResult is not None:
+                    pixelRate = iterResult.rate
+                else:
+                    pixelRate = deltas.mean(axis=0)
+                nirImage = pixelRate * deltas.shape[0]
+                if not self.config.h4.applyUTRWeights and nirDark is not None:
+                    # CDS mode: dark cube was NOT subtracted upstream,
+                    # so apply the 2-D dark CDS correction here.
+                    nirImage = nirImage - (
+                        self.getDarkRead(nirDark, r1 - 1)
+                        - self.getDarkRead(nirDark, r0)
+                    )
+                del deltas, read0
+            elif self.config.h4.applyUTRWeights:
                 self.log.info("applying UTR weights.")
                 rates = self.calcUTRrates(flux)
                 nirImage = rates * len(flux)
             else:
-                # CDS, basically.
+                # CDS, basically. flux[i] aligns with nirDark[r0+i] (the dark
+                # cube has one entry per cumsum frame, indexed as
+                # nirDark[i]==dark-for-read[i+1]). So flux[0] uses nirDark[r0]
+                # and flux[-1] uses nirDark[r1-1]. For the full-ramp default
+                # (r0=0, r1=N-1) this reproduces the prior 0 and len(flux)-1.
                 if nirDark is not None:
-                    nirImage = ((flux[-1] - self.getDarkRead(nirDark, len(flux)-1)) -
-                                (flux[0] - self.getDarkRead(nirDark, 0)))
+                    nirImage = ((flux[-1] - self.getDarkRead(nirDark, r1 - 1)) -
+                                (flux[0] - self.getDarkRead(nirDark, r0)))
                 else:
                     nirImage = flux[-1] - flux[0]
 
         exposure = self._makeExposure(pfsRaw, nirImage)
+        _stampReadRangeMetadata(
+            exposure, r0=r0, r1=r1,
+            nTotal=int(pfsRaw.getNumReads()),
+            applyUTRWeights=bool(self.config.h4.applyUTRWeights),
+        )
+        # BORDER + BAD on the outer 4-pixel ring, unconditionally. Done
+        # before the linearity-mask sweep below so the BAD bit is set even
+        # when doLinearize=False (in which case ``newMask`` is None and
+        # the sweep block is skipped). When linearization HAS run, the
+        # sweep also catches h4Linearity.BORDER_PIX and folds it into BAD;
+        # that's harmless overlap with the same bits we set here.
+        _stampBorderMask(exposure)
         if newMask is not None:
             # Declare that all pixels above the available linearization
             # limits are SATurated.
@@ -1534,11 +1812,23 @@ class PfsIsrTask(ipIsr.IsrTask):
 
             defectMask2 = (newMask & h4Linearity.MASKED_BY_INPUT) > 0
             exposure.mask.array[defectMask2]  |= exposure.mask.getPlaneBitMask('BAD')
-            print(f'nSat={saturated.sum()} '
+            nCR = crResult.nFlagged if crResult is not None else 0
+            self.log.info(f'nSat={saturated.sum()} '
                           f'nLow={lowVal.sum()} '
                           f'nBad={badMask.sum()} '
                           f'nDefects={"none" if defectMask is None else defectMask.sum()} '
-                          f'nDefects2={defectMask2.sum()}')
+                          f'nDefects2={defectMask2.sum()} '
+                          f'nCR={nCR}')
+
+        if crResult is not None and crResult.nFlagged > 0:
+            exposure.mask.array[crResult.flagMask] |= exposure.mask.getPlaneBitMask("CR")
+
+        glitchFlagMask = getattr(crResult, 'glitchFlagMask', None)
+        if glitchFlagMask is not None and glitchFlagMask.any():
+            if "ASIC_GLITCH" not in exposure.mask.getMaskPlaneDict():
+                exposure.mask.addMaskPlane("ASIC_GLITCH")
+                afwDisplay.setDefaultMaskPlaneColor("ASIC_GLITCH", "ORANGE")
+            exposure.mask.array[glitchFlagMask] |= exposure.mask.getPlaneBitMask("ASIC_GLITCH")
 
         return exposure, flux if doReturnRawCube else None
 
@@ -1676,141 +1966,6 @@ class PfsIsrTask(ipIsr.IsrTask):
                                     r0=r0, r1=r1, nreads=nreads, bbox=bbox,
                                     doDeltas=False)
 
-    def repairWithWindow(self, deltas, badPixels,
-                         corrRad, corrMin, corrMax,
-                         repairMask=None,
-                         otherIgnore=None) -> np.ndarray:
-        """Replace single pixels with a local correction
-
-        Parameters
-        ----------
-        deltas : `np.ndarray`
-           The 3-d cube of the ramp
-        badPixels : `np.ndarray`
-           A 2-d array of the indices of the reads to replace
-        corrRad : `int`
-           The width of the window (along reads) to use for replacement values
-        corrMin : `int`
-           In the deltas cube, the first read we can use for replacements
-        corrMax : `int`
-           In the deltas cube, the last read we can use for replacements
-        repairMask : `np.ndarray`, optional
-           If set, only apply corrections to these pixels.
-        otherIgnore : `np.ndarray`, optional
-           If set, array of read indices we cannot use for replacements.
-
-        Returns
-        -------
-        correctionWindow : `np.ndarray`
-           The windows we use to make replacements. NaNs ignored.
-           For engineering. Drop once we believe or replace this.
-        """
-        # Use neighboring reads, clipped by the ends of the ramp
-        lowIdx0 = badPixels - corrRad
-        lowIdx = np.maximum(lowIdx0, np.zeros_like(badPixels)+corrMin)
-
-        # If our window hits the end of the valid window, move the
-        # start of the window down.
-        highIdx0 = badPixels + corrRad
-        highIdx = np.minimum(highIdx0, np.zeros_like(badPixels)+corrMax-1)
-        highClip = np.where(highIdx != highIdx0)
-        lowIdx[highClip] = highIdx[highClip] - 2*corrRad+1
-
-        # Average the nearby reads, ignoring any we are correcting.
-        correctionWindow = np.zeros(shape=(2*corrRad+1, deltas.shape[1], deltas.shape[2]))
-        for i in range(2*corrRad + 1):
-            idx_i = lowIdx + i
-            corr1 = np.take_along_axis(deltas, idx_i, axis=0)
-            corr1[idx_i == badPixels] = np.nan
-            if otherIgnore is not None:
-                corr1[idx_i == otherIgnore] = np.nan
-            correctionWindow[i, :, :] = corr1
-        corrections = np.nanmean(correctionWindow, axis=0)
-
-        # This is not the cheapest way to handle repairMask, but re-writing to
-        # make that efficient would be error-prone work.
-        if repairMask is not None:
-            badPixels[~repairMask] = 0
-            corrections[~repairMask] = deltas[0][~repairMask]
-        np.put_along_axis(deltas, badPixels, corrections, axis=0)
-        return correctionWindow
-
-    def correctCRs(self, pfsRaw, deltas: np.ndarray):
-        """Correct cosmic ray hits using the array of flux deltas.
-
-        "Correct" means to detect both the maximum and the minimum increments for each
-        pixel, and replace both of those by a local estimate of the rate.
-
-        Since we are already paying the cost of detecting hot pixels, fold correction
-        of ASIC-injected bad pixels in here. Currently only n3, channel 24. In the
-        delta ramps these appear as paired high/low pixels. We do need to calculate a
-        robust sigma, which is expensive enough that we want to skip it if possible.
-
-        Parameters
-        ----------
-        pfsRaw : `lsst.obs.pfs.PfsRaw`
-          Access to the raw ramp
-        deltas : `np.ndarray`
-           Corrected in place.
-
-        Returns
-        -------
-        deltas : `np.array`
-           The corrected ramp
-        posIdx, negIdx : `np.array`
-           The per-pixel indexes into deltas of the corrected reads.
-        """
-
-        if not self.config.h4.doCR:
-            return deltas, None, None
-
-        # Oh, ultra gross. Just realized that for normal exposures the shutter is
-        # always closed for the first read and at least the last two reads, so
-        # we do not want to use those for interpolation.
-        # Worse, Ar and Ne exposures are illuminated for just one read, so *all*
-        # illuminated pixels would be rejected! If we start taking shorter quartz
-        # exposures those will lose significant flux.
-        # Finally, we do not want to use the closed-shutter reads to identify the
-        # minimum pixels: arc lines, etc. always get dinged. This is pretty dangerous
-        # for short exposures.
-        #
-        # Hack that following logic in for now, but need to somehow fix correctly -- CPL.
-        #  - if nread is "short", apply no correction: must use CR splits for Ar/Ne
-        #  - if exptype is not DARK, do not use first or two last reads
-        #
-        corrRad, corrMin, corrMax = self.calcCorrectionWindow(pfsRaw, len(deltas))
-        if corrMax - corrMin < self.config.h4.crMinReads:
-            self.log.warn(f'ramp is too short to correct CRs (need {self.config.h4.crMinReads}, '
-                          f'have {corrMax}-{corrMin}): you must use splits!')
-            return deltas, None, None
-
-        # Identify both min and max reads for each pixel. This
-        # is fairly expensive...
-        posIdx = np.argmax(deltas, axis=0, keepdims=True)
-        negIdx = np.argmin(deltas, axis=0, keepdims=True)
-
-        if False:  # Instead of repairing pixels, mask them for later processing.
-            np.put_along_axis(deltas, posIdx, axis=0, values=np.nan)
-            np.put_along_axis(deltas, negIdx, axis=0, values=np.nan)
-        else:
-            self.repairWithWindow(deltas, posIdx,
-                                  corrRad, corrMin, corrMax,
-                                  otherIgnore=negIdx)
-
-            # Need to correct for masking every max read. One way is to mask every
-            # min read. I hate this.
-            if True:
-                self.repairWithWindow(deltas, negIdx,
-                                      corrRad, corrMin, corrMax,
-                                      otherIgnore=posIdx)
-            else:
-                negIdx *= 0
-                self.log.warn('NOT accounting for min pixels in CR step.')
-
-        # we mask/replace two reads for every single pixel. Let the caller decide
-        # what to do about that, but return the indices of both.
-        return deltas, posIdx, negIdx
-
     def loadBadIRPpixels(self, detectorName: str) -> np.ndarray:
         """Return the bad IRP row pixel list."""
 
@@ -1868,6 +2023,38 @@ class PfsIsrTask(ipIsr.IsrTask):
         # Yes, yes, get this from a config file...
         badAsicChannels = dict(n3=(24,))
         return badAsicChannels.get(detectorName, ())
+
+    def asicBadChannelMask(self, detectorName: str, shape: tuple,
+                           nChannels: int = 32) -> np.ndarray:
+        """Return a ``(H, W)`` bool mask True at rows in known-bad ASIC channels.
+
+        H4 ASIC channels run along the y (rows) axis; each channel
+        spans ``H // nChannels`` rows. Useful as the ``glitchPixelMask``
+        argument to ``cr.iterativeUtrDetectAndRepair``: glitch detection
+        is restricted to the rows where ASIC glitches are known to occur.
+
+        Parameters
+        ----------
+        detectorName : str
+            E.g. ``"n3"``.
+        shape : tuple
+            ``(H, W)`` detector dimensions.
+        nChannels : int
+            Number of horizontal ASIC channels stacked along Y; 32 for H4.
+
+        Returns
+        -------
+        mask : np.ndarray
+            ``(H, W)`` bool. All-False if the detector has no known-bad
+            channels.
+        """
+        channels = self.loadBadAsicChannels(detectorName)
+        H, W = shape
+        channelHeight = H // nChannels
+        mask = np.zeros((H, W), dtype=bool)
+        for ch in channels:
+            mask[ch * channelHeight:(ch + 1) * channelHeight, :] = True
+        return mask
 
     def getSimpleDiffIrp(self, pfsRaw, rawDiffIrp) -> np.ndarray:
         """Return a diff IRP image which is just the median across the channel columns"""
@@ -2242,81 +2429,9 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         return corrRad, corrMin, corrMax
 
-    def repairAsicSpikes(self, pfsRaw, cube: np.ndarray, channel: int, sigClip=None, doTest=False):
-        """Replace bad pixels from bad ASIC channels
-
-        The bad pixels are positive going spikes from the ASIC, which can hit
-        both data and IRP pixels. We correct the pixels early, on the separate
-        data and IRP cubes, before even being converted to IRP1 or incremental UTR.
-
-        We expect to only run this for a few (1?) channel.
-
-        Need to iterate until no more spikes are found.....
-        Need to handle spikes at the ends of the ramp.
-
-        Parameters
-        ----------
-        pfsRaw : `lsst.obs.pfs.PfsRaw`
-          Access to the raw ramp
-        cube : `np.ndarray`
-           The 3-d cube of the ramp. Corrected in place.
-        channel : `int`
-           The index of the (32-channel read) channel we are correcting
-        """
-
-        if not self.config.h4.repairAsicSpikes:
-            return
-
-        if pfsRaw.nchan != 32:
-            self.log.warn(f'nchan ({pfsRaw.nchan}) != 32, so not (yet) correcting ASIC glitches')
-            return
-
-        if sigClip is None:
-            sigClip = self.config.h4.repairAsicSpikesSigma
-        badChan = cube[:, channel*128:(channel+1)*128, :]
-
-        diffChan = np.diff(badChan, axis=0, prepend=np.zeros_like(badChan[0:1]))
-        p25, meds, p75 = np.percentile(diffChan, [25, 50, 75], axis=0)
-        iqrSig = 0.741*(p75 - p25)
-
-        # the reads we are correcting have a single hot pixel, just like CRs. But the flux
-        # levels return on the following read, unlike CRs. So, in delta stacks look for
-        # positive spikes just before a matching negative spike. Or in cumulative stacks,
-        # look for a positive spike between two "normal" reads
-        brightMask = np.abs(diffChan) > (meds + sigClip*iqrSig)
-        bright_w = np.where(brightMask)
-
-        # Todo: Handle spikes at the ends of the ramp separately -- CPL
-        atEnd = (bright_w[0] >= len(diffChan)-1 | (bright_w[0] == 0))
-        bright_w1 = bright_w[0][~atEnd], bright_w[1][~atEnd], bright_w[2][~atEnd]
-        next_w1 = (bright_w1[0]+1), bright_w1[1], bright_w1[2]
-
-        peaks1 = diffChan[bright_w1]
-        next1 = diffChan[next_w1]
-        diffs = peaks1 + next1
-
-        meds1 = meds[bright_w1[1:]]
-        iqrSig1 = iqrSig[bright_w1[1:]]
-
-        fix_i = np.abs(diffs) < (meds1 + sigClip*iqrSig1)
-        fix_w = tuple([w1[fix_i] for w1 in bright_w1])
-        if True:  # Use the average of the two neighboring reads
-            fix_wm1 = (fix_w[0]-1, fix_w[1], fix_w[2])
-            fix_wp1 = (fix_w[0]+1, fix_w[1], fix_w[2])
-            repairVals = (badChan[fix_wm1] + badChan[fix_wp1]) / 2
-        else:     # Use the median of the entire ramp
-            repairVals = meds1[fix_w[1:]]
-        badChan[fix_w] = repairVals
-
-        # Return for testing
-        if doTest:
-            return fix_w, badChan, diffChan, bright_w1, iqrSig, meds, repairVals
-        else:
-            return fix_w
-
-    def makeUTRdeltas(self, pfsRaw, r0=0, r1=-1, nreads=None, bbox=None,
-                      showTimes=False) -> np.ndarray:
-        """Return all the fully IRP-corrected frames in a single 3d stack.
+    def makeUTRcumulative(self, pfsRaw, r0=0, r1=-1, nreads=None, bbox=None,
+                          showTimes=False) -> np.ndarray:
+        """Return the IRP-corrected cumulative ramp as a single 3-D stack.
 
         Given two raw data images d0 and d1, and two raw IRP images i0 and i1, the net CDS image
         can be either (d1 - i1) - (d0 - i0), or (d1 - d0) - (i1 - i0). The IRP row has various
@@ -2325,7 +2440,9 @@ class PfsIsrTask(ipIsr.IsrTask):
         In particular there are:
           - bad IRP row pixels
           - fixed pixel-to-pixel offsets
-          - bad ASIC channels
+
+        ASIC glitches are handled later by the iterative CR/glitch detector
+        operating on the linearized cube, not here.
 
         Note that there is also up to ~1% printthrough from data->IRP, and presumably from IRP->data
 
@@ -2346,9 +2463,12 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         Returns
         -------
-        deltas : 3-d float32 numpy array
-           the UTR stack, with axis 0 being the reads up the ramp. We return
-           the flux increments between reads, not the actual fluxes.
+        flux : 3-d float32 numpy array
+           Cumulative IRP-corrected ADU, zero-anchored at read ``r0``.
+           ``flux[k]`` is read ``r0+k+1`` minus read ``r0`` minus the
+           per-channel IRP-filtered diff. Caller uses this directly as
+           the bias-relative cumulative ramp — no diff/cumsum roundtrip
+           needed.
         """
 
         r0 = pfsRaw.positiveIndex(r0)
@@ -2359,33 +2479,12 @@ class PfsIsrTask(ipIsr.IsrTask):
             nreads = r1 - r0 + 1
         reads = np.linspace(r0, r1, nreads, dtype='i2')
 
-        # n3/18321 channel 24 is covered with pixels which have spikes from the ASIC.
-        # We need to repair both the data and IRP pixels separately, and furthermore
-        # want to repair the non-interpolated IRP images. So read both in first and
-        # correct them before building the proper deltas. Since I/O is significant,
-        # we keep the raw data and IRP cubes, then re-read from those instead of
-        # from disk.
-        #
-        badChans = self.loadBadAsicChannels(pfsRaw.detector.getName())
-        if badChans is not None:
-            rawData = self.makeRawDataCube(pfsRaw=pfsRaw, r0=r0, r1=r1, nreads=nreads)
-            rawIrps = self.makeRawIrpNcube(pfsRaw=pfsRaw, r0=r0, r1=r1, nreads=nreads)
-
-            for badChan in badChans:
-                fixedData_w = self.repairAsicSpikes(pfsRaw, rawData, badChan)
-                fixedIrp_w = self.repairAsicSpikes(pfsRaw, rawIrps, badChan)
-                self.log.info(f'repaired {len(fixedData_w[0])} data and {len(fixedIrp_w[0])} IRP '
-                              f'ASIC pixels in channel {badChan}')
-        else:
-            rawData = rawIrps = None
-
-        # Grab the components of read 0, which we will subtract from all the others.
-        if rawData is not None:
-            data0 = self.makeRawDataArray(pfsRaw, 0, fromArray=rawData)
-            irp0 = self.makeRawIrpArray(pfsRaw, 0, fromArray=rawIrps)
-        else:
-            data0 = self.makeRawDataArray(pfsRaw, r0, fromArray=rawData)
-            irp0 = self.makeRawIrpArray(pfsRaw, r0, fromArray=rawIrps)
+        # Grab the components of read r0, which we will subtract from all the others.
+        # ASIC glitches are now handled later by the iterative CR/glitch detector
+        # operating on the linearized cube, so no longer need to preload raw data
+        # and IRP cubes here for pre-linearization spike repair.
+        data0 = self.makeRawDataArray(pfsRaw, r0)
+        irp0 = self.makeRawIrpArray(pfsRaw, r0)
         self.applyIRPcrosstalk(pfsRaw, irp0, data0)
 
         # We are not squirreling away the bbox, but really should for the final Exposure
@@ -2398,12 +2497,8 @@ class PfsIsrTask(ipIsr.IsrTask):
             if r_idx == 0:
                 continue
             t0 = time.time()
-            if rawData is not None:
-                data1 = self.makeRawDataArray(pfsRaw, r_idx, fromArray=rawData)
-                irp1 = self.makeRawIrpArray(pfsRaw, r_idx, fromArray=rawIrps)
-            else:
-                data1 = self.makeRawDataArray(pfsRaw, r_i, fromArray=rawData)
-                irp1 = self.makeRawIrpArray(pfsRaw, r_i, fromArray=rawIrps)
+            data1 = self.makeRawDataArray(pfsRaw, r_i)
+            irp1 = self.makeRawIrpArray(pfsRaw, r_i)
             t1 = time.time()
             self.applyIRPcrosstalk(pfsRaw, irp1, data1)
             dirp = irp1 - irp0
@@ -2418,9 +2513,12 @@ class PfsIsrTask(ipIsr.IsrTask):
             if showTimes:
                 print(f'cds {r_i} io1={t1-t0:0.3f} proc={t2-t1:0.3f}')
 
-        # Warning: prepend=0 causes promotion to float64
-        # This should arguably be constructed on-the-fly, read by read.
-        return np.diff(stack, axis=0, prepend=np.zeros_like(stack[0:1]))
+        # ``stack`` is already the cumulative IRP-corrected ramp the
+        # caller wants. The previous implementation did an extra
+        # ``np.diff(..., prepend=zeros)`` here only to have the caller
+        # ``np.cumsum`` it back — an exact roundtrip costing 5.85 GB of
+        # transient alloc and ~10 s of CPU on a 4096²×88 ramp.
+        return stack
 
     def readIPC(self, detectorName: str) -> dict[int, dict[int, float]]:
         """Read IPC coefficients from file
