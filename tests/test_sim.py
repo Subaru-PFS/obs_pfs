@@ -225,6 +225,23 @@ class UtrRateClosureTestCase(lsst.utils.tests.TestCase):
         self.assertAlmostEqual(float(rate.mean()), 200.0, delta=2.0)
 
 
+def _runCR(cube, **kwargs):
+    """Test helper: run the deltas-based detector on a cumulative cube.
+
+    Same shape as ``test_h4CR._runCR`` — diff once, call, cumsum back so
+    the existing cube-based assertions still apply.
+    """
+    repair = kwargs.get("repair", True)
+    deltas = np.diff(cube, axis=0)
+    read0 = cube[0:1].copy() if repair else None
+    result = cr.iterativeUtrDetectAndRepair(deltas, **kwargs)
+    if repair:
+        cube[0:1] = read0
+        np.cumsum(deltas, axis=0, out=cube[1:])
+        cube[1:] += read0
+    return result
+
+
 class IterativeUtrDetectAndRepairTestCase(lsst.utils.tests.TestCase):
     """Tests for cr.iterativeUtrDetectAndRepair against simulated truth."""
 
@@ -244,7 +261,7 @@ class IterativeUtrDetectAndRepairTestCase(lsst.utils.tests.TestCase):
                  sim.CR(y=8, x=8, read=20, amount=1500.0)]
         cube = self._makeCube(params, crs=truth, rng=0)
         good = np.ones((16, 16), dtype=bool)
-        result = cr.iterativeUtrDetectAndRepair(
+        result = _runCR(
             cube, goodPixelMask=good, nSigma=5.0,
         )
         self.assertEqual(result.nGlitchPairs, 0)
@@ -262,7 +279,7 @@ class IterativeUtrDetectAndRepairTestCase(lsst.utils.tests.TestCase):
         cube = self._makeCube(params, glitches=truth, rng=0)
         good = np.ones((16, 16), dtype=bool)
         glitchMask = np.ones((16, 16), dtype=bool)  # opt in across the cube
-        result = cr.iterativeUtrDetectAndRepair(
+        result = _runCR(
             cube, goodPixelMask=good, glitchPixelMask=glitchMask,
             nSigma=5.0,
         )
@@ -282,7 +299,7 @@ class IterativeUtrDetectAndRepairTestCase(lsst.utils.tests.TestCase):
         truth = [sim.AsicGlitch(y=3, x=3, read=10, amount=+2048.0)]
         cube = self._makeCube(params, glitches=truth, rng=0)
         good = np.ones((8, 8), dtype=bool)
-        result = cr.iterativeUtrDetectAndRepair(
+        result = _runCR(
             cube, goodPixelMask=good, nSigma=5.0,
         )
         self.assertEqual(result.nGlitchPairs, 0,
@@ -307,7 +324,7 @@ class IterativeUtrDetectAndRepairTestCase(lsst.utils.tests.TestCase):
         # Mask covers x in [4, 8) — channel for glitch detection.
         glitchMask = np.zeros((4, 12), dtype=bool)
         glitchMask[:, 4:8] = True
-        result = cr.iterativeUtrDetectAndRepair(
+        result = _runCR(
             cube, goodPixelMask=good, glitchPixelMask=glitchMask,
             nSigma=5.0,
         )
@@ -347,7 +364,7 @@ class IterativeUtrDetectAndRepairTestCase(lsst.utils.tests.TestCase):
         # With poisson=False the only noise source is read noise; per-delta
         # std ≈ sqrt(2)·readNoise = sqrt(2)·5 ≈ 7 ADU. IQR sigma ≈ 7, so
         # threshold = 5·7 = 35 ADU. Bits with amp > 35 detect, amp ≤ 35 don't.
-        result = cr.iterativeUtrDetectAndRepair(
+        result = _runCR(
             cube, goodPixelMask=good, glitchPixelMask=glitchMask,
             sigmaFloorADU=0.0,  # disable floor for this experiment
             nSigma=5.0,
@@ -390,7 +407,7 @@ class IterativeUtrDetectAndRepairTestCase(lsst.utils.tests.TestCase):
         cube = self._makeCube(params, crs=crs, glitches=glitches, rng=0)
         good = np.ones((8, 8), dtype=bool)
         glitchMask = np.ones((8, 8), dtype=bool)
-        result = cr.iterativeUtrDetectAndRepair(
+        result = _runCR(
             cube, goodPixelMask=good, glitchPixelMask=glitchMask,
             nSigma=5.0,
         )
@@ -402,6 +419,70 @@ class IterativeUtrDetectAndRepairTestCase(lsst.utils.tests.TestCase):
         # Specifically the CR pixel and the glitch pixel should also match.
         self.assertAlmostEqual(float(rate_after[2, 3]), params.rate, delta=1.0)
         self.assertAlmostEqual(float(rate_after[5, 5]), params.rate, delta=1.0)
+
+    def testCorrectGlitchesTrueRepairsInteriorPairs(self):
+        """correctGlitches=True (default): an interior glitch pair is
+        detected and repaired out of the cube."""
+        params = sim.RampParams(nReads=30, H=4, W=4, rate=50.0,
+                                readNoise=0.0, poisson=False)
+        g = sim.AsicGlitch(y=1, x=1, read=12, amount=+2048.0)
+        cube = self._makeCube(params, glitches=[g], rng=0)
+        good = np.ones((4, 4), dtype=bool)
+        glitchMask = np.ones((4, 4), dtype=bool)
+        result = _runCR(cube, goodPixelMask=good, glitchPixelMask=glitchMask,
+                        nSigma=5.0, correctGlitches=True)
+        self.assertEqual(result.nGlitchPairs, 1)
+        self.assertTrue(result.glitchFlagMask[11, 1, 1])
+        self.assertTrue(result.glitchFlagMask[12, 1, 1])
+        # Repaired: the pair deltas are now ~rate, the +/-2048 spike gone.
+        deltasAfter = np.diff(cube[:, 1, 1])
+        self.assertAlmostEqual(float(deltasAfter[11]), params.rate, delta=2.0)
+        self.assertAlmostEqual(float(deltasAfter[12]), params.rate, delta=2.0)
+        self.assertAlmostEqual(float(result.rate[1, 1]), params.rate, delta=1.0)
+
+    def testCorrectGlitchesFalseLeavesInteriorPairs(self):
+        """correctGlitches=False: an interior glitch pair is still
+        detected but left in the cube — it self-cancels in the mean rate."""
+        params = sim.RampParams(nReads=30, H=4, W=4, rate=50.0,
+                                readNoise=0.0, poisson=False)
+        g = sim.AsicGlitch(y=1, x=1, read=12, amount=+2048.0)
+        cube = self._makeCube(params, glitches=[g], rng=0)
+        good = np.ones((4, 4), dtype=bool)
+        glitchMask = np.ones((4, 4), dtype=bool)
+        deltasBefore = np.diff(cube[:, 1, 1])
+        result = _runCR(cube, goodPixelMask=good, glitchPixelMask=glitchMask,
+                        nSigma=5.0, correctGlitches=False)
+        # Detection still happens — the pair is in the ASIC_GLITCH mask.
+        self.assertEqual(result.nGlitchPairs, 1)
+        self.assertTrue(result.glitchFlagMask[11, 1, 1])
+        self.assertTrue(result.glitchFlagMask[12, 1, 1])
+        # NOT repaired: the cube still carries the +2048/-2048 pair.
+        deltasAfter = np.diff(cube[:, 1, 1])
+        np.testing.assert_allclose(deltasAfter[11:13], deltasBefore[11:13],
+                                   atol=1.0)
+        # The symmetric pair cancels in the mean, so the rate still recovers.
+        self.assertAlmostEqual(float(result.rate[1, 1]), params.rate, delta=1.0)
+
+    def testEndGlitchAlwaysCorrected(self):
+        """An end glitch (lone spike at the last delta, no pair partner)
+        is always repaired, even with correctGlitches=False."""
+        params = sim.RampParams(nReads=30, H=4, W=4, rate=50.0,
+                                readNoise=0.0, poisson=False)
+        # Glitch on the last read → a lone +2048 spike at the final delta.
+        g = sim.AsicGlitch(y=2, x=2, read=29, amount=+2048.0)
+        cube = self._makeCube(params, glitches=[g], rng=0)
+        good = np.ones((4, 4), dtype=bool)
+        glitchMask = np.ones((4, 4), dtype=bool)
+        result = _runCR(cube, goodPixelMask=good, glitchPixelMask=glitchMask,
+                        nSigma=5.0, correctGlitches=False)
+        # It is an ASIC glitch (in the mask) but not a pair.
+        self.assertEqual(result.nGlitchPairs, 0)
+        self.assertTrue(result.glitchFlagMask[28, 2, 2])
+        # Repaired despite correctGlitches=False — a lone end glitch has no
+        # partner, so it cannot self-cancel and must always be corrected.
+        deltasAfter = np.diff(cube[:, 2, 2])
+        self.assertAlmostEqual(float(deltasAfter[28]), params.rate, delta=2.0)
+        self.assertAlmostEqual(float(result.rate[2, 2]), params.rate, delta=1.0)
 
 
 class TestMemory(lsst.utils.tests.MemoryTestCase):

@@ -34,6 +34,7 @@ Public entry points:
 
 from __future__ import annotations
 
+from . import cr
 from .apply import apply, applyFrame
 from .fit import fit
 from .io import isH4LinearityFile, loadFits, saveFits
