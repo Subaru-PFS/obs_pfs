@@ -34,6 +34,9 @@ import numpy as np
 
 from lsst.obs.pfs import isrTask as pfsIsrTask
 
+from . import cr
+from . import isrPlots
+
 
 SUPPORTED_LINEARITY_CAMS = ("n3",)
 
@@ -94,10 +97,11 @@ def _makeDefaultIsrTask(doLinearize: bool):
     config.doSaturationInterpolation = False
 
     config.h4.quickCDS = False
-    config.h4.doCR = False
     config.h4.doIPC = False
     config.h4.doWriteRawCube = True
     config.h4.doLinearize = doLinearize
+    # Rate-based CR rejection requires linearization to have run.
+    config.h4.doCR = doLinearize
 
     config.validate()
     return pfsIsrTask.PfsIsrTask(config=config)
@@ -110,6 +114,7 @@ def _ensureIsrTask(isrTask, doLinearize: bool):
 
     needsRebuild = (
         bool(isrTask.config.h4.doLinearize) != bool(doLinearize)
+        or bool(isrTask.config.h4.doCR) != bool(doLinearize)
         or not bool(isrTask.config.h4.doWriteRawCube)
         or bool(isrTask.config.h4.quickCDS)
     )
@@ -708,7 +713,7 @@ def plotOutlierTraces(
         ``coords`` is given.
     normalize : {"mean", "max", "none"}
         Per-pixel normalization of the trace.
-    coords : sequence of (y, x), optional
+    coords : sequence of (x, y), optional
         Specific pixel coordinates to plot. Overrides ``thresh``/``n``.
     ax : matplotlib axis, optional
     rng : np.random.Generator, optional
@@ -720,7 +725,7 @@ def plotOutlierTraces(
     -------
     fig : matplotlib.figure.Figure
     coords : np.ndarray
-        Shape ``(npicked, 2)`` of (y, x) pairs that were plotted.
+        Shape ``(npicked, 2)`` of (x, y) pairs that were plotted.
     """
     import matplotlib.pyplot as plt
 
@@ -747,13 +752,13 @@ def plotOutlierTraces(
         if ys.size > n:
             pick = rng.choice(ys.size, size=n, replace=False)
             ys, xs = ys[pick], xs[pick]
-        coords = np.column_stack([ys, xs])
+        coords = np.column_stack([xs, ys])
     else:
         coords = np.asarray(coords)
         if coords.ndim != 2 or coords.shape[1] != 2:
-            raise ValueError("coords must be (N, 2) of (y, x) pairs.")
-        ys = coords[:, 0]
-        xs = coords[:, 1]
+            raise ValueError("coords must be (N, 2) of (x, y) pairs.")
+        xs = coords[:, 0]
+        ys = coords[:, 1]
 
     if ax is None:
         fig, ax = plt.subplots(figsize=(10, 6))
@@ -804,6 +809,433 @@ def plotOutlierTraces(
     cbar.set_label("relDiff")
 
     return fig, coords
+
+
+def processRamp(
+    butler,
+    dataId,
+    *,
+    cam: Optional[str] = None,
+    doLinearize: bool = True,
+    doCR: bool = True,
+    repairCR: bool = True,
+    firstRead: int = 0,
+    lastRead: int = -1,
+    nSigma: float = cr.DEFAULT_ITER_N_SIGMA,
+    sigmaFloorADU: float = cr.DEFAULT_SIGMA_FLOOR_ADU,
+    maxIterations: int = cr.DEFAULT_MAX_ITERATIONS,
+    doDeglitch: bool = True,
+    glitchAmplitudeMinADU: float = 0.0,
+    raw=None,
+    nirDark=None,
+    defects=None,
+    linearity=None,
+    exposure=None,
+    cube=None,
+    intermediates=None,
+    log=None,
+):
+    """Run linearization + (optionally) iterative CR/ASIC-glitch detection.
+
+    The in-ISR CR step is forced off inside this helper so the CR knobs
+    here (``doCR`` / ``repairCR`` / thresholds) are the sole source
+    of truth.
+
+    Iteration shortcuts:
+
+    - Pass a pre-loaded ``linearity`` to iterate over linearity calibrations
+      without re-resolving from EUPS each call.
+    - Pass ``exposure`` + ``cube`` (both, or neither) to skip the
+      linearization phase entirely and re-run only the CR step. The CR
+      plane on ``exposure.mask`` is reset on each call before fresh flags
+      are stamped, so iterating with different thresholds gives a clean
+      mask each time. The caller is responsible for ensuring ``cube`` is
+      post-linearization (or accepting unusual threshold behavior).
+
+    Parameters
+    ----------
+    butler : `lsst.daf.butler.Butler`
+    dataId : mapping
+    cam : str, optional
+        Detector name (e.g. ``"n3"``); inferred from raw if omitted.
+    doLinearize : bool
+        Apply the H4 per-read linearity correction. Ignored when
+        ``exposure`` + ``cube`` are supplied.
+    doCR : bool
+        Run rate-based CR detection on the linearized cube. Requires a
+        supported camera.
+    repairCR : bool
+        Subtract the CR contribution in place. With ``False``, only the
+        CR mask plane is stamped — useful for visual inspection.
+    firstRead, lastRead : int
+        Process only reads ``[firstRead, lastRead]`` of the ramp (0-indexed,
+        inclusive; ``lastRead=-1`` = last read). See ``H4Config.firstRead``
+        / ``H4Config.lastRead``. Ignored when ``exposure`` + ``cube`` are
+        supplied (the supplied cube already encodes the range).
+    nSigma, sigmaFloorADU, maxIterations
+        CR-detection thresholds; see ``cr.iterativeUtrDetectAndRepair``.
+    raw, nirDark, defects : optional
+        Pre-fetched butler objects; fetched on demand if not given.
+        Ignored when ``exposure`` + ``cube`` are supplied.
+    linearity : `LinearityCorrection`, optional
+        Pre-loaded linearity. Falls back to ``isrTask.resolveNirLinearity(cam)``.
+        Ignored when ``exposure`` + ``cube`` are supplied.
+    exposure : `lsst.afw.image.Exposure`, optional
+        Pre-built post-linearization exposure (used as both the mask
+        source for ``goodPixelMask`` and the destination for CR-bit
+        stamping). Must be supplied together with ``cube``.
+    cube : np.ndarray, optional
+        Pre-built post-linearization cumulative ramp, shape ``(N, H, W)``.
+        Must be supplied together with ``exposure``.
+    log : logger, optional
+
+    Returns
+    -------
+    exposure : `lsst.afw.image.Exposure`
+        Post-linearization exposure with the CR mask bit set at every
+        flagged pixel (when ``doCR=True``).
+    cube : np.ndarray
+        Linearized cumulative ramp, shape ``(N, H, W)``, float32. With
+        ``repairCR=True``, the CR contribution has been subtracted; with
+        ``repairCR=False``, the CR signature remains for inspection.
+    crResult : cr.IterativeRepairResult or None
+        ``None`` when ``doCR=False``.
+    """
+    if (exposure is None) != (cube is None):
+        raise ValueError("exposure and cube must be provided together (or both omitted).")
+    reuseExposure = exposure is not None
+
+    cam, raw = _resolveCam(cam, raw, butler, dataId)
+
+    if doCR and cam not in SUPPORTED_LINEARITY_CAMS:
+        raise RuntimeError(
+            f"CR detection requires linearity, only available for "
+            f"{SUPPORTED_LINEARITY_CAMS}; got cam={cam!r}."
+        )
+    if doCR and not doLinearize and not reuseExposure:
+        raise RuntimeError(
+            "doCR requires doLinearize=True (or a pre-linearized exposure+cube)."
+        )
+
+    if reuseExposure:
+        # Skip the linearization pipeline entirely; trust the caller.
+        if log is None:
+            import lsst.log as _lsst_log
+            log = _lsst_log.getLogger("lsst.obs.pfs.h4Linearity.validate.processRamp")
+        log.info(
+            f"processRamp: cam={cam} visit={dataId.get('visit', '?')} "
+            f"reusing supplied exposure+cube; doCR={doCR} repairCR={repairCR}"
+        )
+        exp = exposure
+    else:
+        isrTask = _makeDefaultIsrTask(doLinearize=doLinearize)
+        # The in-ISR CR step is silenced; this helper runs CR (or not) itself.
+        isrTask.config.h4.doCR = False
+        isrTask.config.h4.firstRead = firstRead
+        isrTask.config.h4.lastRead = lastRead
+
+        if log is None:
+            log = isrTask.log
+        log.info(
+            f"processRamp: cam={cam} visit={dataId.get('visit', '?')} "
+            f"doLinearize={doLinearize} doCR={doCR} repairCR={repairCR}"
+        )
+
+        if raw is None:
+            raw = butler.get("raw", dataId)
+        if nirDark is None:
+            nirDark = butler.get("nirDark", dataId)
+        if defects is None:
+            defects = butler.get("defects", dataId)
+
+        if linearity is None and doLinearize:
+            linearity = isrTask.resolveNirLinearity(cam)
+        if doLinearize and linearity is None:
+            raise RuntimeError(f"resolveNirLinearity({cam!r}) returned None.")
+
+        exp, cube = isrTask.makeNirExposure(
+            raw, nirDark=nirDark, defects=defects, linearity=linearity, doReturnRawCube=True,
+            intermediates=intermediates,
+        )
+        if cube is None:
+            raise RuntimeError(
+                "makeNirExposure returned no cube; check h4.doWriteRawCube and h4.quickCDS."
+            )
+        if defects is not None:
+            defects.maskPixels(exp.mask, "BAD")
+
+    crResult = None
+    if doCR:
+        crBit = exp.mask.array.dtype.type(exp.mask.getPlaneBitMask("CR"))
+        # goodPixelMask: pixels with no non-CR bad bits set. Clearing the CR bit
+        # before the test makes the goodPixelMask iteration-independent — flags
+        # from a previous pass don't gate detection on this one.
+        goodPixelMask = (exp.mask.array & ~crBit) == 0
+        # ASIC-glitch detection runs on all pixels when enabled — the
+        # matched-pair cancellation criterion (opposite signs, sum within
+        # threshold) discriminates glitches from CRs without a channel
+        # restriction. Set ``doDeglitch=False`` to skip glitch detection
+        # entirely.
+        glitchPixelMask = np.ones(cube.shape[1:], dtype=bool) if doDeglitch else None
+
+        crResult = cr.iterativeUtrDetectAndRepair(
+            cube,
+            goodPixelMask=goodPixelMask,
+            glitchPixelMask=glitchPixelMask,
+            nSigma=nSigma,
+            sigmaFloorADU=sigmaFloorADU,
+            maxIterations=maxIterations,
+            repair=repairCR,
+            glitchAmplitudeMinADU=glitchAmplitudeMinADU,
+        )
+        crPix2D = crResult.crFlagMask.any(axis=0)
+        glitchPix2D = crResult.glitchFlagMask.any(axis=0)
+        log.info(
+            f"processRamp: iterative CR flagged {crResult.nCRs} entries "
+            f"({int(crPix2D.sum())} unique pixels); "
+            f"ASIC glitch pairs {crResult.nGlitchPairs} "
+            f"({int(glitchPix2D.sum())} unique pixels) "
+            f"in {crResult.nIterations} iterations."
+        )
+        # Reset the CR plane to this run's flags only; also stamp ASIC_GLITCH.
+        exp.mask.array &= ~crBit
+        if crPix2D.any():
+            exp.mask.array[crPix2D] |= crBit
+        if glitchPix2D.any():
+            if "ASIC_GLITCH" not in exp.mask.getMaskPlaneDict():
+                exp.mask.addMaskPlane("ASIC_GLITCH")
+            glBit = exp.mask.array.dtype.type(
+                exp.mask.getPlaneBitMask("ASIC_GLITCH")
+            )
+            exp.mask.array &= ~glBit
+            exp.mask.array[glitchPix2D] |= glBit
+        if intermediates is not None:
+            intermediates['crCorrected'] = cube.copy()
+
+    return exp, cube, crResult
+
+
+def runCRDiagnostics(
+    butler,
+    dataId,
+    *,
+    cam: Optional[str] = None,
+    firstRead: int = 0,
+    lastRead: int = -1,
+    nSigma: float = cr.DEFAULT_ITER_N_SIGMA,
+    sigmaFloorADU: float = cr.DEFAULT_SIGMA_FLOOR_ADU,
+    maxIterations: int = cr.DEFAULT_MAX_ITERATIONS,
+    repair: bool = False,
+    linearity=None,
+    exposure=None,
+    cube=None,
+    log=None,
+):
+    """Convenience wrapper: ``processRamp`` with diagnostics-friendly defaults.
+
+    Always sets ``doLinearize=True``, ``doCR=True``. Defaults to
+    ``repair=False`` so the returned cube preserves the CR/glitch
+    signature for inspection.
+
+    ``linearity`` / ``exposure`` / ``cube`` are forwarded to ``processRamp``
+    for iteration without re-running linearization each call.
+
+    Returns
+    -------
+    crResult, cube, exposure
+        Order preserved for backward compatibility with existing callers
+        of this function. ``processRamp`` itself returns
+        ``(exposure, cube, crResult)``.
+    """
+    exp, cube, crResult = processRamp(
+        butler, dataId,
+        cam=cam,
+        doLinearize=True,
+        doCR=True,
+        repairCR=repair,
+        firstRead=firstRead,
+        lastRead=lastRead,
+        nSigma=nSigma,
+        sigmaFloorADU=sigmaFloorADU,
+        maxIterations=maxIterations,
+        linearity=linearity,
+        exposure=exposure,
+        cube=cube,
+        log=log,
+    )
+    return crResult, cube, exp
+
+
+def collectPixelRampData(
+    butler,
+    dataId,
+    *,
+    cam: Optional[str] = None,
+    firstRead: int = 0,
+    lastRead: int = -1,
+    doCR: bool = True,
+    repairCR: bool = True,
+    raw=None,
+    nirDark=None,
+    defects=None,
+    linearity=None,
+    log=None,
+) -> "isrPlots.PixelRampData":
+    """Collect aligned ISR-stage cubes for per-pixel inspection in one pass.
+
+    Runs ``processRamp`` once with ``doLinearize=True`` and captures copies
+    of the flux cube at each major stage via the ``intermediates`` dict:
+
+    - ``cubePreDark``   — absolute cumulative, pre-dark-subtraction.
+    - ``cubeRaw``       — dark-subtracted absolute cumulative (input to linearity).
+    - ``cubeLin``       — linearized, re-anchored cumulative (pre-CR-repair).
+    - ``cubeCR``        — linearized + CR-repaired cumulative. ``None`` if
+                          ``doCR=False``; equal to ``cubeLin`` if
+                          ``doCR=True, repairCR=False`` (CR pixels flagged
+                          but not subtracted).
+
+    Memory cost: ~4 ramp cubes simultaneously held (≈ 4 × N × H × W ×
+    float32). For a 45-read 4096² ramp that is ~22 GB.
+
+    Parameters
+    ----------
+    doCR : bool
+        Run rate-based CR detection. Default True (so ``cubeCR`` is
+        populated). Pass ``False`` to skip CR work entirely.
+    repairCR : bool
+        When ``doCR=True``, subtract the CR contribution from
+        ``cubeCR``. With ``False``, the CR plane is stamped on
+        ``exp.mask`` but ``cubeCR`` keeps the spikes (useful for
+        inspecting how big they are).
+
+    Returns
+    -------
+    `isrPlots.PixelRampData`
+    """
+    cam, raw = _resolveCam(cam, raw, butler, dataId)
+
+    if nirDark is None:
+        nirDark = butler.get("nirDark", dataId)
+    if defects is None:
+        defects = butler.get("defects", dataId)
+
+    isrTask = _makeDefaultIsrTask(doLinearize=True)
+    if linearity is None:
+        linearity = isrTask.resolveNirLinearity(cam)
+        if linearity is None:
+            raise RuntimeError(f"resolveNirLinearity({cam!r}) returned None.")
+
+    intermediates: dict = {}
+    exp, _, crResult = processRamp(
+        butler, dataId,
+        cam=cam, firstRead=firstRead, lastRead=lastRead,
+        doLinearize=True, doCR=doCR, repairCR=repairCR,
+        raw=raw, nirDark=nirDark, defects=defects, linearity=linearity,
+        intermediates=intermediates,
+        log=log,
+    )
+
+    r0 = raw.positiveIndex(firstRead)
+    r1 = raw.positiveIndex(lastRead)
+    nIntervals = intermediates['linearized'].shape[0]
+    cubeDark = isrTask.getDarkCube(nirDark, r0=r0, nreads=nIntervals).astype(
+        np.float32, copy=False
+    )
+    cubePreDark = intermediates['raw']    # absolute cumulative, pre-dark
+    cubeRaw = intermediates['darkSubbed']  # post-dark, pre-lin
+    cubeLin = intermediates['linearized']  # post-lin, pre-CR
+    cubeCR = intermediates.get('crCorrected')  # None if doCR was False
+
+    readIndices = np.arange(r0 + 1, r0 + 1 + nIntervals, dtype=np.int32)
+
+    # Per-pixel rate: use the proper UTR-weighted estimator
+    # (`isrTask.calcUTRrates`) on the post-CR-repair cube — same one
+    # `makeNirExposure` uses to land the final image when
+    # `applyUTRWeights=True`. The CR detector's own median-of-deltas rate
+    # (`crResult.rate`) is robust for thresholding but isn't the right
+    # number for downstream science / comparison work.
+    rateCube = cubeCR if cubeCR is not None else cubeLin
+    avgRate = np.asarray(isrTask.calcUTRrates(rateCube), dtype=np.float32)
+
+    crFlagMask = (
+        np.asarray(crResult.crFlagMask) if crResult is not None else None
+    )
+    glitchFlagMask = (
+        np.asarray(crResult.glitchFlagMask) if crResult is not None else None
+    )
+
+    return isrPlots.PixelRampData(
+        cubeRaw=cubeRaw, cubeLin=cubeLin, cubeDark=cubeDark,
+        cubePreDark=cubePreDark, readIndices=readIndices,
+        firstRead=r0, lastRead=r1,
+        visit=int(dataId.get("visit", -1)), cam=cam,
+        fitMin=np.asarray(linearity.fitMin, dtype=np.float32),
+        fitMax=np.asarray(linearity.fitMax, dtype=np.float32),
+        cubeCR=cubeCR,
+        mask=exp.mask.array.copy(),
+        maskPlaneDict=dict(exp.mask.getMaskPlaneDict()),
+        avgRate=avgRate,
+        crFlagMask=crFlagMask,
+        glitchFlagMask=glitchFlagMask,
+    )
+
+
+def summarizeCRDiagnostics(
+    crResult,
+    *,
+    sigmaFloorADU: float = cr.DEFAULT_SIGMA_FLOOR_ADU,
+    pcts=(50, 84, 95, 99, 99.9),
+):
+    """Print a concise text summary of an iterative CR/glitch result.
+
+    Works on a `cr.IterativeRepairResult` as returned by
+    ``cr.iterativeUtrDetectAndRepair`` (or ``processRamp``).
+    """
+    crFlag = np.asarray(crResult.crFlagMask, dtype=bool)
+    glFlag = np.asarray(crResult.glitchFlagMask, dtype=bool)
+    crPix = crFlag.any(axis=0)
+    glPix = glFlag.any(axis=0)
+    nCRpix = int(crPix.sum())
+    nGLpix = int(glPix.sum())
+
+    print(f"iterations: {crResult.nIterations}")
+    print(
+        f"  CR delta entries:   {crResult.nCRs:,}  "
+        f"({nCRpix:,} unique pixels)"
+    )
+    print(
+        f"  ASIC glitch pairs:  {crResult.nGlitchPairs:,}  "
+        f"({nGLpix:,} unique pixels)"
+    )
+
+    if crResult.nByIteration:
+        print("per-iteration (new CR entries, new glitch pairs):")
+        for i, (nc, ng) in enumerate(crResult.nByIteration, start=1):
+            print(f"  iter {i}: CR={nc:,}  glitch pairs={ng:,}")
+
+    if crResult.iterationTimings:
+        ts = [round(float(t), 2) for t in crResult.iterationTimings]
+        print(f"per-iter timings (s): {ts}   total={sum(ts):.2f}s")
+
+    pcts = list(pcts)
+    sig = crResult.sigma
+    rate = crResult.rate
+    print(f"\nper-pixel sigma over all pixels (pct {pcts}): "
+          f"{np.percentile(sig, pcts).round(2)}")
+    nAtFloor = int((sig <= float(sigmaFloorADU) + 1e-3).sum())
+    nTot = sig.size
+    print(f"  sigma at floor ({sigmaFloorADU}): {nAtFloor:,} "
+          f"({100 * nAtFloor / max(nTot, 1):.1f}%)")
+
+    if nCRpix:
+        print(f"\nflagged-CR pixel stats over {nCRpix:,} pixels:")
+        print(f"  sigma          pct {pcts}: {np.percentile(sig[crPix], pcts).round(2)}")
+        print(f"  rate (ADU/rd)  pct {pcts}: {np.percentile(rate[crPix], pcts).round(2)}")
+
+    if nGLpix:
+        print(f"\nflagged-glitch pixel stats over {nGLpix:,} pixels:")
+        print(f"  sigma          pct {pcts}: {np.percentile(sig[glPix], pcts).round(2)}")
+        print(f"  rate (ADU/rd)  pct {pcts}: {np.percentile(rate[glPix], pcts).round(2)}")
 
 
 def plotComparison(
