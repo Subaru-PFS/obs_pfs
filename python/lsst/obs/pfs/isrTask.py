@@ -107,8 +107,10 @@ class BrokenShutterConfig(pexConfig.Config):
 class H4Config(pexConfig.Config):
     """Configuration parameters for H4 reductions"""
 
-    quickCDS = pexConfig.Field(dtype=bool, default=False,
-                               doc="Only consider last and first reads instead of the full ramp cube")
+    quickCDS = pexConfig.Field(
+        dtype=bool, default=None, optional=True,
+        doc="Only consider last and first reads instead of the full ramp cube. "
+            "None (default) = dispatch by observation type (CDS for arcs, UTR otherwise).")
     useIRP = pexConfig.Field(dtype=bool, default=True,
                              doc="Use Interleaved Reference Pixel planes if available")
     IRPfilter = pexConfig.Field(dtype=int, default=15,  # 15..31, probably.
@@ -202,12 +204,14 @@ class H4Config(pexConfig.Config):
     )
 
     firstRead = pexConfig.Field(
-        dtype=int, default=0,
-        doc="0-indexed first read of the ramp to include (inclusive). 0 = full ramp.",
+        dtype=int, default=None, optional=True,
+        doc="0-indexed first read of the ramp to include (inclusive). "
+            "None (default) = dispatch by observation type; an explicit value is used as-is.",
     )
     lastRead = pexConfig.Field(
-        dtype=int, default=-1,
-        doc="0-indexed last read of the ramp to include (inclusive). -1 = last read in ramp.",
+        dtype=int, default=None, optional=True,
+        doc="0-indexed last read of the ramp to include (inclusive; -1 = last read). "
+            "None (default) = dispatch by observation type; an explicit value is used as-is.",
     )
 
 
@@ -1551,6 +1555,50 @@ class PfsIsrTask(ipIsr.IsrTask):
             dark /= gain
         return dark
 
+    def rampParams(self, pfsRaw):
+        """Ramp-processing parameters, dispatched by observation type.
+
+        Per-obstype defaults: arcs (``comparison``) → full-ramp CDS;
+        darks → full-ramp UTR; science → UTR over reads ``1:-3`` (drop
+        the shutter-closed read 0 and the trailing 3 shutter-closed /
+        transitional reads). Anything else falls back to full-ramp UTR.
+
+        Each `H4Config` field (``quickCDS`` / ``firstRead`` / ``lastRead``)
+        that is set to an explicit (non-``None``) value overrides the
+        dispatched default.
+
+        Returns
+        -------
+        quickCDS : `bool`
+        firstRead, lastRead : `int`
+            0-indexed inclusive read bounds (negative counts from the end).
+        """
+        obsType = (pfsRaw.obsInfo.observation_type or "").lower()
+        if obsType == "comparison":
+            quickCDS, firstRead, lastRead = True, 0, -1
+        elif obsType == "science":
+            # Shutter open/close FITS cards are not yet written, so the
+            # exact illuminated read range is unknown. Once those cards
+            # are available the range can be computed correctly; until
+            # then use reads 1:-3, which empirically drops the shutter-
+            # closed read 0 and the trailing 3 shutter-closed reads.
+            quickCDS, firstRead, lastRead = False, 1, -4
+        else:  # dark, bias, flat, unknown — full-ramp UTR
+            quickCDS, firstRead, lastRead = False, 0, -1
+
+        cfg = self.config.h4
+        if cfg.quickCDS is not None:
+            quickCDS = cfg.quickCDS
+        if cfg.firstRead is not None:
+            firstRead = cfg.firstRead
+        if cfg.lastRead is not None:
+            lastRead = cfg.lastRead
+        self.log.info(
+            f"ramp params for obsType={obsType!r}: quickCDS={quickCDS} "
+            f"firstRead={firstRead} lastRead={lastRead}"
+        )
+        return quickCDS, firstRead, lastRead
+
     def makeNirExposure(self,
                         pfsRaw,
                         nirDark=None,
@@ -1576,21 +1624,28 @@ class PfsIsrTask(ipIsr.IsrTask):
             The 2-d image from the ramp.
         """
 
-        # Resolve the configured read range to absolute, 0-indexed inclusive bounds.
-        r0 = pfsRaw.positiveIndex(self.config.h4.firstRead)
-        r1 = pfsRaw.positiveIndex(self.config.h4.lastRead)
+        # Dispatch CDS/UTR and the read range by observation type, then
+        # resolve to absolute, 0-indexed inclusive bounds.
+        quickCDS, firstRead, lastRead = self.rampParams(pfsRaw)
+        r0 = pfsRaw.positiveIndex(firstRead)
+        r1 = pfsRaw.positiveIndex(lastRead)
         if r1 - r0 < 1:
             raise ValueError(
-                f"firstRead={self.config.h4.firstRead} (->{r0}) and "
-                f"lastRead={self.config.h4.lastRead} (->{r1}) leave no readable range "
+                f"firstRead={firstRead} (->{r0}) and "
+                f"lastRead={lastRead} (->{r1}) leave no readable range "
                 f"(need r1 > r0)."
             )
-        if self.config.h4.quickCDS:
+        if quickCDS:
             self.log.info(f"creating quick CDS over reads [{r0}, {r1}].")
             # makeCDS already returns flux accumulated during (r0, r1] only —
             # disjoint sub-ranges are additive by construction.
             nirImage = self.makeCDS(pfsRaw, r0=r0, r1=r1)
             flux = None
+            # CDS is a two-read difference: no per-read linearization
+            # mask and no CR/glitch detection, so the downstream
+            # mask-sweep and CR blocks are skipped.
+            newMask = None
+            crResult = None
         else:
             # Too many interacting switches for CDS/UTR/darks. Especially note 2-d doDark is still possible.
             self.log.info(f"reading ramp over reads [{r0}, {r1}]...")
