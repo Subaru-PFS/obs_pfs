@@ -105,6 +105,7 @@ class HalvesIsrData:
     imgF: np.ndarray
     rate1: np.ndarray
     rate2: np.ndarray
+    rateFull: np.ndarray
     addResid: np.ndarray
     addResidRel: np.ndarray
     relDiff: np.ndarray
@@ -125,7 +126,7 @@ def load(path: str) -> HalvesIsrData:
         # Scalars come back as 0-d arrays; unwrap to Python ints/strings.
         return HalvesIsrData(
             img1=f['img1'], img2=f['img2'], imgF=f['imgF'],
-            rate1=f['rate1'], rate2=f['rate2'],
+            rate1=f['rate1'], rate2=f['rate2'], rateFull=f['rateFull'],
             addResid=f['addResid'], addResidRel=f['addResidRel'],
             relDiff=f['relDiff'], avgRate=f['avgRate'],
             mask_first=f['mask_first'], mask_second=f['mask_second'],

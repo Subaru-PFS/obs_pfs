@@ -819,8 +819,8 @@ def processRamp(
     doLinearize: bool = True,
     doCR: bool = True,
     repairCR: bool = True,
-    firstRead: int = 0,
-    lastRead: int = -1,
+    firstRead: Optional[int] = None,
+    lastRead: Optional[int] = None,
     nSigma: float = cr.DEFAULT_ITER_N_SIGMA,
     sigmaFloorADU: float = cr.DEFAULT_SIGMA_FLOOR_ADU,
     maxIterations: int = cr.DEFAULT_MAX_ITERATIONS,
@@ -868,11 +868,14 @@ def processRamp(
     repairCR : bool
         Subtract the CR contribution in place. With ``False``, only the
         CR mask plane is stamped — useful for visual inspection.
-    firstRead, lastRead : int
+    firstRead, lastRead : int, optional
         Process only reads ``[firstRead, lastRead]`` of the ramp (0-indexed,
-        inclusive; ``lastRead=-1`` = last read). See ``H4Config.firstRead``
-        / ``H4Config.lastRead``. Ignored when ``exposure`` + ``cube`` are
-        supplied (the supplied cube already encodes the range).
+        inclusive; ``lastRead=-1`` = last read). ``None`` (default) lets
+        ``makeNirExposure`` dispatch the range by observation type; an
+        explicit value is used as-is. See ``H4Config.firstRead`` /
+        ``H4Config.lastRead`` and ``PfsIsrTask.rampParams``. Ignored when
+        ``exposure`` + ``cube`` are supplied (the supplied cube already
+        encodes the range).
     nSigma, sigmaFloorADU, maxIterations
         CR-detection thresholds; see ``cr.iterativeUtrDetectAndRepair``.
     raw, nirDark, defects : optional
@@ -1027,6 +1030,161 @@ def processRamp(
             intermediates['crCorrected'] = cube.copy()
 
     return exp, cube, crResult
+
+
+def runHalvesIsrData(
+    butler,
+    dataId,
+    *,
+    outputPath: Optional[str] = None,
+    cam: Optional[str] = None,
+    doLinearize: bool = True,
+    doCR: bool = True,
+    repairCR: bool = True,
+    firstRead: int = 0,
+    lastRead: int = -1,
+    nirDark=None,
+    defects=None,
+    linearity=None,
+    log=None,
+) -> "isrPlots.HalvesIsrData":
+    """Build (and optionally save) a ``HalvesIsrData`` for the half-vs-half
+    UTR-rate test.
+
+    This is the in-repo producer for the ``.npz`` that
+    ``isrPlots.load()`` reads — the rate-comparison / amp-bias plots in
+    ``isrPlots`` consume a ``HalvesIsrData``.
+
+    Runs the full ISR (dark + linearity + CR/glitch) three times over
+    the read range ``[firstRead, lastRead]``:
+
+      - first half  ``[r0, mid]``
+      - second half ``[mid, r1]``
+      - full        ``[r0, r1]``
+
+    where ``mid = (r0 + r1) // 2``. **Linearization always operates on
+    the actual cumulative flux** — the second half's reads are
+    linearized at their true level (with the first half's charge
+    underneath them), via ``makeNirExposure``'s standard absolute-
+    baseline anchoring.
+
+    A correct per-read linearity model gives a flat rate across the
+    ramp, so the sub-ramp rates (``rate1``, ``rate2``) and the
+    full-ramp rate (``rateFull``) all agree. The **primary** diagnostic
+    is the sub-ramp-vs-sub-ramp comparison — a discrepant pixel is
+    easiest to diagnose from the two halves directly:
+
+    - ``relDiff = 2(rate1 - rate2)/(rate1 + rate2)`` — first sub-ramp
+      rate vs second sub-ramp rate, in per-read UTR-rate units.
+
+    ``rateFull`` is stored so it can be plotted against each half.
+    ``addResid = rateFull - avgRate`` (``avgRate = (rate1+rate2)/2``,
+    ``addResidRel = addResid / rateFull``) is the secondary
+    full-vs-sub-ramp check.
+
+    Residual structure flags a poor correction (or a genuinely
+    variable source). Acting on significant discrepancies — dynamic
+    masking of the offending pixels — is PIPE2D-1844; this producer
+    only exposes the per-pixel data.
+
+    Parameters
+    ----------
+    butler : `lsst.daf.butler.Butler`
+    dataId : mapping
+    outputPath : str, optional
+        If given, ``np.savez`` the result here in the exact schema
+        ``isrPlots.load()`` expects.
+    cam : str, optional
+        Detector name; inferred from the raw if omitted.
+    doLinearize, doCR, repairCR : bool
+        Forwarded to ``processRamp`` for all three runs.
+    firstRead, lastRead : int
+        0-indexed inclusive read range to split; ``lastRead=-1`` = last.
+    nirDark, defects, linearity : optional
+        Pre-fetched read-only inputs, reused across the three runs.
+    log : logger, optional
+
+    Returns
+    -------
+    `isrPlots.HalvesIsrData`
+    """
+    cam, _ = _resolveCam(cam, None, butler, dataId)
+    if nirDark is None:
+        nirDark = butler.get("nirDark", dataId)
+    if defects is None:
+        defects = butler.get("defects", dataId)
+
+    # Resolve the absolute read range and the split point.
+    raw0 = butler.get("raw", dataId)
+    r0 = raw0.positiveIndex(firstRead)
+    r1 = raw0.positiveIndex(lastRead)
+    nReads = int(raw0.getNumReads())
+    del raw0
+    mid = (r0 + r1) // 2
+    if mid - r0 < 2 or r1 - mid < 2:
+        raise RuntimeError(
+            f"Read range [{r0}, {r1}] is too short to split into halves "
+            f"with >= 2 intervals each (mid={mid})."
+        )
+
+    def _runImage(rLo, rHi):
+        # Standard ISR over [rLo, rHi]: linearization is always on the
+        # actual cumulative flux (makeNirExposure adds the absolute
+        # baseline when rLo > 0).
+        exp, cube, _crResult = processRamp(
+            butler, dataId, cam=cam,
+            doLinearize=doLinearize, doCR=doCR, repairCR=repairCR,
+            firstRead=rLo, lastRead=rHi,
+            nirDark=nirDark, defects=defects, linearity=linearity, log=log,
+        )
+        img = np.asarray(exp.image.array, dtype=np.float32)
+        maskArr = np.asarray(exp.mask.array).copy()
+        # makeNirExposure forms nirImage = rate * (#deltas); #deltas is
+        # cube.shape[0] - 1 (cube holds the cumulative reads).
+        nDeltas = max(int(cube.shape[0]) - 1, 1)
+        return img, maskArr, nDeltas
+
+    img1, mask_first, nDeltas1 = _runImage(r0, mid)
+    img2, mask_second, nDeltas2 = _runImage(mid, r1)
+    imgF, mask_full, nDeltasF = _runImage(r0, r1)
+
+    with np.errstate(divide="ignore", invalid="ignore"):
+        # Per-read UTR rate of each sub-ramp and of the full ramp.
+        rate1 = (img1 / nDeltas1).astype(np.float32)
+        rate2 = (img2 / nDeltas2).astype(np.float32)
+        rateF = (imgF / nDeltasF).astype(np.float32)
+        avgRate = (0.5 * (rate1 + rate2)).astype(np.float32)
+        # Half-vs-half rate consistency.
+        denom12 = rate1 + rate2
+        relDiff = np.where(
+            denom12 != 0, 2.0 * (rate1 - rate2) / denom12, np.nan
+        ).astype(np.float32)
+        # Sub-ramp-vs-full-ramp rate consistency (PIPE2D-1844 acts on this).
+        addResid = (rateF - avgRate).astype(np.float32)
+        addResidRel = np.where(
+            rateF != 0, addResid / rateF, np.nan
+        ).astype(np.float32)
+
+    maskUnion = mask_first | mask_second | mask_full
+
+    fields = dict(
+        img1=img1, img2=img2, imgF=imgF,
+        rate1=rate1, rate2=rate2, rateFull=rateF,
+        addResid=addResid, addResidRel=addResidRel,
+        relDiff=relDiff, avgRate=avgRate,
+        mask_first=mask_first, mask_second=mask_second,
+        mask_full=mask_full, maskUnion=maskUnion,
+        visit=int(dataId.get("visit", -1)), cam=str(cam),
+        midRead=int(mid), nReads=nReads,
+    )
+    data = isrPlots.HalvesIsrData(**fields)
+
+    if outputPath is not None:
+        np.savez(outputPath, **fields)
+        if log is not None:
+            log.info(f"runHalvesIsrData: wrote {outputPath}")
+
+    return data
 
 
 def runCRDiagnostics(
