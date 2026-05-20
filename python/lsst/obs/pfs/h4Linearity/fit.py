@@ -383,7 +383,8 @@ def fit(
         "goodPixelFraction": float(goodPixels.sum()) / totalPixels,
         "badPixelFraction_borderPix": float((badPixelMask & BORDER_PIX > 0).sum()) / totalPixels,
         "badPixelFraction_maskedByInput": float((badPixelMask & MASKED_BY_INPUT > 0).sum()) / totalPixels,
-        "badPixelFraction_insufficientPoints": float((badPixelMask & INSUFFICIENT_POINTS > 0).sum()) / totalPixels,
+        "badPixelFraction_insufficientPoints":
+            float((badPixelMask & INSUFFICIENT_POINTS > 0).sum()) / totalPixels,
         "badPixelFraction_fitFailed": float((badPixelMask & FIT_FAILED > 0).sum()) / totalPixels,
         "badPixelFraction_nonMonotonic": float((badPixelMask & NON_MONOTONIC > 0).sum()) / totalPixels,
         "modelName": model.modelName,

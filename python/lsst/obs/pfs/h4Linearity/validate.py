@@ -485,7 +485,7 @@ def summarize(result: HalvesResult) -> str:
         f"({100.0 * s['nGood'] / nTotal:.2f}%)",
         f"in stats (avgRate > minRate): {s['nStats']}/{s['nTotal']} "
         f"({100.0 * s['nStats'] / nTotal:.2f}%)",
-        f"mask bits: " + ", ".join(f"{k}={v}" for k, v in result.exposureMaskBits.items()),
+        "mask bits: " + ", ".join(f"{k}={v}" for k, v in result.exposureMaskBits.items()),
         f"overall relDiff: median={o['median']:+.4f}  MAD={o['mad']:.4f}  "
         f"p16/p84=[{o['p16']:+.4f},{o['p84']:+.4f}]  "
         f"p1/p99=[{o['p1']:+.4f},{o['p99']:+.4f}]",
@@ -672,8 +672,8 @@ def plotOutliers(
                    interpolation="nearest")
     cbar = fig.colorbar(im, ax=ax, ticks=[0, 1, 2, 3], fraction=0.046, pad=0.02)
     cbar.ax.set_yticklabels([
-        f"masked",
-        f"in-bounds",
+        "masked",
+        "in-bounds",
         f"relDiff < -{thresh:g} ({int(negOut.sum())})",
         f"relDiff > +{thresh:g} ({int(posOut.sum())})",
     ])

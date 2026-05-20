@@ -1625,9 +1625,9 @@ class PfsIsrTask(ipIsr.IsrTask):
             if self.config.h4.doLinearize and linearity is not None:
                 self.log.info("Correcting non-linearity.")
                 if defects is not None:
-                    mi = afwImage.MaskedImageF(geom.Extent2I(4096,4096))
+                    mi = afwImage.MaskedImageF(geom.Extent2I(4096, 4096))
                     defects.maskPixels(mi)
-                    defectMask = (mi.mask.array>0)
+                    defectMask = (mi.mask.array > 0)
                     self.log.info(f"   starting with {defectMask.sum()} defect pixels")
                 else:
                     defectMask = None
@@ -1811,7 +1811,7 @@ class PfsIsrTask(ipIsr.IsrTask):
             exposure.mask.array[badMask] |= exposure.mask.getPlaneBitMask('BAD')
 
             defectMask2 = (newMask & h4Linearity.MASKED_BY_INPUT) > 0
-            exposure.mask.array[defectMask2]  |= exposure.mask.getPlaneBitMask('BAD')
+            exposure.mask.array[defectMask2] |= exposure.mask.getPlaneBitMask('BAD')
             nCR = crResult.nFlagged if crResult is not None else 0
             self.log.info(f'nSat={saturated.sum()} '
                           f'nLow={lowVal.sum()} '

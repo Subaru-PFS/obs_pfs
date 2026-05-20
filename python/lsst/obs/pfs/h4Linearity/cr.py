@@ -115,6 +115,12 @@ def _rampQR(deltas: np.ndarray, hChunk: int = 512) -> tuple:
     median = np.empty((H, W), dtype=np.float32)
     p75 = np.empty((H, W), dtype=deltas.dtype)
 
+    def _interp(arr, lo, hi, frac):
+        """Linear interpolation between ranks ``lo`` and ``hi`` on axis=-1."""
+        if lo == hi:
+            return arr[..., lo]
+        return (1.0 - frac) * arr[..., lo] + frac * arr[..., hi]
+
     # Subset / column-vector paths (H == 1) — one iteration, equivalent
     # to the unchunked behavior.
     for h0 in range(0, H, hChunk):
@@ -131,16 +137,11 @@ def _rampQR(deltas: np.ndarray, hChunk: int = 512) -> tuple:
         # Partition IN PLACE along axis=-1; no separate dp buffer.
         chunkT.partition(kth, axis=-1)
 
-        def _interp(lo, hi, frac):
-            if lo == hi:
-                return chunkT[..., lo]
-            return (1.0 - frac) * chunkT[..., lo] + frac * chunkT[..., hi]
-
-        p25[h0:h1, :] = _interp(lo25, hi25, f25)
-        median[h0:h1, :] = _interp(lo50, hi50, f50).astype(
+        p25[h0:h1, :] = _interp(chunkT, lo25, hi25, f25)
+        median[h0:h1, :] = _interp(chunkT, lo50, hi50, f50).astype(
             np.float32, copy=False
         )
-        p75[h0:h1, :] = _interp(lo75, hi75, f75)
+        p75[h0:h1, :] = _interp(chunkT, lo75, hi75, f75)
         del chunkT  # free the ~730 MB transpose buffer before next iter
 
     return p25, median, p75
@@ -562,4 +563,3 @@ def iterativeUtrDetectAndRepair(
         nByIteration=nByIter,
         iterationTimings=iterTimings,
     )
-

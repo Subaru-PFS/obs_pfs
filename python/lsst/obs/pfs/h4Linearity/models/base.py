@@ -20,8 +20,9 @@ class BlockFitResult:
     nPointsUsed: np.ndarray        # (hTile, wTile) int32
     conditionNumber: np.ndarray    # (hTile, wTile) float32
     monotonic: np.ndarray          # (hTile, wTile) bool
-    badPixelMask: np.ndarray       # (hTile, wTile) uint8 — fit-time flags only
-                                   # (INSUFFICIENT_POINTS, FIT_FAILED, NON_MONOTONIC)
+    # (hTile, wTile) uint8 — fit-time flags only
+    # (INSUFFICIENT_POINTS, FIT_FAILED, NON_MONOTONIC)
+    badPixelMask: np.ndarray
 
 
 @runtime_checkable

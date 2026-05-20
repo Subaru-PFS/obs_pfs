@@ -402,14 +402,14 @@ _PIXEL_RAMP_LINESTYLES = ('-', '--', ':', '-.')
 # Order is priority left-to-right; any plane set on the pixel but not in
 # this dict is rendered with the fallback grey color and trailing.
 _MASK_PLANE_BADGES = (
-    ('CR',          '#d62728'),  # red
+    ('CR', '#d62728'),  # red
     ('ASIC_GLITCH', '#ff7f0e'),  # orange
-    ('SAT',         '#bcbd22'),  # ochre
-    ('BAD',         '#444444'),
-    ('INTRP',       '#888888'),
-    ('NO_DATA',     '#bbbbbb'),
-    ('SUSPECT',     '#9467bd'),  # purple
-    ('EDGE',        '#17becf'),  # cyan
+    ('SAT', '#bcbd22'),  # ochre
+    ('BAD', '#444444'),
+    ('INTRP', '#888888'),
+    ('NO_DATA', '#bbbbbb'),
+    ('SUSPECT', '#9467bd'),  # purple
+    ('EDGE', '#17becf'),  # cyan
 )
 
 
@@ -443,7 +443,7 @@ def _drawMaskBadges(ax, planeNames: list, yPos: float = 0.97) -> None:
     xPos = 0.01
     for name in planeNames:
         color = colorMap.get(name, '#666666')
-        txt = ax.text(
+        ax.text(
             xPos, yPos, name,
             transform=ax.transAxes, ha='left', va='top',
             fontsize=7, color='white', fontweight='bold',

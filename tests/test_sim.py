@@ -123,7 +123,7 @@ class RawAndLinearRampsTestCase(lsst.utils.tests.TestCase):
                                 readNoise=0.0, poisson=False)
         nl = sim.Nonlinearity(alpha=0.05, qMax=60000.0)
         raw, lin = sim.makeRawAndLinearRamps(params, nonlinearity=nl,
-                                              rng=0)
+                                             rng=0)
         # With cum[k] = (k+1)*rate, last read is 40*1500 = 60000 (full well).
         # raw at full well ≈ 60000 * (1 − 0.05) = 57000.
         self.assertAlmostEqual(float(lin[-1].mean()), 60000.0, delta=200.0)
@@ -138,7 +138,7 @@ class RawAndLinearRampsTestCase(lsst.utils.tests.TestCase):
         nl = sim.Nonlinearity(alpha=0.05, qMax=60000.0)
         crs = [sim.CR(y=2, x=3, read=15, amount=2000.0)]
         raw, lin = sim.makeRawAndLinearRamps(params, nonlinearity=nl,
-                                              crs=crs, rng=0)
+                                             crs=crs, rng=0)
         # CR injected in true-linear space, so the linearized cube should
         # show a clean +2000 step starting at read 15.
         delta_lin = float(lin[15, 2, 3] - lin[14, 2, 3])
@@ -355,7 +355,7 @@ class IterativeUtrDetectAndRepairTestCase(lsst.utils.tests.TestCase):
         for bit, amp in amps_by_bit.items():
             for x in range(3):
                 glitches.append(sim.AsicGlitch(y=y, x=x, read=10 + 2 * x,
-                                                 amount=+amp))
+                                               amount=+amp))
             y += 1
 
         cube = self._makeCube(params, glitches=glitches, rng=42)
