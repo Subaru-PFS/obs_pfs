@@ -1636,16 +1636,45 @@ class PfsIsrTask(ipIsr.IsrTask):
                 f"(need r1 > r0)."
             )
         if quickCDS:
-            self.log.info(f"creating quick CDS over reads [{r0}, {r1}].")
-            # makeCDS already returns flux accumulated during (r0, r1] only —
-            # disjoint sub-ranges are additive by construction.
-            nirImage = self.makeCDS(pfsRaw, r0=r0, r1=r1)
+            # CDS from two reads, with two-read linearization: linearize
+            # the absolute cumulative frame at each endpoint and
+            # difference them (the model is nonlinear, so linearize then
+            # subtract — never the reverse). This still yields the
+            # linearity-derived mask planes (defects, bad fit,
+            # saturation). The endpoint frames are dark-subtracted first
+            # because the linearity model is calibrated on dark-
+            # subtracted cumulative ADU. CR/glitch detection needs the
+            # full ramp, so crResult stays None.
+            self.log.info(f"creating CDS over reads [{r0}, {r1}].")
+            frameR1 = self.makeCDS(pfsRaw, r0=0, r1=r1)
+            frameR0 = self.makeCDS(pfsRaw, r0=0, r1=r0) if r0 > 0 else None
+            if nirDark is not None:
+                frameR1 -= self.getDarkRead(nirDark, r1 - 1)
+                if frameR0 is not None:
+                    frameR0 -= self.getDarkRead(nirDark, r0 - 1)
+
             flux = None
-            # CDS is a two-read difference: no per-read linearization
-            # mask and no CR/glitch detection, so the downstream
-            # mask-sweep and CR blocks are skipped.
-            newMask = None
             crResult = None
+            defectMask = None
+            if self.config.h4.doLinearize and linearity is not None:
+                self.log.info("Correcting non-linearity (two-read CDS).")
+                linR1, _ = h4Linearity.applyFrame(linearity, frameR1)
+                if frameR0 is not None:
+                    linR0, _ = h4Linearity.applyFrame(linearity, frameR0)
+                    nirImage = linR1 - linR0
+                else:
+                    nirImage = linR1
+                # Merge the fit-time flags (defects, bad fit) with the
+                # freshly computed out-of-range flags, as h4Linearity.apply
+                # does for the full ramp.
+                newMask = linearity.badPixelMask.copy()
+                frames = [frameR1] if frameR0 is None else [frameR0, frameR1]
+                for frame in frames:
+                    newMask[frame > linearity.fitMax] |= h4Linearity.ABOVE_VALID_RANGE
+                    newMask[frame < linearity.fitMin] |= h4Linearity.BELOW_VALID_RANGE
+            else:
+                nirImage = frameR1 if frameR0 is None else frameR1 - frameR0
+                newMask = None
         else:
             # Too many interacting switches for CDS/UTR/darks. Especially note 2-d doDark is still possible.
             self.log.info(f"reading ramp over reads [{r0}, {r1}]...")
