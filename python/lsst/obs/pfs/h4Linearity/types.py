@@ -53,6 +53,7 @@ UNCLASSIFIED: int = 0x0080  #: ≥1 above-threshold delta the classifier could n
 UNSTABLE: int = 0x0100  #: ≥ ``badPixelMinOutliers`` 4σ delta excursions (RTS / telegraph)
 ASIC_GLITCH: int = 0x0200  #: ≥1 ASIC-glitch pair above ``asicGlitchHeightMaskADU``
 HIGH_FIT_RESIDUAL: int = 0x0400  #: residualRms > badLinearityMedianMultiplier × median(good residualRms)
+RATE_UNSTABLE: int = 0x0800  #: half-vs-half rate disagreement above ``rateStabilityThreshold``
 
 # Convenience composite: pixels the linearity fit failed to model in
 # any way. The ISR projection layer maps this group to the published
