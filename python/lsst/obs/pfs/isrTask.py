@@ -253,6 +253,46 @@ class H4Config(pexConfig.Config):
             "genuine bit-flip events.",
     )
 
+    doRateStability = pexConfig.Field(
+        dtype=bool, default=True,
+        doc="Run the per-pixel rate-stability rejection on the "
+            "linearized, CR/glitch-repaired UTR delta cube. Splits the "
+            "ramp in half, compares the per-half mean delta (the "
+            "production rate estimator), and OR's RATE_UNSTABLE into "
+            "the internal mask for pixels whose halves disagree "
+            "fractionally above the threshold. Inactive on the CDS "
+            "path or when linearization is skipped.",
+    )
+    rateStabilityThreshold = pexConfig.Field(
+        dtype=float, default=0.20,
+        doc="Rejection threshold for the rate-stability test, applied "
+            "to ``sqrt(max(0, (r1-r2)² − sem1² − sem2²)) / max(|r1|, "
+            "|r2|, rateStabilityRateFloorADU)``. Pixels above this "
+            "fraction are flagged RATE_UNSTABLE.",
+    )
+    rateStabilityRateFloorADU = pexConfig.Field(
+        dtype=float, default=5.0,
+        doc="Lower bound on the denominator of the rate-stability "
+            "fraction (ADU/read). Protects dark / near-zero-rate "
+            "pixels from blowing up the fraction from noise.",
+    )
+    rateStabilityMinDeltasPerSegment = pexConfig.Field(
+        dtype=int, default=3,
+        doc="Minimum number of un-flagged deltas for a half to count "
+            "as testable in the rate-stability test.",
+    )
+    maskRateUnstable = pexConfig.Field(
+        dtype=bool, default=False,
+        doc="If True, pixels with the internal RATE_UNSTABLE bit set "
+            "are also OR'd into the published UNSTABLE and BAD planes. "
+            "If False (default), RATE_UNSTABLE-only pixels are flagged "
+            "in the dedicated RATE_UNSTABLE plane but kept out of "
+            "UNSTABLE and BAD — downstream consumers see the marking "
+            "without losing the pixel. A pixel that is RATE_UNSTABLE and "
+            "also carries another internal bit still lands in BAD via "
+            "that other bit regardless of this knob.",
+    )
+
     firstRead = pexConfig.Field(
         dtype=int, default=None, optional=True,
         doc="0-indexed first read of the ramp to include (inclusive). "
@@ -347,29 +387,44 @@ def _makeInternalMask(
     return internal
 
 
-def _projectInternalMask(exposure, internalMask, *, crResult=None) -> None:
+def _projectInternalMask(exposure, internalMask, *, crResult=None,
+                         maskRateUnstable: bool = False) -> None:
     """Lift the H4 internal mask into ``Exposure.mask`` planes.
 
     Single projection point for the canonical published set:
 
-      - ``DARK_DEFECT``      ← ``MASKED_BY_INPUT``      (also BAD)
-      - ``LINEARITY_DEFECT`` ← ``DEAD`` group           (also BAD)
-      - ``SAT``              ← ``ABOVE_VALID_RANGE``    (also BAD)
-      - ``UNSTABLE``         ← ``UNSTABLE``             (also BAD)
+      - ``DARK_DEFECT``      ← ``MASKED_BY_INPUT``                  (also BAD)
+      - ``LINEARITY_DEFECT`` ← ``DEAD`` group                       (also BAD)
+      - ``SAT``              ← ``ABOVE_VALID_RANGE``                (also BAD)
+      - ``UNSTABLE``         ← CR-stage ``UNSTABLE`` always;
+        ∪ ``RATE_UNSTABLE`` only when ``maskRateUnstable=True``     (also BAD)
+      - ``RATE_UNSTABLE``    ← ``RATE_UNSTABLE`` always (independent
+        of ``maskRateUnstable``); included in BAD only when
+        ``maskRateUnstable=True``
       - ``BAD`` ← anywhere any internal bit is set (so BORDER pixels,
         BELOW_VALID_RANGE pixels, etc. land in BAD without an
-        externally distinguished plane).
+        externally distinguished plane), with ``RATE_UNSTABLE``
+        excluded from the catch-all when ``maskRateUnstable=False``.
       - ``CR`` ← from ``crResult.crFlagMask`` (per-delta).
 
     Per the "first-reason-wins" rule, ABOVE_VALID_RANGE only fires on
     pixels that survived defects + fit, so SAT is now the clean
     "genuinely saturating" signal rather than a side effect of dead
     pixels with stale ``fitMax``. ASIC glitch + UNCLASSIFIED bits are
-    not published — those live on ``IterativeRepairResult`` for
-    internal diagnostic use.
+    not published as standalone planes — those live on
+    ``IterativeRepairResult`` for internal diagnostic use, and fold
+    into BAD via the any-bit-set catch-all. The CR-stage ``UNSTABLE``
+    bit (outlier-count gate) always projects to the published
+    ``UNSTABLE`` plane; the rate-stability ``RATE_UNSTABLE`` bit
+    (half-vs-half disagreement) gets its own dedicated published plane
+    and is *also* added to UNSTABLE + BAD only when the caller passes
+    ``maskRateUnstable=True``. A pixel that is RATE_UNSTABLE and also
+    carries another internal bit still lands in BAD via that other bit
+    regardless of ``maskRateUnstable``.
     """
     mask = exposure.mask
-    for plane in ("DARK_DEFECT", "LINEARITY_DEFECT", "UNSTABLE"):
+    for plane in ("DARK_DEFECT", "LINEARITY_DEFECT", "UNSTABLE",
+                  "RATE_UNSTABLE"):
         if plane not in mask.getMaskPlaneDict():
             mask.addMaskPlane(plane)
     bit = mask.getPlaneBitMask
@@ -377,8 +432,15 @@ def _projectInternalMask(exposure, internalMask, *, crResult=None) -> None:
     darkDefect = (internalMask & h4Linearity.MASKED_BY_INPUT) != 0
     linDefect = (internalMask & h4Linearity.DEAD) != 0
     sat = (internalMask & h4Linearity.ABOVE_VALID_RANGE) != 0
+    rateUnstable = (internalMask & h4Linearity.RATE_UNSTABLE) != 0
     unstable = (internalMask & h4Linearity.UNSTABLE) != 0
-    anyBad = internalMask != 0
+    if maskRateUnstable:
+        unstable = unstable | rateUnstable
+        anyBad = internalMask != 0
+    else:
+        # RATE_UNSTABLE alone doesn't make a pixel BAD; pixels with
+        # another internal bit still hit BAD via that other bit.
+        anyBad = (internalMask & ~np.uint16(h4Linearity.RATE_UNSTABLE)) != 0
 
     arr = mask.array
     if darkDefect.any():
@@ -389,6 +451,8 @@ def _projectInternalMask(exposure, internalMask, *, crResult=None) -> None:
         arr[sat] |= bit("SAT")
     if unstable.any():
         arr[unstable] |= bit("UNSTABLE")
+    if rateUnstable.any():
+        arr[rateUnstable] |= bit("RATE_UNSTABLE")
     if anyBad.any():
         arr[anyBad] |= bit("BAD")
 
@@ -1501,7 +1565,8 @@ class PfsIsrTask(ipIsr.IsrTask):
             w.append(k)
         return np.array(w)
 
-    def calcUTRrateFromDeltas(self, deltas: np.ndarray) -> np.ndarray:
+    @staticmethod
+    def calcUTRrateFromDeltas(deltas: np.ndarray) -> np.ndarray:
         """UTR-weighted per-pixel rate, computed directly from a delta
         cube. Equivalent to :meth:`calcUTRrates` applied to the
         reconstructed cumulative ramp ``read0 + cumsum(deltas, axis=-1)``,
@@ -1511,15 +1576,21 @@ class PfsIsrTask(ipIsr.IsrTask):
         weights ``w[i] = (12i - 6(N-1)) / (N(N²-1))`` after the
         cumsum/diff change of variables.
 
+        Independent of task state; exposed as a staticmethod so
+        diagnostic code can call the production rate formula without
+        instantiating ``PfsIsrTask``.
+
         Parameters
         ----------
         deltas : `np.ndarray`
             ``(H, W, N-1)`` per-pixel delta cube with the time axis last.
+            Also accepts lower-rank arrays as long as the time axis is
+            last; the rate has shape ``deltas.shape[:-1]``.
 
         Returns
         -------
         `np.ndarray`
-            ``(H, W)`` per-pixel rate (ADU/read).
+            Per-pixel rate (ADU/read), shape ``deltas.shape[:-1]``.
         """
         nDeltas = deltas.shape[-1]
         nReads = nDeltas + 1
@@ -1744,6 +1815,7 @@ class PfsIsrTask(ipIsr.IsrTask):
 
     _INTERMEDIATE_KEYS = (
         'raw', 'darkSubbed', 'linearized', 'crCorrected', 'crResult',
+        'rateStabilityResult',
     )
 
     def checkNirDark(self, pfsRaw, nirDark, nReadsNeeded):
@@ -1827,8 +1899,11 @@ class PfsIsrTask(ipIsr.IsrTask):
         — when ``config.h4.doCR`` is enabled — runs the iterative
         UTR-rate CR / ASIC-glitch detector on the per-read deltas.
         The returned exposure carries ``CR``, ``BAD``, ``SAT``,
-        ``DARK_DEFECT``, ``LINEARITY_DEFECT``, and ``UNSTABLE`` mask planes
-        as appropriate.
+        ``DARK_DEFECT``, ``LINEARITY_DEFECT``, ``UNSTABLE``, and
+        ``RATE_UNSTABLE`` mask planes as appropriate. ``RATE_UNSTABLE``
+        is always populated when the gate runs; whether those pixels
+        also feed ``UNSTABLE`` + ``BAD`` is controlled by
+        ``config.h4.maskRateUnstable``.
 
         Parameters
         ----------
@@ -1869,11 +1944,20 @@ class PfsIsrTask(ipIsr.IsrTask):
                                 ``badPixelMask`` (UNSTABLE / RTS),
                                 iteration counts. None when
                                 ``config.h4.doCR`` is False.
+              ``'rateStabilityResult'``
+                                the rate-stability detector's
+                                ``RateStabilityResult`` — per-pixel
+                                ``rejectMask`` / ``fraction`` /
+                                ``nTestable`` / ``segmentRates``, scalar
+                                ``nRejected`` / ``nUntestable``. None
+                                when ``config.h4.doRateStability`` is
+                                False or the path is not the linearized
+                                UTR arm.
 
             Pass ``{'linearized': None}`` to capture just one stage;
             pass ``dict.fromkeys(['raw', 'darkSubbed', 'linearized',
-            'crCorrected', 'crResult'])`` for everything. The values
-            are overwritten in place.
+            'crCorrected', 'crResult', 'rateStabilityResult'])`` for
+            everything. The values are overwritten in place.
 
         Returns
         -------
@@ -2076,6 +2160,7 @@ class PfsIsrTask(ipIsr.IsrTask):
                 deltas = np.diff(flux, axis=-1)
                 del flux
                 iterResult = None  # filled in if doCR runs
+                rsResult = None    # filled in if doRateStability runs
 
                 if self.config.h4.doCR:
                     # First-reason-wins: CR detector only runs on
@@ -2174,6 +2259,37 @@ class PfsIsrTask(ipIsr.IsrTask):
                 else:
                     crResult = None
 
+                if self.config.h4.doRateStability:
+                    # First-reason-wins: rate-stability tests only
+                    # pixels with no pre-existing internal-mask reason
+                    # (BORDER / DEFECT / DEAD / range / CR-stage
+                    # UNSTABLE / HIGH_FIT_RESIDUAL / ASIC_GLITCH).
+                    # CR- and glitch-flagged deltas are excluded from
+                    # each half's mean rate.
+                    rsGood = (internalMask == 0)
+                    if iterResult is not None:
+                        rsFlagMask = (iterResult.crFlagMask
+                                      | iterResult.glitchFlagMask)
+                    else:
+                        rsFlagMask = np.zeros(deltas.shape, dtype=bool)
+                    rsResult = h4Linearity.rateStability.detectRateInstability(
+                        deltas, rsFlagMask,
+                        goodPixelMask=rsGood,
+                        threshold=self.config.h4.rateStabilityThreshold,
+                        rateFloorADU=self.config.h4.rateStabilityRateFloorADU,
+                        minDeltasPerSegment=(
+                            self.config.h4.rateStabilityMinDeltasPerSegment
+                        ),
+                    )
+                    if rsResult.nRejected:
+                        internalMask[rsResult.rejectMask] |= h4Linearity.RATE_UNSTABLE
+                    if 'rateStabilityResult' in captureKeys:
+                        intermediates['rateStabilityResult'] = rsResult
+                    self.log.info(
+                        f"rate-stability step: {rsResult.nRejected} "
+                        f"pixels rejected, {rsResult.nUntestable} untestable."
+                    )
+
                 # Reconstruct the cumulative cube ONLY when a debug
                 # capture (``'crCorrected'``) or ``doReturnRawCube`` asks
                 # for it. The default production path is delta-only from
@@ -2250,8 +2366,11 @@ class PfsIsrTask(ipIsr.IsrTask):
         )
         # Single projection point: lift the internal mask + CR result
         # into Exposure.mask planes (DARK_DEFECT, LINEARITY_DEFECT, SAT,
-        # UNSTABLE, BAD, CR). See ``_projectInternalMask``.
-        _projectInternalMask(exposure, internalMask, crResult=crResult)
+        # UNSTABLE, RATE_UNSTABLE, BAD, CR). See ``_projectInternalMask``.
+        _projectInternalMask(
+            exposure, internalMask, crResult=crResult,
+            maskRateUnstable=self.config.h4.maskRateUnstable,
+        )
 
         nCR = crResult.nFlagged if crResult is not None else 0
         self.log.info(
@@ -2260,6 +2379,7 @@ class PfsIsrTask(ipIsr.IsrTask):
             f"nDefects={int(((internalMask & h4Linearity.MASKED_BY_INPUT) != 0).sum())} "
             f"nLinDefects={int(((internalMask & h4Linearity.DEAD) != 0).sum())} "
             f"nUnstable={int(((internalMask & h4Linearity.UNSTABLE) != 0).sum())} "
+            f"nRateUnstable={int(((internalMask & h4Linearity.RATE_UNSTABLE) != 0).sum())} "
             f"nUnclassified={int(((internalMask & h4Linearity.UNCLASSIFIED) != 0).sum())} "
             f"nGlitchMasked={int(((internalMask & h4Linearity.ASIC_GLITCH) != 0).sum())} "
             f"nCR={nCR}"

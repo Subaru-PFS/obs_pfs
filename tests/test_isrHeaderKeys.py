@@ -149,6 +149,68 @@ class ProjectInternalMaskTestCase(lsst.utils.tests.TestCase):
         self.assertEqual(exp.mask.array[5, 2] & unstBit, unstBit)
         self.assertEqual(exp.mask.array[5, 2] & badBit, badBit)
 
+    def testRateUnstableFlagOnlyByDefault(self):
+        """Default ``maskRateUnstable=False``: a RATE_UNSTABLE-only
+        pixel lands in the dedicated RATE_UNSTABLE plane but stays out
+        of UNSTABLE and BAD.
+        """
+        exp = self._makeExposure(H=8, W=8)
+        internal = np.zeros((8, 8), dtype=np.uint16)
+        internal[3, 4] |= h4Linearity.RATE_UNSTABLE
+        _projectInternalMask(exp, internal)
+        rateBit = exp.mask.getPlaneBitMask('RATE_UNSTABLE')
+        unstBit = exp.mask.getPlaneBitMask('UNSTABLE')
+        badBit = exp.mask.getPlaneBitMask('BAD')
+        self.assertEqual(exp.mask.array[3, 4] & rateBit, rateBit)
+        self.assertEqual(exp.mask.array[3, 4] & unstBit, 0)
+        self.assertEqual(exp.mask.array[3, 4] & badBit, 0)
+
+    def testRateUnstableMaskedWhenEnabled(self):
+        """``maskRateUnstable=True``: RATE_UNSTABLE also feeds UNSTABLE
+        and BAD.
+        """
+        exp = self._makeExposure(H=8, W=8)
+        internal = np.zeros((8, 8), dtype=np.uint16)
+        internal[3, 4] |= h4Linearity.RATE_UNSTABLE
+        _projectInternalMask(exp, internal, maskRateUnstable=True)
+        rateBit = exp.mask.getPlaneBitMask('RATE_UNSTABLE')
+        unstBit = exp.mask.getPlaneBitMask('UNSTABLE')
+        badBit = exp.mask.getPlaneBitMask('BAD')
+        self.assertEqual(exp.mask.array[3, 4] & rateBit, rateBit)
+        self.assertEqual(exp.mask.array[3, 4] & unstBit, unstBit)
+        self.assertEqual(exp.mask.array[3, 4] & badBit, badBit)
+
+    def testRateUnstableCoexistingBitStillBADInFlagOnlyMode(self):
+        """Even with ``maskRateUnstable=False``, a pixel that carries
+        RATE_UNSTABLE plus another internal bit (here SAT) still lands
+        in BAD via the other bit, and gets the RATE_UNSTABLE plane on
+        top.
+        """
+        exp = self._makeExposure(H=8, W=8)
+        internal = np.zeros((8, 8), dtype=np.uint16)
+        internal[2, 2] |= h4Linearity.RATE_UNSTABLE | h4Linearity.ABOVE_VALID_RANGE
+        _projectInternalMask(exp, internal)
+        rateBit = exp.mask.getPlaneBitMask('RATE_UNSTABLE')
+        satBit = exp.mask.getPlaneBitMask('SAT')
+        badBit = exp.mask.getPlaneBitMask('BAD')
+        unstBit = exp.mask.getPlaneBitMask('UNSTABLE')
+        self.assertEqual(exp.mask.array[2, 2] & rateBit, rateBit)
+        self.assertEqual(exp.mask.array[2, 2] & satBit, satBit)
+        self.assertEqual(exp.mask.array[2, 2] & badBit, badBit)
+        # The CR-stage UNSTABLE bit was not set on this pixel; the
+        # rate-stability bit must not have leaked into the UNSTABLE
+        # plane when ``maskRateUnstable=False``.
+        self.assertEqual(exp.mask.array[2, 2] & unstBit, 0)
+
+    def testRateUnstablePlaneAlwaysRegistered(self):
+        """The RATE_UNSTABLE published plane is registered on every
+        projection so consumers can reference it by name even when no
+        pixel is flagged.
+        """
+        exp = self._makeExposure(H=8, W=8)
+        _projectInternalMask(exp, np.zeros((8, 8), dtype=np.uint16))
+        self.assertIn('RATE_UNSTABLE', exp.mask.getMaskPlaneDict())
+
     def testUnclassifiedNotPublished(self):
         """UNCLASSIFIED bit folds into BAD but not into any standalone
         external plane.
