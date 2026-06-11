@@ -35,6 +35,7 @@ Public entry points:
 from __future__ import annotations
 
 from . import cr
+from . import rateStability
 from .apply import apply, applyFrame
 from .fit import fit
 from .io import isH4LinearityFile, loadFits, saveFits
@@ -50,6 +51,7 @@ from .types import (
     INSUFFICIENT_POINTS,
     MASKED_BY_INPUT,
     NON_MONOTONIC,
+    RATE_UNSTABLE,
     UNCLASSIFIED,
     UNSTABLE,
     Diagnostics,
@@ -82,5 +84,6 @@ __all__ = [
     "UNSTABLE",
     "ASIC_GLITCH",
     "HIGH_FIT_RESIDUAL",
+    "RATE_UNSTABLE",
     "DEAD",
 ]
