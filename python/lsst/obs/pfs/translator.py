@@ -76,6 +76,7 @@ class PfsTranslator(SubaruTranslator):
         shift=PropertyDefinition("Slit offset in spectral dimension", "float", float),
         focus=PropertyDefinition("Focus offset", "float", float),
         lamps=PropertyDefinition("Lamps that are in use", "str", str),
+        irp=PropertyDefinition("Ratio of data to IRP reference pixels", "int", int),
     )
 
     @classmethod
@@ -196,6 +197,14 @@ class PfsTranslator(SubaruTranslator):
     @cache_translation
     def to_ext_lamps(self):
         return ",".join(sorted(getLamps(self._header)))
+
+    @cache_translation
+    def to_ext_irp(self):
+        # Only NIR (H4RG) ramps carry W_H4IRPN; CCD exposures have no IRP ratio.
+        if "W_H4IRPN" in self._header:
+            self._used_these_cards("W_H4IRPN")
+            return int(self._header["W_H4IRPN"])
+        return None
 
     @cache_translation
     def to_ext_arm(self):

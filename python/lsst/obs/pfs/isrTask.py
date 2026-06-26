@@ -542,6 +542,46 @@ def lookupBiasDark(datasetType, registry, dataId, collections, allowEmpty=False)
     return [ref1]  # Same arm as original, so use this.
 
 
+def lookupNirDark(datasetType, registry, dataId, collections):
+    """Look up the nirDark variant matching the exposure's IRP ratio
+
+    Ramps taken with different dataPixel-to-IRP ratios (``W_H4IRPN``, ingested
+    as the ``irp_ratio`` exposure-record field) have different per-read times
+    and so need different dark cubes. The ``nirDark`` and ``nirDark_irp4``
+    dataset types hold the otherwise-identical cubes for ratios 1 and 4.
+
+    This lookup function is shared by both connections; it resolves a dataset
+    only for the type that matches the exposure's ratio, so exactly one of the
+    two connections yields a reference. The distinction between the two types is
+    confined to this lookup and the load that follows it.
+
+    Parameters
+    ----------
+    datasetType : `lsst.daf.butler.DatasetType`
+        The dataset type to look up (``nirDark`` or ``nirDark_irp4``).
+    registry : `lsst.daf.butler.Registry`
+        The butler registry.
+    dataId : `lsst.daf.butler.DataCoordinate`
+        The data identifier.
+    collections : `list` of `str`
+        The collections to search.
+
+    Returns
+    -------
+    refs : `list` of `lsst.daf.butler.Reference`
+        A single reference to the matching dark cube, or empty.
+    """
+    record = dataId.records["visit"] if dataId.hasRecords() else None
+    irpRatio = getattr(record, "irp_ratio", None)
+    wanted = "nirDark_irp4" if irpRatio == 4 else "nirDark"
+    if datasetType.name != wanted:
+        return []
+    ref = registry.findDataset(
+        datasetType, collections=collections, dataId=dataId, timespan=dataId.timespan
+    )
+    return [ref] if ref is not None else []
+
+
 class PfsIsrConnections(PipelineTaskConnections, dimensions=("instrument", "visit", "arm", "spectrograph")):
     """Connections for IsrTask"""
 
@@ -597,11 +637,11 @@ class PfsIsrConnections(PipelineTaskConnections, dimensions=("instrument", "visi
     )
     nirDark = PrerequisiteConnection(
         name="nirDark",
-        doc="Input dark calibration for NIR",
+        doc="Input dark calibration for NIR (IRP ratio 1)",
         storageClass="ImageCube",
         dimensions=["instrument", "arm", "spectrograph"],
         isCalibration=True,
-        lookupFunction=partial(lookupBiasDark, allowEmpty=True),
+        lookupFunction=lookupNirDark,
         minimum=0,  # allowed to not exist, since we may use dark instead
     )
     badRefPixels = PrerequisiteConnection(
@@ -619,6 +659,15 @@ class PfsIsrConnections(PipelineTaskConnections, dimensions=("instrument", "visi
         dimensions=["instrument", "arm", "spectrograph"],
         isCalibration=True,
         minimum=0,  # only required for NIR when h4.doLinearize
+    )
+    nirDarkIrp4 = PrerequisiteConnection(
+        name="nirDark_irp4",
+        doc="Input dark calibration for NIR (IRP ratio 4)",
+        storageClass="ImageCube",
+        dimensions=["instrument", "arm", "spectrograph"],
+        isCalibration=True,
+        lookupFunction=lookupNirDark,
+        minimum=0,  # allowed to not exist; resolved only for IRP ratio 4 ramps
     )
     flat = PrerequisiteConnection(
         name="fiberFlat",
@@ -781,6 +830,7 @@ class PfsIsrConnections(PipelineTaskConnections, dimensions=("instrument", "visi
         if config.doDark is not True:
             self.prerequisiteInputs.remove("dark")
             self.prerequisiteInputs.remove("nirDark")
+            self.prerequisiteInputs.remove("nirDarkIrp4")
         if config.h4.doIRPbadPixels is not True:
             self.prerequisiteInputs.remove("badRefPixels")
         if config.h4.doLinearize is not True:
@@ -1032,6 +1082,13 @@ class PfsIsrTask(ipIsr.IsrTask):
 
     def runQuantum(self, butlerQC, inputRefs, outputRefs):
         inputs = butlerQC.get(inputRefs)
+
+        # The nirDark/nirDark_irp4 split exists only to resolve and load the
+        # cube matching the ramp's IRP ratio (see lookupNirDark); collapse it
+        # back to a single "nirDark" so the rest of the task is ratio-agnostic.
+        nirDark4 = inputs.pop("nirDarkIrp4", None)
+        if nirDark4 is not None:
+            inputs["nirDark"] = nirDark4
 
         assert self.config.doCrosstalk is False
         assert self.config.doLinearize is False  # We're not set up to do CCD linearization yet
