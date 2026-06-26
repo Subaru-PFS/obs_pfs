@@ -374,7 +374,7 @@ class PfsRawIngestTask(RawIngestTask):
         """
         required, optional = super().getObservationInfoSubsets()
         required |= {"ext_arm", "ext_spectrograph", "ext_pfs_design_id", "ext_dither"}
-        optional |= {"ext_shift", "ext_focus", "ext_lamps"}
+        optional |= {"ext_shift", "ext_focus", "ext_lamps", "ext_irp"}
         return required, optional
 
     def makeExposureRecord(
@@ -427,6 +427,9 @@ class PfsRawIngestTask(RawIngestTask):
 
         if (k := "azimuth") in supported:
             extras[k] = azimuth
+
+        if (k := "irp_ratio") in supported:
+            extras[k] = obsInfo.ext_irp  # type: ignore[attr-defined]
 
         expTime: float | None = None
         if obsInfo.exposure_time_requested is not None:

@@ -248,6 +248,12 @@ elements:
         length: 64
         doc: >
           Comma-separated list of lamps.
+      -
+        name: irp_ratio
+        type: int
+        doc: >
+          Ratio of data to IRP reference pixels for NIR (H4RG) ramps
+          (W_H4IRPN); null for CCD exposures.
     storage:
       cls: lsst.daf.butler.registry.dimensions.table.TableDimensionRecordStorage
 
