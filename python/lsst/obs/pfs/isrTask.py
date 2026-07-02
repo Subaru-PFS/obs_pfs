@@ -612,6 +612,14 @@ class PfsIsrConnections(PipelineTaskConnections, dimensions=("instrument", "visi
         isCalibration=True,
         minimum=0,  # only required for NIR when h4.doIRPbadPixels
     )
+    linearity = PrerequisiteConnection(
+        name="h4Linearity",
+        doc="H4 NIR nonlinearity correction (per-detector)",
+        storageClass="H4Linearity",
+        dimensions=["instrument", "arm", "spectrograph"],
+        isCalibration=True,
+        minimum=0,  # only required for NIR when h4.doLinearize
+    )
     flat = PrerequisiteConnection(
         name="fiberFlat",
         doc="Combined flat",
@@ -775,6 +783,8 @@ class PfsIsrConnections(PipelineTaskConnections, dimensions=("instrument", "visi
             self.prerequisiteInputs.remove("nirDark")
         if config.h4.doIRPbadPixels is not True:
             self.prerequisiteInputs.remove("badRefPixels")
+        if config.h4.doLinearize is not True:
+            self.prerequisiteInputs.remove("linearity")
         if config.doFlat is not True:
             self.prerequisiteInputs.remove("flat")
         if config.doFringe is not True:
@@ -1275,6 +1285,7 @@ class PfsIsrTask(ipIsr.IsrTask):
         detectorNum=None,
         ipcCoeffs=None,
         badRefPixels=None,
+        linearity=None,
         **kwargs,
     ):
         """Specialist instrument signature removal for H4RG detectors
@@ -1332,7 +1343,6 @@ class PfsIsrTask(ipIsr.IsrTask):
             if ipcCoeffs is None:
                 raise RuntimeError("Must supply IPC coefficients if config.h4.doIPC=True.")
         if self.config.h4.doLinearize:
-            linearity = self.resolveNirLinearity(pfsRaw.detector.getName())
             if linearity is None:
                 self.log.warn(
                     f'no usable linearity for {pfsRaw.detector.getName()}; '
@@ -1436,7 +1446,12 @@ class PfsIsrTask(ipIsr.IsrTask):
         return exposure
 
     def resolveNirLinearity(self, cam):
-        """Get the full path for our linearity corrections.
+        """Load the shipped H4 linearity correction for a camera from disk.
+
+        This file-based loader exists for offline validation tooling
+        (`lsst.obs.pfs.h4Linearity.validate`). The ISR pipeline itself
+        consumes the ``h4Linearity`` calibration through the butler
+        (the ``linearity`` prerequisite input), not this method.
 
         Parameters
         ----------
@@ -1445,10 +1460,10 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         Returns
         -------
-        absFilename : `str`
-           The full path of the linearity corrections file, or None if not found.
+        linearity : `lsst.obs.pfs.h4Linearity.LinearityCorrection` or `None`
+           The linearity correction, or `None` if it is missing or not in the
+           h4Linearity FITS format.
         """
-
         filename = f'nirLinearity-{cam}.fits'
         absFilename = os.path.join(getPackageDir("drp_pfs_data"), "nirLinearity", filename)
         if not os.path.exists(absFilename):

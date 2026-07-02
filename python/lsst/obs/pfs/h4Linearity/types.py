@@ -200,3 +200,22 @@ class LinearityCorrection:
     fitMax: np.ndarray             # (H, W) float32
     badPixelMask: np.ndarray       # (H, W) uint8
     diagnostics: Diagnostics
+
+    @classmethod
+    def readFits(cls, path: str) -> "LinearityCorrection":
+        """Read a `LinearityCorrection` from a FITS file.
+
+        Thin adapter over :func:`h4Linearity.io.loadFits` so the butler
+        ``H4Linearity`` storage class can use ``FitsGenericFormatter``.
+        """
+        from .io import loadFits
+        return loadFits(path)
+
+    def writeFits(self, path: str) -> None:
+        """Write this `LinearityCorrection` to a FITS file.
+
+        Thin adapter over :func:`h4Linearity.io.saveFits` for the butler
+        ``H4Linearity`` storage class.
+        """
+        from .io import saveFits
+        saveFits(path, self)
