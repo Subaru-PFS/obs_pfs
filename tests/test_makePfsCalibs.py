@@ -2,7 +2,7 @@
 
 Builds a throwaway butler repository, exercises the ``makePfsCalibs`` install
 logic, and confirms that validity-date selection and CALIBRATION run chaining
-work for the ``defects`` and ``badRefPixels`` products.
+work for the ``defects``, ``badRefPixels`` and ``h4Linearity`` products.
 """
 
 import importlib.util
@@ -13,8 +13,11 @@ import tempfile
 import unittest
 
 import astropy.time
+import numpy as np
 
 from lsst.daf.butler import CollectionType, Timespan
+from lsst.obs.pfs.h4Linearity.models.polynomial import PolynomialModel
+from lsst.obs.pfs.h4Linearity.types import Diagnostics, LinearityCorrection
 import lsst.utils.tests
 
 OBS_PFS_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -31,6 +34,33 @@ def loadScript(name):
 
 def utc(iso):
     return astropy.time.Time(iso, format="isot", scale="utc")
+
+
+def makeCorrection(value, shape=(4, 4)):
+    """Build a tiny degree-1 h4Linearity `LinearityCorrection`.
+
+    The first-order coefficient is filled with ``value`` so distinct
+    versions are trivially distinguishable after a round-trip.
+    """
+    height, width = shape
+    coefficients = np.zeros((2, height, width), dtype=np.float32)
+    coefficients[1] = value
+    diagnostics = Diagnostics(
+        residualRms=np.zeros(shape, dtype=np.float32),
+        maxAbsResidual=np.zeros(shape, dtype=np.float32),
+        nPointsUsed=np.full(shape, 11, dtype=np.int32),
+        monotonic=np.ones(shape, dtype=bool),
+        conditionNumber=np.ones(shape, dtype=np.float32),
+        summary={},
+    )
+    return LinearityCorrection(
+        model=PolynomialModel(order=1),
+        coefficients=coefficients,
+        fitMin=np.zeros(shape, dtype=np.float32),
+        fitMax=np.full(shape, 100.0, dtype=np.float32),
+        badPixelMask=np.zeros(shape, dtype=np.uint8),
+        diagnostics=diagnostics,
+    )
 
 
 @unittest.skipIf("DRP_PFS_DATA_DIR" not in os.environ, "drp_pfs_data is not setup")
@@ -53,6 +83,21 @@ class MakePfsCalibsTestCase(lsst.utils.tests.TestCase):
         cls.install.installBadRefPixels(
             cls.butler, cls.drpData, cls.badRefColl, "PFS", begin=None, end=None
         )
+
+        # h4Linearity: two synthetic versions for n2 split at the boundary T.
+        cls.h4LinColl = f"{cls.collection}/h4LinearityGen.99999999a"
+        cls.butler.registry.registerCollection(cls.h4LinColl, CollectionType.CALIBRATION)
+        cls.boundary = utc("2025-02-15T00:00:00")
+        cls.corrValues = {"v1": 1.0, "v2": 2.0}
+        dataId = dict(instrument="PFS", arm="n", spectrograph=2)
+        for label, timespan in (
+            ("v1", Timespan(None, cls.boundary)),
+            ("v2", Timespan(cls.boundary, None)),
+        ):
+            run = f"{cls.h4LinColl}/{label}"
+            cls.butler.registry.registerRun(run)
+            ref = cls.butler.put(makeCorrection(cls.corrValues[label]), "h4Linearity", dataId, run=run)
+            cls.butler.registry.certify(cls.h4LinColl, [ref], timespan)
 
     @classmethod
     def tearDownClass(cls):
@@ -95,6 +140,35 @@ class MakePfsCalibsTestCase(lsst.utils.tests.TestCase):
             collections=self.badRefColl, timespan=now,
         )
         self.assertEqual(n2.pixels.size, 0)
+
+    def testH4LinearityDateSelection(self):
+        """The two h4Linearity versions select across the boundary."""
+        dataId = dict(instrument="PFS", arm="n", spectrograph=2)
+        self.assertEqual(
+            self.findVersion("h4Linearity", dataId, self.h4LinColl, "2024-01-01T00:00:00"), "v1"
+        )
+        self.assertEqual(
+            self.findVersion("h4Linearity", dataId, self.h4LinColl, "2025-06-01T00:00:00"), "v2"
+        )
+
+    def testH4LinearityRoundTrip(self):
+        """h4Linearity round-trips through the H4Linearity storage class."""
+        now = Timespan(utc("2025-06-01T00:00:00"), utc("2025-06-01T00:00:00"))
+        calib = self.butler.get(
+            "h4Linearity", dict(instrument="PFS", arm="n", spectrograph=2),
+            collections=self.h4LinColl, timespan=now,
+        )
+        self.assertIsInstance(calib, LinearityCorrection)
+        self.assertFloatsEqual(calib.coefficients[1], self.corrValues["v2"])
+
+    def testDatasetTypeSpecsMatchRegistry(self):
+        """The ``--register-dataset-types`` specs must match what the
+        instrument's ``register()`` produced (so they cannot drift)."""
+        for product, (storageClass, dimensions) in self.install.DATASET_TYPES.items():
+            datasetType = self.butler.registry.getDatasetType(product)
+            self.assertEqual(datasetType.storageClass_name, storageClass)
+            self.assertEqual(set(datasetType.dimensions.names), set(dimensions))
+            self.assertTrue(datasetType.isCalibration)
 
 
 class TestMemory(lsst.utils.tests.MemoryTestCase):

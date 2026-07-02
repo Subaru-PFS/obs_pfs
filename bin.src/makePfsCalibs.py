@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 """Install PFS calibration products into a Gen3 butler.
 
-The ``badRefPixels`` and ``defects`` calibrations live as data files in the
-``drp_pfs_data`` package. This script reads them, ``butler.put``s them into a
-RUN collection, and ``registry.certify``s them into a CALIBRATION collection
-with a validity timespan, so that the pipeline selects the appropriate version
-by observation date (rather than by EUPS setup).
+The ``badRefPixels``, ``h4Linearity`` and ``defects`` calibrations live as data
+files in the ``drp_pfs_data`` package. This script reads them, ``butler.put``s
+them into a RUN collection, and ``registry.certify``s them into a CALIBRATION
+collection with a validity timespan, so that the pipeline selects the
+appropriate version by observation date (rather than by EUPS setup).
 
 Collections follow the DMTN-222 convention
 ``{root}/{ticket}/{tag}/{product}Gen.{iteration}``, where ``{iteration}`` is a
@@ -24,13 +24,21 @@ from glob import glob
 import astropy.time
 import ruamel.yaml as yaml
 
-from lsst.daf.butler import Butler, CollectionType, Timespan
+from lsst.daf.butler import Butler, CollectionType, DatasetType, Timespan
 from lsst.ip.isr import Defects
 from lsst.utils import getPackageDir
 
 from lsst.obs.pfs.nirBadRefPixels import NirBadRefPixels
 
 NIR_CAMERAS = ("n1", "n2", "n3", "n4")
+
+# Calibration dataset type definitions (storage class, dimensions) per product.
+# These match PrimeFocusSpectrograph.register(); used by --register-dataset-types.
+DATASET_TYPES = {
+    "badRefPixels": ("NirBadRefPixels", ("instrument", "arm", "spectrograph")),
+    "h4Linearity": ("H4Linearity", ("instrument", "arm", "spectrograph")),
+    "defects": ("Defects", ("instrument", "detector", "arm", "spectrograph")),
+}
 
 
 def isoTai(value: str | None) -> astropy.time.Time | None:
@@ -79,6 +87,16 @@ def certifyGroup(butler, calibCollection, run, datasetTypeName, entries):
             butler.registry.certify(calibCollection, [ref], timespan)
 
 
+def registerDatasetType(butler, product):
+    """Register the calibration dataset type for a product (idempotent)."""
+    storageClass, dimensions = DATASET_TYPES[product]
+    datasetType = DatasetType(
+        product, dimensions, storageClass, universe=butler.dimensions, isCalibration=True
+    )
+    inserted = butler.registry.registerDatasetType(datasetType)
+    print(f"{product}: {'registered' if inserted else 'already registered'} dataset type")
+
+
 def installBadRefPixels(butler, drpData, calibCollection, instrument, begin, end):
     """Install the per-detector bad IRP reference-pixel calibrations.
 
@@ -100,6 +118,27 @@ def installBadRefPixels(butler, drpData, calibCollection, instrument, begin, end
         entries.append((calib, dataId, Timespan(begin, end)))
     certifyGroup(butler, calibCollection, run, "badRefPixels", entries)
     print(f"badRefPixels: certified {len(entries)} detector(s) into {calibCollection}")
+
+
+def installH4Linearity(butler, drpData, calibCollection, instrument, begin, end):
+    """Install the per-detector H4 nonlinearity corrections."""
+    from lsst.obs.pfs import h4Linearity
+
+    run = f"{calibCollection}/put"
+    entries = []
+    for cam in NIR_CAMERAS:
+        path = os.path.join(drpData, "nirLinearity", f"nirLinearity-{cam}.fits")
+        if not os.path.exists(path):
+            print(f"h4Linearity: {path} not found; skipping {cam}")
+            continue
+        if not h4Linearity.isH4LinearityFile(path):
+            print(f"h4Linearity: {path} is not an h4Linearity-format file; skipping {cam}")
+            continue
+        calib = h4Linearity.loadFits(path)
+        dataId = dict(instrument=instrument, arm="n", spectrograph=int(cam[1]))
+        entries.append((calib, dataId, Timespan(begin, end)))
+    certifyGroup(butler, calibCollection, run, "h4Linearity", entries)
+    print(f"h4Linearity: certified {len(entries)} detector(s) into {calibCollection}")
 
 
 def detectorIds(butler, instrument):
@@ -153,13 +192,18 @@ def main():
     parser.add_argument(
         "--products",
         nargs="+",
-        default=["badRefPixels", "defects"],
-        choices=["badRefPixels", "defects"],
+        default=["badRefPixels", "h4Linearity", "defects"],
+        choices=["badRefPixels", "h4Linearity", "defects"],
         help="Products to install (default: all)",
     )
     parser.add_argument("--root", default="PFS/calib", help="Collection root (default: PFS/calib)")
     parser.add_argument("--ticket", required=True, help="Ticket name, e.g. PIPE2D-1856")
     parser.add_argument("--tag", required=True, help="Tag/label for this calibration set")
+    parser.add_argument(
+        "--register-dataset-types",
+        action="store_true",
+        help="Register the calibration dataset types before certifying (idempotent)",
+    )
     parser.add_argument(
         "--iteration",
         default=None,
@@ -168,12 +212,12 @@ def main():
     parser.add_argument(
         "--begin-date",
         default=None,
-        help="Validity start (ISO-8601 TAI) for badRefPixels; default: unbounded",
+        help="Validity start (ISO-8601 TAI) for badRefPixels/h4Linearity; default: unbounded",
     )
     parser.add_argument(
         "--end-date",
         default=None,
-        help="Validity end (ISO-8601 TAI) for badRefPixels; default: unbounded",
+        help="Validity end (ISO-8601 TAI) for badRefPixels/h4Linearity; default: unbounded",
     )
     args = parser.parse_args()
 
@@ -188,10 +232,14 @@ def main():
     butler = Butler(args.repo, writeable=True)
 
     for product in args.products:
+        if args.register_dataset_types:
+            registerDatasetType(butler, product)
         calibCollection = collectionName(args.root, args.ticket, args.tag, product, iteration)
         butler.registry.registerCollection(calibCollection, CollectionType.CALIBRATION)
         if product == "badRefPixels":
             installBadRefPixels(butler, drpData, calibCollection, args.instrument, begin, end)
+        elif product == "h4Linearity":
+            installH4Linearity(butler, drpData, calibCollection, args.instrument, begin, end)
         elif product == "defects":
             installDefects(butler, drpData, calibCollection, args.instrument)
 
