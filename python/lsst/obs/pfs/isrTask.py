@@ -28,7 +28,6 @@ from functools import partial
 
 import numpy as np
 import scipy
-import ruamel.yaml as yaml
 
 import lsst.log
 import lsst.geom as geom                # noqa F401; used in eval(darkBBoxes)
@@ -377,6 +376,14 @@ class PfsIsrConnections(PipelineTaskConnections, dimensions=("instrument", "visi
         lookupFunction=partial(lookupBiasDark, allowEmpty=True),
         minimum=0,  # allowed to not exist, since we may use dark instead
     )
+    badRefPixels = PrerequisiteConnection(
+        name="badRefPixels",
+        doc="Bad IRP reference-row pixels (per-detector)",
+        storageClass="NirBadRefPixels",
+        dimensions=["instrument", "arm", "spectrograph"],
+        isCalibration=True,
+        minimum=0,  # only required for NIR when h4.doIRPbadPixels
+    )
     flat = PrerequisiteConnection(
         name="fiberFlat",
         doc="Combined flat",
@@ -538,6 +545,8 @@ class PfsIsrConnections(PipelineTaskConnections, dimensions=("instrument", "visi
         if config.doDark is not True:
             self.prerequisiteInputs.remove("dark")
             self.prerequisiteInputs.remove("nirDark")
+        if config.h4.doIRPbadPixels is not True:
+            self.prerequisiteInputs.remove("badRefPixels")
         if config.doFlat is not True:
             self.prerequisiteInputs.remove("flat")
         if config.doFringe is not True:
@@ -1040,6 +1049,7 @@ class PfsIsrTask(ipIsr.IsrTask):
         defects=None,
         detectorNum=None,
         ipcCoeffs=None,
+        badRefPixels=None,
         **kwargs,
     ):
         """Specialist instrument signature removal for H4RG detectors
@@ -1081,6 +1091,9 @@ class PfsIsrTask(ipIsr.IsrTask):
 
                 if k in ("crosstalk", "crosstalkSources", "linearizer"):
                     self.log.warn("Unexpected argument for runH4RG: %s", k)
+
+        # Stash for correctBadIrpPixels(), which is reached deep in the ramp path.
+        self._badRefPixels = badRefPixels
 
         if self.config.doDark:
             if self.config.h4.useDarkCube:
@@ -1758,23 +1771,15 @@ class PfsIsrTask(ipIsr.IsrTask):
         # what to do about that, but return the indices of both.
         return deltas, posIdx, negIdx
 
-    def loadBadIRPpixels(self, detectorName: str) -> np.ndarray:
-        """Return the bad IRP row pixel list."""
+    def getBadIRPpixels(self) -> np.ndarray:
+        """Return the bad IRP row pixel list from the butler-provided calib."""
 
-        filename = 'badRefPixels.yaml'
-        absFilename = os.path.join(getPackageDir("drp_pfs_data"), "h4", filename)
-        if not os.path.exists(absFilename):
-            self.log.warn(f'{absFilename} not found')
+        calib = getattr(self, "_badRefPixels", None)
+        if calib is None:
+            self.log.warn('no badRefPixels calib available; skipping bad-IRP-pixel repair')
             return np.zeros(dtype=np.int16, shape=())
 
-        with open(absFilename) as f:
-            cfg = yaml.YAML(typ="safe", pure=True).load(f)
-
-        if detectorName not in cfg:
-            self.log.warn(f'{detectorName} not defined in {absFilename}')
-            return np.zeros(dtype=np.int16, shape=())
-
-        return np.array(cfg[detectorName])
+        return np.asarray(calib.pixels, dtype=np.int32)
 
     def correctBadIrpPixels(self, pfsRaw, refImg):
         """Given an IRP1 image, interpolate over known bad IRP row pixels.
@@ -1795,7 +1800,7 @@ class PfsIsrTask(ipIsr.IsrTask):
             warnings.warn('Do not know how to correct for bad IRP pixels in non-IRP1 images')
             return
 
-        badPixels = self.loadBadIRPpixels(pfsRaw.detector.getName())
+        badPixels = self.getBadIRPpixels()
 
         # We really want to be doing this on IRP diffs, given the huge common per-pixel offsets.
         # If not, need to somehow flatten out those offsets.
