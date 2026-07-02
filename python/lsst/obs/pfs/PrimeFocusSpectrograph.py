@@ -149,6 +149,20 @@ class PrimeFocusSpectrograph(Instrument):
             "ImageCube",
             True,
         )
+        self.registerDatasetType(
+            registry,
+            "badRefPixels",
+            ["instrument", "arm", "spectrograph"],
+            "NirBadRefPixels",
+            True,
+        )
+        self.registerDatasetType(
+            registry,
+            "defects",
+            ["instrument", "detector", "arm", "spectrograph"],
+            "Defects",
+            True,
+        )
 
     def registerDatasetType(
         self,
