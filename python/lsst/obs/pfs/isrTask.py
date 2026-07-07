@@ -22,7 +22,6 @@ from typing import TYPE_CHECKING, Optional
 
 import os
 import time
-import warnings
 
 from functools import partial
 
@@ -1092,8 +1091,17 @@ class PfsIsrTask(ipIsr.IsrTask):
                 if k in ("crosstalk", "crosstalkSources", "linearizer"):
                     self.log.warn("Unexpected argument for runH4RG: %s", k)
 
-        # Stash for correctBadIrpPixels(), which is reached deep in the ramp path.
+        # Stash for getBadIRPpixels(), reached deep in the ramp path via
+        # constructFullIrp when h4.doIRPbadPixels is set. Report once here rather
+        # than per-read.
         self._badRefPixels = badRefPixels
+        if self.config.h4.doIRPbadPixels:
+            if badRefPixels is None:
+                self.log.warn("doIRPbadPixels=True but no badRefPixels calib provided; "
+                              "skipping IRP bad-pixel repair")
+            else:
+                self.log.info("badRefPixels: %d bad IRP pixels for %s",
+                              badRefPixels.pixels.size, pfsRaw.detector.getName())
 
         if self.config.doDark:
             if self.config.h4.useDarkCube:
@@ -1772,49 +1780,106 @@ class PfsIsrTask(ipIsr.IsrTask):
         return deltas, posIdx, negIdx
 
     def getBadIRPpixels(self) -> np.ndarray:
-        """Return the bad IRP row pixel list from the butler-provided calib."""
+        """Return the bad IRP row pixel list from the butler-provided calib.
 
+        The pixels are IRP1-coordinate row indices (0..4095) along the
+        channel-stacked (subsample) axis. Returns an empty array if no calib is
+        available.
+        """
+        # runH4RG reports a missing calib once per exposure; stay quiet here since
+        # this is called per read.
         calib = getattr(self, "_badRefPixels", None)
         if calib is None:
-            self.log.warn('no badRefPixels calib available; skipping bad-IRP-pixel repair')
-            return np.zeros(dtype=np.int16, shape=())
+            return np.zeros(0, dtype=np.int32)
 
-        return np.asarray(calib.pixels, dtype=np.int32)
+        return np.asarray(calib.pixels, dtype=np.int32).ravel()
 
-    def correctBadIrpPixels(self, pfsRaw, refImg):
-        """Given an IRP1 image, interpolate over known bad IRP row pixels.
+    def irpPhaseOffsets(self, pfsRaw) -> tuple:
+        """Return the 0-indexed reference-pixel phase for forward and reversed channels.
 
-        Given the large offsets between the reference pixels and the drifts across the full reads,
-        it only really makes sense to run this on two subtracted IRP reads.
+        ``W_H4IRPO`` (the ASIC ``STARTPIX`` register, 1 <= value <= irpN) is the
+        number of science pixels read before the first reference pixel, so a
+        channel read in the forward temporal direction places the reference pixel
+        at 0-indexed phase ``irpOffset - 1`` within each group of ``irpN``.
+        Channels read in the reverse direction (see ``getH4channelReadOrder``)
+        mirror that to ``irpN - irpOffset``. Both were confirmed against IRP4
+        darks; see ``lsst.obs.pfs.h4utils.irp4``.
+
+        Returns
+        -------
+        forward, reversed : `int`
+           Reference phases for forward- and reverse-read channels. Both 0 for IRP1.
+        """
+        irpN = pfsRaw.irpN
+        if irpN <= 1:
+            return 0, 0
+        forward = pfsRaw.irpOffset - 1
+        return forward, irpN - pfsRaw.irpOffset
+
+    def badRefLocalSamples(self, badPixels, chanLow, chanRows, irpN, offset) -> np.ndarray:
+        """Subsampled indices of bad reference pixels within one channel.
+
+        Restricts the IRP1-coordinate bad list to this channel's ``chanRows``
+        rows ``[chanLow, chanLow + chanRows)``, keeps the pixels actually sampled
+        at this channel's reference phase (``(p - offset) % irpN == 0``), and maps
+        them to local subsampled sample indices ``(p - offset) // irpN``.
 
         Parameters
         ----------
-        pfsRaw : `lsst.obs.pfs.PfsRaw`
-          Access to the raw ramp
-        refImg : `numpy.ndarray`
-           An IRP1 image. Corrected in place.
+        badPixels : `numpy.ndarray`
+           Bad pixels in IRP1 coordinates (0..4095).
+        chanLow : `int`
+           First IRP1 row of the channel.
+        chanRows : `int`
+           IRP1 rows spanned by the channel (``irpN`` times the subsampled height).
+        irpN : `int`
+           Data:IRP ratio.
+        offset : `int`
+           0-indexed reference phase for this channel (see `irpPhaseOffsets`).
+
+        Returns
+        -------
+        samples : `numpy.ndarray`
+           Local subsampled sample indices, 0-indexed within the channel.
         """
-        if not self.config.h4.doIRPbadPixels:
+        inchan = badPixels[(badPixels >= chanLow) & (badPixels < chanLow + chanRows)] - chanLow
+        if irpN <= 1:
+            return inchan
+        relevant = inchan[(inchan - offset) % irpN == 0]
+        return (relevant - offset) // irpN
+
+    def replaceBadRefSamples(self, rawChan, localSamples) -> None:
+        """Replace bad reference samples in a subsampled channel with a neighbour.
+
+        Each bad sample is replaced by the nearest *good* (not-bad) sample,
+        preferring the closest one below it and falling back to the closest one
+        above. Only good samples are used as sources, so this is robust to bad
+        samples at the start or end of a channel and to runs of several adjacent
+        bad samples (a run is filled from the good sample just below it, or just
+        above if the run reaches the channel start). If every sample in the
+        channel is bad there is nothing to copy and it is left untouched. Because
+        the same replacement is applied identically to every read, the
+        substituted neighbour's large per-pixel offset cancels when reads are
+        differenced.
+
+        Parameters
+        ----------
+        rawChan : `numpy.ndarray`
+           One subsampled IRP channel, shape ``(chanHeight, width)``. Modified
+           in place.
+        localSamples : `numpy.ndarray`
+           Bad sample indices within this channel, 0-indexed.
+        """
+        chanHeight = rawChan.shape[0]
+        bad = {int(s) for s in np.asarray(localSamples).ravel() if 0 <= s < chanHeight}
+        if not bad or len(bad) >= chanHeight:
             return
-        if pfsRaw.irpN != 1:
-            warnings.warn('Do not know how to correct for bad IRP pixels in non-IRP1 images')
-            return
-
-        badPixels = self.getBadIRPpixels()
-
-        # We really want to be doing this on IRP diffs, given the huge common per-pixel offsets.
-        # If not, need to somehow flatten out those offsets.
-        #
-        for i in range(32):
-            pixLow = i*128
-            pixHigh = (i+1)*128
-            chan0 = refImg[pixLow:pixHigh, :]
-
-            chanBadPix = badPixels[(badPixels >= pixLow) & (badPixels < pixHigh)] - pixLow
-            if len(chanBadPix) > 0:
-                # Use median of entire column in channel: trying to correct for
-                # fairly local (as seen in column) 1/f
-                chan0[chanBadPix, :] = np.nanmedian(chan0, axis=0)
+        for s in sorted(bad):
+            src = next((t for t in range(s - 1, -1, -1) if t not in bad), None)
+            if src is None:
+                src = next((t for t in range(s + 1, chanHeight) if t not in bad), None)
+            if src is not None:
+                rawChan[s, :] = rawChan[src, :]
 
     def loadBadAsicChannels(self, detectorName: str) -> tuple:
         # Yes, yes, get this from a config file...
@@ -1840,14 +1905,12 @@ class PfsIsrTask(ipIsr.IsrTask):
     def getFinalDiffIrp(self, pfsRaw, rawDiffIrp, useFft=True) -> np.ndarray:
         """Given a simple IRP difference image, return the final IRP image.
 
-        We do a few things here:
-         - replace the detector columns from known bad IRP row pixels with
-           the median of their channel
-         - per-channel, smooth the IRP image rows over {filterWidth} pixels
+        Here we smooth the IRP image rows over {filterWidth} pixels, per channel.
 
         For the moment, we assume that the following has been done before
         we are called:
-          - IRPn images have been filled out into IRP1 images.
+          - IRPn images have been filled out into IRP1 images, with known bad
+            reference pixels already replaced (see ``constructFullIrp``).
           - Any crosstalk/leakage from the data images has been removed.
 
         Parameters
@@ -1866,8 +1929,6 @@ class PfsIsrTask(ipIsr.IsrTask):
         finalIrp : `np.ndarray`
             The processed IRP image.
            """
-
-        self.correctBadIrpPixels(pfsRaw, rawDiffIrp)
 
         skipChannels = self.loadBadAsicChannels(pfsRaw.detector.getName())
 
@@ -1939,8 +2000,9 @@ class PfsIsrTask(ipIsr.IsrTask):
         im : `np.ndarray`
            the full-sized interpolated reference pixel channel.
 
-        We do not yet know how best to interpolate, so simply repeat the pixels refRatio times.
-        We do not handle the IRP row bad pixel mask, which is a *major* flaw.
+        Each sampled reference pixel is simply repeated ``irpN`` times. Known bad
+        reference samples are replaced before this call (see ``constructFullIrp``),
+        so we do not need to handle them here.
         """
 
         irpN = pfsRaw.irpN
@@ -1991,30 +2053,51 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         - the N:1 ratio of science to reference pixels is deduced from the size of the image.
 
-        - self.irpOffset tells us the position of the reference pixel within the N
-          science pixels. It must be >= 1 (there must be at least one
-          science pixel before the reference pixel). The ASIC default is
-          for it to be the last pixel in the group, but we usually try to
-          put the reference pixel in the middle of the block of science pixels.
+        - pfsRaw.irpOffset (W_H4IRPO) tells us the position of the reference pixel
+          within the N science pixels. Because the temporal readout direction
+          alternates between channels, the reference phase differs for forward-
+          and reverse-read channels; ``irpPhaseOffsets`` returns both.
+
+        - known bad reference samples are replaced with an adjacent sample, in the
+          subsampled domain before expansion (see ``replaceBadRefSamples``).
         """
 
         height, width = refImg.shape
         nchan = pfsRaw.nchan
+        irpN = pfsRaw.irpN
 
-        # If we are a full frame, no interpolation is necessary.
-        if height == pfsRaw.h4Size:
+        # An already-full IRPn image has been expanded already (e.g. re-read from
+        # an expanded cube via ``makeRawIrpArray(fromArray=...)`` in the UTR
+        # path); return it as-is rather than re-expanding it by irpN. IRP1 raw
+        # reads are also full-frame but fall through to the loop, where the
+        # expansion is a no-op, to have their bad pixels replaced.
+        if height == pfsRaw.h4Size and irpN > 1:
+            return refImg
+
+        if self.config.h4.doIRPbadPixels:
+            badPixels = self.getBadIRPpixels()
+        else:
+            badPixels = np.zeros(0, dtype=int)
+
+        # A full-frame IRP1 read with no bad pixels needs no work at all.
+        if height == pfsRaw.h4Size and len(badPixels) == 0:
             return refImg
 
         refChanHeight = height // nchan
+        chanRows = refChanHeight * irpN  # IRP1 rows spanned by one channel
+        forwardOffset, reversedOffset = self.irpPhaseOffsets(pfsRaw)
 
         refChans = []
         readOrders = pfsRaw.getH4channelReadOrder()
         self.log.debug(f'filling out IRP{pfsRaw.h4Size // height} image, with {readOrders=}')
         for c_i in range(nchan):
-            rawChan = refImg[c_i*refChanHeight:(c_i+1)*refChanHeight, :]
+            rawChan = refImg[c_i*refChanHeight:(c_i+1)*refChanHeight, :].copy()
             doFlip = readOrders[c_i%2]
+            if len(badPixels) > 0:
+                offset = reversedOffset if doFlip else forwardOffset
+                local = self.badRefLocalSamples(badPixels, c_i*chanRows, chanRows, irpN, offset)
+                self.replaceBadRefSamples(rawChan, local)
 
-            # This is where we would intelligently interpolate.
             refChan = self.interpolateChannelIrp(pfsRaw, rawChan, doFlip)
             refChans.append(refChan)
 
