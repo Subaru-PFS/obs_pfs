@@ -7,11 +7,21 @@ them into a RUN collection, and ``registry.certify``s them into a CALIBRATION
 collection with a validity timespan, so that the pipeline selects the
 appropriate version by observation date (rather than by EUPS setup).
 
-Collections follow the DMTN-222 convention
-``{root}/{ticket}/{tag}/{product}Gen.{iteration}``, where ``{iteration}`` is a
-``YYYYMMDDv`` date string (creation date plus a trailing letter, incremented if
-a generation is retried). The root defaults to ``PFS/calib`` but may be
-overridden (e.g. ``u/<user>/<ticket>``) for testing.
+Collections follow the DMTN-222 convention (https://dmtn-222.lsst.io), as the
+pipeline-generated ``dark`` and ``bias`` do. Under ``{root}/{ticket}/{tag}/``,
+with ``{iteration}`` a ``YYYYMMDDv`` date string:
+
+- ``{product}.{iteration}`` -- CALIBRATION, certified into, and what the
+  pipeline selects the calibration from;
+- ``{product}Gen.{iteration}`` -- CHAINED, gathering this generation's RUNs;
+- ``{product}Gen.{iteration}/{run}`` -- the RUN(s) holding the datasets. For
+  ``defects`` each dated version gets its own run, named for its validity date;
+  for ``badRefPixels`` and ``h4Linearity`` a single run named for the
+  generation time.
+
+Note the certified collection drops the ``Gen`` suffix, which marks the
+generation chain. The root defaults to ``PFS/calib`` but may be overridden (e.g.
+``u/<user>/<ticket>``) for testing.
 """
 
 from __future__ import annotations
@@ -59,13 +69,58 @@ def dateFromFilename(path: str) -> astropy.time.Time:
     return astropy.time.Time(when, format="datetime", scale="utc")
 
 
-def collectionName(root: str, ticket: str, tag: str, product: str, iteration: str) -> str:
-    """Compose the DMTN-222 CALIBRATION collection name for a product."""
-    return f"{root}/{ticket}/{tag}/{product}Gen.{iteration}"
+def collectionRoot(root: str) -> str:
+    """Normalize a collection base, stripping a trailing slash.
+
+    Butler collection names are opaque strings, so ``PFS/calib/`` would otherwise
+    yield ``PFS/calib//PIPE2D-...`` and be registered under that name.
+    """
+    root = root.rstrip("/")
+    if not root:
+        raise ValueError("collection root must not be empty")
+    return root
 
 
-def certifyGroup(butler, calibCollection, run, datasetTypeName, entries):
-    """Put and certify a group of calibrations.
+def calibCollectionName(root: str, ticket: str, tag: str, product: str, iteration: str) -> str:
+    """The CALIBRATION collection the pipeline selects the calibration from.
+
+    ``{root}/{ticket}/{tag}/{product}.{iteration}`` -- no ``Gen`` suffix, which
+    belongs to the generation chain.
+    """
+    return f"{collectionRoot(root)}/{ticket}/{tag}/{product}.{iteration}"
+
+
+def genCollectionName(root: str, ticket: str, tag: str, product: str, iteration: str) -> str:
+    """The CHAINED collection gathering everything one generation produced."""
+    return f"{collectionRoot(root)}/{ticket}/{tag}/{product}Gen.{iteration}"
+
+
+def runName(genCollection: str, suffix: str) -> str:
+    """The RUN the datasets are written to, within the generation chain."""
+    return f"{genCollection}/{suffix}"
+
+
+def defaultTimestamp() -> str:
+    """The default RUN suffix: the current UTC time, as ``YYYYMMDDTHHMMSSZ``."""
+    return datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+
+
+def chainRun(butler, genCollection: str, run: str) -> None:
+    """Register the generation CHAINED collection if needed and prepend ``run``.
+
+    Members already in the chain keep their position; the new run is prepended so
+    the most recent resolves first. Only this generation's own chain is touched;
+    shared chains such as ``PFS/calib`` are maintained by hand.
+    """
+    registry = butler.registry
+    registry.registerCollection(genCollection, CollectionType.CHAINED)
+    chain = list(registry.getCollectionChain(genCollection))
+    if run not in chain:
+        registry.setCollectionChain(genCollection, [run, *chain])
+
+
+def certifyGroup(butler, calibCollection, genCollection, run, datasetTypeName, entries):
+    """Put a group of calibrations into ``run``, certify them, and chain the run.
 
     Parameters
     ----------
@@ -73,6 +128,8 @@ def certifyGroup(butler, calibCollection, run, datasetTypeName, entries):
         Writeable butler.
     calibCollection : `str`
         CALIBRATION collection to certify into.
+    genCollection : `str`
+        Generation CHAINED collection the run is added to.
     run : `str`
         RUN collection to put the datasets into.
     datasetTypeName : `str`
@@ -85,6 +142,7 @@ def certifyGroup(butler, calibCollection, run, datasetTypeName, entries):
         for calib, dataId, timespan in entries:
             ref = butler.put(calib, datasetTypeName, dataId, run=run)
             butler.registry.certify(calibCollection, [ref], timespan)
+    chainRun(butler, genCollection, run)
 
 
 def registerDatasetType(butler, product):
@@ -97,17 +155,19 @@ def registerDatasetType(butler, product):
     print(f"{product}: {'registered' if inserted else 'already registered'} dataset type")
 
 
-def installBadRefPixels(butler, drpData, calibCollection, instrument, begin, end):
+def installBadRefPixels(butler, drpData, calibCollection, genCollection, timestamp,
+                        instrument, begin, end):
     """Install the per-detector bad IRP reference-pixel calibrations.
 
     The multi-camera ``h4/badRefPixels.yaml`` source is split into one
-    per-detector calibration.
+    per-detector calibration. All detectors share one run, named for the
+    generation time.
     """
     path = os.path.join(drpData, "h4", "badRefPixels.yaml")
     with open(path) as fd:
         config = yaml.YAML(typ="safe", pure=True).load(fd)
 
-    run = f"{calibCollection}/put"
+    run = runName(genCollection, timestamp)
     entries = []
     for cam in NIR_CAMERAS:
         if cam not in config:
@@ -116,15 +176,19 @@ def installBadRefPixels(butler, drpData, calibCollection, instrument, begin, end
         calib = NirBadRefPixels.fromList(config[cam], cam)
         dataId = dict(instrument=instrument, arm="n", spectrograph=int(cam[1]))
         entries.append((calib, dataId, Timespan(begin, end)))
-    certifyGroup(butler, calibCollection, run, "badRefPixels", entries)
+    certifyGroup(butler, calibCollection, genCollection, run, "badRefPixels", entries)
     print(f"badRefPixels: certified {len(entries)} detector(s) into {calibCollection}")
 
 
-def installH4Linearity(butler, drpData, calibCollection, instrument, begin, end):
-    """Install the per-detector H4 nonlinearity corrections."""
+def installH4Linearity(butler, drpData, calibCollection, genCollection, timestamp,
+                       instrument, begin, end):
+    """Install the per-detector H4 nonlinearity corrections.
+
+    All detectors share one run, named for the generation time.
+    """
     from lsst.obs.pfs import h4Linearity
 
-    run = f"{calibCollection}/put"
+    run = runName(genCollection, timestamp)
     entries = []
     for cam in NIR_CAMERAS:
         path = os.path.join(drpData, "nirLinearity", f"nirLinearity-{cam}.fits")
@@ -137,7 +201,7 @@ def installH4Linearity(butler, drpData, calibCollection, instrument, begin, end)
         calib = h4Linearity.loadFits(path)
         dataId = dict(instrument=instrument, arm="n", spectrograph=int(cam[1]))
         entries.append((calib, dataId, Timespan(begin, end)))
-    certifyGroup(butler, calibCollection, run, "h4Linearity", entries)
+    certifyGroup(butler, calibCollection, genCollection, run, "h4Linearity", entries)
     print(f"h4Linearity: certified {len(entries)} detector(s) into {calibCollection}")
 
 
@@ -147,13 +211,14 @@ def detectorIds(butler, instrument):
     return {record.full_name: record.id for record in records}
 
 
-def installDefects(butler, drpData, calibCollection, instrument):
+def installDefects(butler, drpData, calibCollection, genCollection, instrument):
     """Install the per-detector defects, certifying the existing dated chain.
 
     Each detector directory holds one or more ISO-dated ``.ecsv`` files. The
     versions are certified with consecutive validity timespans: version ``i``
     is valid from its own date until the next version's date, and the final
-    version is valid open-ended.
+    version is valid open-ended. Each version shares a dataId, so it gets its
+    own run, named for its validity date.
     """
     nameToId = detectorIds(butler, instrument)
     defectsDir = os.path.join(drpData, "curated", "pfs", "defects")
@@ -176,10 +241,10 @@ def installDefects(butler, drpData, calibCollection, instrument):
             dataId = dict(
                 instrument=instrument, detector=detector, arm=arm, spectrograph=spectrograph
             )
-            # Each version shares a dataId, so it needs its own RUN.
-            run = f"{calibCollection}/{os.path.splitext(os.path.basename(path))[0]}"
+            run = runName(genCollection, os.path.splitext(os.path.basename(path))[0])
             certifyGroup(
-                butler, calibCollection, run, "defects", [(calib, dataId, Timespan(begin, end))]
+                butler, calibCollection, genCollection, run, "defects",
+                [(calib, dataId, Timespan(begin, end))]
             )
             numCertified += 1
     print(f"defects: certified {numCertified} version(s) into {calibCollection}")
@@ -224,6 +289,7 @@ def main():
     iteration = args.iteration
     if iteration is None:
         iteration = datetime.date.today().strftime("%Y%m%d") + "a"
+    timestamp = defaultTimestamp()
 
     begin = isoTai(args.begin_date)
     end = isoTai(args.end_date)
@@ -234,14 +300,17 @@ def main():
     for product in args.products:
         if args.register_dataset_types:
             registerDatasetType(butler, product)
-        calibCollection = collectionName(args.root, args.ticket, args.tag, product, iteration)
+        calibCollection = calibCollectionName(args.root, args.ticket, args.tag, product, iteration)
+        genCollection = genCollectionName(args.root, args.ticket, args.tag, product, iteration)
         butler.registry.registerCollection(calibCollection, CollectionType.CALIBRATION)
         if product == "badRefPixels":
-            installBadRefPixels(butler, drpData, calibCollection, args.instrument, begin, end)
+            installBadRefPixels(butler, drpData, calibCollection, genCollection, timestamp,
+                                args.instrument, begin, end)
         elif product == "h4Linearity":
-            installH4Linearity(butler, drpData, calibCollection, args.instrument, begin, end)
+            installH4Linearity(butler, drpData, calibCollection, genCollection, timestamp,
+                               args.instrument, begin, end)
         elif product == "defects":
-            installDefects(butler, drpData, calibCollection, args.instrument)
+            installDefects(butler, drpData, calibCollection, genCollection, args.instrument)
 
 
 if __name__ == "__main__":
