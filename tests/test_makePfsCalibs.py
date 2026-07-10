@@ -74,18 +74,25 @@ class MakePfsCalibsTestCase(lsst.utils.tests.TestCase):
         cls.drpData = cls.install.getPackageDir("drp_pfs_data")
 
         cls.collection = "u/test/PIPE2D-1856/test"
-        cls.defectsColl = f"{cls.collection}/defectsGen.99999999a"
-        cls.badRefColl = f"{cls.collection}/badRefPixelsGen.99999999a"
+        cls.iteration = "99999999a"
+        cls.timestamp = "99999999T000000Z"
+        # DMTN-222 layout: the pipeline selects from ``{product}.{iteration}``
+        # (CALIBRATION); the runs live under ``{product}Gen.{iteration}`` (CHAINED).
+        cls.defectsColl = f"{cls.collection}/defects.{cls.iteration}"
+        cls.defectsGen = f"{cls.collection}/defectsGen.{cls.iteration}"
+        cls.badRefColl = f"{cls.collection}/badRefPixels.{cls.iteration}"
+        cls.badRefGen = f"{cls.collection}/badRefPixelsGen.{cls.iteration}"
         for coll in (cls.defectsColl, cls.badRefColl):
             cls.butler.registry.registerCollection(coll, CollectionType.CALIBRATION)
 
-        cls.install.installDefects(cls.butler, cls.drpData, cls.defectsColl, "PFS")
+        cls.install.installDefects(cls.butler, cls.drpData, cls.defectsColl, cls.defectsGen, "PFS")
         cls.install.installBadRefPixels(
-            cls.butler, cls.drpData, cls.badRefColl, "PFS", begin=None, end=None
+            cls.butler, cls.drpData, cls.badRefColl, cls.badRefGen, cls.timestamp,
+            "PFS", begin=None, end=None,
         )
 
         # h4Linearity: two synthetic versions for n2 split at the boundary T.
-        cls.h4LinColl = f"{cls.collection}/h4LinearityGen.99999999a"
+        cls.h4LinColl = f"{cls.collection}/h4Linearity.{cls.iteration}"
         cls.butler.registry.registerCollection(cls.h4LinColl, CollectionType.CALIBRATION)
         cls.boundary = utc("2025-02-15T00:00:00")
         cls.corrValues = {"v1": 1.0, "v2": 2.0}
