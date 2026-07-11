@@ -1398,7 +1398,7 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         if self.config.doDefect:
             self.log.info("Masking defects.")
-            super().maskAndInterpolateDefects(exposure, defects)
+            self._maskDefects(exposure, defects)
 
         if self.config.maskNegativeVariance:
             super().maskNegativeVariance(exposure)
@@ -1770,6 +1770,20 @@ class PfsIsrTask(ipIsr.IsrTask):
                 f"nirDark has only {numReads} reads, too few to cover the "
                 f"ramp's {nReadsNeeded} reads."
             )
+
+    def _maskDefects(self, exposure, defects):
+        """Mask defects as BAD; interpolate over them only if configured.
+
+        The base `~lsst.ip.isr.IsrTask.maskAndInterpolateDefects` always
+        interpolates. This wrapper honors ``config.doInterpolate``: when it is
+        False the defects are still BAD-masked but the pixel values are left
+        untouched (no INTRP), so a "mask but don't interpolate" mode is possible
+        on the H4 NIR path.
+        """
+        if self.config.doInterpolate:
+            super().maskAndInterpolateDefects(exposure, defects)
+        else:
+            super().maskDefect(exposure, defects)
 
     def makeNirExposure(self,
                         pfsRaw,
