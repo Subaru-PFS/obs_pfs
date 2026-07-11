@@ -79,6 +79,20 @@ class CheckNirDarkTestCase(lsst.utils.tests.TestCase):
         dark = _FakeDark(irpN=1, nreads=90)
         self.task.checkNirDark(raw, dark, nReadsNeeded=90)
 
+    def testOldDarkWithoutRatioAcceptedForIrp1(self):
+        # An old dark predating the W_H4IRPN card (ratio absent) is irp1;
+        # an irp1 ramp must accept it (backward compatibility).
+        raw = _FakeRaw(irpN=1)
+        dark = _FakeDark(irpN=None, nreads=88)
+        self.task.checkNirDark(raw, dark, nReadsNeeded=86)
+
+    def testOldDarkRejectedForIrp4Ramp(self):
+        # The same old (implicitly irp1) dark must NOT serve an irp4 ramp.
+        raw = _FakeRaw(irpN=4)
+        dark = _FakeDark(irpN=None, nreads=200)
+        with self.assertRaises(RuntimeError):
+            self.task.checkNirDark(raw, dark, nReadsNeeded=90)
+
 
 class TestMemory(lsst.utils.tests.MemoryTestCase):
     pass
