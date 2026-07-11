@@ -607,17 +607,18 @@ def lookupBiasDark(datasetType, registry, dataId, collections, allowEmpty=False)
 
 
 def lookupNirDark(datasetType, registry, dataId, collections):
-    """Look up the nirDark variant matching the exposure's IRP ratio
+    """Resolve a NIR dark cube (``nirDark`` or ``nirDark_irp4``).
 
-    Ramps taken with different dataPixel-to-IRP ratios (``W_H4IRPN``, ingested
-    as the ``irp_ratio`` exposure-record field) have different per-read times
-    and so need different dark cubes. The ``nirDark`` and ``nirDark_irp4``
-    dataset types hold the otherwise-identical cubes for ratios 1 and 4.
+    Ramps taken with different dataPixel-to-IRP ratios (``W_H4IRPN``, 1 or 4)
+    have different per-read times and so need different dark cubes. The
+    ``nirDark`` and ``nirDark_irp4`` dataset types hold the otherwise-identical
+    cubes for ratios 1 and 4.
 
-    This lookup function is shared by both connections; it resolves a dataset
-    only for the type that matches the exposure's ratio, so exactly one of the
-    two connections yields a reference. The distinction between the two types is
-    confined to this lookup and the load that follows it.
+    The registry does not (yet) carry the ratio, so the choice cannot be made
+    here at qgraph-build time. This shared lookup therefore resolves *whichever*
+    type it is asked for whenever that dataset exists; both connections resolve
+    independently. The ratio-matched dark is chosen later, during runtime
+    initialization, by `selectNirDark` from the loaded ramp's ``W_H4IRPN``.
 
     Parameters
     ----------
@@ -633,17 +634,39 @@ def lookupNirDark(datasetType, registry, dataId, collections):
     Returns
     -------
     refs : `list` of `lsst.daf.butler.Reference`
-        A single reference to the matching dark cube, or empty.
+        A single reference to the dark cube, or empty if none exists.
     """
-    record = dataId.records["visit"] if dataId.hasRecords() else None
-    irpRatio = getattr(record, "irp_ratio", None)
-    wanted = "nirDark_irp4" if irpRatio == 4 else "nirDark"
-    if datasetType.name != wanted:
-        return []
     ref = registry.findDataset(
         datasetType, collections=collections, dataId=dataId, timespan=dataId.timespan
     )
     return [ref] if ref is not None else []
+
+
+def selectNirDark(inputs):
+    """Pick the ratio-matched NIR dark and collapse it to a single ``nirDark``.
+
+    Interim runtime hack while the registry lacks the IRP-ratio dimension:
+    `lookupNirDark` resolves both ``nirDark`` (ratio 1) and ``nirDark_irp4``
+    (ratio 4) into ``inputs``; here we choose the one matching the loaded ramp's
+    ``W_H4IRPN`` (``PfsRaw.irpN``) and leave the rest of the task ratio-agnostic
+    — it sees only ``nirDark``. For a non-NIR (CCD) exposure neither applies and
+    both are dropped.
+
+    When ``irp_ratio`` becomes a populated registry dimension, `lookupNirDark`
+    can select at build time and this collapses to a no-op.
+
+    Parameters
+    ----------
+    inputs : `dict`
+        The task inputs from ``butlerQC.get``; mutated in place. Must contain
+        ``"ccdExposure"`` (a `~lsst.obs.pfs.PfsRaw`); ``"nirDark"`` and
+        ``"nirDarkIrp4"`` are consumed when present.
+    """
+    raw = inputs["ccdExposure"]
+    nirDark1 = inputs.pop("nirDark", None)
+    nirDark4 = inputs.pop("nirDarkIrp4", None)
+    if raw.isNir():
+        inputs["nirDark"] = nirDark4 if raw.irpN == 4 else nirDark1
 
 
 class PfsIsrConnections(PipelineTaskConnections, dimensions=("instrument", "visit", "arm", "spectrograph")):
@@ -1147,12 +1170,10 @@ class PfsIsrTask(ipIsr.IsrTask):
     def runQuantum(self, butlerQC, inputRefs, outputRefs):
         inputs = butlerQC.get(inputRefs)
 
-        # The nirDark/nirDark_irp4 split exists only to resolve and load the
-        # cube matching the ramp's IRP ratio (see lookupNirDark); collapse it
-        # back to a single "nirDark" so the rest of the task is ratio-agnostic.
-        nirDark4 = inputs.pop("nirDarkIrp4", None)
-        if nirDark4 is not None:
-            inputs["nirDark"] = nirDark4
+        # Choose the ratio-matched NIR dark from the ramp's W_H4IRPN and
+        # collapse to a single "nirDark" (see selectNirDark); the rest of the
+        # task is ratio-agnostic.
+        selectNirDark(inputs)
 
         assert self.config.doCrosstalk is False
         assert self.config.doLinearize is False  # We're not set up to do CCD linearization yet
