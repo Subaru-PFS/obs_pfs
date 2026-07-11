@@ -1732,7 +1732,9 @@ class PfsIsrTask(ipIsr.IsrTask):
            Ramps taken at different data-to-IRP ratios have different
            per-read cadence, so a ratio-mismatched dark's reads do not
            correspond to the ramp's — the usual symptom of the
-           ratio-matched ``nirDark_irp4`` not having been resolved.
+           ratio-matched ``nirDark_irp4`` not having been resolved. A dark
+           with no ``W_H4IRPN`` is treated as irp1 (old darks predate the
+           card), so it is still accepted for an irp1 ramp.
         2. The dark must have at least ``nReadsNeeded`` reads, enough to
            cover every read index the subtraction accesses
            (``0 .. nReadsNeeded - 1``).
@@ -1753,7 +1755,10 @@ class PfsIsrTask(ipIsr.IsrTask):
             If the IRP ratios differ, or the dark has too few reads.
         """
         rampRatio = pfsRaw.irpN
+        # Old darks predate the W_H4IRPN card and are implicitly irp1.
         darkRatio = nirDark.metadata.get("W_H4IRPN")
+        if darkRatio is None:
+            darkRatio = 1
         if darkRatio != rampRatio:
             raise RuntimeError(
                 f"nirDark IRP ratio ({darkRatio}) does not match ramp IRP "
