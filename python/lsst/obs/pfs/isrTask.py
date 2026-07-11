@@ -1721,6 +1721,51 @@ class PfsIsrTask(ipIsr.IsrTask):
         'raw', 'darkSubbed', 'linearized', 'crCorrected', 'crResult',
     )
 
+    def checkNirDark(self, pfsRaw, nirDark, nReadsNeeded):
+        """Verify the NIR dark cube matches the ramp before subtraction.
+
+        Two independent hard requirements, each raised as a fatal error
+        rather than surfacing as a cryptic ``KeyError: 'Extension
+        IMAGE_<n> not found'`` deep in :meth:`subtractDarkCube`:
+
+        1. The dark's IRP ratio (``W_H4IRPN``) must equal the ramp's.
+           Ramps taken at different data-to-IRP ratios have different
+           per-read cadence, so a ratio-mismatched dark's reads do not
+           correspond to the ramp's — the usual symptom of the
+           ratio-matched ``nirDark_irp4`` not having been resolved.
+        2. The dark must have at least ``nReadsNeeded`` reads, enough to
+           cover every read index the subtraction accesses
+           (``0 .. nReadsNeeded - 1``).
+
+        Parameters
+        ----------
+        pfsRaw : `lsst.obs.pfs.PfsRaw`
+            The raw H4 ramp being reduced.
+        nirDark : `lsst.obs.pfs.imageCube.ImageCube`
+            The dark cube about to be subtracted.
+        nReadsNeeded : `int`
+            One past the highest absolute read index the subtraction will
+            access (i.e. ``r1``).
+
+        Raises
+        ------
+        RuntimeError
+            If the IRP ratios differ, or the dark has too few reads.
+        """
+        rampRatio = pfsRaw.irpN
+        darkRatio = nirDark.metadata.get("W_H4IRPN")
+        if darkRatio != rampRatio:
+            raise RuntimeError(
+                f"nirDark IRP ratio ({darkRatio}) does not match ramp IRP "
+                f"ratio ({rampRatio}); the ratio-matched dark was not resolved."
+            )
+        numReads = nirDark.getNumReads()
+        if numReads < nReadsNeeded:
+            raise RuntimeError(
+                f"nirDark has only {numReads} reads, too few to cover the "
+                f"ramp's {nReadsNeeded} reads."
+            )
+
     def makeNirExposure(self,
                         pfsRaw,
                         nirDark=None,
@@ -1830,6 +1875,8 @@ class PfsIsrTask(ipIsr.IsrTask):
                 f"lastRead={lastRead} (->{r1}) leave no readable range "
                 f"(need r1 > r0)."
             )
+        if nirDark is not None:
+            self.checkNirDark(pfsRaw, nirDark, r1)
         # Seed the H4 internal mask once, before the CDS-vs-UTR
         # dispatch — BORDER + DARK_DEFECT (input calib) + the linearity
         # calib's fit-time bits are the universal first step, regardless
