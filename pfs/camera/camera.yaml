@@ -435,7 +435,7 @@ CCDs : &CCDs
     n2:
       <<: *n1
       id: 5
-      serial : "18315:120"              # value at MKO.  Detector:ASIC
+      serial : "18734:248"              # value at MKO.  Detector:ASIC
       offset : [-28.0, 65.1]           # mm
 
       amplifiers:                     # only 1 amplifier (well, really 16M amplifiers but treated as 1)
