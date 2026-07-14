@@ -2848,10 +2848,17 @@ class PfsIsrTask(ipIsr.IsrTask):
             nreads = r1 - r0 + 1
         reads = np.linspace(r0, r1, nreads, dtype='i2')
 
+        # Reference-correct via interleaved reference pixels when available,
+        # otherwise via the Teledyne refPixel4 border pixels -- matching makeCDS.
+        useIrp = self.config.h4.useIRP and pfsRaw.irpN > 0
+
         # Grab the components of read r0, which we will subtract from all the others.
         data0 = self.makeRawDataArray(pfsRaw, r0)
-        irp0 = self.makeRawIrpArray(pfsRaw, r0)
-        self.applyIRPcrosstalk(pfsRaw, irp0, data0)
+        if useIrp:
+            irp0 = self.makeRawIrpArray(pfsRaw, r0)
+            self.applyIRPcrosstalk(pfsRaw, irp0, data0)
+        else:
+            data0 = self.borderCorrect(pfsRaw, data0)
 
         # We are not squirreling away the bbox, but really should for the final Exposure.
         if bbox is None:
@@ -2864,12 +2871,15 @@ class PfsIsrTask(ipIsr.IsrTask):
                 continue
             t0 = time.time()
             data1 = self.makeRawDataArray(pfsRaw, r_i)
-            irp1 = self.makeRawIrpArray(pfsRaw, r_i)
-            t1 = time.time()
-            self.applyIRPcrosstalk(pfsRaw, irp1, data1)
-            dirp = irp1 - irp0
-            ddata = data1 - data0
-            ddata -= self.getFinalDiffIrp(pfsRaw, dirp)
+            if useIrp:
+                irp1 = self.makeRawIrpArray(pfsRaw, r_i)
+                t1 = time.time()
+                self.applyIRPcrosstalk(pfsRaw, irp1, data1)
+                ddata = data1 - data0
+                ddata -= self.getFinalDiffIrp(pfsRaw, irp1 - irp0)
+            else:
+                t1 = time.time()
+                ddata = self.borderCorrect(pfsRaw, data1) - data0
             if bbox is None:
                 stack[r_idx-1, :, :] = ddata
             else:
