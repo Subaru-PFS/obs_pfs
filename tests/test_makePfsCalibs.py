@@ -33,6 +33,7 @@ def utc(iso):
     return astropy.time.Time(iso, format="isot", scale="utc")
 
 
+@unittest.skipIf("DRP_PFS_DATA_DIR" not in os.environ, "drp_pfs_data is not setup")
 class MakePfsCalibsTestCase(lsst.utils.tests.TestCase):
     @classmethod
     def setUpClass(cls):
