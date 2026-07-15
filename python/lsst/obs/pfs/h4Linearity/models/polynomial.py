@@ -427,6 +427,19 @@ class PolynomialModel:
 
         badMask[nonMono] |= NON_MONOTONIC
 
+        # Anchor each pixel's correction at the origin so lin(m=0) == 0 ("flux
+        # is zero at the start of integration"). The least-squares fit leaves a
+        # per-pixel intercept; production re-anchoring at firstRead cancels a
+        # per-pixel constant, but the stored calib must itself pass through
+        # (0, 0) so consumers that do not re-anchor (diagnostics) are correct
+        # too. Shifting only c0 (T_0 == 1) leaves the slope/shape -- and hence
+        # the re-anchored production output and the residuals computed above --
+        # unchanged.
+        x0 = (2.0 * (0.0 - fitMin) / denom - 1.0).astype(np.float32)  # x at m=0, (H, W)
+        lin0 = self.evaluate(coefficients, x0)                        # lin(m=0), (H, W)
+        coefficients[0] = coefficients[0] - lin0.astype(np.float32)
+        coefficients[:, skip] = 0.0
+
         return BlockFitResult(
             coefficients=coefficients,
             fitMin=fitMin.astype(np.float32),

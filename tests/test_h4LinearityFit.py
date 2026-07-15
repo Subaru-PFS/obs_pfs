@@ -27,15 +27,40 @@ def test_fitSingleRampRecoversTarget(smallSyntheticRamp):
         correction.model.evaluate(correction.coefficients, np.moveaxis(x, 0, -1)),
         -1, 0,
     )
+    # fit() anchors each pixel's correction at the origin (lin(0) == 0), so
+    # tPred is the linear target minus that pixel's pre-anchor origin value.
+    # Add it back to check the fit itself recovers the target (independent of
+    # the anchor, which test_fitAnchorsCorrectionAtOrigin covers separately).
+    x0 = (2.0 * (0.0 - correction.fitMin) / denom - 1.0).astype(np.float32)
+    lin0 = correction.model.evaluate(correction.coefficients, x0)
     fitRate = float(np.median(ramp.reads[2] - ramp.reads[1]))
     N = ramp.reads.shape[0]
     expected = fitRate * np.arange(N, dtype=np.float32)
     expectedBroad = np.broadcast_to(expected[:, None, None], tPred.shape)
-    np.testing.assert_allclose(tPred, expectedBroad, rtol=1e-3, atol=1.0)
+    np.testing.assert_allclose(tPred + lin0[None], expectedBroad, rtol=1e-3, atol=1.0)
     # Summary should carry percentiles.
     assert "residualRmsP50" in correction.diagnostics.summary
     assert "residualRmsP95" in correction.diagnostics.summary
     assert "residualRmsP99" in correction.diagnostics.summary
+
+
+def test_fitAnchorsCorrectionAtOrigin(smallSyntheticRamp):
+    """The fitted correction must pass through the origin: lin(m=0) == 0 for
+    every pixel ("flux is zero at the start of integration").
+
+    The unconstrained least-squares fit leaves a per-pixel intercept (lin(0)
+    drifts to the polynomial's value at the low end of its range). Production
+    re-anchoring at firstRead cancels a per-pixel constant, but the stored
+    calib must itself pass through (0, 0) so consumers that do not re-anchor
+    (e.g. diagnostics) are correct too. fit() anchors it.
+    """
+    ramp, _ = smallSyntheticRamp
+    correction = fit([ramp], badLinearityMedianMultiplier=None)
+    denom = correction.fitMax - correction.fitMin
+    denom = np.where(denom > 0, denom, 1.0)
+    x0 = (2.0 * (0.0 - correction.fitMin) / denom - 1.0).astype(np.float32)  # x at m=0
+    lin0 = correction.model.evaluate(correction.coefficients, x0)
+    np.testing.assert_allclose(lin0, 0.0, atol=1e-3)
 
 
 def test_fitTilingIsDeterministic(smallSyntheticRamp):
