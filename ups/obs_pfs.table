@@ -1,6 +1,7 @@
 setupRequired(afw)
 setupRequired(daf_base)
 setupRequired(obs_base)
+setupRequired(ip_isr)
 setupRequired(pex_config)
 setupRequired(pipe_base)
 setupRequired(sconsUtils)
