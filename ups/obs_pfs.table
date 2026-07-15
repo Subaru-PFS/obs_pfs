@@ -1,10 +1,12 @@
 setupRequired(afw)
 setupRequired(daf_base)
 setupRequired(obs_base)
+setupRequired(ip_isr)
 setupRequired(pex_config)
 setupRequired(pipe_base)
 setupRequired(sconsUtils)
 setupRequired(pfs_utils)
+setupOptional(drp_pfs_data)
 
 envPrepend(LD_LIBRARY_PATH, ${PRODUCT_DIR}/lib)
 envPrepend(DYLD_LIBRARY_PATH, ${PRODUCT_DIR}/lib)
