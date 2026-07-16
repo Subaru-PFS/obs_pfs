@@ -222,26 +222,31 @@ class ProjectInternalMaskTestCase(lsst.utils.tests.TestCase):
         badBit = exp.mask.getPlaneBitMask('BAD')
         self.assertEqual(exp.mask.array[6, 6] & badBit, badBit)
 
-    def testNoAsicGlitchPlaneCreated(self):
-        """The refactor drops ASIC_GLITCH from the published mask."""
-        exp = self._makeExposure(H=8, W=8)
-        _projectInternalMask(exp, np.zeros((8, 8), dtype=np.uint16))
-        self.assertNotIn('ASIC_GLITCH', exp.mask.getMaskPlaneDict())
-
-    def testAsicGlitchInternalBitFoldsIntoBADOnly(self):
-        """The ASIC_GLITCH internal bit (set by ``makeNirExposure``
-        when a glitch-pair height clears
-        ``asicGlitchHeightMaskADU``) lifts to BAD via the
-        any-bit-set catch-all, without registering its own external
-        plane.
+    def testAsicGlitchPlanePublished(self):
+        """A corrected glitch carries the published ASIC_GLITCH plane and is
+        NOT BAD -- ASIC_GLITCH alone is a usable, informational flag.
         """
         exp = self._makeExposure(H=8, W=8)
         internal = np.zeros((8, 8), dtype=np.uint16)
         internal[2, 5] |= h4Linearity.ASIC_GLITCH
         _projectInternalMask(exp, internal)
+        agBit = exp.mask.getPlaneBitMask('ASIC_GLITCH')
         badBit = exp.mask.getPlaneBitMask('BAD')
+        self.assertEqual(exp.mask.array[2, 5] & agBit, agBit)
+        self.assertEqual(exp.mask.array[2, 5] & badBit, 0)
+
+    def testGlitchMaskedFoldsIntoBAD(self):
+        """An uncorrectable glitch (ASIC_GLITCH | GLITCH_MASKED) is flagged in
+        the ASIC_GLITCH plane and also BAD.
+        """
+        exp = self._makeExposure(H=8, W=8)
+        internal = np.zeros((8, 8), dtype=np.uint16)
+        internal[2, 5] |= h4Linearity.ASIC_GLITCH | h4Linearity.GLITCH_MASKED
+        _projectInternalMask(exp, internal)
+        agBit = exp.mask.getPlaneBitMask('ASIC_GLITCH')
+        badBit = exp.mask.getPlaneBitMask('BAD')
+        self.assertEqual(exp.mask.array[2, 5] & agBit, agBit)
         self.assertEqual(exp.mask.array[2, 5] & badBit, badBit)
-        self.assertNotIn('ASIC_GLITCH', exp.mask.getMaskPlaneDict())
 
 
 class TestMemory(lsst.utils.tests.MemoryTestCase):
