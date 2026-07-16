@@ -2,7 +2,8 @@
 """Install PFS calibration products into a Gen3 butler.
 
 The ``badRefPixels``, ``h4Linearity`` and ``defects`` calibrations live as data
-files in the ``drp_pfs_data`` package. This script reads them, ``butler.put``s
+files in the ``drp_pfs_data`` package (or a directory given with ``--data-root``;
+see that option for the expected layout). This script reads them, ``butler.put``s
 them into a RUN collection, and ``registry.certify``s them into a CALIBRATION
 collection with a validity timespan, so that the pipeline selects the
 appropriate version by observation date (rather than by EUPS setup).
@@ -28,7 +29,7 @@ from __future__ import annotations
 
 import datetime
 import os
-from argparse import ArgumentParser
+from argparse import ArgumentParser, RawTextHelpFormatter
 from glob import glob
 
 import astropy.time
@@ -250,41 +251,91 @@ def installDefects(butler, drpData, calibCollection, genCollection, instrument):
     print(f"defects: certified {numCertified} version(s) into {calibCollection}")
 
 
-def main():
-    parser = ArgumentParser(description=__doc__)
-    parser.add_argument("repo", help="Path to the butler repository")
-    parser.add_argument("--instrument", default="PFS", help="Instrument name (default: PFS)")
+def makeParser():
+    """Build the command-line parser.
+
+    Uses ``RawTextHelpFormatter`` so the description and the multi-line
+    ``--data-root`` help keep their layout instead of being reflowed into a
+    single block.
+    """
+    parser = ArgumentParser(description=__doc__, formatter_class=RawTextHelpFormatter)
+    parser.add_argument(
+        "repo",
+        help="Path to the butler repository.",
+    )
+    parser.add_argument(
+        "--data-root",
+        default=None,
+        metavar="DIR",
+        help=(
+            "Directory to read the calibration data files from, instead of the\n"
+            "installed drp_pfs_data package. Files are read from, under DIR:\n"
+            "    badRefPixels : h4/badRefPixels.yaml\n"
+            "    h4Linearity  : nirLinearity/nirLinearity-<cam>.fits   (cam = n1..n4)\n"
+            "    defects      : curated/pfs/defects/<detector>/<date>.ecsv\n"
+            "(default: the installed drp_pfs_data package)"
+        ),
+    )
+    parser.add_argument(
+        "--instrument",
+        default="PFS",
+        help="Instrument name (default: PFS).",
+    )
     parser.add_argument(
         "--products",
         nargs="+",
         default=["badRefPixels", "h4Linearity", "defects"],
         choices=["badRefPixels", "h4Linearity", "defects"],
-        help="Products to install (default: all)",
+        help="Products to install (default: all).",
     )
-    parser.add_argument("--root", default="PFS/calib", help="Collection root (default: PFS/calib)")
-    parser.add_argument("--ticket", required=True, help="Ticket name, e.g. PIPE2D-1856")
-    parser.add_argument("--tag", required=True, help="Tag/label for this calibration set")
+    parser.add_argument(
+        "--root",
+        default="PFS/calib",
+        help="Collection root (default: PFS/calib). Override (e.g. u/<user>/<ticket>) for testing.",
+    )
+    parser.add_argument(
+        "--ticket",
+        required=True,
+        help="Ticket name, e.g. PIPE2D-1856.",
+    )
+    parser.add_argument(
+        "--tag",
+        required=True,
+        help="Tag/label for this calibration set.",
+    )
     parser.add_argument(
         "--register-dataset-types",
         action="store_true",
-        help="Register the calibration dataset types before certifying (idempotent)",
+        help="Register the calibration dataset types before certifying (idempotent).",
     )
     parser.add_argument(
         "--iteration",
         default=None,
-        help="DMTN-222 rerun iteration (YYYYMMDDv); default: today + 'a'",
+        help="DMTN-222 rerun iteration (YYYYMMDDv); default: today + 'a'.",
     )
     parser.add_argument(
         "--begin-date",
         default=None,
-        help="Validity start (ISO-8601 TAI) for badRefPixels/h4Linearity; default: unbounded",
+        help="Validity start (ISO-8601 TAI) for badRefPixels/h4Linearity; default: unbounded.",
     )
     parser.add_argument(
         "--end-date",
         default=None,
-        help="Validity end (ISO-8601 TAI) for badRefPixels/h4Linearity; default: unbounded",
+        help="Validity end (ISO-8601 TAI) for badRefPixels/h4Linearity; default: unbounded.",
     )
-    args = parser.parse_args()
+    return parser
+
+
+def resolveDataRoot(args):
+    """Return the directory holding the calibration data files: ``--data-root``
+    if given, else the installed ``drp_pfs_data`` package directory."""
+    if args.data_root is not None:
+        return args.data_root
+    return getPackageDir("drp_pfs_data")
+
+
+def main():
+    args = makeParser().parse_args()
 
     iteration = args.iteration
     if iteration is None:
@@ -294,7 +345,7 @@ def main():
     begin = isoTai(args.begin_date)
     end = isoTai(args.end_date)
 
-    drpData = getPackageDir("drp_pfs_data")
+    drpData = resolveDataRoot(args)
     butler = Butler(args.repo, writeable=True)
 
     for product in args.products:
