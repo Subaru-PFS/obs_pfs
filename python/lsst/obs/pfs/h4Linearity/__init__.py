@@ -46,6 +46,7 @@ from .types import (
     BORDER_PIX,
     DEAD,
     FIT_FAILED,
+    GLITCH_MASKED,
     HIGH_FIT_RESIDUAL,
     INSUFFICIENT_POINTS,
     MASKED_BY_INPUT,
@@ -81,6 +82,7 @@ __all__ = [
     "UNCLASSIFIED",
     "UNSTABLE",
     "ASIC_GLITCH",
+    "GLITCH_MASKED",
     "HIGH_FIT_RESIDUAL",
     "DEAD",
 ]

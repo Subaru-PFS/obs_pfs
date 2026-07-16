@@ -51,8 +51,9 @@ ABOVE_VALID_RANGE: int = 0x40    #: at least one read was above the per-pixel fi
 # uint16 internal mask:
 UNCLASSIFIED: int = 0x0080  #: ≥1 above-threshold delta the classifier could not assign
 UNSTABLE: int = 0x0100  #: ≥ ``badPixelMinOutliers`` 4σ delta excursions (RTS / telegraph)
-ASIC_GLITCH: int = 0x0200  #: ≥1 ASIC-glitch pair above ``asicGlitchHeightMaskADU``
+ASIC_GLITCH: int = 0x0200  #: ≥1 ASIC glitch present; published as the (non-BAD) ASIC_GLITCH plane
 HIGH_FIT_RESIDUAL: int = 0x0400  #: residualRms > badLinearityMedianMultiplier × median(good residualRms)
+GLITCH_MASKED: int = 0x1000  #: an ASIC glitch too messy to correct cleanly -- masked (BAD)
 
 # Convenience composite: pixels the linearity fit failed to model in
 # any way. The ISR projection layer maps this group to the published

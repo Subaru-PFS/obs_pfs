@@ -356,20 +356,24 @@ def _projectInternalMask(exposure, internalMask, *, crResult=None) -> None:
       - ``LINEARITY_DEFECT`` ← ``DEAD`` group           (also BAD)
       - ``SAT``              ← ``ABOVE_VALID_RANGE``    (also BAD)
       - ``UNSTABLE``         ← ``UNSTABLE``             (also BAD)
-      - ``BAD`` ← anywhere any internal bit is set (so BORDER pixels,
-        BELOW_VALID_RANGE pixels, etc. land in BAD without an
-        externally distinguished plane).
+      - ``ASIC_GLITCH``      ← ``ASIC_GLITCH``         (NOT BAD on its own)
+      - ``BAD`` ← anywhere any internal bit *other than a lone
+        ``ASIC_GLITCH``* is set (so BORDER pixels, BELOW_VALID_RANGE
+        pixels, etc. land in BAD without an externally distinguished
+        plane; a corrected glitch carries only ``ASIC_GLITCH`` and
+        stays usable, while an uncorrectable one also carries
+        ``GLITCH_MASKED`` and is BAD).
       - ``CR`` ← from ``crResult.crFlagMask`` (per-delta).
 
     Per the "first-reason-wins" rule, ABOVE_VALID_RANGE only fires on
     pixels that survived defects + fit, so SAT is now the clean
     "genuinely saturating" signal rather than a side effect of dead
-    pixels with stale ``fitMax``. ASIC glitch + UNCLASSIFIED bits are
-    not published — those live on ``IterativeRepairResult`` for
-    internal diagnostic use.
+    pixels with stale ``fitMax``. ASIC_GLITCH is now a published,
+    non-BAD plane marking every glitch pixel (corrected or masked);
+    UNCLASSIFIED stays unpublished for internal diagnostic use.
     """
     mask = exposure.mask
-    for plane in ("DARK_DEFECT", "LINEARITY_DEFECT", "UNSTABLE"):
+    for plane in ("DARK_DEFECT", "LINEARITY_DEFECT", "UNSTABLE", "ASIC_GLITCH"):
         if plane not in mask.getMaskPlaneDict():
             mask.addMaskPlane(plane)
     bit = mask.getPlaneBitMask
@@ -378,7 +382,11 @@ def _projectInternalMask(exposure, internalMask, *, crResult=None) -> None:
     linDefect = (internalMask & h4Linearity.DEAD) != 0
     sat = (internalMask & h4Linearity.ABOVE_VALID_RANGE) != 0
     unstable = (internalMask & h4Linearity.UNSTABLE) != 0
-    anyBad = internalMask != 0
+    asicGlitch = (internalMask & h4Linearity.ASIC_GLITCH) != 0
+    # ASIC_GLITCH alone (a corrected glitch) is usable, so it does not
+    # imply BAD; an uncorrectable glitch also carries GLITCH_MASKED.
+    notGlitch = 0xFFFF & ~h4Linearity.ASIC_GLITCH
+    anyBad = (internalMask & notGlitch) != 0
 
     arr = mask.array
     if darkDefect.any():
@@ -389,6 +397,8 @@ def _projectInternalMask(exposure, internalMask, *, crResult=None) -> None:
         arr[sat] |= bit("SAT")
     if unstable.any():
         arr[unstable] |= bit("UNSTABLE")
+    if asicGlitch.any():
+        arr[asicGlitch] |= bit("ASIC_GLITCH")
     if anyBad.any():
         arr[anyBad] |= bit("BAD")
 
@@ -2136,14 +2146,17 @@ class PfsIsrTask(ipIsr.IsrTask):
                     # plane by _projectInternalMask.
                     internalMask[badPix2D] |= h4Linearity.UNSTABLE
                     internalMask[unclassMask2D] |= h4Linearity.UNCLASSIFIED
-                    # Promote ASIC-glitch pixels with at least one
-                    # pair height above ``asicGlitchHeightMaskADU`` to
-                    # BAD. Default threshold is 0 — every glitch-
-                    # flagged pixel is masked, matching the current
-                    # detect-but-don't-repair policy. Heights come
+                    # Flag every ASIC-glitch pixel (pair height above
+                    # ``asicGlitchHeightMaskADU``, default 0) with the
+                    # published, non-BAD ASIC_GLITCH plane. Heights come
                     # straight from the saved deltas because interior
-                    # pairs are not repaired (correctGlitches=False
-                    # by default).
+                    # pairs are not repaired (correctGlitches=False by
+                    # default). Clean glitches in correction-scoped
+                    # channels are kept -- result.rate is the mean of the
+                    # un-flagged deltas, so a clean matched pair already
+                    # cancels there and the flux is unbiased. Messy or
+                    # out-of-scope glitch pixels additionally get
+                    # GLITCH_MASKED, which promotes them to BAD.
                     glitchMask3D = iterResult.glitchFlagMask
                     if glitchMask3D.any():
                         pairStart = (glitchMask3D[..., :-1]
@@ -2153,13 +2166,19 @@ class PfsIsrTask(ipIsr.IsrTask):
                         maxHeight = np.where(
                             pairStart, np.abs(halfDiff), 0.0,
                         ).max(axis=-1)
-                        promote = (
+                        glitchPix = (
                             (maxHeight
                              > self.config.h4.asicGlitchHeightMaskADU)
                             & glitchMask3D.any(axis=-1)
                         )
-                        if promote.any():
-                            internalMask[promote] |= h4Linearity.ASIC_GLITCH
+                        correctable = self.correctableGlitchMask(
+                            pfsRaw.detector.getName(), glitchMask3D,
+                            iterResult.crFlagMask, deltas, badPix2D,
+                        )
+                        internalMask[glitchPix] |= h4Linearity.ASIC_GLITCH
+                        masked = glitchPix & ~correctable
+                        if masked.any():
+                            internalMask[masked] |= h4Linearity.GLITCH_MASKED
                     if 'crResult' in captureKeys:
                         intermediates['crResult'] = iterResult
                     self.log.info(
@@ -2450,6 +2469,126 @@ class PfsIsrTask(ipIsr.IsrTask):
         # Yes, yes, get this from a config file...
         badAsicChannels = dict(n3=(24,))
         return badAsicChannels.get(detectorName, ())
+
+    def loadCorrectGlitchChannels(self, detectorName: str, nChannels: int = 32) -> tuple:
+        """ASIC channels whose clean glitches are *corrected* (kept) rather than
+        masked, on pixels with a clean glitch/CR pattern.
+
+        Every channel is in scope except the known-bad ASIC channels
+        (:meth:`loadBadAsicChannels`) -- e.g. n3 channel 24, whose IRP is
+        bypassed under Hann filtering, injecting large digital glitches that
+        can't be cleanly corrected, so it stays detect-and-mask. Under
+        ``IRPfilter == -1`` the per-column median cleans those channels (their
+        glitches become ordinary correctable outlier+return pairs), so nothing
+        is excluded.
+        """
+        # The bad-ASIC exclusion only applies while the IRP is bypassed / raw
+        # (IRPfilter != -1); the -1 median cleans those channels.
+        bad = set() if self.config.h4.IRPfilter == -1 else set(self.loadBadAsicChannels(detectorName))
+        return tuple(c for c in range(nChannels) if c not in bad)
+
+    def correctableGlitchMask(self, detectorName: str, glitchFlagMask: np.ndarray,
+                              crFlagMask: np.ndarray, deltas: np.ndarray, badMask: np.ndarray,
+                              nChannels: int = 32, returnFraction: float = 0.5) -> np.ndarray:
+        """Return a ``(H, W)`` bool mask True at pixels eligible for glitch
+        *correction* rather than masking.
+
+        An ASIC glitch is a two-delta event: a one-read outlier followed by a
+        roughly-equal, opposite-sign return. A pixel is correctable when it is
+        in a correction-scoped channel (:meth:`loadCorrectGlitchChannels`), not
+        already flagged bad, and every glitch behaves that way:
+
+        - **outlier** -- a glitch-flagged delta whose residual from the pixel's
+          robust rate exceeds the detector's own threshold,
+          ``rateCRnSigma * max(sigma, rateCRsigmaFloorADU)`` (``sigma`` the IQR
+          estimate). This is the same test that flagged it.
+        - **return** -- every outlier must have an adjacent glitch-flagged delta
+          of opposite sign and magnitude at least ``returnFraction`` of the
+          outlier. A lone outlier with no such return (a persistent step, i.e.
+          CR-like) makes the pixel non-correctable.
+        - Sub-threshold glitch flags (the small strays the matched-pair logic
+          sweeps in around a real pair) are **not** outliers, so they need no
+          return and never by themselves disqualify a pixel.
+        - a CR (dropped from the rate separately) must have **no flagged
+          neighbour**, so glitch-vs-CR is unambiguous.
+
+        This keeps a clean pair, any number of well-separated pairs, and a pair
+        carrying a small spurious third flag (the common "triple-run"), while
+        masking lone persistent spikes and entangled multi-outlier structures.
+        CR detection and repair are untouched -- the CR flags are read only for
+        the adjacency guard.
+
+        Parameters
+        ----------
+        detectorName : `str`
+            E.g. ``"n4"``.
+        glitchFlagMask, crFlagMask : `np.ndarray`
+            ``(H, W, nDeltas)`` bool per-read glitch / CR flags.
+        deltas : `np.ndarray`
+            ``(H, W, nDeltas)`` per-read deltas of the linearized ramp; used to
+            find the outlier and test that its return roughly cancels it.
+        badMask : `np.ndarray`
+            ``(H, W)`` bool; pixels already classified bad (RTS/UNSTABLE).
+        nChannels : `int`
+            Number of horizontal ASIC channels stacked along Y; 32 for H4.
+        returnFraction : `float`
+            An outlier's return must be at least this fraction of its magnitude
+            (opposite sign) to count. ~0.5 cleanly separates the real ~equal
+            return from a small spurious stray.
+        """
+        channels = self.loadCorrectGlitchChannels(detectorName)
+        H, W = glitchFlagMask.shape[:2]
+        glitch = glitchFlagMask.astype(bool)
+
+        inScope = np.zeros((H, W), dtype=bool)
+        channelHeight = H // nChannels
+        for ch in channels:
+            inScope[ch * channelHeight:(ch + 1) * channelHeight, :] = True
+
+        # Restrict the per-delta work to candidate pixels (in scope, not bad,
+        # at least one glitch flag) -- on the full detector this is a tiny
+        # fraction, so the IQR/percentile pass stays cheap and memory-light.
+        candidate = inScope & ~badMask.astype(bool) & glitch.any(-1)
+        out = np.zeros((H, W), dtype=bool)
+        ys, xs = np.where(candidate)
+        if len(ys) == 0:
+            return out
+
+        g = glitch[ys, xs]                             # (Ncand, nDeltas)
+        c = crFlagMask.astype(bool)[ys, xs]
+        d = np.asarray(deltas)[ys, xs].astype(np.float64)
+        absd = np.abs(d)
+        sgn = np.sign(d)
+
+        # Detector-equivalent outlier test: |delta - rate| above nSigma*sigma.
+        p25 = np.percentile(d, 25, axis=-1)
+        p75 = np.percentile(d, 75, axis=-1)
+        rate = np.median(d, axis=-1)
+        sigma = (p75 - p25) / 1.349
+        thresh = self.config.h4.rateCRnSigma * np.maximum(
+            sigma, self.config.h4.rateCRsigmaFloorADU)
+        outlier = g & (np.abs(d - rate[:, None]) > thresh[:, None])
+
+        # Each outlier needs an adjacent glitch delta, opposite sign, magnitude
+        # >= returnFraction * |outlier| -- its return.
+        leftReturn = np.zeros_like(g)
+        leftReturn[:, 1:] = (g[:, :-1] & (sgn[:, :-1] * sgn[:, 1:] < 0)
+                             & (absd[:, :-1] >= returnFraction * absd[:, 1:]))
+        rightReturn = np.zeros_like(g)
+        rightReturn[:, :-1] = (g[:, 1:] & (sgn[:, 1:] * sgn[:, :-1] < 0)
+                               & (absd[:, 1:] >= returnFraction * absd[:, :-1]))
+        hasReturn = leftReturn | rightReturn
+        unpairedOutlier = (outlier & ~hasReturn).any(-1)
+
+        # A CR must not sit next to any flagged delta.
+        flagged = g | c
+        flaggedNeighbor = np.zeros_like(flagged)
+        flaggedNeighbor[:, :-1] |= flagged[:, 1:]
+        flaggedNeighbor[:, 1:] |= flagged[:, :-1]
+        crAdjacent = (c & flaggedNeighbor).any(-1)
+
+        out[ys, xs] = outlier.any(-1) & ~unpairedOutlier & ~crAdjacent
+        return out
 
     def asicBadChannelMask(self, detectorName: str, shape: tuple,
                            nChannels: int = 32) -> np.ndarray:
