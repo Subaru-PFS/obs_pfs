@@ -177,6 +177,26 @@ class MakePfsCalibsTestCase(lsst.utils.tests.TestCase):
             self.assertEqual(set(datasetType.dimensions.names), set(dimensions))
             self.assertTrue(datasetType.isCalibration)
 
+    def testDataRootOverride(self):
+        """``--data-root`` overrides drp_pfs_data, and the help is not the
+        default collapsed block (raw formatter, with the file layout documented)."""
+        from argparse import RawTextHelpFormatter
+
+        parser = self.install.makeParser()
+        # Default: no --data-root -> resolve to the drp_pfs_data package.
+        args = parser.parse_args(["repo", "--ticket", "T", "--tag", "G"])
+        self.assertIsNone(args.data_root)
+        self.assertEqual(self.install.resolveDataRoot(args), self.drpData)
+        # Override: --data-root is used verbatim.
+        args = parser.parse_args(["repo", "--ticket", "T", "--tag", "G", "--data-root", "/custom/root"])
+        self.assertEqual(args.data_root, "/custom/root")
+        self.assertEqual(self.install.resolveDataRoot(args), "/custom/root")
+        # Help is preserved (raw formatter) and documents where files live under the root.
+        self.assertIs(parser.formatter_class, RawTextHelpFormatter)
+        helpText = parser.format_help()
+        for token in ("h4/badRefPixels.yaml", "nirLinearity", "curated/pfs/defects"):
+            self.assertIn(token, helpText)
+
 
 class TestMemory(lsst.utils.tests.MemoryTestCase):
     pass
