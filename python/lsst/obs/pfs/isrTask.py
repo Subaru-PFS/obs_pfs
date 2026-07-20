@@ -1417,10 +1417,10 @@ class PfsIsrTask(ipIsr.IsrTask):
         return cube
 
     def getDarkRead(self, nirDark, readNum) -> np.ndarray:
-        """Get the dark read for the NIR ramp.
+        """Get one read of the dark cube, in ADU.
 
-        This wraps the fact that we switched from post-gain darks to
-        pre-gain darks.
+        The dark is stored in electrons, so the gain it was taken with is backed
+        out to match the raw ramp it is subtracted from.
 
         Parameters
         ----------
@@ -1432,16 +1432,14 @@ class PfsIsrTask(ipIsr.IsrTask):
         Returns
         -------
         `np.ndarray`
-            The dark read.
+            The dark read. Always a new array: `ImageCube.__getitem__` caches the
+            image it returns, so scaling it in place would corrupt the cube for
+            every later read of the same index.
         """
-
-        dark = nirDark[readNum].array
 
         # If gain was applied, back it out.
         gain = nirDark.metadata.get("GAIN", 1.0)
-        if gain != 1.0:
-            dark /= gain
-        return dark
+        return nirDark[readNum].array / gain
 
     def makeNirExposure(self, pfsRaw, nirDark=None, doReturnRawCube=False):
         """Construct a 2D image from the NIR ramp data.
@@ -1834,7 +1832,7 @@ class PfsIsrTask(ipIsr.IsrTask):
             chan0 = rawDiffIrp[rowLow:rowHigh, :]
 
             chanVec = np.nanmedian(chan0, axis=0, keepdims=True)
-            out[rowLow:rowHigh, :] = np.tile(chanVec, (h, 1))
+            out[rowLow:rowHigh, :] = chanVec  # broadcasts (1, w) down the channel's rows
         return out
 
     def getFinalDiffIrp(self, pfsRaw, rawDiffIrp, useFft=True) -> np.ndarray:

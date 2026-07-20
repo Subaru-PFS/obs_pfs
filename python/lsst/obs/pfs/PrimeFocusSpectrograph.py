@@ -149,6 +149,16 @@ class PrimeFocusSpectrograph(Instrument):
             "ImageCube",
             True,
         )
+        # IRP4 dark: same product as nirDark, built from IRP-ratio-4 ramps. The
+        # dark is subtracted read-by-read, and the IRP ratio changes the per-read
+        # cadence, so it needs its own dataset type. (Also defined in PIPE2D-1855.)
+        self.registerDatasetType(
+            registry,
+            "nirDark_irp4",
+            ["instrument", "arm", "spectrograph"],
+            "ImageCube",
+            True,
+        )
         self.registerDatasetType(
             registry,
             "badRefPixels",
