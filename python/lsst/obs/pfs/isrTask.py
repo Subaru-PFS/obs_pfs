@@ -1387,7 +1387,12 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         if rawRamp is not None:
             rawRamp *= gain
-            rawRamp = imageCube.ImageCube.fromCube(rawRamp, exposure.getMetadata())
+            # The cube is now in electrons; label it with the applied gain so
+            # consumers can recover the e-/ADU scaling. deepCopy so we don't
+            # mutate the metadata shared with the (also-electron) postISRCCD.
+            rawMd = exposure.getMetadata().deepCopy()
+            rawMd.set("GAIN", gain)
+            rawRamp = imageCube.ImageCube.fromCube(rawRamp, rawMd)
 
         # Any nquarter stuff should be removed after PIPE2D-1200
         nQuarter = exposure.getDetector().getOrientation().getNQuarter()
@@ -1557,6 +1562,25 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         return rate_sum
 
+    def _darkGain(self, nirDark) -> float:
+        """The nirDark's electrons/ADU gain, guarded against a bad label.
+
+        ``combineNirDark`` labels the electron-valued dark with the applied
+        gain, which the dark methods divide out to reach ADU. A non-physical
+        value -- notably the ``9999`` raw-ASIC placeholder -- means the dark was
+        never gain-labeled, so ``dark / gain`` would silently mis-scale the
+        subtraction (``/9999`` leaves essentially no dark). Fail loudly rather
+        than guess the units. ``1.0`` (no ``GAIN`` header) is allowed and means
+        the dark is already in ADU.
+        """
+        gain = nirDark.metadata.get("GAIN", 1.0)
+        if not (0.0 < gain < 100.0):
+            raise RuntimeError(
+                f"nirDark GAIN={gain} is non-physical (9999 is the raw ASIC "
+                f"placeholder); rebuild the dark with combineNirDark."
+            )
+        return gain
+
     def subtractDarkCube(self, nirDark, cube: np.ndarray, r0: int = 0) -> None:
         """Subtract the per-read dark frames from ``cube`` in place.
 
@@ -1586,7 +1610,7 @@ class PfsIsrTask(ipIsr.IsrTask):
             Absolute index of the first read processed; ``nirDark[r0+k]``
             is paired with ``cube[k]``.
         """
-        gain = nirDark.metadata.get("GAIN", 1.0)
+        gain = self._darkGain(nirDark)
         N = cube.shape[0]
         for k in range(N):
             darkFrame = nirDark.getReadArray(r0 + k)
@@ -1639,7 +1663,7 @@ class PfsIsrTask(ipIsr.IsrTask):
             cube = nirDark.getImageCube(nreads=nreads)
         # If gain was applied, back it out. We used to apply darks to the
         # 2-d image in e-, but have switch to applying it to the raw rampin ADU.
-        gain = nirDark.metadata.get("GAIN", 1.0)
+        gain = self._darkGain(nirDark)
         if gain != 1.0:
             cube /= gain
         return np.ascontiguousarray(cube.transpose(1, 2, 0))
@@ -1666,8 +1690,9 @@ class PfsIsrTask(ipIsr.IsrTask):
             every later read of the same index.
         """
 
-        # If gain was applied, back it out.
-        gain = nirDark.metadata.get("GAIN", 1.0)
+        # Back out the applied gain (electrons -> ADU). Divide into a fresh
+        # array: ImageCube caches the read, so an in-place /= would corrupt it.
+        gain = self._darkGain(nirDark)
         return nirDark[readNum].array / gain
 
     def rampParams(self, pfsRaw):

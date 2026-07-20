@@ -94,6 +94,38 @@ class CheckNirDarkTestCase(lsst.utils.tests.TestCase):
             self.task.checkNirDark(raw, dark, nReadsNeeded=90)
 
 
+class _GainDark:
+    """Minimal ``ImageCube`` surface for the GAIN guard: just ``metadata``."""
+
+    def __init__(self, gain=None):
+        self.metadata = {} if gain is None else {"GAIN": gain}
+
+
+class DarkGainGuardTestCase(lsst.utils.tests.TestCase):
+    """``_darkGain`` rejects a non-physical nirDark GAIN (e.g. the 9999 raw
+    placeholder) rather than silently mis-scaling the dark subtraction.
+    """
+
+    def setUp(self):
+        self.task = _makeIsrTask()
+
+    def testPhysicalGainReturned(self):
+        self.assertAlmostEqual(self.task._darkGain(_GainDark(3.097)), 3.097)
+
+    def testMissingGainIsUnity(self):
+        # No GAIN header -> 1.0 (dark already in ADU); allowed, no division.
+        self.assertEqual(self.task._darkGain(_GainDark()), 1.0)
+
+    def testPlaceholder9999Raises(self):
+        with self.assertRaises(RuntimeError):
+            self.task._darkGain(_GainDark(9999.0))
+
+    def testNonPhysicalGainRaises(self):
+        for bad in (0.0, -3.0, 1.0e6):
+            with self.assertRaises(RuntimeError):
+                self.task._darkGain(_GainDark(bad))
+
+
 class TestMemory(lsst.utils.tests.MemoryTestCase):
     pass
 
