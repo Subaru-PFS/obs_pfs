@@ -1,5 +1,6 @@
 setupRequired(afw)
 setupRequired(daf_base)
+setupRequired(datamodel)
 setupRequired(obs_base)
 setupRequired(ip_isr)
 setupRequired(pex_config)
