@@ -1,0 +1,130 @@
+# Columns:
+# 1: wavelength (nm)
+# 2: intensity (arbitrary units)
+# 3: description (ionic species)
+# 4: status (bitmask)
+# 5: transition
+# 6: source reference
+#
+# Status bitmask elements:
+# GOOD=0: Line is good
+# NOT_VISIBLE=1: Line is not typically visible in PFS (maybe too faint)
+# BLEND=2: Line is blended with other line(s)
+# SUSPECT=4: Line is of suspect quality
+# REJECTED=8: Line has been rejected from use in PFS
+# BROAD=16: Line is broader than normal
+#
+# Source bitmask elements:
+# NONE=0: No source information available
+# MANUAL=1: Lines added or modified by hand
+# NIST=2: Lines taken from NIST
+# OSTERBROCK97=4: Osterbrock+1996 (1996PASP..108..277O) and Osterbrock+1997 (1997PASP..109..614O)
+# ROUSSELOT2000=8: Rousselot+2000 (2000A&A...354.1134R)
+# SDSS=16: Lines taken from SDSS (https://www.sdss.org/dr14/spectro/spectro_basics)
+#
+# HeI lines - intensity > 10
+388.97475124         500.00    HeI          0     3p->1s_triplet             2
+388.97508392         500.00    HeI          0     3p->1s_triplet             2
+396.58505891          20.00    HeI          0     4p->1s_singlet             2
+382.06859344          10.00    HeI          1     6d->3p_triplet             2
+382.06867323          10.00    HeI          1     6d->3p_triplet             2
+382.06867875          10.00    HeI          1     6d->3p_triplet             2
+382.06970907          10.00    HeI          1     6d->3p_triplet             2
+382.06978886          10.00    HeI          1     6d->3p_triplet             2
+402.73221796          50.00    HeI          2     5d->3p_triplet             2
+402.73237136          50.00    HeI          2     5d->3p_triplet             2
+402.73238176          50.00    HeI          2     5d->3p_triplet             2
+402.73345754          50.00    HeI          2     5d->3p_triplet             2
+402.73361094          50.00    HeI          2     5d->3p_triplet             2
+412.19733416          12.00    HeI          0     5s->3p_triplet             2
+412.19863268          12.00    HeI          0     5s->3p_triplet             2
+414.49276502          15.00    HeI          0     6d->1p_singlet             2
+438.91619053          10.00    HeI          0     5d->1p_singlet             2
+443.87992687          11.00    HeI          0     5s->1p_singlet             2
+447.27251598         200.00    HeI          2     4d->3p_triplet             2
+447.27288647         200.00    HeI          2     4d->3p_triplet             2
+447.27291049         200.00    HeI          2     4d->3p_triplet             2
+447.27404490         200.00    HeI          2     4d->3p_triplet             2
+447.27441539         200.00    HeI          2     4d->3p_triplet             2
+447.29380942          25.00    HeI          2     4d->3p_triplet             2
+471.4457842          30.00    HeI          0     4s->3p_triplet             2
+471.4474829          30.00    HeI          0     4s->3p_triplet             2
+492.33050740          20.00    HeI          0     4d->1p_singlet             2
+501.70769515         100.00    HeI          0     3p->1s_singlet             2
+504.9146038          10.00    HeI          0     4s->1s_singlet             2
+587.72424420         500.00    HeI          2     3d->3p_triplet             2
+587.72433092         500.00    HeI          2     3d->3p_triplet             2
+587.72535741         500.00    HeI          2     3d->3p_triplet             2
+587.72688410         500.00    HeI          2     3d->3p_triplet             2
+587.75948406         100.00    HeI          2     3d->3p_triplet             2
+667.9995639         100.00    HeI          0     3d->1p_singlet             2
+706.712523          200.00    HeI          0     3s->3p_triplet             2
+706.716340          200.00    HeI          0     3s->3p_triplet             2
+706.765685           30.00    HeI          0     3s->3p_triplet             2
+728.3357121          50.00    HeI          0     3s->1s_singlet             2
+946.613295           10.00    HeI          1     5p->3s_triplet             2
+946.618264           10.00    HeI          1     5p->3s_triplet             2
+946.618669           10.00    HeI          1     5p->3s_triplet             2
+1031.4046979          10.00    HeI          1     6d->3p_singlet_M1          2
+1031.4052794          10.00    HeI          1     6d->3p_singlet_E1          2
+1031.4053197          10.00    HeI          1     6d->3p_singlet_E1          2
+1031.4070370          10.00    HeI          1     6d->3p_singlet_E1          2
+1031.4076185          10.00    HeI          1     6d->3p_singlet_E1          2
+1083.2057482         300.00    HeI          2     2s->2p_triplet             2
+1083.3216761        1000.00    HeI          2     2s->2p_triplet             2
+1083.3306454        2000.00    HeI          2     2s->2p_triplet             2
+1091.59792706         12.00    HeI          1     6f->3f_triplet_E1          2
+1091.59822621         12.00    HeI          1     6f->3f_triplet_E1          2
+1091.59823109         12.00    HeI          1     6f->3f_triplet_E1          2
+1091.59842230         12.00    HeI          1     6f->3f_triplet_E1          2
+1091.59872146         12.00    HeI          1     6f->3f_triplet_E1          2
+1091.60349282          9.00    HeI          1     6f->3f_triplet_E1          2
+1197.2320775          44.00    HeI          1     5d->3p_singlet_M1          2
+1197.2334332          44.00    HeI          1     5d->3p_singlet_E1          2
+1197.2335250          44.00    HeI          1     5d->3p_singlet_E1          2
+1197.2352292          44.00    HeI          1     5d->3p_singlet_E1          2
+1197.2365849          30.00    HeI          1     5d->3p_singlet_E1          2
+1253.093690          20.00    HeI          1     4p->3s_triplet             2
+# HeII lines - intensity > 10
+320.38725141          10.00    HeII         0     5d->3p                     2
+320.38867740          10.00    HeII         0     5p->3s                     2
+320.39078241          10.00    HeII         0     5s->3p                     2
+320.39252530          10.00    HeII         0     5p->3s                     2
+320.40375694          10.00    HeII         0     5f->3d                     2
+320.40378392          10.00    HeII         0     5d->3p                     2
+468.66881681          10.00    HeII         0     4d->3p                     2
+468.67185522          10.00    HeII         0     4p->3s                     2
+468.68357619          10.00    HeII         0     4s->3p                     2
+468.68793756          10.00    HeII         0     4p->3s                     2
+468.70152546          10.00    HeII         0     4f->3d                     2
+468.70157852          10.00    HeII         0     4d->3p                     2
+468.70693939          10.00    HeII         0     4d->3p                     2
+468.71155240          10.00    HeII         0     4f->3d                     2
+468.71423286          10.00    HeII         0     4f->3d                     2
+468.72170117          10.00    HeII         0     4d->3s                     2
+656.15807799          10.00    HeII         0     6d->4p                     2
+656.16060225          10.00    HeII         0     6p->4d                     2
+656.16664814          10.00    HeII         0     6s->4p                     2
+656.16994224          10.00    HeII         0     6p->4s                     2
+656.1864414          10.00    HeII         0     6f->4d                     2
+656.18648815          10.00    HeII         0     6d->4f                     2
+656.18960148          10.00    HeII         0     6d->4p                     2
+656.19537621          10.00    HeII         0     6g->4f                     2
+656.1953922          10.00    HeII         0     6f->4d                     2
+656.19817245          10.00    HeII         0     6d->4s                     2
+656.19969591          10.00    HeII         0     6g->4f                     2
+1012.5628261          20.00    HeII         0     5d->4p                     2
+1012.56881068         20.00    HeII         0     5p->4s                     2
+1012.5980957          20.00    HeII         0     5s->4p                     2
+1012.60724595         20.00    HeII         0     5p->4s                     2
+1012.6249836          20.00    HeII         0     5f->4d                     2
+1012.6250853          20.00    HeII         0     5d->4f                     2
+1012.6378971          10.00    HeII         0     5d->4p                     2
+1012.6435681          10.00    HeII         0     5g->4f                     2
+1012.6436011          10.00    HeII         0     5f->4d                     2
+1012.6500070          10.00    HeII         0     5d->4f                     2
+1012.6522361          10.00    HeII         0     5g->4f                     2
+1012.6560797          10.00    HeII         0     5g->4f                     2
+1012.6627318          10.00    HeII         0     5d->4s                     2
+1012.6731720          10.00    HeII         0     5d->4s                     2
+1012.6761483          10.00    HeII         0     5p->4d                     2

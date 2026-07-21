@@ -1,0 +1,45 @@
+# Columns:
+# 1: wavelength (nm)
+# 2: intensity (arbitrary units)
+# 3: description (ionic species)
+# 4: status (bitmask)
+# 5: transition
+# 6: source reference
+#
+# Status bitmask elements:
+# GOOD=0: Line is good
+# NOT_VISIBLE=1: Line is not typically visible in PFS (maybe too faint)
+# BLEND=2: Line is blended with other line(s)
+# SUSPECT=4: Line is of suspect quality
+# REJECTED=8: Line has been rejected from use in PFS
+# BROAD=16: Line is broader than normal
+#
+# Source bitmask elements:
+# NONE=0: No source information available
+# MANUAL=1: Lines added or modified by hand
+# NIST=2: Lines taken from NIST
+# OSTERBROCK97=4: Osterbrock+1996 (1996PASP..108..277O) and Osterbrock+1997 (1997PASP..109..614O)
+# ROUSSELOT2000=8: Rousselot+2000 (2000A&A...354.1134R)
+# SDSS=16: Lines taken from SDSS (https://www.sdss.org/dr14/spectro/spectro_basics)
+#
+# Balmer series (n->2) - Intensity > 300:
+375.12244            267.00    HI           0    12->2                       2
+377.17081            300.00    HI           0    11->2                       2
+379.89827            567.00    HI           0    10->2                       2
+383.64789           1000.00    HI           0     9->2                       2
+389.01577           2333.00    HI           0     8->2                       2
+397.12020           1000.00    HI           0     7->2                       2
+410.28991           2333.00    HI           0     6->2_(H-delta)             2
+434.16910           3000.00    HI           0     5->2_(H-gamma)             2
+486.26910           6000.00    HI           0     4->2_(H-beta)              2
+656.46320          16667.00    HI           0     3->2_(H-alpha)             2
+# Paschen series (n->3) - Intensity > 300:
+860.07540             77.00    HI           0    14->3                       2
+866.73980             73.00    HI           0    13->3                       2
+875.28760             73.00    HI           0    12->3_(Pa-alpha)            2
+886.52160            120.00    HI           0    11->3_(Pa-beta)             2
+901.73840            160.00    HI           0    10->3_(Pa-gamma)            2
+923.15460            217.00    HI           0     9->3_(Pa-delta)            2
+954.85880            300.00    HI           0     8->3_(Pa-epsilon)          2
+1005.21230           433.00    HI           0     7->3_(Pa-zeta)             2
+1094.11700           467.00    HI           0     6->3_(Pa-eta)              2

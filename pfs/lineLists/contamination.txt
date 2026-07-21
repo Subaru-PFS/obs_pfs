@@ -1,0 +1,41 @@
+#
+# These are common contamination in arcs, in particular He
+#
+# Columns:
+# 1: wavelength (nm)
+# 2: intensity (arbitrary units)
+# 3: description (ionic species)
+# 4: status (bitmask)
+# 5: transition
+# 6: source reference
+#
+# Status bitmask elements:
+# GOOD=0: Line is good
+# NOT_VISIBLE=1: Line is not typically visible in PFS (maybe too faint)
+# BLEND=2: Line is blended with other line(s)
+# SUSPECT=4: Line is of suspect quality
+# REJECTED=8: Line has been rejected from use in PFS
+# BROAD=16: Line is broader than normal
+#
+# Source bitmask elements:
+# NONE=0: No source information available
+# MANUAL=1: Lines added or modified by hand
+# NIST=2: Lines taken from NIST
+# OSTERBROCK97=4: Osterbrock+1996 (1996PASP..108..277O) and Osterbrock+1997 (1997PASP..109..614O)
+# ROUSSELOT2000=8: Rousselot+2000 (2000A&A...354.1134R)
+# SDSS=16: Lines taken from SDSS (https://www.sdss.org/dr14/spectro/spectro_basics)
+#
+# OI lines - intensity > 10
+# 777 nm triplet
+777.408              87.00    OI           0     3p->3s_triplet             2
+777.631              81.00    OI           0     3p->3s_triplet             2
+777.753              75.00    OI           0     3p->3s_triplet             2
+# 844 nm triplet
+844.857              81.00    OI           0     4p->4s_triplet             2
+844.868             100.00    OI           0     4p->4s_triplet             2
+844.908              94.00    OI           0     4p->4s_triplet             2
+# 1129 nm region
+1128.943             49.00    OI           0     3d->3p_singlet             2
+1129.262             64.00    OI           0     3d->3p_singlet             2
+1130.178             64.00    OI           0     3d->3p_singlet             2
+1130.547             54.00    OI           0     3d->3p_singlet             2
