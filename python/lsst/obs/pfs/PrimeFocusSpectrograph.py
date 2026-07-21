@@ -168,6 +168,13 @@ class PrimeFocusSpectrograph(Instrument):
         )
         self.registerDatasetType(
             registry,
+            "h4Linearity",
+            ["instrument", "arm", "spectrograph"],
+            "H4Linearity",
+            True,
+        )
+        self.registerDatasetType(
+            registry,
             "defects",
             ["instrument", "detector", "arm", "spectrograph"],
             "Defects",
