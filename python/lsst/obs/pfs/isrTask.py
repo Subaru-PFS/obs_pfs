@@ -2484,10 +2484,24 @@ class PfsIsrTask(ipIsr.IsrTask):
         return mask
 
     def getSimpleDiffIrp(self, pfsRaw, rawDiffIrp) -> np.ndarray:
-        """Return a diff IRP image which is just the median across the channel columns"""
+        """Return a diff IRP image: each channel column replaced by the median
+        across its reference rows.
+
+        For IRP1, bad reference rows (the ``badRefPixels`` calib) are excluded
+        from the per-column median so they cannot bias it. The calib is indexed
+        in the IRP1 frame, so the masking is applied only when ``irpN == 1``;
+        for IRP4 (any ``irpN > 1``) the median runs over all rows -- bad-ref
+        masking there needs an IRP4-aware calib mapping and is deferred.
+        """
         nchan = pfsRaw.nchan
         h, w = rawDiffIrp.shape
         chan_w = h//nchan
+
+        # badRefPixels is indexed in the IRP1 frame, so only mask for irpN == 1.
+        badRows = np.zeros(0, dtype=np.int32)
+        calib = getattr(self, "_badRefPixels", None)
+        if calib is not None and self.config.h4.doIRPbadPixels and pfsRaw.irpN == 1:
+            badRows = np.asarray(calib.pixels, dtype=np.int32)
 
         out = np.zeros_like(rawDiffIrp)
         for chan_i in range(nchan):
@@ -2495,7 +2509,13 @@ class PfsIsrTask(ipIsr.IsrTask):
             rowHigh = (chan_i + 1)*chan_w
             chan0 = rawDiffIrp[rowLow:rowHigh, :]
 
-            chanVec = np.nanmedian(chan0, axis=0, keepdims=True)
+            chanBad = badRows[(badRows >= rowLow) & (badRows < rowHigh)] - rowLow
+            if len(chanBad) > 0:
+                good = np.ones(chan_w, dtype=bool)
+                good[chanBad] = False
+                chanVec = np.nanmedian(chan0[good, :], axis=0, keepdims=True)
+            else:
+                chanVec = np.nanmedian(chan0, axis=0, keepdims=True)
             out[rowLow:rowHigh, :] = chanVec  # broadcasts (1, w) down the channel's rows
         return out
 
@@ -2529,6 +2549,16 @@ class PfsIsrTask(ipIsr.IsrTask):
             The processed IRP image.
            """
 
+        # The reference-pixel filter runs on the DIFF IRP (irpN - irp0), never
+        # on a single IRP read -- and that is essential. The IRP pixels carry a
+        # strong, fixed pixel-to-pixel capacitance pattern; on a single read
+        # that pattern dominates the rank ordering of a channel's 128 reference
+        # rows, so the per-column median degenerates to repeatedly selecting the
+        # same fixed-pattern pixel (measured n4/ch18: one row is the median for
+        # 92% of columns; only ~10-12 of 128 rows are ever chosen). Differencing
+        # against read0 cancels the fixed pattern, leaving smooth noise, so the
+        # median draws ~uniformly across all 128 rows and is a genuine robust
+        # estimator.
         self.correctBadIrpPixels(pfsRaw, rawDiffIrp)
 
         skipChannels = self.loadBadAsicChannels(pfsRaw.detector.getName())
