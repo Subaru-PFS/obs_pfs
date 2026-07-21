@@ -15,10 +15,18 @@ from lsst.obs.pfs import isrTask as pfsIsrTask
 
 
 class _FakeRaw:
-    """Minimal surface ``getSimpleDiffIrp`` needs: the channel count."""
+    """Minimal surface ``getSimpleDiffIrp`` needs: channel count and IRP ratio."""
 
-    def __init__(self, nchan):
+    def __init__(self, nchan, irpN=1):
         self.nchan = nchan
+        self.irpN = irpN
+
+
+class _FakeBadRefPixels:
+    """Minimal ``badRefPixels`` calib surface: a list of bad reference rows."""
+
+    def __init__(self, pixels):
+        self.pixels = np.asarray(pixels)
 
 
 def _makeIsrTask():
@@ -53,6 +61,33 @@ class GetSimpleDiffIrpTestCase(lsst.utils.tests.TestCase):
                              [25., 40., 55.]])
         self.assertEqual(out.shape, img.shape)
         np.testing.assert_array_equal(out, expected)
+
+    def testExcludesBadRefRows(self):
+        # Bad reference rows must be left out of the per-column median so they
+        # can't bias it. Channel 0 rows 2,3 are outliers and flagged bad; the
+        # median must come from the good rows (0,1) only.
+        task = _makeIsrTask()
+        task._badRefPixels = _FakeBadRefPixels([2, 3])
+        raw = _FakeRaw(nchan=2)  # 8 rows -> two 4-row channels
+        img = np.array([[10.], [10.], [999.], [999.],   # channel 0: rows 2,3 bad
+                        [20.], [20.], [20.], [20.]])     # channel 1: clean
+        out = task.getSimpleDiffIrp(raw, img)
+        # Good-rows median is 10, not the all-rows median 504.5.
+        np.testing.assert_allclose(out[0:4, 0], 10.0)
+        np.testing.assert_allclose(out[4:8, 0], 20.0)
+
+    def testDoesNotMaskForIrp4(self):
+        # badRefPixels is an IRP1-frame calib, so masking is disabled for
+        # irpN > 1: the median runs over all rows (bad rows included).
+        task = _makeIsrTask()
+        task._badRefPixels = _FakeBadRefPixels([2, 3])
+        raw = _FakeRaw(nchan=2, irpN=4)
+        img = np.array([[10.], [10.], [999.], [999.],
+                        [20.], [20.], [20.], [20.]])
+        out = task.getSimpleDiffIrp(raw, img)
+        # No masking -> all-rows median of channel 0 = 504.5.
+        np.testing.assert_allclose(out[0:4, 0], 504.5)
+        np.testing.assert_allclose(out[4:8, 0], 20.0)
 
 
 class TestMemory(lsst.utils.tests.MemoryTestCase):
