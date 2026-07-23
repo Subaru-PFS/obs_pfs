@@ -12,9 +12,11 @@ import shutil
 import sys
 import tempfile
 import unittest
+import warnings
 
 import astropy.time
 import astropy.units as u
+import erfa
 import numpy as np
 
 import lsst.resources
@@ -231,8 +233,11 @@ class SaveNirDarkTestCase(lsst.utils.tests.TestCase):
         self.assertIsNotNone(
             registry.findDataset("nirDark", dataId, collections=calib,
                                  timespan=Timespan(after, after)))
-        # ...and open-ended, so a far-future exposure still finds it.
-        far = astropy.time.Time("2099-01-01T00:00:00", format="isot", scale="utc")
+        # ...and open-ended, so a far-future exposure still finds it. The date is
+        # past the leap-second table, so silence ERFA's incidental "dubious year".
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", erfa.ErfaWarning)
+            far = astropy.time.Time("2099-01-01T00:00:00", format="isot", scale="utc")
         self.assertIsNotNone(
             registry.findDataset("nirDark", dataId, collections=calib,
                                  timespan=Timespan(far, far)))
