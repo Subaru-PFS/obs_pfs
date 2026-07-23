@@ -18,22 +18,22 @@
 # https://sumire-pfs.slack.com/archives/C03EEN158DP/p1762182548020139?thread_ts=1761921030.891469&cid=C03EEN158DP
 
 393.4777   1.0     CaII        0   Solar     0
-394.5122   1.0     AlI         0   Solar     0
-396.2641   1.0     AlI         0   Solar     0
+394.5122   1.0     AlI         2   Solar     0
+396.2641   1.0     AlI         2   Solar     0
 396.9591   1.0     CaII        0   Solar     0
 404.6955   1.0     FeI         0   Solar     0
 406.4742   1.0     FeI         0   Solar     0
 407.2887   1.0     FeI         0   Solar     0
 407.8865   1.0     SrII        0   Solar     0
 410.2865   1.0     Hdelta      0   Solar     0
-413.3223   1.0     FeI         0   Solar     0
+413.3223   1.0     FeI         2   Solar     0
 414.5036   1.0     FeI         0   Solar     0
-416.8446   1.0     MgI         0   Solar     0
-420.3213   1.0     FeI         0   Solar     0
+416.8446   1.0     MgI         1   Solar     0
+420.3213   1.0     FeI         1   Solar     0
 422.7918   1.0     CaI         0   Solar     0
 423.7130   1.0     FeI         0   Solar     0
-425.1316   1.0     FeI         0   Solar     0
-425.1983   1.0     FeI         0   Solar     0
+425.1316   1.0     FeI         2   Solar     0
+425.1983   1.0     FeI         2   Solar     0
 425.5549   1.0     CrI         0   Solar     0
 426.1673   1.0     FeI         0   Solar     0
 427.2962   1.0     FeI         0   Solar     0
@@ -42,8 +42,8 @@
 438.4776   1.0     FeI         0   Solar     0
 440.5987   1.0     FeI         0   Solar     0
 441.6362   1.0     FeI         0   Solar     0
-452.9884   1.0     FeI         0   Solar     0
-455.5310   1.0     BaII        0   Solar     0
+452.9884   1.0     FeI         2   Solar     0
+455.5310   1.0     BaII        2   Solar     0
 470.4307   1.0     MgI         0   Solar     0
 486.2721   1.0     Hbeta       0   Solar     0
 489.2121   1.0     FeI         0   Solar     0
@@ -60,7 +60,7 @@
 610.4412   1.0     CaI         0   Solar     0
 612.3912   1.0     CaI         0   Solar     0
 616.3878   1.0     CaI         0   Solar     0
-630.3244   1.0     FeI         0   Solar     0
+630.3244   1.0     FeI         2   Solar     0
 656.4614   1.0     Halpha      0   Solar     0
 
 # These are the "Calcium triplet", which was not in Evan Kirby's original list
