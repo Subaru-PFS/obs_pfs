@@ -17,6 +17,8 @@ import astropy.time
 from lsst.daf.butler import CollectionType, Timespan
 import lsst.utils.tests
 
+from testUtils import closeButler
+
 OBS_PFS_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -56,6 +58,7 @@ class MakePfsCalibsTestCase(lsst.utils.tests.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        closeButler(cls)
         shutil.rmtree(cls.root, ignore_errors=True)
 
     def findVersion(self, datasetType, dataId, collection, when):

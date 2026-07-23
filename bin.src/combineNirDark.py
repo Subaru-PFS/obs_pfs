@@ -35,6 +35,7 @@ from __future__ import annotations
 import concurrent.futures
 import datetime
 import logging
+import multiprocessing
 import os
 from argparse import ArgumentParser
 
@@ -124,7 +125,14 @@ def reduceSpectrographs(repo: str, inputRun: str, outputBase: str,
             except Exception as exc:
                 errors.append((dataId["spectrograph"], exc))
     else:
-        with concurrent.futures.ProcessPoolExecutor(max_workers=processes) as pool:
+        # A forkserver start method (rather than the default fork) keeps the
+        # workers from being forked out of this multi-threaded parent, where an
+        # inherited lock could deadlock an hours-long combine. Its workers start
+        # from a clean interpreter, so the initializer restores their logging.
+        with concurrent.futures.ProcessPoolExecutor(
+                max_workers=processes,
+                mp_context=multiprocessing.get_context("forkserver"),
+                initializer=nirSuperdark.configureLogging) as pool:
             futures = {}
             for dataId in dataIds:
                 future = pool.submit(nirSuperdark.processMasterDark, inputRun,
@@ -144,10 +152,7 @@ def reduceSpectrographs(repo: str, inputRun: str, outputBase: str,
 
 
 def main():
-    # Configure logging before the worker pool is created so forked workers
-    # inherit it and their per-read progress lines reach the terminal.
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s",
-                        datefmt="%H:%M:%S")
+    nirSuperdark.configureLogging()
     parser = ArgumentParser(description=__doc__)
     parser.add_argument("repo", help="Path to the butler repository")
     parser.add_argument("--input", required=True,

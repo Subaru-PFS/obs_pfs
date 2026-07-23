@@ -536,6 +536,18 @@ def makeButler(inputRun: str, outputRun: str | None,
                             writeable=True)
 
 
+def configureLogging() -> None:
+    """Set up console logging for the dark combine and its worker processes.
+
+    Called once in the parent and again, as the worker-pool initializer, in each
+    worker. The pool uses a ``forkserver`` start method, so workers begin from a
+    clean interpreter and do not inherit the parent's logging configuration;
+    reapplying it here keeps their per-read progress lines reaching the terminal.
+    """
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s",
+                        datefmt="%H:%M:%S")
+
+
 def processMasterDark(inputRun: str, outputRun: str,
                       dataId: dict,
                       visits: list[int],

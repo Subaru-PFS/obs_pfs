@@ -23,7 +23,7 @@ from lsst.daf.butler.registry import ConflictingDefinitionError
 from lsst.obs.pfs import datasetCopy
 from lsst.obs.pfs.imageCube import ImageCube
 
-from testUtils import loadScript
+from testUtils import closeButler, loadScript
 
 BEGIN = astropy.time.Time("2026-07-08T12:00:00", format="isot", scale="tai")
 
@@ -47,6 +47,7 @@ class DatasetCopyTestCase(lsst.utils.tests.TestCase):
             self.srcRefs.append(self.butler.put(cube, "nirDark", dataId, run=self.srcRun))
 
     def tearDown(self):
+        closeButler(self)
         shutil.rmtree(self.root, ignore_errors=True)
 
     def certifySource(self, calib="u/test/src/nirDarkGen.20260708a"):

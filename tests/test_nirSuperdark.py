@@ -12,9 +12,11 @@ import shutil
 import sys
 import tempfile
 import unittest
+import warnings
 
 import astropy.time
 import astropy.units as u
+import erfa
 import numpy as np
 
 import lsst.resources
@@ -23,7 +25,7 @@ from lsst.daf.butler import CollectionType, Timespan
 
 from lsst.obs.pfs.imageCube import ImageCube
 
-from testUtils import HAS_DRP_STELLA, loadScript, requireDrpStella
+from testUtils import HAS_DRP_STELLA, closeButler, loadScript, requireDrpStella
 
 if HAS_DRP_STELLA:
     # nirSuperdark imports pfs.drp.stella.calibs.setCalibHeader.
@@ -165,6 +167,7 @@ class SaveNirDarkTestCase(lsst.utils.tests.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        closeButler(cls)
         shutil.rmtree(cls.root, ignore_errors=True)
 
     START = datetime.datetime(2026, 7, 8, 12, 0, 0)
@@ -231,8 +234,11 @@ class SaveNirDarkTestCase(lsst.utils.tests.TestCase):
         self.assertIsNotNone(
             registry.findDataset("nirDark", dataId, collections=calib,
                                  timespan=Timespan(after, after)))
-        # ...and open-ended, so a far-future exposure still finds it.
-        far = astropy.time.Time("2099-01-01T00:00:00", format="isot", scale="utc")
+        # ...and open-ended, so a far-future exposure still finds it. The date is
+        # past the leap-second table, so silence ERFA's incidental "dubious year".
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", erfa.ErfaWarning)
+            far = astropy.time.Time("2099-01-01T00:00:00", format="isot", scale="utc")
         self.assertIsNotNone(
             registry.findDataset("nirDark", dataId, collections=calib,
                                  timespan=Timespan(far, far)))
@@ -297,6 +303,7 @@ class EnsureOutputsTestCase(lsst.utils.tests.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        closeButler(cls)
         shutil.rmtree(cls.root, ignore_errors=True)
 
     def testCollectionsCreated(self):
