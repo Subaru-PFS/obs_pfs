@@ -1,0 +1,70 @@
+# Columns:
+# 1: wavelength (nm)
+# 2: intensity (arbitrary units)
+# 3: description (ionic species)
+# 4: status (bitmask)
+# 5: transition
+# 6: source reference
+#
+# Source bitmask elements:
+# NONE=0: No source information available
+# MANUAL=1: Lines added or modified by hand
+# NIST=2: Lines taken from NIST
+# OSTERBROCK97=4: Osterbrock+1996 (1996PASP..108..277O) and Osterbrock+1997 (1997PASP..109..614O)
+# ROUSSELOT2000=8: Rousselot+2000 (2000A&A...354.1134R)
+# SDSS=16: Lines taken from SDSS
+
+# Solar absorption lines, vacuum wavelengths from NIST, provided by Evan Kirby
+# https://sumire-pfs.slack.com/archives/C03EEN158DP/p1762182548020139?thread_ts=1761921030.891469&cid=C03EEN158DP
+
+393.4777   1.0     CaII        0   Solar     0
+394.5122   1.0     AlI         0   Solar     0
+396.2641   1.0     AlI         0   Solar     0
+396.9591   1.0     CaII        0   Solar     0
+404.6955   1.0     FeI         0   Solar     0
+406.4742   1.0     FeI         0   Solar     0
+407.2887   1.0     FeI         0   Solar     0
+407.8865   1.0     SrII        0   Solar     0
+410.2865   1.0     Hdelta      0   Solar     0
+413.3223   1.0     FeI         0   Solar     0
+414.5036   1.0     FeI         0   Solar     0
+416.8446   1.0     MgI         0   Solar     0
+420.3213   1.0     FeI         0   Solar     0
+422.7918   1.0     CaI         0   Solar     0
+423.7130   1.0     FeI         0   Solar     0
+425.1316   1.0     FeI         0   Solar     0
+425.1983   1.0     FeI         0   Solar     0
+425.5549   1.0     CrI         0   Solar     0
+426.1673   1.0     FeI         0   Solar     0
+427.2962   1.0     FeI         0   Solar     0
+432.6978   1.0     FeI         0   Solar     0
+434.1692   1.0     Hgamma      0   Solar     0
+438.4776   1.0     FeI         0   Solar     0
+440.5987   1.0     FeI         0   Solar     0
+441.6362   1.0     FeI         0   Solar     0
+452.9884   1.0     FeI         0   Solar     0
+455.5310   1.0     BaII        0   Solar     0
+470.4307   1.0     MgI         0   Solar     0
+486.2721   1.0     Hbeta       0   Solar     0
+489.2121   1.0     FeI         0   Solar     0
+492.1877   1.0     FeI         0   Solar     0
+495.8980   1.0     FeI         0   Solar     0
+516.8761   1.0     MgI         0   Solar     0
+517.4125   1.0     MgI         0   Solar     0
+518.5048   1.0     MgI         0   Solar     0
+527.1004   1.0     FeI         0   Solar     0
+532.9520   1.0     FeI         0   Solar     0
+552.9940   1.0     MgI         0   Solar     0
+589.1583   1.0     NaI(D2)     10  Solar     0  # Confused with sky emission line
+589.7558   1.0     NaI(D1)     10  Solar     0  # Confused with sky emission line
+610.4412   1.0     CaI         0   Solar     0
+612.3912   1.0     CaI         0   Solar     0
+616.3878   1.0     CaI         0   Solar     0
+630.3244   1.0     FeI         0   Solar     0
+656.4614   1.0     Halpha      0   Solar     0
+
+# These are the "Calcium triplet", which was not in Evan Kirby's original list
+# Vacuum wavelengths from NIST
+850.035    1.0     CaII        0   Solar     0
+854.444    1.0     CaII        0   Solar     0
+866.452    1.0     CaII        0   Solar     0
