@@ -25,7 +25,7 @@ from lsst.daf.butler import CollectionType, Timespan
 
 from lsst.obs.pfs.imageCube import ImageCube
 
-from testUtils import HAS_DRP_STELLA, loadScript, requireDrpStella
+from testUtils import HAS_DRP_STELLA, closeButler, loadScript, requireDrpStella
 
 if HAS_DRP_STELLA:
     # nirSuperdark imports pfs.drp.stella.calibs.setCalibHeader.
@@ -167,6 +167,7 @@ class SaveNirDarkTestCase(lsst.utils.tests.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        closeButler(cls)
         shutil.rmtree(cls.root, ignore_errors=True)
 
     START = datetime.datetime(2026, 7, 8, 12, 0, 0)
@@ -302,6 +303,7 @@ class EnsureOutputsTestCase(lsst.utils.tests.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        closeButler(cls)
         shutil.rmtree(cls.root, ignore_errors=True)
 
     def testCollectionsCreated(self):
