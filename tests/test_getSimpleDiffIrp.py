@@ -89,6 +89,12 @@ class GetSimpleDiffIrpTestCase(lsst.utils.tests.TestCase):
         np.testing.assert_allclose(out[0:4, 0], 504.5)
         np.testing.assert_allclose(out[4:8, 0], 20.0)
 
+    def testDefaultConfigSelectsMedian(self):
+        # The default IRP filter is the per-column median path (-1) -- the robust
+        # reference-pixel estimator that rejects IRP outliers -- not Hann smoothing.
+        config = pfsIsrTask.PfsIsrTask.ConfigClass()
+        self.assertEqual(config.h4.IRPfilter, -1)
+
 
 class TestMemory(lsst.utils.tests.MemoryTestCase):
     pass
