@@ -144,6 +144,14 @@ class H4Config(pexConfig.Config):
         doc="Run the iterative UTR-rate-based CR + ASIC-glitch detector on "
             "the linearized cube after dark subtraction.",
     )
+    crMinReads = pexConfig.Field(
+        dtype=int, default=None, optional=True,
+        doc="Deprecated and ignored. Up-the-ramp CR rejection no longer uses a "
+            "minimum-reads threshold; this field is retained only so configs that "
+            "still set it (e.g. an older drp_stella) load without error.",
+        deprecated="up-the-ramp CR rejection no longer applies a minimum-reads "
+                   "threshold; crMinReads is ignored.",
+    )
     repairCR = pexConfig.Field(
         dtype=bool, default=True,
         doc="When ``doCR`` is True, replace flagged deltas in the "
