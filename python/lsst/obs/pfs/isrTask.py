@@ -107,8 +107,11 @@ class H4Config(pexConfig.Config):
             "(CDS for arcs and flats; UTR for darks and science).")
     useIRP = pexConfig.Field(dtype=bool, default=True,
                              doc="Use Interleaved Reference Pixel planes if available")
-    IRPfilter = pexConfig.Field(dtype=int, default=15,  # 15..31, probably.
-                                doc="width of smoothing window for IRP corrections. 0=no smoothing. Odd")
+    IRPfilter = pexConfig.Field(
+        dtype=int, default=-1,
+        doc="Reference-pixel filter for the diff IRP. -1 = per-column median "
+            "(robust; rejects IRP outliers). 0 = no smoothing (raw diff IRP). "
+            "Odd N > 0 = Hann smoothing window of width N.")
     doIRPbadPixels = pexConfig.Field(dtype=bool, default=True,
                                      doc="Interpolate over known bad IRP row pixels")
     doIRPcrosstalk = pexConfig.Field(dtype=bool, default=False,
