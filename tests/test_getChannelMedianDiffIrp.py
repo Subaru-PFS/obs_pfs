@@ -1,4 +1,4 @@
-"""``PfsIsrTask.getSimpleDiffIrp`` must replace each ASIC channel with its
+"""``PfsIsrTask.getChannelMedianDiffIrp`` must replace each ASIC channel with its
 per-column median (broadcast down the channel's rows).
 
 The original implementation tiled the per-column vector by the full image
@@ -15,7 +15,7 @@ from lsst.obs.pfs import isrTask as pfsIsrTask
 
 
 class _FakeRaw:
-    """Minimal surface ``getSimpleDiffIrp`` needs: channel count and IRP ratio."""
+    """Minimal surface ``getChannelMedianDiffIrp`` needs: channel count and IRP ratio."""
 
     def __init__(self, nchan, irpN=1):
         self.nchan = nchan
@@ -44,7 +44,7 @@ def _makeIsrTask():
     return pfsIsrTask.PfsIsrTask(config=config)
 
 
-class GetSimpleDiffIrpTestCase(lsst.utils.tests.TestCase):
+class GetChannelMedianDiffIrpTestCase(lsst.utils.tests.TestCase):
     def testPerChannelPerColumnMedian(self):
         task = _makeIsrTask()
         raw = _FakeRaw(nchan=2)
@@ -53,7 +53,7 @@ class GetSimpleDiffIrpTestCase(lsst.utils.tests.TestCase):
                         [3., 4., 5.],     # channel 0: rows 0-1
                         [10., 20., 30.],
                         [40., 60., 80.]])  # channel 1: rows 2-3
-        out = task.getSimpleDiffIrp(raw, img)
+        out = task.getChannelMedianDiffIrp(raw, img)
         # per-channel, per-column median, broadcast down the channel's rows
         expected = np.array([[2., 3., 4.],
                              [2., 3., 4.],
@@ -71,7 +71,7 @@ class GetSimpleDiffIrpTestCase(lsst.utils.tests.TestCase):
         raw = _FakeRaw(nchan=2)  # 8 rows -> two 4-row channels
         img = np.array([[10.], [10.], [999.], [999.],   # channel 0: rows 2,3 bad
                         [20.], [20.], [20.], [20.]])     # channel 1: clean
-        out = task.getSimpleDiffIrp(raw, img)
+        out = task.getChannelMedianDiffIrp(raw, img)
         # Good-rows median is 10, not the all-rows median 504.5.
         np.testing.assert_allclose(out[0:4, 0], 10.0)
         np.testing.assert_allclose(out[4:8, 0], 20.0)
@@ -84,7 +84,7 @@ class GetSimpleDiffIrpTestCase(lsst.utils.tests.TestCase):
         raw = _FakeRaw(nchan=2, irpN=4)
         img = np.array([[10.], [10.], [999.], [999.],
                         [20.], [20.], [20.], [20.]])
-        out = task.getSimpleDiffIrp(raw, img)
+        out = task.getChannelMedianDiffIrp(raw, img)
         # No masking -> all-rows median of channel 0 = 504.5.
         np.testing.assert_allclose(out[0:4, 0], 504.5)
         np.testing.assert_allclose(out[4:8, 0], 20.0)
@@ -94,6 +94,24 @@ class GetSimpleDiffIrpTestCase(lsst.utils.tests.TestCase):
         # reference-pixel estimator that rejects IRP outliers -- not Hann smoothing.
         config = pfsIsrTask.PfsIsrTask.ConfigClass()
         self.assertEqual(config.h4.IRPfilter, -1)
+
+    def testPrimaryPathInvariantToBadRowValues(self):
+        # irpN=1 + IRPfilter=-1: the channel median excludes bad rows, so the
+        # output is invariant to their VALUES. This is the byte-identical
+        # guarantee protecting the -1843 handoff -- neither the removed
+        # correctBadIrpPixels nor the constructFullIrp replacement can change it,
+        # because both touch only bad rows and those are excluded here.
+        task = _makeIsrTask()
+        task._badRefPixels = _FakeBadRefPixels([2, 3])
+        raw = _FakeRaw(nchan=2)  # 8 rows -> two 4-row channels
+        base = np.array([[10.], [10.], [999.], [999.],
+                         [20.], [20.], [20.], [20.]])
+        out1 = task.getChannelMedianDiffIrp(raw, base.copy())
+        wild = base.copy()
+        wild[2:4, 0] = -1e6          # arbitrary bad-row values
+        out2 = task.getChannelMedianDiffIrp(raw, wild)
+        np.testing.assert_array_equal(out1, out2)       # invariant => bad rows excluded
+        np.testing.assert_allclose(out1[0:4, 0], 10.0)  # median of the good rows only
 
 
 class TestMemory(lsst.utils.tests.MemoryTestCase):

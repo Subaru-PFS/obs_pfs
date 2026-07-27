@@ -10,6 +10,35 @@ from pfs.datamodel.utils import astropyHeaderFromDict
 __all__ = ("NirBadRefPixels",)
 
 
+def _applyProvenance(metadata: PropertyList, provenance: dict) -> None:
+    """Record scan provenance in ``metadata`` as FITS-safe header cards.
+
+    Maps the ``badRefPixels.yaml`` ``metadata`` block (who/when/visits/dates/
+    thresholds) to <=8-char header keywords, stringifying list/dict values so
+    they survive the FITS round-trip.
+    """
+    def add(key, value):
+        if value is not None:
+            metadata.set(key, value)
+
+    add("CALGENBY", provenance.get("generatedBy"))
+    add("CALGENAT", provenance.get("generatedAt"))
+    add("CALARM", provenance.get("arm"))
+    visits = provenance.get("visits")
+    if visits:
+        add("CALVIS", ",".join(str(v) for v in visits))
+        add("CALNVIS", len(visits))
+    dates = sorted(d for d in (provenance.get("visitDates") or {}).values() if d)
+    if dates:
+        add("CALDBEG", dates[0])
+        add("CALDEND", dates[-1])
+    add("CALTHR", provenance.get("threshold"))
+    add("CALMAXTH", provenance.get("maxThreshold"))
+    add("CALMINVI", provenance.get("minVisits"))
+    nreads = provenance.get("nreads")
+    add("CALNRD", "all" if nreads is None else nreads)
+
+
 class NirBadRefPixels:
     """Bad IRP reference-row pixel list for a single NIR (H4RG) detector.
 
@@ -30,7 +59,8 @@ class NirBadRefPixels:
         self.metadata = metadata if metadata is not None else PropertyList()
 
     @classmethod
-    def fromList(cls, pixels, detectorName: "str | None" = None) -> "NirBadRefPixels":
+    def fromList(cls, pixels, detectorName: "str | None" = None,
+                 provenance: "dict | None" = None) -> "NirBadRefPixels":
         """Construct from a list of pixel indices
 
         Parameters
@@ -39,6 +69,9 @@ class NirBadRefPixels:
             Row-pixel indices that are bad in the IRP.
         detectorName : `str`, optional
             Detector name, recorded in the metadata as ``DETNAME``.
+        provenance : `dict`, optional
+            Scan provenance (the ``badRefPixels.yaml`` ``metadata`` block); its
+            who/when/visits/dates/thresholds are recorded in the FITS header.
 
         Returns
         -------
@@ -48,6 +81,8 @@ class NirBadRefPixels:
         metadata = PropertyList()
         if detectorName is not None:
             metadata.set("DETNAME", detectorName)
+        if provenance:
+            _applyProvenance(metadata, provenance)
         return cls(np.array(pixels, dtype=np.int32), metadata)
 
     @classmethod

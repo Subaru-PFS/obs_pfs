@@ -168,13 +168,14 @@ def installBadRefPixels(butler, drpData, calibCollection, genCollection, timesta
     with open(path) as fd:
         config = yaml.YAML(typ="safe", pure=True).load(fd)
 
+    provenance = config.get("metadata")  # optional scan provenance -> FITS header
     run = runName(genCollection, timestamp)
     entries = []
     for cam in NIR_CAMERAS:
         if cam not in config:
             print(f"badRefPixels: {cam} not defined in {path}; skipping")
             continue
-        calib = NirBadRefPixels.fromList(config[cam], cam)
+        calib = NirBadRefPixels.fromList(config[cam], cam, provenance=provenance)
         dataId = dict(instrument=instrument, arm="n", spectrograph=int(cam[1]))
         entries.append((calib, dataId, Timespan(begin, end)))
     certifyGroup(butler, calibCollection, genCollection, run, "badRefPixels", entries)
