@@ -441,6 +441,42 @@ def _stampRampMetadata(exposure, *, r0, r1, nTotal, appliedUTR):
            'UTR weights applied to exposure image (False=CDS)')
 
 
+def _utrVariance(image, nread, readNoise, utrWeighted):
+    """Per-pixel variance (electrons^2) for an H4 UTR (or CDS) product.
+
+    The Poisson photon term is floored at zero: a negative pixel value is
+    read/dark noise, not a negative photon count, so it must not seed a
+    *negative* variance (which ``maskNegativeVariance`` would then flag BAD).
+    Added to the read-noise term the variance is always positive; positive
+    pixels are unchanged. UTR reads are weighted per RHL Eq. 4.45; CDS uses the
+    two-read noise.
+
+    Parameters
+    ----------
+    image : `np.ndarray`
+        Per-pixel signal in electrons (may be negative). Not modified.
+    nread : `int`
+        Reads integrated; used only when ``utrWeighted``.
+    readNoise : `float`
+        Per-read read noise in electrons.
+    utrWeighted : `bool`
+        True for a UTR-weighted product, False for CDS.
+
+    Returns
+    -------
+    `np.ndarray`
+        Per-pixel variance in electrons^2, strictly positive.
+    """
+    var = np.maximum(image, 0.0)  # Poisson photon term, floored (a fresh copy)
+    if utrWeighted:
+        # UTR noise per RHL Eq. 4.45.
+        var = var * (6 * (nread * nread + 1) / (5 * nread * (nread + 1)))
+        var = var + 12 * (nread - 1) / (nread * (nread + 1)) * readNoise ** 2
+    else:
+        var = var + 2 * readNoise ** 2  # CDS
+    return var
+
+
 def lookupDefects(datasetType, registry, dataId, collections):
     """Look up defects
 
@@ -1380,21 +1416,15 @@ class PfsIsrTask(ipIsr.IsrTask):
         gain = channel.getGain()
 
         exposure.image *= gain  # convert to electrons
-        var = exposure.image.array.copy()  # assumes photon noise -- not true for the persistence
-        # CDS vs UTR variance. Driven by ``H4UTRWT`` (records whether
-        # UTR weights were actually applied during ``makeNirExposure``)
-        # and ``H4NREAD`` (the actual reads integrated after the
-        # firstRead/lastRead trim — *not* ``pfsRaw.getNumReads()``).
+        # CDS vs UTR variance. Driven by ``H4UTRWT`` (records whether UTR weights
+        # were actually applied during ``makeNirExposure``) and ``H4NREAD`` (the
+        # actual reads integrated after the firstRead/lastRead trim — *not*
+        # ``pfsRaw.getNumReads()``).
         md = exposure.getMetadata()
-        if md.getScalar("H4UTRWT"):
-            nread = int(md.getScalar("H4NREAD"))
-            # UTR noise per RHL Eq. 4.45.
-            var *= 6 * (nread * nread + 1) / (5 * nread * (nread + 1))
-            var += (12 * (nread - 1) / (nread * (nread + 1))
-                    * channel.getReadNoise()**2)
-        else:
-            var += 2 * channel.getReadNoise()**2  # CDS
-        exposure.variance.array[:] = var
+        utrWeighted = bool(md.getScalar("H4UTRWT"))
+        nread = int(md.getScalar("H4NREAD")) if utrWeighted else 0
+        exposure.variance.array[:] = _utrVariance(
+            exposure.image.array, nread, channel.getReadNoise(), utrWeighted)
 
         if rawRamp is not None:
             rawRamp *= gain
