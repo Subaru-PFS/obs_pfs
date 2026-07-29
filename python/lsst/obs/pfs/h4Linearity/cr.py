@@ -399,6 +399,7 @@ def iterativeUtrDetectAndRepair(
     nDropSigma: float = 3.0,
     badPixelMinOutliers: int = 4,
     badPixelOutlierSigma: float = 4.0,
+    badPixelRateNSigma: float = 3.0,
 ) -> IterativeRepairResult:
     """Iterative CR + ASIC-glitch detection on a linearized delta cube.
 
@@ -516,13 +517,20 @@ def iterativeUtrDetectAndRepair(
         tails (shot/read-noise mixture + linearity residuals) that
         ``σ_IQR`` underestimates by ~30 %, and 3σ at the count=4
         threshold pulls in many merely-noisy pixels.
+    badPixelRateNSigma : float
+        BAD-pixel gate (rate criterion). In addition to the count/sigma
+        criteria, a pixel is marked BAD only when its net UTR rate is more
+        negative than ``-badPixelRateNSigma × σ/√nDeltas`` (the rate's own
+        uncertainty). Default 3.0. Spares erratic-but-zero-rate pixels
+        (e.g. n4/ch18), whose flux is usable, while still masking pixels
+        that both scatter and drift negative.
 
     Returns
     -------
     IterativeRepairResult
-        ``rate`` is the per-pixel UTR rate — the mean of the un-flagged
-        deltas (CR-flagged always excluded; glitch-flagged excluded only
-        when ``correctGlitches``), ready for use as the science rate.
+        ``rate`` is the per-pixel UTR rate — the weighted mean of the
+        un-flagged deltas (CR + boundary + unclassified excluded; matched
+        interior glitch pairs left in), ready for use as the science rate.
         ``sigma`` is the IQR-based per-pixel scatter from the last
         iteration.
     """
@@ -688,8 +696,14 @@ def iterativeUtrDetectAndRepair(
     sumUnflaggedW = np.zeros(deltas.shape[:-1], dtype=np.float32)
     sumFlaggedW = np.zeros(deltas.shape[:-1], dtype=np.float32)
     for k in range(nDeltas):
+        # Matched interior glitch pairs are LEFT IN the rate: their net UTR
+        # leverage is the tiny adjacent-weight difference u[k]-u[k+1] (~1/m of a
+        # single delta), whereas excluding them renormalises by 1/(1-sum of
+        # excluded weights) and amplifies noise on glitch-dense channels. CR +
+        # boundary (end) glitches + unclassified outliers have first-order
+        # leverage and are still excluded.
         flagK = (crFlagAccum[..., k] | boundaryFlagAccum[..., k]
-                 | glitchFlagAccum[..., k] | unclassFlagAccum[..., k])
+                 | unclassFlagAccum[..., k])
         unflagK = ~flagK
         sumUnflaggedW += utrW[k] * deltas[..., k] * unflagK
         sumFlaggedW += utrW[k] * flagK
@@ -701,14 +715,20 @@ def iterativeUtrDetectAndRepair(
         rateFinal[allFlagged] = rateFull[allFlagged]
     sigmaFinal = sigmaFull.astype(np.float32, copy=False)
 
-    # BAD-pixel pass: a pixel with ≥ badPixelMinOutliers delta
-    # excursions above ``badPixelOutlierSigma × σ_IQR`` (counted on the
-    # pristine input deltas before in-place repair) is RTS /
-    # telegraph-noise. Restricted to ``goodPixelMask`` so already-masked
-    # pixels don't appear in this output independently.
+    # BAD-pixel pass: a pixel is RTS / telegraph-noise only when it has BOTH
+    # ≥ badPixelMinOutliers delta excursions above ``badPixelOutlierSigma ×
+    # σ_IQR`` (counted on the pristine input deltas before in-place repair) AND
+    # a significantly-negative net rate (below ``-badPixelRateNSigma`` times the
+    # rate's own uncertainty ``σ/√nDeltas``). Excursions alone do not disqualify
+    # a pixel: a channel whose noise is erratic but zero-mean (e.g. n4/ch18)
+    # carries usable ~0 flux and must be kept. Restricted to ``goodPixelMask``
+    # so already-masked pixels don't appear in this output independently.
     if nLargeOutliers is not None:
+        rateThreshold = -badPixelRateNSigma * sigmaFinal / np.sqrt(nDeltas)
         badPixelMask = (
-            (nLargeOutliers >= badPixelMinOutliers) & goodPixelMask
+            (nLargeOutliers >= badPixelMinOutliers)
+            & (rateFinal < rateThreshold)
+            & goodPixelMask
         )
     else:
         badPixelMask = np.zeros((H, W), dtype=bool)
