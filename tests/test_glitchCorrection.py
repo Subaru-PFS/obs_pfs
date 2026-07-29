@@ -106,6 +106,36 @@ class GlitchCorrectionTestCase(lsst.utils.tests.TestCase):
         self.assertFalse(mask[r18, 8], "already-bad pixel should not be correctable")
         self.assertTrue(mask[r16, 0], "a clean pair on any in-scope channel should be correctable")
 
+    def test_endReadOutlierIsCorrectable(self):
+        """A lone glitch outlier at a ramp END (first/last delta) can't have a
+        return, but it sits at ~zero UTR weight and is dropped (the end read is
+        truncated) rather than masking the pixel — so it is correctable. A lone
+        INTERIOR outlier with no return stays non-correctable.
+        """
+        task = _makeTask()
+        H, W, nDeltas, nChan = 64, 6, 24, 32
+        ch = H // nChan
+        r18 = 18 * ch
+        glitch = np.zeros((H, W, nDeltas), dtype=bool)
+        cr = np.zeros((H, W, nDeltas), dtype=bool)
+        deltas = np.zeros((H, W, nDeltas), dtype=np.float32)
+        bad = np.zeros((H, W), dtype=bool)
+        # flat deltas -> IQR sigma 0 -> outlier threshold = nSigma*floor = 5*8 = 40
+        # lone outlier at the FIRST delta -> droppable end read -> correctable
+        glitch[r18, 0, 0] = True
+        deltas[r18, 0, 0] = 60.0
+        # lone outlier at the LAST delta -> droppable end read -> correctable
+        glitch[r18, 1, nDeltas - 1] = True
+        deltas[r18, 1, nDeltas - 1] = 60.0
+        # control: lone INTERIOR outlier, no return -> still not correctable
+        glitch[r18, 2, 5] = True
+        deltas[r18, 2, 5] = 60.0
+
+        mask = task.correctableGlitchMask("n4", glitch, cr, deltas, bad, nChannels=nChan)
+        self.assertTrue(mask[r18, 0], "lone outlier at the first read is droppable/correctable")
+        self.assertTrue(mask[r18, 1], "lone outlier at the last read is droppable/correctable")
+        self.assertFalse(mask[r18, 2], "lone interior outlier with no return stays non-correctable")
+
     def test_correctGlitchScopeExcludesBadChannel(self):
         # Hann (IRPfilter=15): n3/ch24 is out of correction scope and masked.
         task = _makeTask(irpFilter=15)

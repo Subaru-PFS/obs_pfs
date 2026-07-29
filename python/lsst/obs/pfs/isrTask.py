@@ -253,6 +253,16 @@ class H4Config(pexConfig.Config):
             "H4 deltas (mild non-Gaussian tails from shot/read-noise "
             "mixture + linearity residuals).",
     )
+    badPixelRateNSigma = pexConfig.Field(
+        dtype=float, default=3.0,
+        doc="BAD-pixel gate inside the CR detector (rate criterion). A "
+            "pixel is OR'd into UNSTABLE + BAD only when, on top of the "
+            "count/sigma criteria, its net UTR rate is more negative than "
+            "``-badPixelRateNSigma × σ/√nDeltas`` (the rate's own "
+            "uncertainty). Spares erratic-but-zero-rate pixels (e.g. "
+            "n4/ch18), whose flux is usable, while still masking pixels "
+            "that both scatter and drift negative.",
+    )
     asicGlitchHeightMaskADU = pexConfig.Field(
         dtype=float, default=0.0,
         doc="ASIC-glitch repair/mask threshold. Pixels with at least "
@@ -2322,6 +2332,7 @@ class PfsIsrTask(ipIsr.IsrTask):
                         nDropSigma=self.config.h4.rateCRnDropSigma,
                         badPixelMinOutliers=self.config.h4.badPixelMinOutliers,
                         badPixelOutlierSigma=self.config.h4.badPixelOutlierSigma,
+                        badPixelRateNSigma=self.config.h4.badPixelRateNSigma,
                     )
                     # Suppress CR / glitch flags at pixels classified
                     # BAD — RTS pixels often paint up as one or two CRs
@@ -2815,7 +2826,15 @@ class PfsIsrTask(ipIsr.IsrTask):
         rightReturn[:, :-1] = (g[:, 1:] & (sgn[:, 1:] * sgn[:, :-1] < 0)
                                & (absd[:, 1:] >= returnFraction * absd[:, :-1]))
         hasReturn = leftReturn | rightReturn
-        unpairedOutlier = (outlier & ~hasReturn).any(-1)
+        # An outlier at a ramp END (first/last delta) has no read beyond it to
+        # supply a return, but it sits at ~zero UTR weight and is already dropped
+        # from the rate (boundary flag), so the end read is simply truncated
+        # rather than masking the pixel. Such an end outlier therefore does not
+        # count as a disqualifying unpaired outlier.
+        isEnd = np.zeros_like(g)
+        isEnd[:, 0] = True
+        isEnd[:, -1] = True
+        unpairedOutlier = (outlier & ~hasReturn & ~isEnd).any(-1)
 
         # A CR must not sit next to any flagged delta.
         flagged = g | c

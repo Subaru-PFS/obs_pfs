@@ -431,11 +431,14 @@ class IterativeUtrDetectAndRepairTestCase(lsst.utils.tests.TestCase):
         )
 
     def testBadPixelMaskCatchesRTSPixel(self):
-        """An RTS / telegraph-noise pixel — several large delta
-        excursions across the ramp — is classified BAD by the outlier
-        count gate. A clean single-CR pixel elsewhere on the cube is NOT.
+        """An erratic pixel with several large delta excursions AND a
+        significantly-negative net rate is classified BAD by the outlier gate.
+        A clean single-CR pixel elsewhere on the cube is NOT. (Balanced
+        zero-rate RTS is spared — see ``testBadPixelGateSparesZeroRateRTSPixel``
+        — because such pixels carry usable ~0 flux.)
         """
-        flux = _flatRamp(nReads=40, rate=0.0)
+        # Declining baseline (net-negative rate) plus the RTS excursions.
+        flux = _flatRamp(nReads=40, rate=-20.0)
 
         # RTS pixel at (5, 7): isolated single-read ±60 ADU pulses.
         # 4 of each sign clears the default ``badPixelMinOutliers=4``
@@ -461,8 +464,31 @@ class IterativeUtrDetectAndRepairTestCase(lsst.utils.tests.TestCase):
         self.assertFalse(bool(result.badPixelMask[3, 4]))
         self.assertTrue(
             bool(result.badPixelMask[y, x]),
-            "RTS pixel with many ±60 ADU spikes should land in "
-            "badPixelMask",
+            "erratic pixel with many ±60 ADU spikes AND a net-negative rate "
+            "should land in badPixelMask",
+        )
+
+    def testBadPixelGateSparesZeroRateRTSPixel(self):
+        """A balanced (zero net rate) RTS pixel — many ± excursions that cancel
+        — is NOT masked. Its flux is usable (~0); the gate requires BOTH many
+        outliers AND a significantly-negative rate, so a clean-rate noisy pixel
+        survives (the n4/ch18 recovery).
+        """
+        flux = _flatRamp(nReads=40, rate=0.0)
+        y, x = 5, 7
+        for k in (3, 11, 19, 27):
+            flux[k + 1, y, x] += 60.0
+        for k in (7, 15, 23, 31):
+            flux[k + 1, y, x] -= 60.0
+
+        result = _runCR(
+            flux.copy(), goodPixelMask=np.ones(flux.shape[1:], dtype=bool),
+            glitchPixelMask=None,
+        )
+
+        self.assertFalse(
+            bool(result.badPixelMask[y, x]),
+            "balanced zero-rate RTS pixel should be spared by the rate-aware gate",
         )
 
     def testBadPixelGateDoesNotMaskSimpleNoisyPixels(self):
@@ -511,6 +537,34 @@ class IterativeUtrDetectAndRepairTestCase(lsst.utils.tests.TestCase):
             glitchPixelMask=None, badPixelMinOutliers=0,
         )
         self.assertFalse(result.badPixelMask.any())
+
+    def testGlitchPairLeftInRate(self):
+        """A matched glitch pair is LEFT IN the UTR rate, not excluded: the
+        rate equals the full delta-weighted rate over the (un-repaired) deltas,
+        which at an off-centre position differs measurably from the value the
+        old pair-excluding renormalisation gave (the clean baseline rate).
+        """
+        nReads = 20
+        flux = _flatRamp(nReads=nReads, rate=10.0)
+        # Glitch pair straddling delta indices 5 and 6 (off-centre, so the
+        # closed-form UTR weights u[5], u[6] differ and the pair does not
+        # cancel when left in).
+        _injectGlitchPair(flux, y=2, x=2, k=6, amount=400.0)
+        origDeltas = np.diff(flux[:, 2, 2]).astype(np.float64)
+        good = np.ones(flux.shape[1:], dtype=bool)
+        glitchMask = np.zeros_like(good)
+        glitchMask[2, :] = True   # glitch-active row
+
+        result = _runCR(flux, goodPixelMask=good, glitchPixelMask=glitchMask)
+
+        self.assertEqual(result.nGlitchPairs, 1)
+        ks = np.arange(nReads - 1)
+        u = 6.0 * (ks + 1) * (nReads - 1 - ks) / (nReads * (nReads - 1) * (nReads + 1))
+        expected = float((u * origDeltas).sum())   # full UTR rate, pair left in
+        self.assertAlmostEqual(float(result.rate[2, 2]), expected, places=2)
+        # The excluding renormalisation would have returned the clean 10.0;
+        # leaving the pair in pulls it well below that.
+        self.assertLess(float(result.rate[2, 2]), 9.0)
 
 
 class RampQRTestCase(lsst.utils.tests.TestCase):
