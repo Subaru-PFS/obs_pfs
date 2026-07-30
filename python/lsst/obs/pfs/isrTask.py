@@ -197,15 +197,18 @@ class H4Config(pexConfig.Config):
     )
     correctGlitches = pexConfig.Field(
         dtype=bool, default=False,
-        doc="Correct interior ASIC-glitch pairs: subtract them from the "
-            "linearized cube and exclude their deltas from the UTR rate. "
-            "Default False — interior pairs are still detected (``ASIC_GLITCH`` "
-            "stamped, up-spike not misclassified as a CR) but left in place; "
-            "a real symmetric +A/-A pair cancels on its own in the mean rate, "
-            "so not correcting avoids acting on an unreliable glitch "
-            "classification. End glitches (a lone glitch at the first or last "
-            "delta, with no pair partner) are always corrected regardless of "
-            "this flag. Only meaningful when ``doDeglitch`` is True.",
+        doc="Repair interior ASIC-glitch pairs in the linearized cube by "
+            "replacing their deltas with the per-pixel rate. Default False — "
+            "interior pairs are still detected (``ASIC_GLITCH`` stamped, "
+            "up-spike not misclassified as a CR) but left in place. A matched "
+            "+A/-A pair is always kept IN the UTR rate (never excluded); its "
+            "net UTR leverage is the tiny adjacent-weight difference "
+            "u[k]-u[k+1], so it nearly cancels there while avoiding the noise "
+            "amplification that excluding + renormalising would cause, and "
+            "avoids acting on an unreliable glitch classification. End glitches "
+            "(a lone glitch at the first or last delta, with no pair partner) "
+            "are always corrected regardless of this flag. Only meaningful when "
+            "``doDeglitch`` is True.",
     )
     rateCRiterMax = pexConfig.Field(
         dtype=int, default=5,
@@ -2365,9 +2368,9 @@ class PfsIsrTask(ipIsr.IsrTask):
                     # straight from the saved deltas because interior
                     # pairs are not repaired (correctGlitches=False by
                     # default). Clean glitches in correction-scoped
-                    # channels are kept -- result.rate is the mean of the
-                    # un-flagged deltas, so a clean matched pair already
-                    # cancels there and the flux is unbiased. Messy or
+                    # channels are kept -- a clean matched pair is left in
+                    # result.rate, where its near-zero net UTR leverage
+                    # keeps the flux ~unbiased. Messy or
                     # out-of-scope glitch pixels additionally get
                     # GLITCH_MASKED, which promotes them to BAD.
                     glitchMask3D = iterResult.glitchFlagMask
