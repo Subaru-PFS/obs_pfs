@@ -368,8 +368,10 @@ def _detectAndRepairOnce(deltas, goodPixelMask, glitchActive,
         # CRs and end glitches are always repaired — an end glitch has no
         # pair partner, so it cannot cancel itself out. Interior glitch
         # pairs are repaired only when ``correctGlitches`` is set;
-        # otherwise the symmetric +A/-A pair is left in place to cancel
-        # in the mean UTR rate on its own.
+        # otherwise the symmetric +A/-A pair is left in place. Either way
+        # the pair stays IN the UTR rate (it is never excluded); its net
+        # leverage there is the tiny adjacent-weight difference
+        # u[k]-u[k+1], so it nearly cancels on its own.
         allFlag = crAccum | boundaryAccum
         if correctGlitches:
             allFlag = allFlag | glitchAccum
@@ -413,8 +415,9 @@ def iterativeUtrDetectAndRepair(
 
     For linearized data, deltas have uncorrelated read noise and the
     per-pixel mean is the optimal (BLUE) UTR rate estimator; ``result.rate``
-    is that mean taken over the un-flagged deltas (CR/glitch-flagged
-    deltas excluded). Detection still uses the robust median + IQR
+    is that mean taken over the un-flagged deltas (CR + boundary +
+    unclassified excluded; matched interior glitch pairs left in).
+    Detection still uses the robust median + IQR
     (computed in a single ``np.partition`` pass via :func:`_rampQR`), so
     iter-1's threshold doesn't get inflated by contamination.
 
@@ -465,16 +468,21 @@ def iterativeUtrDetectAndRepair(
     repair : bool
         If False, only flag; deltas are not modified.
     correctGlitches : bool
-        Controls correction of *interior* ASIC-glitch pairs. Default
-        False — the policy is to detect ASIC glitches but not repair
-        them: interior pairs are flagged (so a glitch up-spike is not
-        misclassified as a CR) and left in place, where the symmetric
-        +A/-A pair cancels on its own in the rate mean. Set True to
-        also repair interior pairs in the cube and exclude their deltas
-        from ``result.rate`` alongside CRs. *End glitches* (a lone
-        flagged delta at the first or last delta, with no pair partner)
-        are always repaired regardless of this flag: with no partner
-        they cannot self-cancel.
+        Controls *in-cube* repair of *interior* ASIC-glitch pairs.
+        Default False — the policy is to detect ASIC glitches but not
+        repair them: interior pairs are flagged (so a glitch up-spike is
+        not misclassified as a CR) and left in place. A matched +A/-A
+        pair is always kept IN ``result.rate`` (never excluded); its net
+        UTR leverage is the tiny adjacent-weight difference u[k]-u[k+1],
+        so it nearly cancels there while avoiding the noise amplification
+        that excluding + renormalising would cause. Set True to instead
+        fill the pair with the per-pixel rate in the cube, so it
+        contributes the rate rather than the raw pair (removing that small
+        residual, at the cost of a global-median fill). *End glitches* (a
+        lone flagged delta at the first or last delta, with no pair
+        partner) are always repaired regardless of this flag: with no
+        partner they cannot cancel, and they are excluded from the rate
+        as boundary flags.
     glitchAmplitudeMinADU : float
         Minimum |residual| amplitude (ADU) for ASIC-glitch pair
         classification. 0 (default) uses only the CR threshold.
@@ -665,27 +673,25 @@ def iterativeUtrDetectAndRepair(
     # to 1 and reproduce the read-space UTR weights w[i] = (12i - 6(N-1))
     # / (N(N²-1)) after the cumsum/diff change of variables.
     #
-    # Flagged-delta handling: CR + interior glitch pairs + end glitches
-    # + unclassified outliers are all excluded from the rate.
-    # Unclassified deltas are above-threshold residuals the classifier
-    # could not assign (mostly negative outliers from RTS/persistence/
-    # defects + CR candidates demoted by the cumulative-drop check) —
-    # they are real ramp aberrations, not signal, and leaving them in
-    # pulls the slope toward the outlier amplitude. Glitch pairs are
-    # excluded regardless of ``correctGlitches`` because the UTR
-    # weights are asymmetric across the pair — the +A/-A cancellation
-    # that held for the unweighted mean does not extend here.
-    # ``correctGlitches`` now controls only the in-cube repair
-    # (whether the spikes survive in the returned ``deltas``), not
-    # the rate.
+    # Flagged-delta handling: CR + end (boundary) glitches + unclassified
+    # outliers are excluded from the rate; matched INTERIOR glitch pairs
+    # are LEFT IN (see the loop below). Unclassified deltas are above-
+    # threshold residuals the classifier could not assign (mostly negative
+    # outliers from RTS/persistence/defects + CR candidates demoted by the
+    # cumulative-drop check) — real ramp aberrations, not signal, so
+    # leaving them in would pull the slope toward the outlier amplitude.
+    # A matched interior pair, by contrast, has near-zero net UTR leverage
+    # (the adjacent-weight difference u[k]-u[k+1]), so keeping it in is far
+    # cheaper than the noise amplification that excluding + renormalising
+    # causes on glitch-dense channels; ``correctGlitches`` controls only
+    # whether the pair is also repaired in the returned ``deltas``.
     #
-    # Exclusion is implemented as weight re-normalization: rate = sum
-    # over unflagged k of u[k]·δ[k], divided by 1 − sum over flagged k
-    # of u[k]. Equivalently, fill flagged deltas with the rate itself
-    # and apply the closed-form UTR weights — i.e., the fixed point of
-    # ``calcUTRrates(read0 + cumsum(deltas_with_flagged_filled_by_rate))``.
-    # This makes ``result.rate`` agree exactly with calcUTRrates on the
-    # reconstructed-and-repaired ramp; the median ``rateFull`` is kept
+    # Exclusion (of the CR/boundary/unclassified set) is implemented as
+    # weight re-normalization: rate = sum over unflagged k of u[k]·δ[k],
+    # divided by 1 − sum over flagged k of u[k]. Equivalently, fill those
+    # flagged deltas with the rate itself and apply the closed-form UTR
+    # weights — the fixed point of ``calcUTRrates(read0 + cumsum(deltas
+    # _with_flagged_filled_by_rate))``. The median ``rateFull`` is kept
     # only as the all-flagged fallback. Accumulated slice-wise to avoid
     # an ``(H, W, N-1)`` transient.
     nReads = nDeltas + 1
