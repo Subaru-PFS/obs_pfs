@@ -165,6 +165,15 @@ class H4Config(pexConfig.Config):
             "estimator, but the cube exposed via ``intermediates`` / "
             "``doReturnRawCube`` shows uncorrected reads).",
     )
+    maskCR = pexConfig.Field(
+        dtype=bool, default=False,
+        doc="When ``doCR`` is True, also OR CR-detected pixels into the "
+            "BAD mask plane. Default False (CR pixels get the CR plane and "
+            "stay usable). Set True to treat CR pixels as bad: a bright CR's "
+            "persistence tail biases the corrected flux, so the pixel is "
+            "flagged out rather than trusted. CR/ASIC-glitch detection is "
+            "unaffected.",
+    )
     rateCRnSigma = pexConfig.Field(
         dtype=float, default=5.0,
         doc="Per-pixel sigma threshold for the iterative CR/glitch detector.",
@@ -412,7 +421,8 @@ def _makeInternalMask(
 
 
 def _projectInternalMask(exposure, internalMask, *, crResult=None,
-                         maskRateUnstable: bool = False) -> None:
+                         maskRateUnstable: bool = False,
+                         maskCR: bool = False) -> None:
     """Lift the H4 internal mask into ``Exposure.mask`` planes.
 
     Single projection point for the canonical published set:
@@ -432,7 +442,9 @@ def _projectInternalMask(exposure, internalMask, *, crResult=None,
         ``ASIC_GLITCH`` (always) or a lone ``RATE_UNSTABLE`` (when
         ``maskRateUnstable=False``); so BORDER / BELOW_VALID_RANGE etc.
         land in BAD without an externally distinguished plane.
-      - ``CR`` ← from ``crResult.crFlagMask`` (per-delta).
+      - ``CR`` ← from ``crResult.flagMask`` (per-pixel); also folded into
+        ``BAD`` when ``maskCR`` is set (a bright CR's persistence tail makes
+        the corrected flux unreliable, so the pixel is treated as bad).
 
     Per the "first-reason-wins" rule, ABOVE_VALID_RANGE only fires on
     pixels that survived defects + fit, so SAT is now the clean
@@ -492,6 +504,11 @@ def _projectInternalMask(exposure, internalMask, *, crResult=None,
         crFlag = getattr(crResult, "flagMask", None)
         if crFlag is not None and crFlag.any():
             arr[crFlag] |= bit("CR")
+            if maskCR:
+                # A bright CR's persistence tail biases the corrected flux at
+                # that pixel, so treat CR pixels as BAD rather than trusting
+                # the correction.
+                arr[crFlag] |= bit("BAD")
 
 
 def _stampRampMetadata(exposure, *, r0, r1, nTotal, appliedUTR):
@@ -2520,6 +2537,7 @@ class PfsIsrTask(ipIsr.IsrTask):
         _projectInternalMask(
             exposure, internalMask, crResult=crResult,
             maskRateUnstable=self.config.h4.maskRateUnstable,
+            maskCR=self.config.h4.maskCR,
         )
 
         nCR = crResult.nFlagged if crResult is not None else 0

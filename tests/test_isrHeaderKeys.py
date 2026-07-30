@@ -1,4 +1,5 @@
 import unittest
+from types import SimpleNamespace
 
 import numpy as np
 
@@ -247,6 +248,33 @@ class ProjectInternalMaskTestCase(lsst.utils.tests.TestCase):
         badBit = exp.mask.getPlaneBitMask('BAD')
         self.assertEqual(exp.mask.array[2, 5] & agBit, agBit)
         self.assertEqual(exp.mask.array[2, 5] & badBit, badBit)
+
+    def testCRPixelNotBadByDefault(self):
+        """A CR pixel gets the CR plane but is NOT BAD by default (the CR is
+        corrected and the pixel stays usable)."""
+        exp = self._makeExposure(H=8, W=8)
+        internal = np.zeros((8, 8), dtype=np.uint16)
+        cr = SimpleNamespace(flagMask=np.zeros((8, 8), dtype=bool))
+        cr.flagMask[3, 3] = True
+        _projectInternalMask(exp, internal, crResult=cr)
+        crBit = exp.mask.getPlaneBitMask('CR')
+        badBit = exp.mask.getPlaneBitMask('BAD')
+        self.assertEqual(exp.mask.array[3, 3] & crBit, crBit)
+        self.assertEqual(exp.mask.array[3, 3] & badBit, 0)
+
+    def testMaskCRPromotesCRPixelsToBad(self):
+        """With ``maskCR=True`` a CR pixel is also masked BAD: persistence from a
+        bright CR makes the corrected flux at that pixel unreliable, so the
+        pixel is treated as bad rather than trusted."""
+        exp = self._makeExposure(H=8, W=8)
+        internal = np.zeros((8, 8), dtype=np.uint16)
+        cr = SimpleNamespace(flagMask=np.zeros((8, 8), dtype=bool))
+        cr.flagMask[3, 3] = True
+        _projectInternalMask(exp, internal, crResult=cr, maskCR=True)
+        crBit = exp.mask.getPlaneBitMask('CR')
+        badBit = exp.mask.getPlaneBitMask('BAD')
+        self.assertEqual(exp.mask.array[3, 3] & crBit, crBit)
+        self.assertEqual(exp.mask.array[3, 3] & badBit, badBit)
 
 
 class TestMemory(lsst.utils.tests.MemoryTestCase):
