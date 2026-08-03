@@ -206,12 +206,16 @@ class IsrConfigFieldsTestCase(lsst.utils.tests.TestCase):
             self.assertFieldExists(override)
 
     def testRawCubesRequireUncorrectedRamps(self):
-        """The darks must be combined without linearity or a dark subtracted."""
+        """The darks must be combined without linearity, a dark, or CR/glitch
+        correction applied: the combine's per-read median across ramps rejects
+        temporally independent events (CRs), so per-ramp CR repair is both
+        redundant and would bake corrected deltas into the stored cube."""
         overrides = dict(
             override.split(":", 1)[1].split("=", 1) for override in self.script.ISR_CONFIG)
         self.assertEqual(overrides["doDark"], "False")
         self.assertEqual(overrides["h4.doLinearize"], "False")
         self.assertEqual(overrides["h4.doWriteRawCube"], "True")
+        self.assertEqual(overrides["h4.doCR"], "False")
 
     def testDefaultIrpFilterNoSmoothing(self):
         overrides = dict(o.split(":", 1)[1].split("=", 1)
@@ -224,6 +228,7 @@ class IsrConfigFieldsTestCase(lsst.utils.tests.TestCase):
         self.assertTrue(self.config.doDark)
         self.assertTrue(self.config.h4.doLinearize)
         self.assertFalse(self.config.h4.doWriteRawCube)
+        self.assertTrue(self.config.h4.doCR)
         self.assertNotEqual(self.config.h4.IRPfilter, self.script.DEFAULT_IRP_FILTER)
 
 
