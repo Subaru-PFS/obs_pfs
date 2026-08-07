@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from lsst.obs.pfs.h4Linearity.fit import fit
 from lsst.obs.pfs.h4Linearity.models import PolynomialModel
@@ -77,9 +78,14 @@ def test_fitPropagatesInputMask(tinyLinearRamp):
     mask = np.zeros(ramp.reads.shape[1:], dtype=np.uint8)
     mask[0, 0] = 1  # Mark pixel (0, 0) as invalid
     maskedRamp = Ramp(reads=ramp.reads, validMask=mask)
-    correction = fit(
-        [maskedRamp], model=PolynomialModel(order=1), badLinearityMedianMultiplier=None
-    )
+    # Pixel (0, 0) has no valid reads, so the per-pixel nanmin/nanmax over its
+    # valid samples reduces an all-NaN slice — an expected, handled case (it maps
+    # to a zero fit range and the pixel is flagged below). Catch the warning so
+    # it does not leak out of the test.
+    with pytest.warns(RuntimeWarning, match="All-NaN slice encountered"):
+        correction = fit(
+            [maskedRamp], model=PolynomialModel(order=1), badLinearityMedianMultiplier=None
+        )
     assert correction.badPixelMask[0, 0] & MASKED_BY_INPUT
     assert correction.badPixelMask[0, 1] == 0
 
