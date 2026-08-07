@@ -35,6 +35,7 @@ datastore:
     ImageCube: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     ObjectGroupMap: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     NirLinearity: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+    H4Linearity: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     NirBadRefPixels: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
   templates:
     default: "{run:/}/{datasetType}.{component:?}/{visit.day_obs:?}/{visit:?}/{datasetType}_{component:?}_{instrument:?}_{visit:?}_{arm:?}{spectrograph:?}_{detector:?}_{run}"
@@ -160,5 +161,7 @@ storageClasses:
     pytype: pfs.datamodel.objectGroupMap.ObjectGroupMap
   NirLinearity:
     pytype: lsst.obs.pfs.nirLinearity.NirLinearity
+  H4Linearity:
+    pytype: lsst.obs.pfs.h4Linearity.LinearityCorrection
   NirBadRefPixels:
     pytype: lsst.obs.pfs.nirBadRefPixels.NirBadRefPixels
