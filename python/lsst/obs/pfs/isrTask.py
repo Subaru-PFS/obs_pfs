@@ -653,6 +653,69 @@ def lookupBiasDark(datasetType, registry, dataId, collections, allowEmpty=False)
     return [ref1]  # Same arm as original, so use this.
 
 
+def lookupNirDark(datasetType, registry, dataId, collections):
+    """Resolve a NIR dark cube (``nirDark`` or ``nirDark_irp4``).
+
+    Ramps taken with different dataPixel-to-IRP ratios (``W_H4IRPN``, 1 or 4)
+    have different per-read times and so need different dark cubes. The
+    ``nirDark`` and ``nirDark_irp4`` dataset types hold the otherwise-identical
+    cubes for ratios 1 and 4.
+
+    The registry does not (yet) carry the ratio, so the choice cannot be made
+    here at qgraph-build time. This shared lookup therefore resolves *whichever*
+    type it is asked for whenever that dataset exists; both connections resolve
+    independently. The ratio-matched dark is chosen later, during runtime
+    initialization, by `selectNirDark` from the loaded ramp's ``W_H4IRPN``.
+
+    Parameters
+    ----------
+    datasetType : `lsst.daf.butler.DatasetType`
+        The dataset type to look up (``nirDark`` or ``nirDark_irp4``).
+    registry : `lsst.daf.butler.Registry`
+        The butler registry.
+    dataId : `lsst.daf.butler.DataCoordinate`
+        The data identifier.
+    collections : `list` of `str`
+        The collections to search.
+
+    Returns
+    -------
+    refs : `list` of `lsst.daf.butler.Reference`
+        A single reference to the dark cube, or empty if none exists.
+    """
+    ref = registry.findDataset(
+        datasetType, collections=collections, dataId=dataId, timespan=dataId.timespan
+    )
+    return [ref] if ref is not None else []
+
+
+def selectNirDark(inputs):
+    """Pick the ratio-matched NIR dark and collapse it to a single ``nirDark``.
+
+    Interim runtime hack while the registry lacks the IRP-ratio dimension:
+    `lookupNirDark` resolves both ``nirDark`` (ratio 1) and ``nirDark_irp4``
+    (ratio 4) into ``inputs``; here we choose the one matching the loaded ramp's
+    ``W_H4IRPN`` (``PfsRaw.irpN``) and leave the rest of the task ratio-agnostic
+    — it sees only ``nirDark``. For a non-NIR (CCD) exposure neither applies and
+    both are dropped.
+
+    When ``irp_ratio`` becomes a populated registry dimension, `lookupNirDark`
+    can select at build time and this collapses to a no-op.
+
+    Parameters
+    ----------
+    inputs : `dict`
+        The task inputs from ``butlerQC.get``; mutated in place. Must contain
+        ``"ccdExposure"`` (a `~lsst.obs.pfs.PfsRaw`); ``"nirDark"`` and
+        ``"nirDarkIrp4"`` are consumed when present.
+    """
+    raw = inputs["ccdExposure"]
+    nirDark1 = inputs.pop("nirDark", None)
+    nirDark4 = inputs.pop("nirDarkIrp4", None)
+    if raw.isNir():
+        inputs["nirDark"] = nirDark4 if raw.irpN == 4 else nirDark1
+
+
 class PfsIsrConnections(PipelineTaskConnections, dimensions=("instrument", "visit", "arm", "spectrograph")):
     """Connections for IsrTask"""
 
@@ -708,11 +771,11 @@ class PfsIsrConnections(PipelineTaskConnections, dimensions=("instrument", "visi
     )
     nirDark = PrerequisiteConnection(
         name="nirDark",
-        doc="Input dark calibration for NIR",
+        doc="Input dark calibration for NIR (IRP ratio 1)",
         storageClass="ImageCube",
         dimensions=["instrument", "arm", "spectrograph"],
         isCalibration=True,
-        lookupFunction=partial(lookupBiasDark, allowEmpty=True),
+        lookupFunction=lookupNirDark,
         minimum=0,  # allowed to not exist, since we may use dark instead
     )
     badRefPixels = PrerequisiteConnection(
@@ -730,6 +793,15 @@ class PfsIsrConnections(PipelineTaskConnections, dimensions=("instrument", "visi
         dimensions=["instrument", "arm", "spectrograph"],
         isCalibration=True,
         minimum=0,  # only required for NIR when h4.doLinearize
+    )
+    nirDarkIrp4 = PrerequisiteConnection(
+        name="nirDark_irp4",
+        doc="Input dark calibration for NIR (IRP ratio 4)",
+        storageClass="ImageCube",
+        dimensions=["instrument", "arm", "spectrograph"],
+        isCalibration=True,
+        lookupFunction=lookupNirDark,
+        minimum=0,  # allowed to not exist; resolved only for IRP ratio 4 ramps
     )
     flat = PrerequisiteConnection(
         name="fiberFlat",
@@ -892,6 +964,7 @@ class PfsIsrConnections(PipelineTaskConnections, dimensions=("instrument", "visi
         if config.doDark is not True:
             self.prerequisiteInputs.remove("dark")
             self.prerequisiteInputs.remove("nirDark")
+            self.prerequisiteInputs.remove("nirDarkIrp4")
         if config.h4.doIRPbadPixels is not True:
             self.prerequisiteInputs.remove("badRefPixels")
         if config.h4.doLinearize is not True:
@@ -1143,6 +1216,11 @@ class PfsIsrTask(ipIsr.IsrTask):
 
     def runQuantum(self, butlerQC, inputRefs, outputRefs):
         inputs = butlerQC.get(inputRefs)
+
+        # Choose the ratio-matched NIR dark from the ramp's W_H4IRPN and
+        # collapse to a single "nirDark" (see selectNirDark); the rest of the
+        # task is ratio-agnostic.
+        selectNirDark(inputs)
 
         assert self.config.doCrosstalk is False
         assert self.config.doLinearize is False  # We're not set up to do CCD linearization yet

@@ -3,9 +3,11 @@
 
 Runs the ``isr`` step of ``reduceExposure.yaml`` over the given NIR visits with
 the corrections that a dark must *not* have applied: no dark subtraction, no
-flat, no linearity, and no IRP smoothing. The point of a nirDark is to capture
-the full raw instrument dark signature, which is subtracted from an exposure ramp
-before any corrections, so the ramps it is built from must themselves be raw.
+flat, no linearity, no CR/glitch correction, and no IRP smoothing. The point of a
+nirDark is to capture the full raw instrument dark signature, which is subtracted
+from an exposure ramp before any corrections, so the ramps it is built from must
+themselves be raw. Per-ramp CR repair is redundant besides: combineNirDark's
+per-read median across ramps rejects temporally independent events (CRs).
 
 The overridden configuration, and the default it replaces:
 
@@ -16,6 +18,7 @@ Config                           Default   Here
 ``isr.doFlat``                   True      False
 ``isr.h4.doWriteRawCube``        False     True
 ``isr.h4.doLinearize``           True      False
+``isr.h4.doCR``                  True      False
 ``isr.h4.quickCDS``              False     False
 ===============================  ========  =====
 
@@ -64,6 +67,7 @@ ISR_CONFIG = (
     "isr:h4.doWriteRawCube=True",
     "isr:h4.quickCDS=False",
     "isr:h4.doLinearize=False",
+    "isr:h4.doCR=False",
 )
 
 # The default IRP smoothing: use IRP planes with no smoothing, matching the
