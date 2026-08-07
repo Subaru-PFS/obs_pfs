@@ -482,8 +482,18 @@ class IterativeUtrDetectAndRepairTestCase(lsst.utils.tests.TestCase):
         deltasAfter = np.diff(cube[:, 1, 1])
         np.testing.assert_allclose(deltasAfter[11:13], deltasBefore[11:13],
                                    atol=1.0)
-        # The symmetric pair cancels in the mean, so the rate still recovers.
-        self.assertAlmostEqual(float(result.rate[1, 1]), params.rate, delta=1.0)
+        # Left in, not excluded: under the parabolic UTR weights a matched pair
+        # does not perfectly cancel (that held only for the unweighted mean), so
+        # the rate carries a small position-dependent residual A*(u[k]-u[k+1]).
+        # It equals the full delta-weighted rate and stays close to the truth
+        # (leaving the pair in is far cheaper than the noise amplification that
+        # excluding + renormalising causes on glitch-dense channels).
+        N = params.nReads
+        ks = np.arange(N - 1)
+        u = 6.0 * (ks + 1) * (N - 1 - ks) / (N * (N - 1) * (N + 1))
+        expected = float((u * deltasBefore).sum())
+        self.assertAlmostEqual(float(result.rate[1, 1]), expected, delta=0.5)
+        self.assertLess(abs(float(result.rate[1, 1]) - params.rate), 3.0)
 
     def testEndGlitchAlwaysCorrected(self):
         """An end glitch (lone spike at the last delta, no pair partner)
