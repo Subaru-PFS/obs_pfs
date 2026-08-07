@@ -12,3 +12,7 @@ tests/.tests
 .coverage
 .pytest_cache
 pytest_session.txt
+
+# Internal design / implementation notes; kept on disk but not tracked.
+docs/superpowers/specs/*.md
+docs/superpowers/plans/*.md
