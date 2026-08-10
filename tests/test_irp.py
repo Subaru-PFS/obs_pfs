@@ -4,9 +4,15 @@ import unittest
 import numpy as np
 import lsst.utils.tests
 
-from lsst.obs.pfs.isrTask import PfsIsrTask
 from lsst.obs.pfs.h4utils import irp4
 from lsst.obs.pfs.nirBadRefPixels import NirBadRefPixels
+
+from testUtils import HAS_DRP_STELLA, requireDrpStella
+
+if HAS_DRP_STELLA:
+    # isrTask imports pfs.drp.stella.crosstalk. irp4 itself defers its own
+    # isrTask import, so the rest of this module runs without drp_stella.
+    from lsst.obs.pfs.isrTask import PfsIsrTask
 
 
 def makePfsRawStub(irpN, irpOffset, nchan=4, badPixels=None, readOrder=(0, 0)):
@@ -27,6 +33,7 @@ def makePfsRawStub(irpN, irpOffset, nchan=4, badPixels=None, readOrder=(0, 0)):
     )
 
 
+@requireDrpStella
 class IrpTestCase(lsst.utils.tests.TestCase):
     """Geometry of IRPn -> IRP1 interpolation and bad-pixel reinterpretation."""
 
@@ -167,6 +174,7 @@ class IrpTestCase(lsst.utils.tests.TestCase):
 class IrpAlignmentTestCase(lsst.utils.tests.TestCase):
     """Offset alignment from observed noisy IRP rows (h4utils.irp4)."""
 
+    @requireDrpStella
     def testMakeQuickIsrTask(self):
         """The inspection-task factory applies the IRP-friendly config."""
         task = irp4.makeQuickIsrTask()

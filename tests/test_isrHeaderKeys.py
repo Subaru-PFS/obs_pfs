@@ -7,11 +7,17 @@ import lsst.afw.image as afwImage
 import lsst.geom as geom
 import lsst.utils.tests
 from lsst.obs.pfs import h4Linearity
-from lsst.obs.pfs.isrTask import (
-    _makeInternalMask, _projectInternalMask, _stampRampMetadata,
-)
+
+from testUtils import HAS_DRP_STELLA, requireDrpStella
+
+if HAS_DRP_STELLA:
+    # isrTask imports pfs.drp.stella.crosstalk.
+    from lsst.obs.pfs.isrTask import (
+        _makeInternalMask, _projectInternalMask, _stampRampMetadata,
+    )
 
 
+@requireDrpStella
 class StampRampMetadataTestCase(lsst.utils.tests.TestCase):
     """`_stampRampMetadata` writes the expected H4* keys on the
     exposure's metadata so downstream consumers can identify partial-ramp
@@ -56,6 +62,7 @@ class StampRampMetadataTestCase(lsst.utils.tests.TestCase):
             self.assertTrue(md.getComment(key), msg=f'{key} should carry a comment')
 
 
+@requireDrpStella
 class MakeInternalMaskTestCase(lsst.utils.tests.TestCase):
     """`_makeInternalMask` seeds the H4 ISR internal mask with
     BORDER_PIX on the outer ring plus MASKED_BY_INPUT from the defects
@@ -81,6 +88,7 @@ class MakeInternalMaskTestCase(lsst.utils.tests.TestCase):
         self.assertEqual(m.dtype, np.uint16)
 
 
+@requireDrpStella
 class ProjectInternalMaskTestCase(lsst.utils.tests.TestCase):
     """`_projectInternalMask` lifts internal-mask bits onto Exposure.mask
     planes following the canonical projection rule.

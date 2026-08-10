@@ -13,7 +13,8 @@ import unittest
 import numpy as np
 
 import lsst.utils.tests
-from lsst.obs.pfs import isrTask as pfsIsrTask
+
+from testUtils import HAS_DRP_STELLA, requireDrpStella
 
 
 class _FakeRaw:
@@ -27,39 +28,44 @@ class _FakeRaw:
         return i if i >= 0 else self._nreads + i
 
 
-class _RecordingTask(pfsIsrTask.PfsIsrTask):
-    """Drive the real ``makeUTRcumulative`` loop but replace the leaf I/O and
-    the two reference primitives with deterministic, call-recording stand-ins.
+if HAS_DRP_STELLA:
+    # isrTask imports pfs.drp.stella.crosstalk, and _RecordingTask subclasses
+    # PfsIsrTask, so the class body itself needs the import to have succeeded.
+    from lsst.obs.pfs import isrTask as pfsIsrTask
 
-    - ``makeRawDataArray``  -> a 4x4 plane whose value is ``10 * readNum``
-    - ``makeRawIrpArray``   -> a 4x4 plane whose value is ``readNum``
-    - ``getFinalDiffIrp``   -> constant 3.0 (records that IRP was used)
-    - ``borderCorrect``     -> ``image * 2`` (records that border was used)
-    """
+    class _RecordingTask(pfsIsrTask.PfsIsrTask):
+        """Drive the real ``makeUTRcumulative`` loop but replace the leaf I/O and
+        the two reference primitives with deterministic, call-recording stand-ins.
 
-    SHAPE = (4, 4)
+        - ``makeRawDataArray``  -> a 4x4 plane whose value is ``10 * readNum``
+        - ``makeRawIrpArray``   -> a 4x4 plane whose value is ``readNum``
+        - ``getFinalDiffIrp``   -> constant 3.0 (records that IRP was used)
+        - ``borderCorrect``     -> ``image * 2`` (records that border was used)
+        """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.irpCalls = 0
-        self.borderCalls = 0
+        SHAPE = (4, 4)
 
-    def makeRawDataArray(self, pfsRaw, readNum, fromArray=None):
-        return np.full(self.SHAPE, 10.0 * readNum, dtype="f4")
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.irpCalls = 0
+            self.borderCalls = 0
 
-    def makeRawIrpArray(self, pfsRaw, readNum, forceIrp1=True, fromArray=None):
-        return np.full(self.SHAPE, float(readNum), dtype="f4")
+        def makeRawDataArray(self, pfsRaw, readNum, fromArray=None):
+            return np.full(self.SHAPE, 10.0 * readNum, dtype="f4")
 
-    def applyIRPcrosstalk(self, pfsRaw, irp, data):
-        pass
+        def makeRawIrpArray(self, pfsRaw, readNum, forceIrp1=True, fromArray=None):
+            return np.full(self.SHAPE, float(readNum), dtype="f4")
 
-    def getFinalDiffIrp(self, pfsRaw, rawDiffIrp, useFft=True):
-        self.irpCalls += 1
-        return np.full_like(rawDiffIrp, 3.0)
+        def applyIRPcrosstalk(self, pfsRaw, irp, data):
+            pass
 
-    def borderCorrect(self, pfsRaw, image, colWindow=4, doRows=True, doCols=True):
-        self.borderCalls += 1
-        return image * 2.0
+        def getFinalDiffIrp(self, pfsRaw, rawDiffIrp, useFft=True):
+            self.irpCalls += 1
+            return np.full_like(rawDiffIrp, 3.0)
+
+        def borderCorrect(self, pfsRaw, image, colWindow=4, doRows=True, doCols=True):
+            self.borderCalls += 1
+            return image * 2.0
 
 
 def _makeTask(useIRP):
@@ -78,6 +84,7 @@ def _makeTask(useIRP):
     return _RecordingTask(config=config)
 
 
+@requireDrpStella
 class MakeUTRcumulativeReferenceTestCase(lsst.utils.tests.TestCase):
     def testUsesIrpWhenUseIrpTrue(self):
         task = _makeTask(useIRP=True)

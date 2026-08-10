@@ -11,7 +11,12 @@ import unittest
 import numpy as np
 
 import lsst.utils.tests
-from lsst.obs.pfs import isrTask as pfsIsrTask
+
+from testUtils import HAS_DRP_STELLA, requireDrpStella
+
+if HAS_DRP_STELLA:
+    # isrTask imports pfs.drp.stella.crosstalk.
+    from lsst.obs.pfs import isrTask as pfsIsrTask
 
 
 class _FakeRaw:
@@ -44,6 +49,7 @@ def _makeIsrTask():
     return pfsIsrTask.PfsIsrTask(config=config)
 
 
+@requireDrpStella
 class GetChannelMedianDiffIrpTestCase(lsst.utils.tests.TestCase):
     def testPerChannelPerColumnMedian(self):
         task = _makeIsrTask()

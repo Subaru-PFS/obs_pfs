@@ -1,9 +1,15 @@
 import unittest
 
 import lsst.utils.tests
-from lsst.obs.pfs.isrTask import H4Config
+
+from testUtils import HAS_DRP_STELLA, requireDrpStella
+
+if HAS_DRP_STELLA:
+    # isrTask imports pfs.drp.stella.crosstalk.
+    from lsst.obs.pfs.isrTask import H4Config
 
 
+@requireDrpStella
 class H4ConfigRateStabilityTestCase(lsst.utils.tests.TestCase):
     """The rate-stability fields exist on H4Config with the documented
     defaults and accept overrides."""

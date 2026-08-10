@@ -9,7 +9,12 @@ import unittest
 import numpy as np
 
 import lsst.utils.tests
-from lsst.obs.pfs.isrTask import _utrVariance
+
+from testUtils import HAS_DRP_STELLA, requireDrpStella
+
+if HAS_DRP_STELLA:
+    # isrTask imports pfs.drp.stella.crosstalk.
+    from lsst.obs.pfs.isrTask import _utrVariance
 
 
 def _utrCoeffs(nread):
@@ -18,6 +23,7 @@ def _utrCoeffs(nread):
     return A, floor
 
 
+@requireDrpStella
 class UtrVarianceTestCase(lsst.utils.tests.TestCase):
     def test_negativeSignalFlooredToReadNoiseFloor(self):
         # A negative pixel gets exactly the read-noise floor, never a negative

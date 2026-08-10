@@ -9,7 +9,12 @@ import unittest
 import warnings
 
 import lsst.utils.tests
-from lsst.obs.pfs import isrTask as pfsIsrTask
+
+from testUtils import HAS_DRP_STELLA, requireDrpStella
+
+if HAS_DRP_STELLA:
+    # isrTask imports pfs.drp.stella.crosstalk.
+    from lsst.obs.pfs import isrTask as pfsIsrTask
 
 
 def _baseConfig():
@@ -25,6 +30,7 @@ def _baseConfig():
     return config
 
 
+@requireDrpStella
 class CrMinReadsDeprecationTestCase(lsst.utils.tests.TestCase):
     def test_settingWarnsAndDoesNotRaise(self):
         # The field must exist again (drp_stella compat): setting it emits a

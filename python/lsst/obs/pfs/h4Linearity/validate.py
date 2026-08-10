@@ -32,8 +32,6 @@ from typing import Optional
 
 import numpy as np
 
-from lsst.obs.pfs import isrTask as pfsIsrTask
-
 from . import cr
 from . import isrPlots
 
@@ -90,6 +88,11 @@ class ComparisonResult:
 
 def _makeDefaultIsrTask(doLinearize: bool):
     """Build a `PfsIsrTask` matching the notebook recipe for this test."""
+    # Deferred: isrTask imports pfs.drp.stella.crosstalk, which a standalone
+    # obs_pfs build does not have. Everything else in this module is drp_stella
+    # -free, and stays importable without it.
+    from lsst.obs.pfs import isrTask as pfsIsrTask
+
     config = pfsIsrTask.PfsIsrTask.ConfigClass()
     config.doFlat = False
     config.doDark = True

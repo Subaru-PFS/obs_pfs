@@ -13,7 +13,12 @@ import unittest
 import numpy as np
 
 import lsst.utils.tests
-from lsst.obs.pfs import isrTask as pfsIsrTask
+
+from testUtils import HAS_DRP_STELLA, requireDrpStella
+
+if HAS_DRP_STELLA:
+    # isrTask imports pfs.drp.stella.crosstalk.
+    from lsst.obs.pfs import isrTask as pfsIsrTask
 
 
 def _makeTask(irpFilter=None):
@@ -32,6 +37,7 @@ def _makeTask(irpFilter=None):
     return pfsIsrTask.PfsIsrTask(config=config)
 
 
+@requireDrpStella
 class GlitchCorrectionTestCase(lsst.utils.tests.TestCase):
     def test_loadCorrectGlitchChannels(self):
         # Under Hann smoothing (IRPfilter=15) ch24's IRP is bypassed, injecting
