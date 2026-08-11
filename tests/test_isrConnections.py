@@ -11,9 +11,15 @@ import sys
 import unittest
 
 import lsst.utils.tests
-from lsst.obs.pfs.isrTask import PfsIsrConnections, PfsIsrTask
+
+from testUtils import HAS_DRP_STELLA, requireDrpStella
+
+if HAS_DRP_STELLA:
+    # isrTask imports pfs.drp.stella.crosstalk.
+    from lsst.obs.pfs.isrTask import PfsIsrConnections, PfsIsrTask
 
 
+@requireDrpStella
 class PfsIsrConnectionsTestCase(lsst.utils.tests.TestCase):
     def testLinearityIsOptional(self):
         """With the default config (h4.doLinearize=True) the ``h4Linearity``

@@ -12,7 +12,12 @@ Either mismatch must raise, rather than surfacing as a cryptic
 import unittest
 
 import lsst.utils.tests
-from lsst.obs.pfs import isrTask as pfsIsrTask
+
+from testUtils import HAS_DRP_STELLA, requireDrpStella
+
+if HAS_DRP_STELLA:
+    # isrTask imports pfs.drp.stella.crosstalk.
+    from lsst.obs.pfs import isrTask as pfsIsrTask
 
 
 class _FakeRaw:
@@ -49,6 +54,7 @@ def _makeIsrTask():
     return pfsIsrTask.PfsIsrTask(config=config)
 
 
+@requireDrpStella
 class CheckNirDarkTestCase(lsst.utils.tests.TestCase):
     def setUp(self):
         self.task = _makeIsrTask()
@@ -101,6 +107,7 @@ class _GainDark:
         self.metadata = {} if gain is None else {"GAIN": gain}
 
 
+@requireDrpStella
 class DarkGainGuardTestCase(lsst.utils.tests.TestCase):
     """``_darkGain`` rejects a non-physical nirDark GAIN (e.g. the 9999 raw
     placeholder) rather than silently mis-scaling the dark subtraction.

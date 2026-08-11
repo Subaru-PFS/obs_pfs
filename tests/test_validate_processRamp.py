@@ -28,6 +28,10 @@ import lsst.utils.tests
 
 from lsst.obs.pfs.h4Linearity import validate as pfsValidate
 
+# ``validate`` imports cleanly, but ``processRamp`` reaches into ``isrTask`` for
+# ``_projectInternalMask``, which needs pfs.drp.stella.crosstalk.
+from testUtils import requireDrpStella
+
 
 N_READS = 20
 H = 5
@@ -48,6 +52,7 @@ def _makeExposure(h=H, w=W):
     return afwImage.ExposureF(geom.Extent2I(w, h))
 
 
+@requireDrpStella
 class ProcessRampAxisOrderTestCase(lsst.utils.tests.TestCase):
     """Verify processRamp preserves the (H, W, N) convention and stamps
     masks at the right ``(y, x)``."""
@@ -136,6 +141,7 @@ class ProcessRampAxisOrderTestCase(lsst.utils.tests.TestCase):
         self.assertTrue(bool(crResult.crFlagMask[3, 4, 9]))
 
 
+@requireDrpStella
 class ProcessRampIntermediatesTestCase(lsst.utils.tests.TestCase):
     """The pre-seeded ``intermediates`` opt-in API: only requested keys
     are populated; unrelated keys remain absent."""

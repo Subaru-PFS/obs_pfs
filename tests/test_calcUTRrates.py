@@ -21,8 +21,13 @@ import unittest
 import numpy as np
 
 import lsst.utils.tests
-from lsst.obs.pfs import isrTask as pfsIsrTask
 from lsst.obs.pfs.h4Linearity import cr
+
+from testUtils import HAS_DRP_STELLA, requireDrpStella
+
+if HAS_DRP_STELLA:
+    # isrTask imports pfs.drp.stella.crosstalk.
+    from lsst.obs.pfs import isrTask as pfsIsrTask
 
 
 N_READS = 15
@@ -58,6 +63,7 @@ def _makeIsrTask():
     return pfsIsrTask.PfsIsrTask(config=config)
 
 
+@requireDrpStella
 class CalcUTRRatesTestCase(lsst.utils.tests.TestCase):
 
     def setUp(self):

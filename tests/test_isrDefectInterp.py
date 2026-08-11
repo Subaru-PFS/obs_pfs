@@ -12,7 +12,12 @@ import lsst.utils.tests
 import lsst.geom as geom
 import lsst.afw.image as afwImage
 from lsst.ip.isr import Defects
-from lsst.obs.pfs import isrTask as pfsIsrTask
+
+from testUtils import HAS_DRP_STELLA, requireDrpStella
+
+if HAS_DRP_STELLA:
+    # isrTask imports pfs.drp.stella.crosstalk.
+    from lsst.obs.pfs import isrTask as pfsIsrTask
 
 
 def _makeIsrTask(doInterpolate):
@@ -39,6 +44,7 @@ def _makeExposureAndDefects():
     return exp, Defects([box])
 
 
+@requireDrpStella
 class DefectInterpolationTestCase(lsst.utils.tests.TestCase):
     def testInterpolatesWhenEnabled(self):
         task = _makeIsrTask(doInterpolate=True)

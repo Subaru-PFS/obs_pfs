@@ -13,7 +13,12 @@ qgraph-build time. Instead:
 import unittest
 
 import lsst.utils.tests
-from lsst.obs.pfs import isrTask as pfsIsrTask
+
+from testUtils import HAS_DRP_STELLA, requireDrpStella
+
+if HAS_DRP_STELLA:
+    # isrTask imports pfs.drp.stella.crosstalk.
+    from lsst.obs.pfs import isrTask as pfsIsrTask
 
 
 class _DatasetType:
@@ -41,6 +46,7 @@ class _Registry:
         return self._ref
 
 
+@requireDrpStella
 class LookupNirDarkTestCase(lsst.utils.tests.TestCase):
     def testResolvesIrp4WithoutIrpRatio(self):
         # The regression case: no irp_ratio in the record, yet nirDark_irp4
@@ -75,6 +81,7 @@ class _Raw:
         return self._irpN
 
 
+@requireDrpStella
 class SelectNirDarkTestCase(lsst.utils.tests.TestCase):
     def testPicksIrp4ForRatio4(self):
         nir1, nir4 = object(), object()

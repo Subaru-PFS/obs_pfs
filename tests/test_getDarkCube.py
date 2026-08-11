@@ -11,7 +11,12 @@ import unittest
 import numpy as np
 
 import lsst.utils.tests
-from lsst.obs.pfs import isrTask as pfsIsrTask
+
+from testUtils import HAS_DRP_STELLA, requireDrpStella
+
+if HAS_DRP_STELLA:
+    # isrTask imports pfs.drp.stella.crosstalk.
+    from lsst.obs.pfs import isrTask as pfsIsrTask
 
 
 N_READS = 12
@@ -63,6 +68,7 @@ def _makeIsrTask():
     return pfsIsrTask.PfsIsrTask(config=config)
 
 
+@requireDrpStella
 class GetDarkCubeTestCase(lsst.utils.tests.TestCase):
     """The returned slice's last axis corresponds to the requested
     reads; axes 0 and 1 are the (H, W) spatial plane in that order
