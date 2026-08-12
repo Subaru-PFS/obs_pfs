@@ -328,12 +328,18 @@ class H4Config(pexConfig.Config):
     firstRead = pexConfig.Field(
         dtype=int, default=None, optional=True,
         doc="0-indexed first read of the ramp to include (inclusive). "
-            "None (default) = dispatch by observation type; an explicit value is used as-is.",
+            "None (default) = dispatch by observation type and reduction mode "
+            "(science UTR trims to 1:-4; everything else uses the whole ramp); "
+            "an explicit value is used as-is. Either way the resolved range must "
+            "fit the ramp, or the reduction fails.",
     )
     lastRead = pexConfig.Field(
         dtype=int, default=None, optional=True,
         doc="0-indexed last read of the ramp to include (inclusive; -1 = last read). "
-            "None (default) = dispatch by observation type; an explicit value is used as-is.",
+            "None (default) = dispatch by observation type and reduction mode "
+            "(science UTR trims to 1:-4; everything else uses the whole ramp); "
+            "an explicit value is used as-is. Either way the resolved range must "
+            "fit the ramp, or the reduction fails.",
     )
 
 
@@ -1934,10 +1940,20 @@ class PfsIsrTask(ipIsr.IsrTask):
     def rampParams(self, pfsRaw):
         """Ramp-processing parameters, dispatched by observation type.
 
-        Per-obstype defaults: arcs (``comparison``) and flats → full-ramp
-        CDS; darks → full-ramp UTR; science → UTR over reads ``1:-3``
-        (drop the shutter-closed read 0 and the trailing 3 shutter-closed
-        / transitional reads). Anything else falls back to full-ramp UTR.
+        The reduction mode is settled first: arcs (``comparison``) and
+        flats use CDS, everything else UTR. We may want to process longer
+        flats UTR — deferred until we have a principled read-range
+        choice.
+
+        The read range then follows the *resolved* mode. Science ramps
+        reduced UTR integrate reads ``1:-4``: the shutter open/close FITS
+        cards are not yet written, so the illuminated range is unknown,
+        and this empirically drops the shutter-closed read 0 and the
+        trailing 3 shutter-closed / transitional reads. Once those cards
+        are available the range can be computed correctly. Every other
+        combination — including a science ramp reduced CDS, which
+        differences exactly those endpoint reads — uses the whole ramp,
+        ``0:-1``.
 
         Each `H4Config` field (``quickCDS`` / ``firstRead`` / ``lastRead``)
         that is set to an explicit (non-``None``) value overrides the
@@ -1947,36 +1963,91 @@ class PfsIsrTask(ipIsr.IsrTask):
         -------
         quickCDS : `bool`
         firstRead, lastRead : `int`
-            0-indexed inclusive read bounds (negative counts from the end).
+            0-indexed inclusive read bounds (negative counts from the end),
+            guaranteed to resolve within the ramp with at least one delta
+            between them.
+
+        Raises
+        ------
+        RuntimeError
+            If the resolved range does not fit the ramp. A short ramp (a
+            2-read simulation ramp, say) cannot carry the science UTR
+            trim, and failing here beats an ``IndexError`` out of the
+            read accessors further down.
         """
         obsType = (pfsRaw.obsInfo.observation_type or "").lower()
-        if obsType in ("comparison", "flat"):
-            # Arcs and flats use CDS. We may want to process longer
-            # flats UTR — deferred until we have a principled
-            # read-range choice.
-            quickCDS, firstRead, lastRead = True, 0, -1
-        elif obsType == "science":
-            # Shutter open/close FITS cards are not yet written, so the
-            # exact illuminated read range is unknown. Once those cards
-            # are available the range can be computed correctly; until
-            # then use reads 1:-3, which empirically drops the shutter-
-            # closed read 0 and the trailing 3 shutter-closed reads.
-            quickCDS, firstRead, lastRead = False, 1, -4
-        else:  # dark, unknown — full-ramp UTR
-            quickCDS, firstRead, lastRead = False, 0, -1
+        quickCDS = obsType in ("comparison", "flat")
 
         cfg = self.config.h4
         if cfg.quickCDS is not None:
             quickCDS = cfg.quickCDS
+
+        if obsType == "science" and not quickCDS:
+            firstRead, lastRead = 1, -4
+        else:
+            firstRead, lastRead = 0, -1
         if cfg.firstRead is not None:
             firstRead = cfg.firstRead
         if cfg.lastRead is not None:
             lastRead = cfg.lastRead
+
         self.log.info(
             f"ramp params for obsType={obsType!r}: quickCDS={quickCDS} "
             f"firstRead={firstRead} lastRead={lastRead}"
         )
+        self.checkRampRange(pfsRaw, obsType, quickCDS, firstRead, lastRead)
         return quickCDS, firstRead, lastRead
+
+    def checkRampRange(self, pfsRaw, obsType, quickCDS, firstRead, lastRead):
+        """Verify a read range resolves within the ramp.
+
+        Both bounds must land inside the ramp and enclose at least one
+        delta (``lastRead`` strictly after ``firstRead``).
+
+        Parameters
+        ----------
+        pfsRaw : `lsst.obs.pfs.PfsRaw`
+            The raw H4 ramp being reduced.
+        obsType : `str`
+            The observation type, for the error message.
+        quickCDS : `bool`
+            The resolved reduction mode, for the error message.
+        firstRead, lastRead : `int`
+            0-indexed inclusive read bounds (negative counts from the end).
+
+        Raises
+        ------
+        RuntimeError
+            If either bound falls outside the ramp, or the two leave no
+            delta between them.
+        """
+        numReads = pfsRaw.getNumReads()
+        bounds = {}
+        for name, read in (("firstRead", firstRead), ("lastRead", lastRead)):
+            try:
+                bounds[name] = pfsRaw.positiveIndex(read)
+            except IndexError:
+                bounds[name] = None
+        r0, r1 = bounds["firstRead"], bounds["lastRead"]
+        if r0 is not None and r1 is not None and r1 - r0 >= 1:
+            return
+
+        def describe(name, read):
+            resolved = bounds[name]
+            return f"{name}={read}" + (f" (->{resolved})" if resolved is not None else "")
+
+        remedy = (
+            " Reduce this ramp with h4.quickCDS=True, or set h4.firstRead and "
+            "h4.lastRead explicitly."
+            if not quickCDS
+            else " Set h4.firstRead and h4.lastRead explicitly."
+        )
+        raise RuntimeError(
+            f"{describe('firstRead', firstRead)} and {describe('lastRead', lastRead)} "
+            f"do not give a usable range in this {numReads}-read obsType={obsType!r} "
+            f"ramp (quickCDS={quickCDS}); need both reads within the ramp and "
+            f"lastRead after firstRead.{remedy}"
+        )
 
     _INTERMEDIATE_KEYS = (
         'raw', 'darkSubbed', 'linearized', 'crCorrected', 'crResult',
@@ -2162,12 +2233,6 @@ class PfsIsrTask(ipIsr.IsrTask):
             )
         r0 = pfsRaw.positiveIndex(firstRead)
         r1 = pfsRaw.positiveIndex(lastRead)
-        if r1 - r0 < 1:
-            raise ValueError(
-                f"firstRead={firstRead} (->{r0}) and "
-                f"lastRead={lastRead} (->{r1}) leave no readable range "
-                f"(need r1 > r0)."
-            )
         if nirDark is not None:
             self.checkNirDark(pfsRaw, nirDark, r1)
         # Seed the H4 internal mask once, before the CDS-vs-UTR
