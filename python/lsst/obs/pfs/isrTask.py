@@ -51,6 +51,7 @@ from lsst.daf.butler import DimensionGroup
 
 from . import imageCube
 from . import h4Linearity
+from .maskPlanes import addObsPfsMaskPlanes
 from .overscan import PfsOverscanCorrectionTask
 from pfs.drp.stella.crosstalk import PfsCrosstalkTask
 
@@ -430,6 +431,9 @@ def _projectInternalMask(exposure, internalMask, *, crResult=None,
                          maskCR: bool = False) -> None:
     """Lift the H4 internal mask into ``Exposure.mask`` planes.
 
+    ``addObsPfsMaskPlanes`` claims the planes themselves, so each is present
+    whether or not any pixel here ends up in it.
+
     Single projection point for the canonical published set:
 
       - ``DARK_DEFECT``      ← ``MASKED_BY_INPUT``                  (also BAD)
@@ -467,10 +471,7 @@ def _projectInternalMask(exposure, internalMask, *, crResult=None,
     regardless of ``maskRateUnstable`` or ASIC_GLITCH.
     """
     mask = exposure.mask
-    for plane in ("DARK_DEFECT", "LINEARITY_DEFECT", "UNSTABLE",
-                  "RATE_UNSTABLE", "ASIC_GLITCH"):
-        if plane not in mask.getMaskPlaneDict():
-            mask.addMaskPlane(plane)
+    addObsPfsMaskPlanes(exposure)
     bit = mask.getPlaneBitMask
 
     darkDefect = (internalMask & h4Linearity.MASKED_BY_INPUT) != 0
@@ -1362,9 +1363,12 @@ class PfsIsrTask(ipIsr.IsrTask):
         """
         pfsRaw = ccdExposure  # argument must still be called "ccdExposure"; PIPE2D-1093
         if pfsRaw.isNir():  # treat H4RGs specially
-            return self.runH4RG(pfsRaw, **kwargs)
+            results = self.runH4RG(pfsRaw, **kwargs)
         else:
-            return self.runCCD(pfsRaw.getExposure(), **kwargs)
+            results = self.runCCD(pfsRaw.getExposure(), **kwargs)
+        # Ensure that all arms define the same Mask planes.
+        addObsPfsMaskPlanes(results.exposure)
+        return results
 
     def updateVariance(self, ampExposure, amp, overscanImage=None, ptcDataset=None):
         """Set the variance plane using the gain and read noise
@@ -3601,10 +3605,7 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         exposure.image.array[:, :] -= ipcmodel
 
-        if "IPC" not in exposure.mask.getMaskPlaneDict():
-            exposure.mask.addMaskPlane("IPC")
-            afwDisplay.setDefaultMaskPlaneColor("IPC", "GREEN")
-
+        afwDisplay.setDefaultMaskPlaneColor("IPC", "GREEN")
         exposure.mask.array[ipcmodel != 0] |= exposure.mask.getPlaneBitMask("IPC")
 
     def maskAmplifier(self, exposure, amp, defects):
