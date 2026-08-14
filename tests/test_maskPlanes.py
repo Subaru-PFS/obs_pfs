@@ -124,7 +124,11 @@ class CalibConformanceTestCase(lsst.utils.tests.TestCase):
     def testForeignNumberingConformsOnRead(self):
         addObsPfsMaskPlanes()
         expected = afwImage.Mask().getMaskPlaneDict()["PARTLY_VIGNETTED"]
-        foreign = 11
+        # Stand in for a calib that numbered the plane differently. afw's own
+        # planes occupy bits 0-10, so anything we claim sits above them and a
+        # low bit cannot collide with `expected` -- which it would at bit 11 in a
+        # build without drp_stella, where PARTLY_VIGNETTED is the first claimed.
+        foreign = 1
         self.assertNotEqual(foreign, expected)
 
         array = np.zeros((4, 4), dtype=np.int32)
