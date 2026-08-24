@@ -126,18 +126,26 @@ class PfsRaw:
 
     @property
     def detector(self) -> "Detector":
-        """Return the detector"""
-        detId = self.metadata["DET-ID"]
-        detector = loadCamera(self.pfsCategory)[detId]
-        if self.isNir():
-            detector = detector.rebuild()  # returns a Detector Builder
-            gain = self.metadata["W_H4GAIN"]  # ASIC pre-amp gain (electrons per ADU)
+        """Return the detector
 
-            # This will need work for non-32-channel ramps.
-            for channel in detector.getAmplifiers():  # an H4RG/ROIC/SAM "channel", not really an amplifier
-                channel.setGain(channel.getGain() / gain)
-            detector = detector.finish()
-        return detector
+        Cached: every read of a NIR ramp asks for the detector's rotation, so
+        rebuilding it per read would reload the camera hundreds of times per
+        exposure. It depends only on the metadata, which is itself fixed.
+        """
+        if self._detector is None:
+            detId = self.metadata["DET-ID"]
+            detector = loadCamera(self.pfsCategory)[detId]
+            if self.isNir():
+                detector = detector.rebuild()  # returns a Detector Builder
+                gain = self.metadata["W_H4GAIN"]  # ASIC pre-amp gain (electrons per ADU)
+
+                # This will need work for non-32-channel ramps. An "amplifier"
+                # here is really an H4RG/ROIC/SAM channel.
+                for channel in detector.getAmplifiers():
+                    channel.setGain(channel.getGain() / gain)
+                detector = detector.finish()
+            self._detector = detector
+        return self._detector
 
     @property
     def obsInfo(self) -> ObservationInfo:

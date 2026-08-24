@@ -17,7 +17,8 @@ import lsst.afw.math as afwMath
 import lsst.utils.tests
 from lsst.afw.image import ImageF
 
-from lsst.obs.pfs.raw import rotateImageBy90Striped
+import lsst.obs.pfs.raw as pfsRawModule
+from lsst.obs.pfs.raw import PfsRaw, rotateImageBy90Striped
 
 
 def _afwReference(array, nQuarter):
@@ -84,6 +85,56 @@ class RotateImageBy90StripedTestCase(lsst.utils.tests.TestCase):
             for equivalent in (nQuarter - 4, nQuarter + 4, nQuarter + 8):
                 np.testing.assert_array_equal(
                     _striped(array, equivalent), expected)
+
+
+class DetectorCachingTestCase(lsst.utils.tests.TestCase):
+    """``PfsRaw.detector`` must be built once per instance.
+
+    Every ramp read asks for the detector (to get its rotation), so an
+    uncached property reloads the whole camera 280 times per 140-read quantum.
+    ``__init__`` already allocates ``_detector`` for this.
+    """
+
+    def setUp(self):
+        self.calls = []
+        self.sentinel = object()
+
+        def fakeLoadCamera(pfsCategory):
+            self.calls.append(pfsCategory)
+            return {7: self.sentinel}
+
+        self.original = pfsRawModule.loadCamera
+        pfsRawModule.loadCamera = fakeLoadCamera
+
+    def tearDown(self):
+        pfsRawModule.loadCamera = self.original
+
+    def _makeRaw(self):
+        # A CCD arm (W_ARM != 3) so the NIR gain rebuild is skipped; the
+        # caching under test is common to both arms.
+        raw = PfsRaw.__new__(PfsRaw)
+        raw.path = "unused"
+        raw.pfsCategory = None
+        raw._metadata = {"DET-ID": 7, "W_ARM": 1}
+        raw._detector = None
+        raw._obsInfo = None
+        raw._visitInfo = None
+        return raw
+
+    def testBuiltOnceAndReturnedByIdentity(self):
+        raw = self._makeRaw()
+        first = raw.detector
+        self.assertIs(first, self.sentinel)
+        for _ in range(9):
+            self.assertIs(raw.detector, first)
+        self.assertEqual(len(self.calls), 1,
+                         f"camera loaded {len(self.calls)} times, expected 1")
+
+    def testCacheIsPerInstance(self):
+        a, b = self._makeRaw(), self._makeRaw()
+        self.assertIs(a.detector, b.detector)   # same sentinel from the camera
+        self.assertEqual(len(self.calls), 2,
+                         "each PfsRaw must build its own detector")
 
 
 class TestMemory(lsst.utils.tests.MemoryTestCase):
