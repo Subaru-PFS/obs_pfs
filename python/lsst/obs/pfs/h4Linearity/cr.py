@@ -137,23 +137,6 @@ def _rampQR(deltas: np.ndarray) -> tuple:
     return p25, median, p75
 
 
-def _utrRateSimple(cube: np.ndarray) -> np.ndarray:
-    """Robust per-pixel rate via median of cumulative deltas (ADU/read).
-
-    Median has a 50% breakdown point — a few CR/glitch hits in a ramp
-    don't bias the rate. LSQ slope (the obvious alternative) is non-
-    robust: a single outlier near the center of a short ramp can drag
-    the slope by ~5% of the outlier amplitude, which feeds back into
-    the iterative detection loop and causes the rate to diverge. For a
-    clean ramp the median of deltas matches the mean (= LSQ slope) up
-    to sampling noise.
-
-    ``cube`` is ``(H, W, N)`` cumulative ADU; the time axis is last.
-    """
-    deltas = np.diff(cube, axis=-1)
-    return np.median(deltas, axis=-1).astype(np.float32, copy=False)
-
-
 def _detectAndRepairOnce(deltas, goodPixelMask, glitchActive,
                          crAccum, glitchAccum, boundaryAccum, unclassAccum,
                          sigmaFloorADU, nSigma, repair, correctGlitches,

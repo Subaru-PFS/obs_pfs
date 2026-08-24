@@ -2479,11 +2479,12 @@ class PfsIsrTask(ipIsr.IsrTask):
                         glitchPix = (
                             (maxHeight
                              > self.config.h4.asicGlitchHeightMaskADU)
-                            & glitchMask3D.any(axis=-1)
+                            & glitchFlagMask2D
                         )
                         correctable = self.correctableGlitchMask(
                             pfsRaw.detector.getName(), glitchMask3D,
                             iterResult.crFlagMask, deltas, badPix2D,
+                            glitchAny2D=glitchFlagMask2D,
                         )
                         internalMask[glitchPix] |= h4Linearity.ASIC_GLITCH
                         masked = glitchPix & ~correctable
@@ -2892,7 +2893,8 @@ class PfsIsrTask(ipIsr.IsrTask):
 
     def correctableGlitchMask(self, detectorName: str, glitchFlagMask: np.ndarray,
                               crFlagMask: np.ndarray, deltas: np.ndarray, badMask: np.ndarray,
-                              nChannels: int = 32, returnFraction: float = 0.5) -> np.ndarray:
+                              nChannels: int = 32, returnFraction: float = 0.5,
+                              glitchAny2D: Optional[np.ndarray] = None) -> np.ndarray:
         """Return a ``(H, W)`` bool mask True at pixels eligible for glitch
         *correction* rather than masking.
 
@@ -2938,10 +2940,16 @@ class PfsIsrTask(ipIsr.IsrTask):
             An outlier's return must be at least this fraction of its magnitude
             (opposite sign) to count. ~0.5 cleanly separates the real ~equal
             return from a small spurious stray.
+        glitchAny2D : `np.ndarray`, optional
+            ``(H, W)`` bool, ``glitchFlagMask.any(axis=-1)``. Supply it when the
+            caller has already reduced the cube; recomputing it here is a second
+            full-cube pass over ~2.3 GB.
         """
         channels = self.loadCorrectGlitchChannels(detectorName)
         H, W = glitchFlagMask.shape[:2]
-        glitch = glitchFlagMask.astype(bool)
+        # asarray, not astype: a no-op view for the bool cubes the CR stage
+        # produces, where astype would copy the full (H, W, nDeltas) cube.
+        glitch = np.asarray(glitchFlagMask, dtype=bool)
 
         inScope = np.zeros((H, W), dtype=bool)
         channelHeight = H // nChannels
@@ -2951,14 +2959,16 @@ class PfsIsrTask(ipIsr.IsrTask):
         # Restrict the per-delta work to candidate pixels (in scope, not bad,
         # at least one glitch flag) -- on the full detector this is a tiny
         # fraction, so the IQR/percentile pass stays cheap and memory-light.
-        candidate = inScope & ~badMask.astype(bool) & glitch.any(-1)
+        if glitchAny2D is None:
+            glitchAny2D = glitch.any(-1)
+        candidate = inScope & ~np.asarray(badMask, dtype=bool) & glitchAny2D
         out = np.zeros((H, W), dtype=bool)
         ys, xs = np.where(candidate)
         if len(ys) == 0:
             return out
 
         g = glitch[ys, xs]                             # (Ncand, nDeltas)
-        c = crFlagMask.astype(bool)[ys, xs]
+        c = np.asarray(crFlagMask, dtype=bool)[ys, xs]
         d = np.asarray(deltas)[ys, xs].astype(np.float64)
         absd = np.abs(d)
         sgn = np.sign(d)
