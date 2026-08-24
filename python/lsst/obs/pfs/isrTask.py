@@ -1786,7 +1786,8 @@ class PfsIsrTask(ipIsr.IsrTask):
         Parameters
         ----------
         cube : `np.ndarray`
-            The ramp cube to apply UTR to.
+            The ``(H, W, N)`` ramp cube to apply UTR to; the time axis is
+            last, matching the rest of the H4 path.
         nreads : `int`, optional
             The number of reads to use in the UTR calculation. default=all cube reads.
 
@@ -1796,14 +1797,14 @@ class PfsIsrTask(ipIsr.IsrTask):
             The estimated per-pixel arrival rate.
         """
         if nreads is None:
-            n_i = len(cube)
+            n_i = cube.shape[-1]
         else:
             n_i = nreads
-        rate_sum = np.zeros_like(cube[0])
+        rate_sum = np.zeros_like(cube[..., 0])
         weights = self.calcUTRWeights(n_i)
         for i in range(n_i):
             k = weights[i]
-            s1 = k*cube[i]
+            s1 = k*cube[..., i]
             rate_sum += s1
 
         return rate_sum
@@ -1830,13 +1831,12 @@ class PfsIsrTask(ipIsr.IsrTask):
     def subtractDarkCube(self, nirDark, cube: np.ndarray, r0: int = 0) -> None:
         """Subtract the per-read dark frames from ``cube`` in place.
 
-        Iterates absolute read indices ``[r0, r0 + cube.shape[0])`` and
+        Iterates absolute read indices ``[r0, r0 + cube.shape[-1])`` and
         subtracts each dark frame from the corresponding read of
         ``cube``. No transient ramp-sized buffer: each ``(H, W)`` dark
         frame is fetched via ``nirDark.getReadArray(...)``, gain-corrected,
-        and applied directly to ``cube[k]``. The per-read subtract is a
-        contiguous 2-D write because ``cube`` is ``(N, H, W)`` C-order,
-        which is cache-friendly and avoids the ~14 s / ~6.7 GB cost of
+        and applied directly to ``cube[..., k]``. That write strides, since
+        ``cube`` is ``(H, W, N)``, but it avoids the ~14 s / ~6.7 GB cost of
         materializing-then-transposing a full dark cube via
         :meth:`getDarkCube`.
 
@@ -1849,23 +1849,23 @@ class PfsIsrTask(ipIsr.IsrTask):
             (the convention :meth:`getDarkRead` and :meth:`getDarkCube`
             use).
         cube : `np.ndarray`
-            ``(N, H, W)`` cumulative ramp to dark-subtract, modified in
-            place. ``cube[k]`` corresponds to absolute read ``r0 + k + 1``
-            of the original ramp.
+            ``(H, W, N)`` cumulative ramp to dark-subtract, modified in
+            place. ``cube[..., k]`` corresponds to absolute read
+            ``r0 + k + 1`` of the original ramp.
         r0 : `int`
             Absolute index of the first read processed; ``nirDark[r0+k]``
             is paired with ``cube[k]``.
         """
         gain = self._darkGain(nirDark)
-        N = cube.shape[0]
+        N = cube.shape[-1]
         for k in range(N):
             darkFrame = nirDark.getReadArray(r0 + k)
             if gain != 1.0:
                 # Back out the gain that ``ImageCube`` applied when
                 # writing the dark in electrons; the cube here is in ADU.
-                cube[k] -= darkFrame / gain
+                cube[:, :, k] -= darkFrame / gain
             else:
-                cube[k] -= darkFrame
+                cube[:, :, k] -= darkFrame
 
     def getDarkCube(self, nirDark, nreads: Optional[int] = None, r0: int = 0) -> np.ndarray:
         """Get the dark cube for the NIR ramp.
@@ -2303,12 +2303,10 @@ class PfsIsrTask(ipIsr.IsrTask):
         else:
             self.log.info(f"reading ramp over reads [{r0}, {r1}]...")
             # ``flux`` is the cumulative IRP-corrected ramp zero-anchored
-            # at r0, shape ``(N, H, W)`` — frames first so the per-read
-            # ``subtractDarkCube`` below writes contiguously. The single
-            # transpose to ``(H, W, N)`` happens at the ``apply()``
-            # boundary further down (in the linearization arm) or stays
-            # ``(N, H, W)`` all the way through the no-linearization
-            # fallback.
+            # at r0, shape ``(H, W, N)`` — the time axis is last all the
+            # way from here to the CR detector, so no transpose is needed
+            # between ingest and linearization.
+            fluxIsTimeLast = False
             flux = self.makeUTRcumulative(pfsRaw, r0=r0, r1=r1)
 
             # makeUTRcumulative zero-anchors at r0, so flux[i] = read[r0+i+1] - read[r0].
@@ -2319,33 +2317,20 @@ class PfsIsrTask(ipIsr.IsrTask):
             if r0 > 0:
                 self.log.info(f"adding absolute baseline from reads [0, {r0}].")
                 offsetRaw = self.makeCDS(pfsRaw, r0=0, r1=r0).astype(flux.dtype, copy=False)
-                flux += offsetRaw[None]
+                flux += offsetRaw[..., None]
 
             if 'raw' in captureKeys:
-                # PixelRampData / the rest of the diagnostic chain wants
-                # the captured cubes in (H, W, N) form to match
-                # cubeLin / cubeCR. Transpose at capture time — paid
-                # only on the diagnostic path.
-                intermediates['raw'] = np.ascontiguousarray(flux.transpose(1, 2, 0))
+                intermediates['raw'] = flux.copy()  # (H, W, N)
 
             if nirDark is not None:
                 self.log.info("subtracting dark cube (per-read, in place).")
                 self.subtractDarkCube(nirDark, flux, r0=r0)
 
             if 'darkSubbed' in captureKeys:
-                intermediates['darkSubbed'] = np.ascontiguousarray(
-                    flux.transpose(1, 2, 0)
-                )
+                intermediates['darkSubbed'] = flux.copy()  # (H, W, N)
 
             if self.config.h4.doLinearize and linearity is not None:
                 self.log.info("Correcting non-linearity.")
-                # h4Linearity.apply, the CR detector, the diff and the
-                # cumsum reconstruction all want the time axis last and
-                # contiguous — per-pixel Horner / partition / IQR /
-                # cumsum then stride 1 along reads instead of crossing
-                # the slowest axis. Single transpose here; everything
-                # downstream of this point stays ``(H, W, N)``.
-                flux = np.ascontiguousarray(flux.transpose(1, 2, 0))
                 # Hand the pre-seeded internal mask to apply() as
                 # ``validMask``; apply() OR's its own findings (range
                 # bits) back in under the first-reason-wins rule.
@@ -2564,12 +2549,11 @@ class PfsIsrTask(ipIsr.IsrTask):
                 # (BORDER + DARK_DEFECT only — linearity bits were skipped
                 # since no calib was loaded) carries through unchanged.
                 crResult = None
-                # No linearization → no apply-boundary transpose ran;
-                # flux is still ``(N, H, W)`` from makeUTRcumulative,
-                # which is the form the legacy ``calcUTRrates`` and
-                # ``flux[-1] - flux[0]`` paths below expect.
                 deltas = None
                 read0 = None
+                # ``flux`` is still the ``(H, W, N)`` ingest cube here, and
+                # the rate paths below index it that way.
+                fluxIsTimeLast = True
 
             if deltas is not None:
                 # Delta-space science image: UTR-weighted rate × nReads,
@@ -2596,12 +2580,18 @@ class PfsIsrTask(ipIsr.IsrTask):
                 # branch stays load-bearing.
                 self.log.info("applying UTR weights.")
                 rates = self.calcUTRrates(flux)
-                nirImage = rates * len(flux)
+                nirImage = rates * flux.shape[-1]
                 appliedUTR = True
             else:
                 # No linearization and no UTR weighting: two-read
                 # difference on the already dark-subtracted ramp.
-                nirImage = flux[-1] - flux[0]
+                nirImage = flux[..., -1] - flux[..., 0]
+
+            if fluxIsTimeLast and doReturnRawCube:
+                # ``runH4RG`` → ``ImageCube.fromCube`` iterates the cube
+                # frame by frame, so the returned cube is the one place
+                # that still wants ``(N, H, W)``.
+                flux = np.ascontiguousarray(flux.transpose(2, 0, 1))
 
         exposure = self._makeExposure(pfsRaw, nirImage)
         _stampRampMetadata(
@@ -3470,13 +3460,13 @@ class PfsIsrTask(ipIsr.IsrTask):
         -------
         flux : 3-d float32 numpy array
            Cumulative IRP-corrected ADU, zero-anchored at read ``r0``,
-           shape ``(nreads-1, H, W)``. ``flux[k]`` is read ``r0+k+1``
+           shape ``(H, W, nreads-1)``. ``flux[..., k]`` is read ``r0+k+1``
            minus read ``r0`` minus the per-channel IRP-filtered diff.
-           The frame-first layout is what the production caller wants
-           for the in-place ``subtractDarkCube`` step; a single
-           ``ascontiguousarray(flux.transpose(1, 2, 0))`` at the
-           ``apply()`` boundary is the only transpose between here and
-           the linearization step.
+           The time axis is last, which is what the linearity correction,
+           the CR detector, the ``np.diff`` and the ``cumsum``
+           reconstruction all want: each pixel's time series is
+           contiguous, so those steps stride by one instead of crossing
+           the slowest axis.
         """
 
         r0 = pfsRaw.positiveIndex(r0)
@@ -3501,9 +3491,9 @@ class PfsIsrTask(ipIsr.IsrTask):
 
         # We are not squirreling away the bbox, but really should for the final Exposure.
         if bbox is None:
-            stackShape = (nreads-1, *data0.shape)
+            stackShape = (*data0.shape, nreads-1)
         else:
-            stackShape = (nreads-1, bbox.getHeight(), bbox.getWidth())
+            stackShape = (bbox.getHeight(), bbox.getWidth(), nreads-1)
         stack = np.empty(shape=stackShape, dtype='f4')
         for r_idx, r_i in enumerate(reads):
             if r_idx == 0:
@@ -3520,9 +3510,9 @@ class PfsIsrTask(ipIsr.IsrTask):
                 t1 = time.time()
                 ddata = self.borderCorrect(pfsRaw, data1) - data0
             if bbox is None:
-                stack[r_idx-1, :, :] = ddata
+                stack[:, :, r_idx-1] = ddata
             else:
-                stack[r_idx-1, :, :] = ddata[bbox.getBeginY():bbox.getEndY(),
+                stack[:, :, r_idx-1] = ddata[bbox.getBeginY():bbox.getEndY(),
                                              bbox.getBeginX():bbox.getEndX()]
             t2 = time.time()
             if showTimes:
