@@ -631,6 +631,87 @@ class RampQRTestCase(lsst.utils.tests.TestCase):
         np.testing.assert_array_equal(deltas, snapshot)
 
 
+class PrecomputedRampQRTestCase(lsst.utils.tests.TestCase):
+    """The BAD-pixel pre-pass and iteration 1 partition the same array.
+
+    ``_rampQR`` is ~51 s per full-cube call at production scale. The pre-pass
+    only reads ``deltas`` and ``_rampQR`` partitions a scratch copy, so the two
+    calls see a bit-identical array and must produce a bit-identical result;
+    computing it once and handing it to iteration 1 is therefore free of any
+    change in output.
+    """
+
+    def _deltas(self, seed=1885, nReads=18, H=11, W=13):
+        rng = np.random.RandomState(seed)
+        flux = _flatRamp(nReads=nReads, H=H, W=W, rate=25.0)
+        _injectCR(flux, 3, 4, 6, 900.0)
+        _injectCR(flux, 8, 1, 11, 1500.0)
+        _injectGlitchPair(flux, 5, 9, 7, 700.0)
+        flux += rng.normal(0.0, 4.0, size=flux.shape).astype(np.float32)
+        deltas = np.diff(flux, axis=0)
+        return np.ascontiguousarray(deltas.transpose(1, 2, 0))
+
+    def testPrePassLeavesDeltasUnmodified(self):
+        # The precondition the reuse rests on: nothing between the pre-pass's
+        # _rampQR and iteration 1's touches ``deltas``.
+        deltas = self._deltas()
+        before = deltas.copy()
+        good = np.ones(deltas.shape[:-1], dtype=bool)
+        cr.iterativeUtrDetectAndRepair(
+            deltas.copy(), goodPixelMask=good, repair=False,
+            badPixelMinOutliers=4,
+        )
+        np.testing.assert_array_equal(deltas, before)
+
+    def testPrecomputedMatchesInternal(self):
+        # Handing _detectAndRepairOnce a precomputed (p25, rate, p75) must give
+        # bit-identical results to letting it compute its own.
+        deltas = self._deltas()
+        good = np.ones(deltas.shape[:-1], dtype=bool)
+        active = np.ones(deltas.shape[:-1], dtype=bool)
+        shape = deltas.shape
+
+        def run(rampQR):
+            work = deltas.copy()
+            accums = [np.zeros(shape, dtype=bool) for _ in range(4)]
+            out = cr._detectAndRepairOnce(
+                work, good, active, *accums,
+                8.0, 5.0, True, True, rampQR=rampQR,
+            )
+            return work, accums, out
+
+        workA, accumA, outA = run(None)
+        workB, accumB, outB = run(cr._rampQR(deltas))
+
+        np.testing.assert_array_equal(workA, workB)
+        for a, b in zip(accumA, accumB):
+            np.testing.assert_array_equal(a, b)
+        np.testing.assert_array_equal(outA[0], outB[0])   # rate
+        np.testing.assert_array_equal(outA[1], outB[1])   # sigma
+        self.assertEqual(outA[2:], outB[2:])              # counts
+
+    def testFullRunUnchangedByReuse(self):
+        # End-to-end: the reuse path (badPixelMinOutliers > 0, which is what
+        # populates the precomputed value) must agree with a run that has no
+        # pre-pass to reuse, on every field the pre-pass does not itself gate.
+        deltas = self._deltas()
+        good = np.ones(deltas.shape[:-1], dtype=bool)
+        withPrePass = cr.iterativeUtrDetectAndRepair(
+            deltas.copy(), goodPixelMask=good, repair=False,
+            badPixelMinOutliers=4,
+        )
+        noPrePass = cr.iterativeUtrDetectAndRepair(
+            deltas.copy(), goodPixelMask=good, repair=False,
+            badPixelMinOutliers=0,
+        )
+        np.testing.assert_array_equal(withPrePass.crFlagMask,
+                                      noPrePass.crFlagMask)
+        np.testing.assert_array_equal(withPrePass.glitchFlagMask,
+                                      noPrePass.glitchFlagMask)
+        np.testing.assert_array_equal(withPrePass.rate, noPrePass.rate)
+        np.testing.assert_array_equal(withPrePass.sigma, noPrePass.sigma)
+
+
 class TestMemory(lsst.utils.tests.MemoryTestCase):
     pass
 

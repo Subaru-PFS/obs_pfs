@@ -159,7 +159,8 @@ def _detectAndRepairOnce(deltas, goodPixelMask, glitchActive,
                          sigmaFloorADU, nSigma, repair, correctGlitches,
                          glitchAmplitudeMinADU=0.0,
                          maxDropFraction=0.5,
-                         nDropSigma=3.0):
+                         nDropSigma=3.0,
+                         rampQR=None):
     """Run one IQR-sigma detection/repair iteration on a delta cube.
 
     Modifies ``deltas``, ``crAccum``, ``glitchAccum``, ``boundaryAccum``
@@ -176,13 +177,17 @@ def _detectAndRepairOnce(deltas, goodPixelMask, glitchActive,
     above this value. Use it to suppress faint-end deglitching where the
     classifier is less reliable. 0 disables the extra floor.
 
+    ``rampQR`` optionally supplies the ``(p25, median, p75)`` triple for
+    ``deltas``, for callers that have already partitioned this exact array.
+    Passing it skips a full-cube partition; ``None`` computes it here.
+
     Returns ``(rate, sigma, newCR, newGlitchPairs)`` — counts are *new this
     call* against ``crAccum`` / ``glitchAccum`` at entry.
     """
     # IQR percentiles + median in a single partition pass (see _rampQR).
     # Done BEFORE converting deltas to residual so we can still read the
     # raw delta values.
-    p25, rate, p75 = _rampQR(deltas)
+    p25, rate, p75 = _rampQR(deltas) if rampQR is None else rampQR
 
     iqrSigma = 0.741 * (p75 - p25)
     sigma = np.maximum(iqrSigma, sigmaFloorADU).astype(np.float32, copy=False)
@@ -576,7 +581,11 @@ def iterativeUtrDetectAndRepair(
     # median + IQR-σ used to define an outlier; the rate criterion is
     # applied at the end against ``rateFinal``.
     if badPixelMinOutliers > 0:
-        p25Init, p50Init, p75Init = _rampQR(deltas)
+        # Kept for iteration 1 below: it partitions this same, still-unmodified
+        # array, so recomputing there would repeat a full-cube partition for a
+        # bit-identical result.
+        rampQR = _rampQR(deltas)
+        p25Init, p50Init, p75Init = rampQR
         sigmaInit = np.maximum(
             0.741 * (p75Init - p25Init).astype(np.float32, copy=False),
             sigmaFloorADU,
@@ -592,6 +601,7 @@ def iterativeUtrDetectAndRepair(
         del absSlice, threshInit, sigmaInit, p25Init, p50Init, p75Init
     else:
         nLargeOutliers = None
+        rampQR = None
 
     nByIter = []
     iterTimings = []
@@ -607,7 +617,9 @@ def iterativeUtrDetectAndRepair(
         glitchAmplitudeMinADU=glitchAmplitudeMinADU,
         maxDropFraction=maxDropFraction,
         nDropSigma=nDropSigma,
+        rampQR=rampQR,
     )
+    del rampQR
     iterTimings.append(time.time() - tIter0)
     nByIter.append((newCR, newGlitch))
 
