@@ -3042,6 +3042,11 @@ class PfsIsrTask(ipIsr.IsrTask):
         in the IRP1 frame, so the masking is applied only when ``irpN == 1``;
         for IRP4 (any ``irpN > 1``) the median runs over all rows -- bad-ref
         masking there needs an IRP4-aware calib mapping and is deferred.
+
+        ``rawDiffIrp`` is a difference of two IRP planes, which are integer ADC
+        readings, so it cannot contain NaN and a plain ``median`` is used. The
+        NaN-aware median costs an extra copy-and-partition per channel -- 73 s
+        per 140-read quantum -- to handle a value that cannot occur.
         """
         nchan = pfsRaw.nchan
         h, w = rawDiffIrp.shape
@@ -3063,9 +3068,9 @@ class PfsIsrTask(ipIsr.IsrTask):
             if len(chanBad) > 0:
                 good = np.ones(chan_w, dtype=bool)
                 good[chanBad] = False
-                chanVec = np.nanmedian(chan0[good, :], axis=0, keepdims=True)
+                chanVec = np.median(chan0[good, :], axis=0, keepdims=True)
             else:
-                chanVec = np.nanmedian(chan0, axis=0, keepdims=True)
+                chanVec = np.median(chan0, axis=0, keepdims=True)
             out[rowLow:rowHigh, :] = chanVec  # broadcasts (1, w) down the channel's rows
         return out
 

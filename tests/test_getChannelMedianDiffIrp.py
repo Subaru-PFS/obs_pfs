@@ -119,6 +119,50 @@ class GetChannelMedianDiffIrpTestCase(lsst.utils.tests.TestCase):
         np.testing.assert_array_equal(out1, out2)       # invariant => bad rows excluded
         np.testing.assert_allclose(out1[0:4, 0], 10.0)  # median of the good rows only
 
+    def testMatchesNanmedianOnNanFreeInput(self):
+        # The IRP planes are uint16 ADC data, so their difference cannot be
+        # NaN. On such input the plain median must agree exactly with the
+        # NaN-aware one, both with and without bad-row masking.
+        task = _makeIsrTask()
+        raw = _FakeRaw(nchan=4)
+        rng = np.random.RandomState(1885)
+        img = rng.uniform(-500.0, 500.0, size=(32, 17))
+        expected = np.zeros_like(img)
+        chanHeight = img.shape[0] // raw.nchan
+        for chan in range(raw.nchan):
+            lo, hi = chan * chanHeight, (chan + 1) * chanHeight
+            expected[lo:hi, :] = np.nanmedian(img[lo:hi, :], axis=0,
+                                              keepdims=True)
+        np.testing.assert_array_equal(task.getChannelMedianDiffIrp(raw, img),
+                                      expected)
+
+        task._badRefPixels = _FakeBadRefPixels([1, 9])
+        good = np.ones(chanHeight, dtype=bool)
+        good[1] = False
+        expected[0:chanHeight, :] = np.nanmedian(
+            img[0:chanHeight, :][good, :], axis=0, keepdims=True)
+        good = np.ones(chanHeight, dtype=bool)
+        good[1] = False
+        expected[chanHeight:2*chanHeight, :] = np.nanmedian(
+            img[chanHeight:2*chanHeight, :][good, :], axis=0, keepdims=True)
+        np.testing.assert_array_equal(task.getChannelMedianDiffIrp(raw, img),
+                                      expected)
+
+    def testNanInInputPropagates(self):
+        # Documents the precondition rather than hiding it: the estimator is a
+        # plain median, so a NaN reaching it poisons its whole column. The IRP
+        # planes are integer ADC data and NaN-free by construction; if one ever
+        # appears the output should show it, not silently absorb it.
+        task = _makeIsrTask()
+        raw = _FakeRaw(nchan=2)
+        img = np.array([[1., 2.], [3., 4.],
+                        [10., 20.], [30., 40.]])
+        img[0, 0] = np.nan
+        out = task.getChannelMedianDiffIrp(raw, img)
+        self.assertTrue(np.isnan(out[0:2, 0]).all())
+        np.testing.assert_array_equal(out[0:2, 1], [3., 3.])
+        np.testing.assert_array_equal(out[2:4, 0], [20., 20.])
+
 
 class TestMemory(lsst.utils.tests.MemoryTestCase):
     pass
