@@ -1858,12 +1858,19 @@ class PfsIsrTask(ipIsr.IsrTask):
         """
         gain = self._darkGain(nirDark)
         N = cube.shape[-1]
+        scaled = None
         for k in range(N):
             darkFrame = nirDark.getReadArray(r0 + k)
             if gain != 1.0:
                 # Back out the gain that ``ImageCube`` applied when
                 # writing the dark in electrons; the cube here is in ADU.
-                cube[:, :, k] -= darkFrame / gain
+                # Scale into a reused buffer: ``darkFrame`` may be the cube's
+                # own cached array, so it must not be scaled in place, and a
+                # fresh temporary per read is one allocation per read.
+                if scaled is None:
+                    scaled = np.empty_like(darkFrame)
+                np.divide(darkFrame, gain, out=scaled)
+                cube[:, :, k] -= scaled
             else:
                 cube[:, :, k] -= darkFrame
 
