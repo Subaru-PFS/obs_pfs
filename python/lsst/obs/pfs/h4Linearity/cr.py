@@ -17,6 +17,8 @@ from typing import Optional
 
 import numpy as np
 
+from .chunking import rowChunks
+
 
 DEFAULT_SIGMA_FLOOR_ADU = 8.0
 
@@ -195,13 +197,11 @@ def _detectAndRepairOnce(deltas, goodPixelMask, glitchActive,
     # Slice-wise candidate scan: build the (H, W) any-delta-exceeds-
     # threshold mask without materializing the full (H, W, N-1) flagged
     # cube (saves ~1.5 GB bool + ~5.85 GB float abs transient).
-    cand2D = np.zeros(residual.shape[:-1], dtype=bool)
-    absSlice = np.empty(residual.shape[:-1], dtype=residual.dtype)
-    for k in range(residual.shape[-1]):
-        np.abs(residual[..., k], out=absSlice)
-        cand2D |= absSlice > threshold
+    cand2D = np.empty(residual.shape[:-1], dtype=bool)
+    for lo, hi in rowChunks(residual.shape, residual.dtype.itemsize):
+        np.any(np.abs(residual[lo:hi]) > threshold[lo:hi, ..., None],
+               axis=-1, out=cand2D[lo:hi])
     cand2D &= goodPixelMask
-    del absSlice
 
     candYs, candXs = np.where(cand2D)
     nCand = candYs.size
@@ -576,12 +576,13 @@ def iterativeUtrDetectAndRepair(
         threshInit = (badPixelOutlierSigma * sigmaInit).astype(
             np.float32, copy=False
         )
-        nLargeOutliers = np.zeros((H, W), dtype=np.int32)
-        absSlice = np.empty((H, W), dtype=deltas.dtype)
-        for k in range(nDeltas):
-            np.abs(deltas[..., k] - p50Init, out=absSlice)
-            nLargeOutliers += absSlice > threshInit
-        del absSlice, threshInit, sigmaInit, p25Init, p50Init, p75Init
+        nLargeOutliers = np.empty((H, W), dtype=np.int32)
+        for lo, hi in rowChunks(deltas.shape, deltas.dtype.itemsize):
+            outliers = (np.abs(deltas[lo:hi] - p50Init[lo:hi, :, None])
+                        > threshInit[lo:hi, :, None])
+            np.sum(outliers, axis=-1, dtype=np.int32,
+                   out=nLargeOutliers[lo:hi])
+        del threshInit, sigmaInit, p25Init, p50Init, p75Init
     else:
         nLargeOutliers = None
         rampQR = None
@@ -694,20 +695,32 @@ def iterativeUtrDetectAndRepair(
     utrW = np.float32(6.0) * (ks + np.float32(1.0)) * (
         np.float32(nReads - 1) - ks
     ) / np.float32(nReads * (nReads - 1) * (nReads + 1))
-    sumUnflaggedW = np.zeros(deltas.shape[:-1], dtype=np.float32)
-    sumFlaggedW = np.zeros(deltas.shape[:-1], dtype=np.float32)
-    for k in range(nDeltas):
-        # Matched interior glitch pairs are LEFT IN the rate: their net UTR
-        # leverage is the tiny adjacent-weight difference u[k]-u[k+1] (~1/m of a
-        # single delta), whereas excluding them renormalises by 1/(1-sum of
-        # excluded weights) and amplifies noise on glitch-dense channels. CR +
-        # boundary (end) glitches + unclassified outliers have first-order
-        # leverage and are still excluded.
-        flagK = (crFlagAccum[..., k] | boundaryFlagAccum[..., k]
-                 | unclassFlagAccum[..., k])
-        unflagK = ~flagK
-        sumUnflaggedW += utrW[k] * deltas[..., k] * unflagK
-        sumFlaggedW += utrW[k] * flagK
+    sumUnflaggedW = np.empty(deltas.shape[:-1], dtype=np.float32)
+    sumFlaggedW = np.empty(deltas.shape[:-1], dtype=np.float32)
+    # Row-banded, but the per-pixel accumulation over k stays a loop in
+    # ascending k: float32 addition is not associative, so reducing the time
+    # axis in one call would change the last bits of the rate.
+    for lo, hi in rowChunks(deltas.shape, deltas.dtype.itemsize):
+        unflaggedW = sumUnflaggedW[lo:hi]
+        flaggedW = sumFlaggedW[lo:hi]
+        unflaggedW[...] = np.float32(0.0)
+        flaggedW[...] = np.float32(0.0)
+        deltaBand = deltas[lo:hi]
+        crBand = crFlagAccum[lo:hi]
+        boundaryBand = boundaryFlagAccum[lo:hi]
+        unclassBand = unclassFlagAccum[lo:hi]
+        for k in range(nDeltas):
+            # Matched interior glitch pairs are LEFT IN the rate: their net UTR
+            # leverage is the tiny adjacent-weight difference u[k]-u[k+1] (~1/m
+            # of a single delta), whereas excluding them renormalises by
+            # 1/(1-sum of excluded weights) and amplifies noise on glitch-dense
+            # channels. CR + boundary (end) glitches + unclassified outliers
+            # have first-order leverage and are still excluded.
+            flagK = (crBand[..., k] | boundaryBand[..., k]
+                     | unclassBand[..., k])
+            unflagK = ~flagK
+            unflaggedW += utrW[k] * deltaBand[..., k] * unflagK
+            flaggedW += utrW[k] * flagK
     denom = np.float32(1.0) - sumFlaggedW
     with np.errstate(divide="ignore", invalid="ignore"):
         rateFinal = (sumUnflaggedW / denom).astype(np.float32, copy=False)

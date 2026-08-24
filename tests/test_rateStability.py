@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 
 import lsst.utils.tests
-from lsst.obs.pfs.h4Linearity import rateStability
+from lsst.obs.pfs.h4Linearity import chunking, rateStability
 
 
 def _deltas(rate1, rate2, H=4, W=4, nDeltas=10):
@@ -204,6 +204,64 @@ class DetectRateInstabilityTestCase(lsst.utils.tests.TestCase):
         with self.assertRaises(ValueError):
             rateStability.detectRateInstability(
                 deltas, flags, goodPixelMask=good)
+
+
+class RowChunkingTestCase(lsst.utils.tests.TestCase):
+    """Banding the segment accumulation must not change a single bit.
+
+    The sums reduce along the delta axis per pixel, so how many image rows are
+    handled together is invisible to the result. Banding is what keeps the
+    float64 cast and its square -- two copies of half the delta cube, ~18.5 GB
+    at production size -- bounded by the band.
+    """
+
+    def _inputs(self, H=29, W=7, nDeltas=17, seed=1885):
+        rng = np.random.RandomState(seed)
+        deltas = rng.normal(120.0, 15.0, size=(H, W, nDeltas)).astype(np.float32)
+        # A rate step in the second half of some pixels, plus flagged deltas.
+        deltas[3, 2, nDeltas // 2:] += 400.0
+        deltas[20, 5, nDeltas // 2:] -= 250.0
+        flagMask = np.zeros((H, W, nDeltas), dtype=bool)
+        flagMask[7, 1, 2] = True
+        flagMask[7, 1, 3] = True
+        flagMask[25, 6, nDeltas - 2] = True
+        goodPixelMask = np.ones((H, W), dtype=bool)
+        goodPixelMask[11, 4] = False
+        return deltas, flagMask, goodPixelMask
+
+    def _run(self, chunkBytes):
+        deltas, flagMask, goodPixelMask = self._inputs()
+        original = chunking.CHUNK_BYTES
+        chunking.CHUNK_BYTES = chunkBytes
+        try:
+            return rateStability.detectRateInstability(
+                deltas, flagMask, goodPixelMask=goodPixelMask)
+        finally:
+            chunking.CHUNK_BYTES = original
+
+    def testEveryChunkSizeAgreesExactly(self):
+        reference = self._run(1 << 30)
+        # 29 rows: none of these band sizes divides it evenly.
+        for chunkBytes in (1 << 30, 1 << 12, 1 << 9, 1):
+            with self.subTest(chunkBytes=chunkBytes):
+                got = self._run(chunkBytes)
+                np.testing.assert_array_equal(got.rejectMask,
+                                              reference.rejectMask)
+                np.testing.assert_array_equal(got.nTestable,
+                                              reference.nTestable)
+                np.testing.assert_array_equal(got.segmentRates,
+                                              reference.segmentRates)
+                # fraction carries NaN at untested pixels; compare bitwise.
+                self.assertTrue(
+                    np.array_equal(got.fraction, reference.fraction,
+                                   equal_nan=True))
+                self.assertEqual(got.nRejected, reference.nRejected)
+                self.assertEqual(got.nUntestable, reference.nUntestable)
+
+    def testFixtureActuallyRejectsSomething(self):
+        # Otherwise the comparison above could pass on an all-empty result.
+        result = self._run(1 << 30)
+        self.assertGreater(result.nRejected, 0)
 
 
 class TestMemory(lsst.utils.tests.MemoryTestCase):

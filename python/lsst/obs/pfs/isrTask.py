@@ -51,6 +51,7 @@ from lsst.daf.butler import DimensionGroup
 
 from . import imageCube
 from . import h4Linearity
+from .h4Linearity.chunking import rowChunks
 from .maskPlanes import addObsPfsMaskPlanes
 from .overscan import PfsOverscanCorrectionTask
 from pfs.drp.stella.crosstalk import PfsCrosstalkTask
@@ -2460,14 +2461,26 @@ class PfsIsrTask(ipIsr.IsrTask):
                     # out-of-scope glitch pixels additionally get
                     # GLITCH_MASKED, which promotes them to BAD.
                     glitchMask3D = iterResult.glitchFlagMask
-                    if glitchMask3D.any():
-                        pairStart = (glitchMask3D[..., :-1]
-                                     & glitchMask3D[..., 1:])
-                        halfDiff = 0.5 * (deltas[..., :-1]
-                                          - deltas[..., 1:])
-                        maxHeight = np.where(
-                            pairStart, np.abs(halfDiff), 0.0,
-                        ).max(axis=-1)
+                    if glitchFlagMask2D.any():
+                        # Banded by image rows: this is a per-pixel maximum
+                        # over the delta axis, so the result is unchanged,
+                        # but whole-cube it builds a bool cube plus four
+                        # float cubes -- ~22 GB at 4096**2 x 138, one of the
+                        # three transients that set the peak.
+                        maxHeight = np.empty(deltas.shape[:-1],
+                                             dtype=deltas.dtype)
+                        for lo, hi in rowChunks(deltas.shape,
+                                                deltas.dtype.itemsize):
+                            band = deltas[lo:hi]
+                            glitchBand = glitchMask3D[lo:hi]
+                            pairStart = (glitchBand[..., :-1]
+                                         & glitchBand[..., 1:])
+                            halfDiff = 0.5 * (band[..., :-1]
+                                              - band[..., 1:])
+                            np.max(
+                                np.where(pairStart, np.abs(halfDiff), 0.0),
+                                axis=-1, out=maxHeight[lo:hi],
+                            )
                         glitchPix = (
                             (maxHeight
                              > self.config.h4.asicGlitchHeightMaskADU)
