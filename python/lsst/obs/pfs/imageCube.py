@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 import astropy.io.fits
+import fitsio
 
 from astro_metadata_translator import fix_header
 from lsst.afw.fits import readMetadata
@@ -47,12 +48,21 @@ class ImageCube:
         If True, close the FITS file when the instance is deleted.
     """
     def __init__(
-            self, fits: astropy.io.fits.HDUList, metadata: "PropertyList", closeOnDel: bool = True
+            self, fits: astropy.io.fits.HDUList, metadata: "PropertyList", closeOnDel: bool = True,
+            path: Optional[str] = None
     ) -> None:
         self.fits = fits
         self.metadata = metadata
         self._images: dict[int, ImageF] = {}
         self._closeOnDel = closeOnDel
+        # Pixels are read through cfitsio rather than the HDUList above.
+        # ``astropy.io.fits`` caches ``hdu.data`` on the HDU permanently, which
+        # defeats ``getReadArray``'s contract and pins a whole dark cube in
+        # memory; it is also ~1.7x slower per compressed frame. The HDUList is
+        # kept for headers, structure and writing, and is never asked for
+        # ``.data``.
+        self._path = path
+        self._reader: Optional[fitsio.FITS] = None
 
         if self.fits is not None:
             try:
@@ -65,16 +75,46 @@ class ImageCube:
         else:
             self.nreads = 0
 
+    @property
+    def reader(self) -> Optional[fitsio.FITS]:
+        """The cfitsio reader for the backing file, or None if in memory."""
+        if self._reader is None and self._path is not None:
+            self._reader = fitsio.FITS(self._path)
+        return self._reader
+
+    def _readHduArray(self, index: int) -> np.ndarray:
+        """Read one image from the file, without caching it anywhere."""
+        name = self._getHduName(index)
+        reader = self.reader
+        if reader is None:
+            # In-memory cube (``empty``/``fromCube``): no file to read from.
+            return self.fits[name].data.astype(np.float32, copy=False)
+        try:
+            hdu = reader[name]
+        except Exception as exc:
+            # cfitsio reports a missing extension its own way; callers rely on
+            # a missing read raising KeyError, which is how a dark that is
+            # shorter than the ramp gets caught rather than passing silently.
+            raise KeyError(name) from exc
+        return np.asarray(hdu.read(), dtype=np.float32)
+
+    def _closeReader(self) -> None:
+        if self._reader is not None:
+            self._reader.close()
+            self._reader = None
+
     def __enter__(self) -> "ImageCube":
         """Enter context"""
         return self
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         """Exit context"""
+        self._closeReader()
         self.fits.close()
 
     def __del__(self):
         """Delete object"""
+        self._closeReader()
         if self._closeOnDel:
             self.fits.close()
 
@@ -116,7 +156,7 @@ class ImageCube:
         fits = astropy.io.fits.open(path)
         metadata = readMetadata(path, 0)
         fix_header(metadata, translator_class=PfsTranslator, filename=path)
-        return cls(fits, metadata)
+        return cls(fits, metadata, path=path)
 
     @classmethod
     def fromCube(cls, data: np.ndarray, metadata: "PropertyList") -> "ImageCube":
@@ -146,7 +186,6 @@ class ImageCube:
     def flush(self) -> None:
         """Flush the cache"""
         self._images.clear()
-        self.nread = 0
 
     @classmethod
     def _getHduName(cls, index: int) -> str:
@@ -189,7 +228,7 @@ class ImageCube:
         """Return the image for the given index"""
         if index in self._images:
             return self._images[index]
-        image = ImageF(self.fits[self._getHduName(index)].data.astype(np.float32, copy=False))
+        image = ImageF(self._readHduArray(index))
         self._images[index] = image
         return image
 
@@ -209,7 +248,8 @@ class ImageCube:
     def readAll(self) -> None:
         """Read all images into cache"""
         for hdu in self.fits[1:]:
-            self[self._getHduIndex(hdu.name)] = ImageF(hdu.data.astype(np.float32, copy=False))
+            index = self._getHduIndex(hdu.name)
+            self[index] = ImageF(self._readHduArray(index))
 
     def getReadArray(self, index: int) -> np.ndarray:
         """Return the image for the given index, but do *not* cache it if it is not already cached
@@ -226,7 +266,7 @@ class ImageCube:
         """
         if index in self._images:
             return self._images[index].array
-        return self.fits[self._getHduName(index)].data.astype(np.float32, copy=False)
+        return self._readHduArray(index)
 
     def getImageCube(self, nreads: Optional[int] = None) -> np.ndarray:
         """Return the image cube as a 3D numpy array, trying not to cache new reads.
@@ -247,9 +287,12 @@ class ImageCube:
 
         if nreads is None:
             nreads = self.nreads
-        ret = np.empty((nreads, self.fits[1].data.shape[0], self.fits[1].data.shape[1]),
-                       dtype=np.float32)
-        for i in range(nreads):
+        if nreads <= 0:
+            return np.empty((0, 0, 0), dtype=np.float32)
+        first = self.getReadArray(0)
+        ret = np.empty((nreads, *first.shape), dtype=np.float32)
+        ret[0] = first
+        for i in range(1, nreads):
             ret[i] = self.getReadArray(i)
         return ret
 

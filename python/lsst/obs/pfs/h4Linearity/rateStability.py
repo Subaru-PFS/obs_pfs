@@ -36,6 +36,8 @@ from typing import Optional
 
 import numpy as np
 
+from .chunking import rowChunks
+
 __all__ = ["RateStabilityResult", "detectRateInstability"]
 
 
@@ -159,21 +161,25 @@ def detectRateInstability(
     # Two contiguous halves of the delta axis, as equal as possible.
     bounds = np.linspace(0, nDeltas, 3).astype(int)
 
-    # Per-segment sum of un-flagged deltas and un-flagged count. One
-    # segment at a time keeps the accumulation loop's where-temp to
-    # 1/2 of the cube rather than a whole-cube copy.
-    segSum = np.zeros((2, H, W), dtype=np.float64)
-    segSumSq = np.zeros((2, H, W), dtype=np.float64)
-    segCount = np.zeros((2, H, W), dtype=np.int32)
+    # Per-segment sum of un-flagged deltas and un-flagged count, accumulated
+    # one band of image rows at a time. The sums reduce along the delta axis
+    # per pixel, so banding leaves every value bit-identical; what it bounds is
+    # the temporaries. Whole-segment, the float64 cast below and its square are
+    # two copies of half the delta cube -- ~18.5 GB at 4096**2 x 138, and the
+    # largest transient in the quantum.
+    segSum = np.empty((2, H, W), dtype=np.float64)
+    segSumSq = np.empty((2, H, W), dtype=np.float64)
+    segCount = np.empty((2, H, W), dtype=np.int32)
     for k in range(2):
         lo, hi = int(bounds[k]), int(bounds[k + 1])
-        valid = ~flagMask[..., lo:hi]
-        contrib = np.where(valid, deltas[..., lo:hi], np.float32(0.0))
-        segSum[k] = contrib.sum(axis=-1, dtype=np.float64)
-        # Sum of squares over un-flagged deltas only (squaring of zero
-        # contributions from flagged entries is fine -- they add nothing).
-        segSumSq[k] = (contrib.astype(np.float64) ** 2).sum(axis=-1)
-        segCount[k] = valid.sum(axis=-1)
+        for r0, r1 in rowChunks(deltas.shape, deltas.dtype.itemsize):
+            valid = ~flagMask[r0:r1, :, lo:hi]
+            contrib = np.where(valid, deltas[r0:r1, :, lo:hi], np.float32(0.0))
+            segSum[k, r0:r1] = contrib.sum(axis=-1, dtype=np.float64)
+            # Sum of squares over un-flagged deltas only (squaring of zero
+            # contributions from flagged entries is fine -- they add nothing).
+            segSumSq[k, r0:r1] = (contrib.astype(np.float64) ** 2).sum(axis=-1)
+            segCount[k, r0:r1] = valid.sum(axis=-1)
 
     testable = segCount >= minDeltasPerSegment            # (2, H, W)
     nTestable = testable.sum(axis=0).astype(np.int16)     # (H, W)

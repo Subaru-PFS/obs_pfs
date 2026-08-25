@@ -2,19 +2,20 @@
 position-dependent per-pixel slopes.
 
 The UTR weights are the standard linear-LS slope estimator on evenly
-spaced reads: with ``cube[i, y, x] = (i + 1) * slope[y, x]`` (no
+spaced reads: with ``cube[y, x, i] = (i + 1) * slope[y, x]`` (no
 offset) and exact arithmetic, ``calcUTRrates(cube)[y, x] == slope[y, x]``.
 We use a position-encoded slope ``slope[y, x] = y * 10 + x`` and
-asymmetric ``(N=15, H=4, W=7)`` so that:
+asymmetric ``(H=4, W=7, N=15)`` so that:
 
 - An ``H <-> W`` swap inside ``calcUTRrates`` would either raise (shape
-  mismatch between cube[0] and the rate buffer) or produce a transposed
-  rate plane whose values are observably wrong at every asymmetric
-  ``(y, x)``.
-- An axis-0 vs axis-1 swap (treating reads as height) would produce a
-  shape mismatch immediately.
-- A read-direction swap (cube[N-1-i] iterated instead of cube[i]) would
-  invert the sign of the recovered slope and is also caught.
+  mismatch between ``cube[..., 0]`` and the rate buffer) or produce a
+  transposed rate plane whose values are observably wrong at every
+  asymmetric ``(y, x)``.
+- Treating a spatial axis as the read axis would produce a shape mismatch
+  immediately.
+- A read-direction swap (``cube[..., N-1-i]`` iterated instead of
+  ``cube[..., i]``) would invert the sign of the recovered slope and is
+  also caught.
 """
 import unittest
 
@@ -42,10 +43,10 @@ def _slopePerPixel(H, W, dtype=np.float32):
 
 
 def _linearRamp(nReads, H, W, dtype=np.float32):
-    """``cube[i, y, x] = (i + 1) * slope[y, x]``."""
+    """``cube[y, x, i] = (i + 1) * slope[y, x]`` -- the time axis is last."""
     slope = _slopePerPixel(H, W, dtype=dtype)
-    i = np.arange(1, nReads + 1, dtype=dtype)[:, None, None]
-    return (i * slope[None, :, :]).astype(dtype)
+    i = np.arange(1, nReads + 1, dtype=dtype)[None, None, :]
+    return (i * slope[:, :, None]).astype(dtype)
 
 
 def _makeIsrTask():
@@ -99,7 +100,7 @@ class CalcUTRRatesTestCase(lsst.utils.tests.TestCase):
         # slope. Confirms axis 0 is actually being treated as the read
         # index (not the spatial axis).
         cube = _linearRamp(N_READS, H, W)
-        cubeRev = cube[::-1].copy()
+        cubeRev = cube[..., ::-1].copy()
         rates = self.task.calcUTRrates(cube)
         ratesRev = self.task.calcUTRrates(cubeRev)
         np.testing.assert_allclose(
@@ -109,7 +110,7 @@ class CalcUTRRatesTestCase(lsst.utils.tests.TestCase):
 
     def testNreadsTruncatesAxisZero(self):
         # ``nreads=k`` should only use the first k reads (axis 0). With
-        # cube[i, y, x] = (i+1) * slope, the first k reads still satisfy
+        # cube[y, x, i] = (i+1) * slope, the first k reads still satisfy
         # the linear model exactly, so the recovered slope is unchanged.
         cube = _linearRamp(N_READS, H, W)
         rates_full = self.task.calcUTRrates(cube)
@@ -121,12 +122,12 @@ class CalcUTRRatesTestCase(lsst.utils.tests.TestCase):
         )
 
     def testShapeMatchesSpatialPlane(self):
-        # The output shape must equal cube[0].shape (i.e. (H, W)) — not
+        # The output shape must equal cube[..., 0].shape (i.e. (H, W)) — not
         # some transposition. If axes 1 and 2 were swapped inside the
         # function the shape would be (W, H) here.
         cube = _linearRamp(N_READS, H, W)
         rates = self.task.calcUTRrates(cube)
-        self.assertEqual(rates.shape, cube[0].shape)
+        self.assertEqual(rates.shape, cube[..., 0].shape)
         self.assertEqual(rates.shape, (H, W))
 
     def testThreeRateFunctionsAgreeOnCleanRamp(self):
@@ -139,14 +140,13 @@ class CalcUTRRatesTestCase(lsst.utils.tests.TestCase):
         re-derives one of the formulas.
         """
         cube = _linearRamp(N_READS, H, W)
-        cubeHWN = np.ascontiguousarray(cube.transpose(1, 2, 0))
-        deltas = np.diff(cubeHWN, axis=-1)
+        deltas = np.diff(cube, axis=-1)
 
         rRead = self.task.calcUTRrates(cube)
         rDelta = self.task.calcUTRrateFromDeltas(deltas)
         result = cr.iterativeUtrDetectAndRepair(
             deltas.copy(),
-            goodPixelMask=np.ones(cubeHWN.shape[:-1], dtype=bool),
+            goodPixelMask=np.ones(cube.shape[:-1], dtype=bool),
             glitchPixelMask=None,
         )
         rCR = result.rate

@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 
 import lsst.utils.tests
-from lsst.obs.pfs.h4Linearity import cr
+from lsst.obs.pfs.h4Linearity import chunking, cr
 
 
 def _flatRamp(nReads=16, H=11, W=13, rate=10.0, dtype=np.float32):
@@ -629,6 +629,177 @@ class RampQRTestCase(lsst.utils.tests.TestCase):
         snapshot = deltas.copy()
         cr._rampQR(deltas)
         np.testing.assert_array_equal(deltas, snapshot)
+
+
+class PrecomputedRampQRTestCase(lsst.utils.tests.TestCase):
+    """The BAD-pixel pre-pass and iteration 1 partition the same array.
+
+    ``_rampQR`` is ~51 s per full-cube call at production scale. The pre-pass
+    only reads ``deltas`` and ``_rampQR`` partitions a scratch copy, so the two
+    calls see a bit-identical array and must produce a bit-identical result;
+    computing it once and handing it to iteration 1 is therefore free of any
+    change in output.
+    """
+
+    def _deltas(self, seed=1885, nReads=18, H=11, W=13):
+        rng = np.random.RandomState(seed)
+        flux = _flatRamp(nReads=nReads, H=H, W=W, rate=25.0)
+        _injectCR(flux, 3, 4, 6, 900.0)
+        _injectCR(flux, 8, 1, 11, 1500.0)
+        _injectGlitchPair(flux, 5, 9, 7, 700.0)
+        flux += rng.normal(0.0, 4.0, size=flux.shape).astype(np.float32)
+        deltas = np.diff(flux, axis=0)
+        return np.ascontiguousarray(deltas.transpose(1, 2, 0))
+
+    def testPrePassLeavesDeltasUnmodified(self):
+        # The precondition the reuse rests on: nothing between the pre-pass's
+        # _rampQR and iteration 1's touches ``deltas``.
+        deltas = self._deltas()
+        before = deltas.copy()
+        good = np.ones(deltas.shape[:-1], dtype=bool)
+        cr.iterativeUtrDetectAndRepair(
+            deltas.copy(), goodPixelMask=good, repair=False,
+            badPixelMinOutliers=4,
+        )
+        np.testing.assert_array_equal(deltas, before)
+
+    def testPrecomputedMatchesInternal(self):
+        # Handing _detectAndRepairOnce a precomputed (p25, rate, p75) must give
+        # bit-identical results to letting it compute its own.
+        deltas = self._deltas()
+        good = np.ones(deltas.shape[:-1], dtype=bool)
+        active = np.ones(deltas.shape[:-1], dtype=bool)
+        shape = deltas.shape
+
+        def run(rampQR):
+            work = deltas.copy()
+            accums = [np.zeros(shape, dtype=bool) for _ in range(4)]
+            out = cr._detectAndRepairOnce(
+                work, good, active, *accums,
+                8.0, 5.0, True, True, rampQR=rampQR,
+            )
+            return work, accums, out
+
+        workA, accumA, outA = run(None)
+        workB, accumB, outB = run(cr._rampQR(deltas))
+
+        np.testing.assert_array_equal(workA, workB)
+        for a, b in zip(accumA, accumB):
+            np.testing.assert_array_equal(a, b)
+        np.testing.assert_array_equal(outA[0], outB[0])   # rate
+        np.testing.assert_array_equal(outA[1], outB[1])   # sigma
+        self.assertEqual(outA[2:], outB[2:])              # counts
+
+    def testFullRunUnchangedByReuse(self):
+        # End-to-end: the reuse path (badPixelMinOutliers > 0, which is what
+        # populates the precomputed value) must agree with a run that has no
+        # pre-pass to reuse, on every field the pre-pass does not itself gate.
+        deltas = self._deltas()
+        good = np.ones(deltas.shape[:-1], dtype=bool)
+        withPrePass = cr.iterativeUtrDetectAndRepair(
+            deltas.copy(), goodPixelMask=good, repair=False,
+            badPixelMinOutliers=4,
+        )
+        noPrePass = cr.iterativeUtrDetectAndRepair(
+            deltas.copy(), goodPixelMask=good, repair=False,
+            badPixelMinOutliers=0,
+        )
+        np.testing.assert_array_equal(withPrePass.crFlagMask,
+                                      noPrePass.crFlagMask)
+        np.testing.assert_array_equal(withPrePass.glitchFlagMask,
+                                      noPrePass.glitchFlagMask)
+        np.testing.assert_array_equal(withPrePass.rate, noPrePass.rate)
+        np.testing.assert_array_equal(withPrePass.sigma, noPrePass.sigma)
+
+
+class RowChunkingTestCase(lsst.utils.tests.TestCase):
+    """Chunk size is a cache knob and must not change a single bit.
+
+    The whole-cube passes reduce along the time axis one pixel at a time, so
+    banding them by rows cannot change any pixel's result -- provided the
+    float accumulation over reads keeps its order. This pins that.
+    """
+
+    def _deltas(self, seed=99, nReads=22, H=37, W=13):
+        rng = np.random.RandomState(seed)
+        flux = _flatRamp(nReads=nReads, H=H, W=W, rate=40.0)
+        for y, x, k, amp in ((3, 4, 6, 1200.0), (30, 2, 11, 800.0),
+                             (17, 9, 3, -600.0)):
+            _injectCR(flux, y, x, k, amp)
+        _injectGlitchPair(flux, 21, 7, 9, 900.0)
+        _injectGlitchPair(flux, 5, 1, 14, -750.0)
+        flux += rng.normal(0.0, 6.0, size=flux.shape).astype(np.float32)
+        return np.ascontiguousarray(np.diff(flux, axis=0).transpose(1, 2, 0))
+
+    def _run(self, deltas, chunkBytes):
+        original = chunking.CHUNK_BYTES
+        chunking.CHUNK_BYTES = chunkBytes
+        try:
+            good = np.ones(deltas.shape[:-1], dtype=bool)
+            return cr.iterativeUtrDetectAndRepair(
+                deltas.copy(), goodPixelMask=good,
+                glitchPixelMask=np.ones(deltas.shape[:-1], dtype=bool),
+                repair=True, correctGlitches=True, badPixelMinOutliers=4,
+            )
+        finally:
+            chunking.CHUNK_BYTES = original
+
+    def testEveryChunkSizeAgreesExactly(self):
+        deltas = self._deltas()
+        # A whole-cube band, then bands that do not divide 37 rows evenly,
+        # down to one row at a time.
+        reference = self._run(deltas, 1 << 30)
+        for chunkBytes in (1 << 30, 1 << 14, 1 << 12, 1 << 10, 1):
+            with self.subTest(chunkBytes=chunkBytes):
+                got = self._run(deltas, chunkBytes)
+                np.testing.assert_array_equal(got.rate, reference.rate)
+                np.testing.assert_array_equal(got.sigma, reference.sigma)
+                np.testing.assert_array_equal(got.crFlagMask,
+                                              reference.crFlagMask)
+                np.testing.assert_array_equal(got.glitchFlagMask,
+                                              reference.glitchFlagMask)
+                np.testing.assert_array_equal(got.unclassifiedFlagMask,
+                                              reference.unclassifiedFlagMask)
+                np.testing.assert_array_equal(got.badPixelMask,
+                                              reference.badPixelMask)
+                self.assertEqual(got.nCRs, reference.nCRs)
+                self.assertEqual(got.nGlitchPairs, reference.nGlitchPairs)
+
+    def testRepairedDeltasAgreeExactly(self):
+        deltas = self._deltas()
+        good = np.ones(deltas.shape[:-1], dtype=bool)
+
+        def repaired(chunkBytes):
+            original = chunking.CHUNK_BYTES
+            chunking.CHUNK_BYTES = chunkBytes
+            try:
+                work = deltas.copy()
+                cr.iterativeUtrDetectAndRepair(
+                    work, goodPixelMask=good, repair=True,
+                    badPixelMinOutliers=4)
+                return work
+            finally:
+                chunking.CHUNK_BYTES = original
+
+        np.testing.assert_array_equal(repaired(1 << 10), repaired(1 << 30))
+
+    def testTestDataExercisesTheDetector(self):
+        # A guard on the guard: if the fixture stopped producing flags the
+        # comparisons above would pass vacuously.
+        result = self._run(self._deltas(), 1 << 30)
+        self.assertGreater(result.nCRs, 0)
+        self.assertTrue(result.glitchFlagMask.any())
+
+    def testRowChunksCoverEveryRowExactlyOnce(self):
+        for nRows in (1, 2, 7, 37, 64):
+            for budget in (1, 64, 4096, 1 << 20):
+                with self.subTest(nRows=nRows, budget=budget):
+                    bands = list(chunking.rowChunks((nRows, 5, 3), 4, budget))
+                    self.assertEqual(bands[0][0], 0)
+                    self.assertEqual(bands[-1][1], nRows)
+                    for (_, prevHi), (lo, _) in zip(bands, bands[1:]):
+                        self.assertEqual(prevHi, lo)
+                    self.assertTrue(all(lo < hi for lo, hi in bands))
 
 
 class TestMemory(lsst.utils.tests.MemoryTestCase):

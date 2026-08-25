@@ -17,6 +17,8 @@ from typing import Optional
 
 import numpy as np
 
+from .chunking import rowChunks
+
 
 DEFAULT_SIGMA_FLOOR_ADU = 8.0
 
@@ -137,29 +139,13 @@ def _rampQR(deltas: np.ndarray) -> tuple:
     return p25, median, p75
 
 
-def _utrRateSimple(cube: np.ndarray) -> np.ndarray:
-    """Robust per-pixel rate via median of cumulative deltas (ADU/read).
-
-    Median has a 50% breakdown point — a few CR/glitch hits in a ramp
-    don't bias the rate. LSQ slope (the obvious alternative) is non-
-    robust: a single outlier near the center of a short ramp can drag
-    the slope by ~5% of the outlier amplitude, which feeds back into
-    the iterative detection loop and causes the rate to diverge. For a
-    clean ramp the median of deltas matches the mean (= LSQ slope) up
-    to sampling noise.
-
-    ``cube`` is ``(H, W, N)`` cumulative ADU; the time axis is last.
-    """
-    deltas = np.diff(cube, axis=-1)
-    return np.median(deltas, axis=-1).astype(np.float32, copy=False)
-
-
 def _detectAndRepairOnce(deltas, goodPixelMask, glitchActive,
                          crAccum, glitchAccum, boundaryAccum, unclassAccum,
                          sigmaFloorADU, nSigma, repair, correctGlitches,
                          glitchAmplitudeMinADU=0.0,
                          maxDropFraction=0.5,
-                         nDropSigma=3.0):
+                         nDropSigma=3.0,
+                         rampQR=None):
     """Run one IQR-sigma detection/repair iteration on a delta cube.
 
     Modifies ``deltas``, ``crAccum``, ``glitchAccum``, ``boundaryAccum``
@@ -176,13 +162,17 @@ def _detectAndRepairOnce(deltas, goodPixelMask, glitchActive,
     above this value. Use it to suppress faint-end deglitching where the
     classifier is less reliable. 0 disables the extra floor.
 
+    ``rampQR`` optionally supplies the ``(p25, median, p75)`` triple for
+    ``deltas``, for callers that have already partitioned this exact array.
+    Passing it skips a full-cube partition; ``None`` computes it here.
+
     Returns ``(rate, sigma, newCR, newGlitchPairs)`` — counts are *new this
     call* against ``crAccum`` / ``glitchAccum`` at entry.
     """
     # IQR percentiles + median in a single partition pass (see _rampQR).
     # Done BEFORE converting deltas to residual so we can still read the
     # raw delta values.
-    p25, rate, p75 = _rampQR(deltas)
+    p25, rate, p75 = _rampQR(deltas) if rampQR is None else rampQR
 
     iqrSigma = 0.741 * (p75 - p25)
     sigma = np.maximum(iqrSigma, sigmaFloorADU).astype(np.float32, copy=False)
@@ -207,13 +197,11 @@ def _detectAndRepairOnce(deltas, goodPixelMask, glitchActive,
     # Slice-wise candidate scan: build the (H, W) any-delta-exceeds-
     # threshold mask without materializing the full (H, W, N-1) flagged
     # cube (saves ~1.5 GB bool + ~5.85 GB float abs transient).
-    cand2D = np.zeros(residual.shape[:-1], dtype=bool)
-    absSlice = np.empty(residual.shape[:-1], dtype=residual.dtype)
-    for k in range(residual.shape[-1]):
-        np.abs(residual[..., k], out=absSlice)
-        cand2D |= absSlice > threshold
+    cand2D = np.empty(residual.shape[:-1], dtype=bool)
+    for lo, hi in rowChunks(residual.shape, residual.dtype.itemsize):
+        np.any(np.abs(residual[lo:hi]) > threshold[lo:hi, ..., None],
+               axis=-1, out=cand2D[lo:hi])
     cand2D &= goodPixelMask
-    del absSlice
 
     candYs, candXs = np.where(cand2D)
     nCand = candYs.size
@@ -576,7 +564,11 @@ def iterativeUtrDetectAndRepair(
     # median + IQR-σ used to define an outlier; the rate criterion is
     # applied at the end against ``rateFinal``.
     if badPixelMinOutliers > 0:
-        p25Init, p50Init, p75Init = _rampQR(deltas)
+        # Kept for iteration 1 below: it partitions this same, still-unmodified
+        # array, so recomputing there would repeat a full-cube partition for a
+        # bit-identical result.
+        rampQR = _rampQR(deltas)
+        p25Init, p50Init, p75Init = rampQR
         sigmaInit = np.maximum(
             0.741 * (p75Init - p25Init).astype(np.float32, copy=False),
             sigmaFloorADU,
@@ -584,14 +576,16 @@ def iterativeUtrDetectAndRepair(
         threshInit = (badPixelOutlierSigma * sigmaInit).astype(
             np.float32, copy=False
         )
-        nLargeOutliers = np.zeros((H, W), dtype=np.int32)
-        absSlice = np.empty((H, W), dtype=deltas.dtype)
-        for k in range(nDeltas):
-            np.abs(deltas[..., k] - p50Init, out=absSlice)
-            nLargeOutliers += absSlice > threshInit
-        del absSlice, threshInit, sigmaInit, p25Init, p50Init, p75Init
+        nLargeOutliers = np.empty((H, W), dtype=np.int32)
+        for lo, hi in rowChunks(deltas.shape, deltas.dtype.itemsize):
+            outliers = (np.abs(deltas[lo:hi] - p50Init[lo:hi, :, None])
+                        > threshInit[lo:hi, :, None])
+            np.sum(outliers, axis=-1, dtype=np.int32,
+                   out=nLargeOutliers[lo:hi])
+        del threshInit, sigmaInit, p25Init, p50Init, p75Init
     else:
         nLargeOutliers = None
+        rampQR = None
 
     nByIter = []
     iterTimings = []
@@ -607,7 +601,9 @@ def iterativeUtrDetectAndRepair(
         glitchAmplitudeMinADU=glitchAmplitudeMinADU,
         maxDropFraction=maxDropFraction,
         nDropSigma=nDropSigma,
+        rampQR=rampQR,
     )
+    del rampQR
     iterTimings.append(time.time() - tIter0)
     nByIter.append((newCR, newGlitch))
 
@@ -699,20 +695,32 @@ def iterativeUtrDetectAndRepair(
     utrW = np.float32(6.0) * (ks + np.float32(1.0)) * (
         np.float32(nReads - 1) - ks
     ) / np.float32(nReads * (nReads - 1) * (nReads + 1))
-    sumUnflaggedW = np.zeros(deltas.shape[:-1], dtype=np.float32)
-    sumFlaggedW = np.zeros(deltas.shape[:-1], dtype=np.float32)
-    for k in range(nDeltas):
-        # Matched interior glitch pairs are LEFT IN the rate: their net UTR
-        # leverage is the tiny adjacent-weight difference u[k]-u[k+1] (~1/m of a
-        # single delta), whereas excluding them renormalises by 1/(1-sum of
-        # excluded weights) and amplifies noise on glitch-dense channels. CR +
-        # boundary (end) glitches + unclassified outliers have first-order
-        # leverage and are still excluded.
-        flagK = (crFlagAccum[..., k] | boundaryFlagAccum[..., k]
-                 | unclassFlagAccum[..., k])
-        unflagK = ~flagK
-        sumUnflaggedW += utrW[k] * deltas[..., k] * unflagK
-        sumFlaggedW += utrW[k] * flagK
+    sumUnflaggedW = np.empty(deltas.shape[:-1], dtype=np.float32)
+    sumFlaggedW = np.empty(deltas.shape[:-1], dtype=np.float32)
+    # Row-banded, but the per-pixel accumulation over k stays a loop in
+    # ascending k: float32 addition is not associative, so reducing the time
+    # axis in one call would change the last bits of the rate.
+    for lo, hi in rowChunks(deltas.shape, deltas.dtype.itemsize):
+        unflaggedW = sumUnflaggedW[lo:hi]
+        flaggedW = sumFlaggedW[lo:hi]
+        unflaggedW[...] = np.float32(0.0)
+        flaggedW[...] = np.float32(0.0)
+        deltaBand = deltas[lo:hi]
+        crBand = crFlagAccum[lo:hi]
+        boundaryBand = boundaryFlagAccum[lo:hi]
+        unclassBand = unclassFlagAccum[lo:hi]
+        for k in range(nDeltas):
+            # Matched interior glitch pairs are LEFT IN the rate: their net UTR
+            # leverage is the tiny adjacent-weight difference u[k]-u[k+1] (~1/m
+            # of a single delta), whereas excluding them renormalises by
+            # 1/(1-sum of excluded weights) and amplifies noise on glitch-dense
+            # channels. CR + boundary (end) glitches + unclassified outliers
+            # have first-order leverage and are still excluded.
+            flagK = (crBand[..., k] | boundaryBand[..., k]
+                     | unclassBand[..., k])
+            unflagK = ~flagK
+            unflaggedW += utrW[k] * deltaBand[..., k] * unflagK
+            flaggedW += utrW[k] * flagK
     denom = np.float32(1.0) - sumFlaggedW
     with np.errstate(divide="ignore", invalid="ignore"):
         rateFinal = (sumUnflaggedW / denom).astype(np.float32, copy=False)

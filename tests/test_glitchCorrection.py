@@ -112,6 +112,54 @@ class GlitchCorrectionTestCase(lsst.utils.tests.TestCase):
         self.assertFalse(mask[r18, 8], "already-bad pixel should not be correctable")
         self.assertTrue(mask[r16, 0], "a clean pair on any in-scope channel should be correctable")
 
+    def test_precomputedGlitchAnyMatchesInternal(self):
+        # ``glitchFlagMask.any(-1)`` is already computed by the caller; passing
+        # it in must not change the answer. The full-cube reduction is ~2.3 GB
+        # of traffic per call at production scale.
+        task = _makeTask()
+        H, W, nChan = 64, 8, 32
+        nDeltas = 12
+        rng = np.random.RandomState(1885)
+        glitch = np.zeros((H, W, nDeltas), dtype=bool)
+        crMask = np.zeros((H, W, nDeltas), dtype=bool)
+        deltas = rng.normal(0.0, 3.0, size=(H, W, nDeltas)).astype(np.float32)
+        bad = np.zeros((H, W), dtype=bool)
+        row = 18 * (H // nChan)
+        for col, (a, b) in enumerate([(60.0, -55.0), (70.0, -68.0), (50.0, 12.0)]):
+            glitch[row, col, 4:6] = True
+            deltas[row, col, 4:6] = (a, b)
+        crMask[row, 4, 7] = True
+        bad[row, 5] = True
+
+        expected = task.correctableGlitchMask("n4", glitch, crMask, deltas, bad,
+                                              nChannels=nChan)
+        got = task.correctableGlitchMask("n4", glitch, crMask, deltas, bad,
+                                         nChannels=nChan,
+                                         glitchAny2D=glitch.any(axis=-1))
+        np.testing.assert_array_equal(got, expected)
+        self.assertTrue(expected.any(), "test data must exercise the candidate path")
+
+    def test_doesNotMutateItsInputs(self):
+        # The astype(bool) copies are being removed, so the arrays the caller
+        # still holds are now the ones this method reads. It must not write to
+        # them.
+        task = _makeTask()
+        H, W, nChan, nDeltas = 64, 6, 32, 10
+        glitch = np.zeros((H, W, nDeltas), dtype=bool)
+        crMask = np.zeros((H, W, nDeltas), dtype=bool)
+        deltas = np.zeros((H, W, nDeltas), dtype=np.float32)
+        bad = np.zeros((H, W), dtype=bool)
+        row = 18 * (H // nChan)
+        glitch[row, 0, 4:6] = True
+        deltas[row, 0, 4:6] = (60.0, -55.0)
+        before = (glitch.copy(), crMask.copy(), deltas.copy(), bad.copy())
+        task.correctableGlitchMask("n4", glitch, crMask, deltas, bad,
+                                   nChannels=nChan)
+        for name, now, was in zip(("glitch", "cr", "deltas", "bad"),
+                                  (glitch, crMask, deltas, bad), before):
+            np.testing.assert_array_equal(now, was,
+                                          err_msg=f"{name} was modified")
+
     def test_endReadOutlierIsCorrectable(self):
         """A lone glitch outlier at a ramp END (first/last delta) can't have a
         return, but it sits at ~zero UTR weight and is dropped (the end read is

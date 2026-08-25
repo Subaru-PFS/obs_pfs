@@ -93,8 +93,8 @@ class MakeUTRcumulativeReferenceTestCase(lsst.utils.tests.TestCase):
         # IRP path: ddata = (data1 - data0) - getFinalDiffIrp = (10r - 0) - 3
         self.assertGreater(task.irpCalls, 0)
         self.assertEqual(task.borderCalls, 0)
-        np.testing.assert_allclose(stack[0], 10.0 - 3.0)  # read 1
-        np.testing.assert_allclose(stack[1], 20.0 - 3.0)  # read 2
+        np.testing.assert_allclose(stack[..., 0], 10.0 - 3.0)  # read 1
+        np.testing.assert_allclose(stack[..., 1], 20.0 - 3.0)  # read 2
 
     def testUsesBorderWhenUseIrpFalse(self):
         task = _makeTask(useIRP=False)
@@ -104,8 +104,8 @@ class MakeUTRcumulativeReferenceTestCase(lsst.utils.tests.TestCase):
         #            = 2*(10r) - 2*0 = 20r ; IRP must NOT be used.
         self.assertEqual(task.irpCalls, 0)
         self.assertGreater(task.borderCalls, 0)
-        np.testing.assert_allclose(stack[0], 20.0)  # read 1: 2*10
-        np.testing.assert_allclose(stack[1], 40.0)  # read 2: 2*20
+        np.testing.assert_allclose(stack[..., 0], 20.0)  # read 1: 2*10
+        np.testing.assert_allclose(stack[..., 1], 40.0)  # read 2: 2*20
 
     def testUsesBorderWhenNoInterleavedReferencePixels(self):
         # useIRP requested but the ramp has no IRP planes (irpN == 0):
@@ -115,7 +115,89 @@ class MakeUTRcumulativeReferenceTestCase(lsst.utils.tests.TestCase):
         stack = task.makeUTRcumulative(raw, r0=0, r1=2)
         self.assertEqual(task.irpCalls, 0)
         self.assertGreater(task.borderCalls, 0)
-        np.testing.assert_allclose(stack[0], 20.0)
+        np.testing.assert_allclose(stack[..., 0], 20.0)
+
+
+if HAS_DRP_STELLA:
+    class _LayoutTask(_RecordingTask):
+        """Position- and read-encoded planes, on a deliberately asymmetric shape.
+
+        ``data[readNum][y, x] = readNum * (100*y + x + 1)``, so with ``r0 = 0``
+        and a zero IRP diff, ``stack`` entry for read ``k+1`` is
+        ``(k+1) * (100*y + x + 1)`` -- a value that identifies its own ``(k, y,
+        x)``. Any axis permutation puts a different number in the sample.
+        """
+
+        SHAPE = (6, 9)
+
+        def _plane(self, readNum):
+            H, W = self.SHAPE
+            y = np.arange(H, dtype="f4")[:, None]
+            x = np.arange(W, dtype="f4")[None, :]
+            return (readNum * (100.0 * y + x + 1.0)).astype("f4")
+
+        def makeRawDataArray(self, pfsRaw, readNum, fromArray=None):
+            return self._plane(readNum)
+
+        def makeRawIrpArray(self, pfsRaw, readNum, forceIrp1=True, fromArray=None):
+            return np.zeros(self.SHAPE, dtype="f4")
+
+        def getFinalDiffIrp(self, pfsRaw, rawDiffIrp, useFft=True):
+            self.irpCalls += 1
+            return np.zeros_like(rawDiffIrp)
+
+
+@requireDrpStella
+class MakeUTRcumulativeLayoutTestCase(lsst.utils.tests.TestCase):
+    """``makeUTRcumulative`` returns ``(H, W, nreads-1)`` -- the time axis last.
+
+    Everything downstream of ingest (linearity, the CR detector, the deltas
+    and the cumsum reconstruction) wants the time axis last and contiguous, so
+    the stack is built that way rather than transposed afterwards. The
+    transpose was 152 s of a 777 s quantum.
+    """
+
+    NREADS = 5
+
+    def _run(self):
+        config = pfsIsrTask.PfsIsrTask.ConfigClass()
+        config.doFlat = False
+        config.doDark = False
+        config.doDefect = False
+        config.doSaturationInterpolation = False
+        config.h4.quickCDS = False
+        config.h4.doIPC = False
+        config.h4.doWriteRawCube = False
+        config.h4.doLinearize = False
+        config.h4.doCR = False
+        config.h4.useIRP = True
+        config.validate()
+        task = _LayoutTask(config=config)
+        raw = _FakeRaw(irpN=1, nreads=self.NREADS)
+        return task.makeUTRcumulative(raw, r0=0, r1=self.NREADS - 1)
+
+    def testShapeIsTimeLast(self):
+        stack = self._run()
+        H, W = _LayoutTask.SHAPE
+        self.assertEqual(stack.shape, (H, W, self.NREADS - 1))
+
+    def testIsCContiguousAlongTime(self):
+        # The point of the layout: per-pixel time series are contiguous.
+        stack = self._run()
+        self.assertTrue(stack.flags["C_CONTIGUOUS"])
+        self.assertEqual(stack.strides[-1], stack.dtype.itemsize)
+
+    def testEverySampleLandsAtItsOwnIndex(self):
+        stack = self._run()
+        H, W = _LayoutTask.SHAPE
+        for k in range(self.NREADS - 1):
+            for y in range(H):
+                for x in range(W):
+                    self.assertAlmostEqual(
+                        float(stack[y, x, k]),
+                        (k + 1) * (100.0 * y + x + 1.0), places=3,
+                        msg=f"wrong value at (y={y}, x={x}, k={k}) -- axes permuted?",
+                    )
 
 
 class TestMemory(lsst.utils.tests.MemoryTestCase):
