@@ -13,16 +13,23 @@ the lamp, rising at a constant rate while it is on, dark after. The reads that
 straddle each transition are partially illuminated, and the fraction of the
 plateau rate they carry places that transition to a fraction of a read.
 
-Two cautions, both learned the hard way:
+**A read is not an instantaneous sample.** A row pointer sweeps continuously
+down the detector, from the top row to the bottom, then wraps to the top; one
+pass is one read. The images as stored are rotated relative to that, so a
+detector row maps to an image *column* and time runs from the left of the
+image to the right. A lamp switching mid-read therefore leaves a *spatial*
+boundary rather than a uniform partial level: the columns scanned before the
+switch show nothing and those after show light, with the ratio to a fully
+illuminated read rising linearly with column. `measureEdgeByScan` fits that
+ramp and places the transition to a fraction of a read, which is far better
+than anything a whole-read median can do -- a median averages the lit and
+unlit halves together and can only place an edge to the nearest read.
 
-- Use a *low* threshold to decide which read carries an edge. Reads only
-  9-29% illuminated are common; treating them as dark truncates the answer to
-  a read boundary and can make cameras look a whole read apart.
-- The read straddling lamp-off also contains prompt persistence -- on a bright
-  flat that is ~16% of the plateau -- so the trailing edge cannot be placed
-  exactly from flux alone. `IlluminationWindow.off` is the start of the first
-  unilluminated read, a lower bound, and ``offUpper`` is the naive flux
-  estimate; the truth lies between.
+Do not mistake that spatial gradient for a dose-dependence. Comparing bright
+against faint pixels across the whole frame samples different scan positions,
+not different doses, and produces a difference that looks like persistence and
+is not: within a fixed column band, bright and faint pixels agree to a few
+percent.
 
 The cameras run independent frame clocks, so their ramps begin up to about one
 frame apart. Do **not** try to remove that with ``MJD-STR``: measured against
@@ -153,16 +160,19 @@ def _isIllumination(delta, reference, plateauBright, plateauFaint,
                     tolerance=BRIGHTNESS_TOLERANCE):
     """Is a partly-filled read illumination, or persistence?
 
-    A lamp switching partway through a read leaves every pixel with the same
-    *fraction* of its illuminated rate, whatever its brightness. Persistence
-    does not: it scales with what the pixel received from earlier exposures,
-    so the brightest pixels -- which took the most dose then -- show the
-    largest fraction, and the faint ones show none.
+    **This test is unreliable and is kept only as a diagnostic.** Its premise
+    -- that a lamp leaves every pixel with the same fraction of its
+    illuminated rate -- is false, because the readout scans across the frame
+    time: a pixel's illuminated fraction depends on where it sits in the scan.
+    Comparing bright against faint pixels drawn from the whole frame therefore
+    compares scan positions as much as brightnesses, and on 145076 that
+    produced an apparent 45%-against-1% split which looks like a
+    dose-dependence and is not. Within a fixed column band the same comparison
+    gives agreement to a few percent.
 
-    On 145076 read 0 runs at 47% of plateau on the brightest 0.1% of pixels,
-    45% on the brightest 1%, 19% on the brightest 10% and 0% on the median
-    pixel. That is a persistence signature, and reading it as illumination
-    moves the inferred lamp-on a whole read early.
+    Use `measureEdgeByScan` to place an edge. This function can only say
+    whether a read's illuminated fraction varies with brightness *at fixed
+    scan position*, which the caller must arrange.
 
     Parameters
     ----------
@@ -199,7 +209,7 @@ def _isIllumination(delta, reference, plateauBright, plateauFaint,
 
 def measureIllumination(cube, box=None, minPlateau=5.0,
                         minPlateauReads=2, litPercentile=99.0,
-                        firstUsableRead=1):
+                        firstUsableRead=0):
     """Measure a ramp's illumination window from its flux.
 
     Parameters
@@ -226,15 +236,11 @@ def measureIllumination(cube, box=None, minPlateau=5.0,
         Guards against a single anomalous read -- typically read 0, carrying
         reset behaviour -- being mistaken for the illuminated level.
     firstUsableRead : `int`, optional
-        Ignore reads before this when locating the lamp. Read 0 is not usable:
-        it carries persistence released by the preceding exposures, which
-        follows the same fiber traces as the illumination and so is easily
-        mistaken for it. On 145076 read 0 sits at 45% of plateau on the
-        brightest pixels while the median pixel sees nothing -- a
-        dose-proportional signature, not a lamp. The commanding never turns
-        the lamp on that early, so nothing is lost by skipping it, and
-        `leadingDark` still counts it as unilluminated, which for the lamp it
-        is.
+        Ignore reads before this when locating the plateau. Defaults to 0:
+        the lamp does arrive in the first interval on these ramps -- measured
+        by the scan, at 14.4-18.2 s -- so skipping it forces the answer onto
+        a read boundary. Raise it only if a ramp's first read is known to be
+        corrupted.
 
     Returns
     -------
@@ -305,3 +311,83 @@ def measureIllumination(cube, box=None, minPlateau=5.0,
         lampStillOn=(lastFull == nRead - 1),
         exptime=exptime, darktime=float(meta["DARKTIME"]),
         mjdStart=float(meta["MJD-STR"]))
+
+
+def measureEdgeByScan(cube, box=None, litPercentile=99.0, nBins=16):
+    """Locate the lamp transitions within a read, using the readout scan.
+
+    A read is not an instantaneous sample. The detector is scanned over the
+    frame time, so a lamp switching mid-read leaves a *spatial* boundary: the
+    part scanned before the switch shows nothing, the part after shows light,
+    and in between the ratio to a fully illuminated read rises linearly with
+    scan position. On 146285/n1 that ratio runs 0.006 below image column 2000
+    and then climbs steadily to 0.49 at the last column.
+
+    That structure carries far more timing information than a whole-read
+    median, which averages the lit and unlit halves together and can only ever
+    place an edge to the nearest read. Fitting the ramp gives the transition to
+    a fraction of a read.
+
+    For a pixel scanned at time ``t`` within the read, with the lamp switching
+    on at ``T``, the fraction of its integration that was illuminated is
+    ``(t - T)/frameTime``, clipped to [0, 1]. Scan position maps to image
+    column, so fitting ratio against column and solving for the zero crossing
+    gives ``T``.
+
+    Returns
+    -------
+    result : `dict` or `None`
+        ``onFraction`` is where in the read the lamp came on, as a fraction of
+        the frame time; ``onColumn`` the corresponding scan position;
+        ``slope`` the fitted rise per column, which should be about 1/ncols if
+        the scan spans one frame time; ``readIndex`` the read it happened in.
+    """
+    meta = cube.metadata
+    nRead = cube.getNumReads()
+    frameTime = float(meta["W_H4FRMT"])
+    if box is None:
+        box = (slice(None), slice(None))
+    planes = [np.asarray(cube.getReadArray(i), np.float32)[box]
+              for i in range(nRead)]
+    deltas = [planes[0]] + [planes[i] - planes[i - 1] for i in range(1, nRead)]
+    order = sorted(range(nRead),
+                   key=lambda i: np.percentile(deltas[i], litPercentile))
+    full = order[-1]
+    lit = deltas[full] >= np.percentile(deltas[full], litPercentile)
+    if not lit.any():
+        return None
+    ncols = deltas[full].shape[1]
+    edges = np.linspace(0, ncols, nBins + 1).astype(int)
+
+    def profile(delta):
+        out = []
+        for lo, hi in zip(edges[:-1], edges[1:]):
+            m = np.zeros_like(lit)
+            m[:, lo:hi] = True
+            m &= lit
+            if m.sum() < 50:
+                out.append(np.nan)
+                continue
+            ref = float(np.median(deltas[full][m]))
+            out.append(float(np.median(delta[m]))/ref if ref else np.nan)
+        return np.array(out)
+
+    centres = 0.5*(edges[:-1] + edges[1:])
+    for index in range(nRead):
+        if index == full:
+            continue
+        ratio = profile(deltas[index])
+        rising = np.isfinite(ratio) & (ratio > 0.05) & (ratio < 0.95)
+        if rising.sum() < 3:
+            continue
+        slope, intercept = np.polyfit(centres[rising], ratio[rising], 1)
+        if slope <= 0:
+            continue
+        onColumn = -intercept/slope
+        if not 0 <= onColumn <= ncols:
+            continue
+        return dict(readIndex=index, onColumn=float(onColumn),
+                    onFraction=float(onColumn/ncols), slope=float(slope),
+                    expectedSlope=1.0/ncols, frameTime=frameTime,
+                    ratio=ratio, centres=centres)
+    return None

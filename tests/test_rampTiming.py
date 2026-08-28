@@ -88,11 +88,11 @@ class RampTimingTestCase(lsst.utils.tests.TestCase):
         plateau then reports the lamp coming on in read 0, which it did not.
         """
         cube = FakeCube([7.0, 3.0, 3.1, 2.3, 0.4])
-        window = measureIllumination(cube, minPlateau=1.0)
-        self.assertIsNotNone(window)
-        # read 0 is skipped, so the plateau comes from the genuinely lit reads
-        self.assertLess(window.plateau, 4.0)
-        self.assertGreater(window.on, cube.metadata["W_H4FRMT"])
+        # The single hot read cannot hold a plateau across two reads, so no
+        # window is reported rather than a bogus one. Read 0 is no longer
+        # skipped -- the lamp genuinely does arrive in the first interval on
+        # real ramps -- so this guard is what protects against it.
+        self.assertIsNone(measureIllumination(cube, minPlateau=1.0))
 
     def testPlateauHeldAcrossTwoReadsIsAccepted(self):
         """The guard must not reject a genuine short plateau."""
@@ -109,6 +109,44 @@ class RampTimingTestCase(lsst.utils.tests.TestCase):
         window = measureIllumination(cube, minPlateau=1.0)
         self.assertAlmostEqual(window.duration, 30.0, places=6)
         self.assertAlmostEqual(window.off, window.on + 30.0, places=6)
+
+    def testScanEdgeRecoversMidReadTransition(self):
+        """A lamp switching mid-read leaves a ramp across the scan direction.
+
+        Built as a synthetic frame whose illuminated fraction rises linearly
+        with image column, which is what the row pointer produces: columns
+        scanned before the switch see nothing, those after see progressively
+        more.
+        """
+        from lsst.obs.pfs.h4utils.rampTiming import measureEdgeByScan
+
+        ncol, nrow, frame = 4096, 64, 10.0
+        onColumn = 1600.0
+        ramp = np.clip((np.arange(ncol) - onColumn)/ncol, 0.0, 1.0)
+        full = np.tile(np.full(ncol, 100.0), (nrow, 1))*frame
+        partial = np.tile(ramp*100.0, (nrow, 1))*frame
+
+        class ScanCube:
+            def __init__(self):
+                self.metadata = PropertyList()
+                self.metadata["W_H4FRMT"] = frame
+                self.metadata["H4READ0"] = 0
+                self.metadata["EXPTIME"] = 30.0
+                self.metadata["DARKTIME"] = 4*frame
+                self.metadata["MJD-STR"] = 60000.0
+                self._p = [partial, partial + full, partial + 2*full]
+
+            def getNumReads(self):
+                return len(self._p)
+
+            def getReadArray(self, i):
+                return self._p[i]
+
+        result = measureEdgeByScan(ScanCube(), litPercentile=50.0)
+        self.assertIsNotNone(result)
+        self.assertAlmostEqual(result["onColumn"], onColumn, delta=60)
+        self.assertAlmostEqual(result["slope"]/result["expectedSlope"], 1.0,
+                               delta=0.1)
 
     def testTrussLampsAreReported(self):
         """getLamps knows nothing of the truss lamps, which are voltages."""

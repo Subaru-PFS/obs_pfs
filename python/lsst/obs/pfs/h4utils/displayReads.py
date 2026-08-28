@@ -192,12 +192,15 @@ def displayReadsDs9(ds9, butler, visit, camera="n1", *, reads="all",
             else:
                 end = window.ends[index]
                 lit = 100*window.litFraction(index)
-                # The first interval is excluded from lamp detection, so any
-                # flux in it is persistence released by the preceding
-                # exposures. It follows the same traces as the illumination,
-                # which is what makes it so easy to misread as the lamp.
-                note = ("  PERSISTENCE, not lamp"
-                        if index == 0 and lit > 2 else "")
+                # A read carrying a partial level is usually the lamp
+                # switching mid-scan, which leaves a spatial boundary rather
+                # than a uniform level: with time running left to right across
+                # the image, the columns to the left were scanned before the
+                # switch. `litFraction` averages over that, so a partial value
+                # here means "the lamp switched during this read", not "the
+                # whole read was dimly lit".
+                note = ("  lamp switches mid-read"
+                        if 2 < lit < 95 else "")
                 label = (f"{visit} {camera} reads {index}-{index + 1}  "
                          f"{end - window.frameTime:.0f}-{end:.0f}s  "
                          f"{lit:.0f}% lit  ({lamps}){note}")
