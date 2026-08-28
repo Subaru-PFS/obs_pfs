@@ -18,6 +18,13 @@ difference matters:
 ``delta``
     what arrived *during* each read, i.e. the difference between consecutive
     reads. Use this for illumination and decay.
+
+    The first frame has no preceding read to difference against, so it is
+    shown with its own median removed. That puts it on the same zero-based
+    footing as the others -- it is charge accumulated since read 0, and
+    carries a pedestal the differences do not -- while preserving any
+    structure in it, which for the first interval is usually persistence
+    from the preceding exposure rather than the lamp.
 ``cumulative``
     the stored planes, each the charge since read 0. Monotonic, so it hides
     both the lamp switching off and anything decaying.
@@ -151,8 +158,15 @@ def displayReadsDs9(ds9, butler, visit, camera="n1", *, reads="all",
     for index in range(nRead):
         array = np.asarray(cube.getReadArray(index), dtype=np.float32)
         if mode == "delta":
-            current, previous = (array if previous is None
-                                 else array - previous), array
+            if previous is None:
+                # Nothing to difference against: show it relative to its own
+                # median so its pedestal does not swamp the display, and it
+                # shares a zero point with the differences that follow.
+                shown = array[box] if box is not None else array
+                current = array - float(np.median(shown))
+            else:
+                current = array - previous
+            previous = array
         else:
             current, previous = array, array
         if index not in wanted:

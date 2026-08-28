@@ -120,6 +120,29 @@ class RampTimingTestCase(lsst.utils.tests.TestCase):
         self.assertIn("Quartz", lampsOn(md))
 
 
+class ReadSelectionTestCase(lsst.utils.tests.TestCase):
+    """Read selection strings, which are the part users type by hand."""
+
+    def testSelections(self):
+        from lsst.obs.pfs.h4utils.displayReads import parseReads
+        self.assertEqual(parseReads("all", 5), [0, 1, 2, 3, 4])
+        self.assertEqual(parseReads(None, 5), [0, 1, 2, 3, 4])
+        self.assertEqual(parseReads("0-2", 5), [0, 1, 2])
+        self.assertEqual(parseReads("1,3", 5), [1, 3])
+        self.assertEqual(parseReads("2:", 5), [2, 3, 4])
+        self.assertEqual(parseReads("-1", 5), [4])
+        self.assertEqual(parseReads("-2:", 5), [3, 4])
+
+    def testOutOfRangeIsClipped(self):
+        from lsst.obs.pfs.h4utils.displayReads import parseReads
+        self.assertEqual(parseReads("3-99", 5), [3, 4])
+        self.assertEqual(parseReads("99", 5), [])
+
+    def testDuplicatesCollapse(self):
+        from lsst.obs.pfs.h4utils.displayReads import parseReads
+        self.assertEqual(parseReads("1,1,0-1", 5), [1, 0])
+
+
 class TestMemory(lsst.utils.tests.MemoryTestCase):
     pass
 
