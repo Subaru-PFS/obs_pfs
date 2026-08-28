@@ -170,8 +170,9 @@ def displayReadsDs9(ds9, butler, visit, camera="n1", *, reads="all",
             if window is None:
                 label = f"{visit} {camera} read {index}  ({lamps})"
             else:
+                end = window.ends[index]
                 label = (f"{visit} {camera} read {index}  "
-                         f"{window.ends[index]:.0f}s  "
+                         f"{end - window.frameTime:.0f}-{end:.0f}s  "
                          f"{100*window.litFraction(index):.0f}% lit  ({lamps})")
             shape = (current[box] if box is not None else current).shape
             x, y = int(0.30*shape[1]), int(0.95*shape[0])

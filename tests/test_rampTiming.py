@@ -43,7 +43,7 @@ class RampTimingTestCase(lsst.utils.tests.TestCase):
         cube = FakeCube([0.0, 100.0, 100.0, 0.0])
         window = measureIllumination(cube, minPlateau=1.0)
         self.assertAlmostEqual(window.on, 20.0, places=6)
-        self.assertAlmostEqual(window.off, 40.0, places=6)
+        self.assertAlmostEqual(window.offFlux, 40.0, places=6)
         self.assertFalse(window.lampStillOn)
 
     def testPartialReadPlacesEdgeInsideIt(self):
@@ -62,8 +62,8 @@ class RampTimingTestCase(lsst.utils.tests.TestCase):
         """Prompt persistence in the straddling read makes off a lower bound."""
         cube = FakeCube([0.0, 100.0, 100.0, 16.0])
         window = measureIllumination(cube, minPlateau=1.0)
-        self.assertAlmostEqual(window.off, 40.0, places=6)
-        self.assertGreater(window.offUpper, window.off)
+        self.assertAlmostEqual(window.offFlux, 40.0, places=6)
+        self.assertGreater(window.offUpper, window.offFlux)
         self.assertAlmostEqual(window.offUpper, 40.0 + 0.16*10.0, places=6)
 
     def testLampStillOnAtRampEnd(self):
@@ -74,10 +74,30 @@ class RampTimingTestCase(lsst.utils.tests.TestCase):
         self.assertEqual(window.trailingDark, 0)
 
     def testLeadingAndTrailingDarkCounts(self):
-        cube = FakeCube([0.0, 0.0, 100.0, 0.0, 0.0])
+        cube = FakeCube([0.0, 0.0, 100.0, 100.0, 0.0, 0.0])
         window = measureIllumination(cube, minPlateau=1.0)
         self.assertGreaterEqual(window.leadingDark, 1)
         self.assertGreaterEqual(window.trailingDark, 1)
+
+    def testAnomalousFirstReadIsNotAPlateau(self):
+        """A single hot read must not be mistaken for the illuminated level.
+
+        Read 0 carries reset and settling behaviour and on a faint flat can
+        exceed every illuminated read -- as on 146285/n2, where read 0 ran at
+        7.0 e-/s against ~3.1 for the lit reads. Taking the peak rate as the
+        plateau then reports the lamp coming on in read 0, which it did not.
+        """
+        cube = FakeCube([7.0, 3.0, 3.1, 2.3, 0.4])
+        window = measureIllumination(cube, minPlateau=1.0)
+        self.assertIsNotNone(window)
+        # read 0 is skipped, so the plateau comes from the genuinely lit reads
+        self.assertLess(window.plateau, 4.0)
+        self.assertGreater(window.on, cube.metadata["W_H4FRMT"])
+
+    def testPlateauHeldAcrossTwoReadsIsAccepted(self):
+        """The guard must not reject a genuine short plateau."""
+        cube = FakeCube([0.0, 100.0, 100.0, 0.0])
+        self.assertIsNotNone(measureIllumination(cube, minPlateau=1.0))
 
     def testTooFaintReturnsNone(self):
         """Arcs are often too faint to locate an edge; say so rather than guess."""
@@ -88,6 +108,7 @@ class RampTimingTestCase(lsst.utils.tests.TestCase):
         cube = FakeCube([0.0, 100.0, 100.0, 100.0, 0.0], exptime=30.0)
         window = measureIllumination(cube, minPlateau=1.0)
         self.assertAlmostEqual(window.duration, 30.0, places=6)
+        self.assertAlmostEqual(window.off, window.on + 30.0, places=6)
 
     def testTrussLampsAreReported(self):
         """getLamps knows nothing of the truss lamps, which are voltages."""
