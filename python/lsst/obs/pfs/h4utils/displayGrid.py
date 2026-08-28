@@ -131,17 +131,23 @@ def _maskFitsBytes(boolArr):
 
 
 def _drawCellDs9(ds9, exp, frame, *, maskPlanes, colors, transparency,
-                 scaleAlgorithm, scaleMode, label=None, labelColor="green"):
+                 scaleAlgorithm, scaleMode, scaleLimits=None,
+                 label=None, labelColor="green"):
     """Load one exposure into ``frame`` of ``ds9`` and overlay its mask planes.
 
-    Shared by `displayGridDs9` and `displayGridCollectionsDs9`. When ``label``
-    is given it is burned into the frame as a text region near the top-left, so
-    tiled rows are unambiguous without reading a separate legend.
+    Shared by the grid displayers. When ``label`` is given it is burned into the
+    frame as a text region near the top-left, so tiled rows are unambiguous
+    without reading a separate legend. When ``scaleLimits=(lo, hi)`` is given it
+    sets explicit manual scale limits instead of honoring ``scaleMode``.
     """
     ds9.set(f"frame {frame}")
     ds9.set_np2arr(exp.image.array)
     ds9.set(f"scale {scaleAlgorithm}")
-    ds9.set(f"scale mode {scaleMode}")
+    if scaleLimits is not None:
+        lo, hi = scaleLimits
+        ds9.set(f"scale limits {lo:g} {hi:g}")
+    else:
+        ds9.set(f"scale mode {scaleMode}")
     ds9.set("mask clear")
     planes = exp.mask.getMaskPlaneDict()
     for plane in maskPlanes:
@@ -334,6 +340,90 @@ def displayGridCollectionsDs9(ds9, butler, visit, collections,
             _drawCellDs9(ds9, exp, frame, maskPlanes=maskPlanes, colors=colors,
                          transparency=transparency, scaleAlgorithm=scaleAlgorithm,
                          scaleMode=scaleMode,
+                         label=f"{label} {cam}" if showLabels else None,
+                         labelColor=labelColor)
+            frames[(label, cam)] = frame
+
+    return frames
+
+
+def displayGridRunVisitDs9(ds9, butler, rows, cameras=DEFAULT_CAMERAS, *,
+                           datasetType="calexp", maskPlanes=DEFAULT_MASK_PLANES,
+                           planeColors=None, transparency=85,
+                           scaleAlgorithm="asinh", scaleMode="zscale",
+                           scaleLimits=None, frame0=1, instrument="PFS",
+                           showLabels=True, labelColor="green"):
+    """Draw an ``nrow`` x ``ncam`` grid where each row sets its OWN (run, visit).
+
+    Unlike `displayGridDs9` (one collection, visits down the rows) or
+    `displayGridCollectionsDs9` (one visit, collections down the rows), here
+    each row carries **both** a collection and a visit — for comparing datasets
+    that live in different runs AND at different visits (e.g. an IRP1 visit in
+    its run against an IRP4 visit in its run). Cameras run across the columns.
+
+    Parameters
+    ----------
+    ds9 : `pyds9.DS9`
+        The already-connected ds9 handle to drive.
+    butler : `lsst.daf.butler.Butler`
+        Butler to read from.
+    rows : iterable
+        One row per entry. Each entry is ``(collection, visit)`` or
+        ``(label, collection, visit)``; ``collection`` may be a `str` or a list
+        of collections and ``visit`` is an `int`. The label defaults to
+        ``"<collection> <visit>"`` and is used for the returned dict, the
+        printed legend, and the burned-in frame label.
+    cameras : iterable of `str`, optional
+        Camera names like ``"n2"``; one column each. Default ``n1``..``n4``.
+    datasetType, maskPlanes, planeColors, transparency, scaleAlgorithm,
+    scaleMode, frame0, instrument, showLabels, labelColor
+        As for `displayGridDs9`.
+
+    Returns
+    -------
+    frames : `dict`
+        ``{(label, camera): ds9-frame-number}`` for the cells that were shown.
+    """
+    colors = dict(DEFAULT_PLANE_COLORS)
+    if planeColors:
+        colors.update(planeColors)
+    cameras = list(cameras)
+    ncam = len(cameras)
+
+    # Normalize each row to (label, collection, visit).
+    norm = []
+    for entry in rows:
+        entry = tuple(entry)
+        if len(entry) == 3:
+            label, coll, visit = str(entry[0]), entry[1], entry[2]
+        elif len(entry) == 2:
+            coll, visit = entry
+            label = f"{coll} {visit}"
+        else:
+            raise ValueError("each row must be (collection, visit) or "
+                             f"(label, collection, visit); got {entry!r}")
+        norm.append((label, coll, int(visit)))
+
+    ds9.set(f"tile grid layout {ncam} {len(norm)}")     # <cols> <rows>
+    ds9.set("tile grid mode manual")            # honor our layout, don't auto-arrange
+    ds9.set("tile yes")
+    print("rows (top->bottom): "
+          + ", ".join(f"{i}:{lab}" for i, (lab, _, _) in enumerate(norm)))
+
+    frames = {}
+    for ir, (label, coll, visit) in enumerate(norm):
+        for ic, cam in enumerate(cameras):
+            frame = frame0 + ir * ncam + ic
+            try:
+                exp = butler.get(datasetType, instrument=instrument, visit=visit,
+                                 collections=coll, **_camDataId(cam))
+            except Exception as exc:
+                print(f"  {label} {cam}: no {datasetType} "
+                      f"({type(exc).__name__}: {exc})")
+                continue
+            _drawCellDs9(ds9, exp, frame, maskPlanes=maskPlanes, colors=colors,
+                         transparency=transparency, scaleAlgorithm=scaleAlgorithm,
+                         scaleMode=scaleMode, scaleLimits=scaleLimits,
                          label=f"{label} {cam}" if showLabels else None,
                          labelColor=labelColor)
             frames[(label, cam)] = frame
