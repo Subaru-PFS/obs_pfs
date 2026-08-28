@@ -167,13 +167,26 @@ def displayReadsDs9(ds9, butler, visit, camera="n1", *, reads="all",
         else:
             ds9.set(f"scale mode {scaleMode}")
         if showLabels:
+            # Name the interval, not just its lower index. Plane i is
+            # read[i+1] - read[0], so what is displayed is the charge that
+            # arrived BETWEEN reads i and i+1 -- labelling it "read i" invites
+            # the reading that it is a single read, and the first interval in
+            # particular is routinely mistaken for the lamp when what it holds
+            # is persistence from the previous exposure.
             if window is None:
-                label = f"{visit} {camera} read {index}  ({lamps})"
+                label = f"{visit} {camera} reads {index}-{index + 1}  ({lamps})"
             else:
                 end = window.ends[index]
-                label = (f"{visit} {camera} read {index}  "
+                lit = 100*window.litFraction(index)
+                # The first interval is excluded from lamp detection, so any
+                # flux in it is persistence released by the preceding
+                # exposures. It follows the same traces as the illumination,
+                # which is what makes it so easy to misread as the lamp.
+                note = ("  PERSISTENCE, not lamp"
+                        if index == 0 and lit > 2 else "")
+                label = (f"{visit} {camera} reads {index}-{index + 1}  "
                          f"{end - window.frameTime:.0f}-{end:.0f}s  "
-                         f"{100*window.litFraction(index):.0f}% lit  ({lamps})")
+                         f"{lit:.0f}% lit  ({lamps}){note}")
             shape = (current[box] if box is not None else current).shape
             x, y = int(0.30*shape[1]), int(0.95*shape[0])
             ds9.set("regions", f'image; text {x} {y} # text={{{label}}} '
