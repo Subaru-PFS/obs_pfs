@@ -37,6 +37,8 @@ datastore:
     NirLinearity: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     H4Linearity: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     NirBadRefPixels: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+    H4PersistenceModel: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+    H4Persistence: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
   templates:
     default: "{run:/}/{datasetType}.{component:?}/{visit.day_obs:?}/{visit:?}/{datasetType}_{component:?}_{instrument:?}_{visit:?}_{arm:?}{spectrograph:?}_{detector:?}_{run}"
     instrument+detector: "{run:/}/{datasetType}.{component:?}/{datasetType}_{component:?}_{instrument:?}_{detector:?}_{run}"  # used for defects
@@ -165,3 +167,7 @@ storageClasses:
     pytype: lsst.obs.pfs.h4Linearity.LinearityCorrection
   NirBadRefPixels:
     pytype: lsst.obs.pfs.nirBadRefPixels.NirBadRefPixels
+  H4PersistenceModel:
+    pytype: pfs.drp.stella.datamodel.h4Persistence.H4PersistenceModel
+  H4Persistence:
+    pytype: pfs.datamodel.h4Persistence.H4Persistence
