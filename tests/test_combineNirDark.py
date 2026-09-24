@@ -2,11 +2,15 @@
 
 The wrapper is a thin driver over ``lsst.obs.pfs.nirSuperdark.processMasterDark``
 that expands visit ranges and reduces the requested spectrographs in parallel.
-These tests confirm argument marshalling, visit-range parsing, the parallel
-fan-out, and per-spectrograph error aggregation.
+These tests confirm argument marshalling (including the defaults inferred from a
+``makeNirRawCubes`` output collection), visit-range parsing, the validity range,
+the parallel fan-out, progress reporting, and per-spectrograph error aggregation.
 """
 
+import contextlib
 import datetime
+import io
+import logging
 import os
 import shutil
 import sys
@@ -22,8 +26,8 @@ if HAS_DRP_STELLA:
     from lsst.obs.pfs import nirSuperdark
 
 
-def markerWorker(inputRun, outputRun, dataId, visits, startDate=None, repo_path=None,
-                 saveDir=None, calibCollection=None):
+def markerWorker(inputRun, outputRun, dataId, visits, startDate=None, endDate=None,
+                 repo_path=None, saveDir=None, calibCollection=None):
     """Stand-in for ``processMasterDark`` that records a run as a file.
 
     Module-level (hence picklable) so it can be dispatched to worker processes
@@ -35,11 +39,16 @@ def markerWorker(inputRun, outputRun, dataId, visits, startDate=None, repo_path=
 
 VISIT_START = datetime.datetime(2026, 6, 25, 5, 23, 17)
 TIMESTAMP = "20260709T123456Z"
+# What the fake input collection holds, for when no --visits are given.
+AVAILABLE = [100, 101, 102]
+preflightCalls = []
 
 
-def fakePreflight(inputRun, outputBase, dataId, visits, ticket, tag, iteration,
-                  timestamp, repo_path=None):
+def fakePreflight(inputRun, outputBase, spectrographs, visits, ticket, tag, iteration,
+                  timestamp, repo_path=None, skipMissing=False):
     """Stand-in for ``preflight``: no butler to name collections against here."""
+    preflightCalls.append(dict(inputRun=inputRun, outputBase=outputBase, ticket=ticket,
+                               tag=tag, skipMissing=skipMissing))
     gen = nirSuperdark.genCollectionName(outputBase, ticket, tag, "nirDark", iteration)
     return nirSuperdark.Plan(
         datasetType="nirDark",
@@ -48,6 +57,7 @@ def fakePreflight(inputRun, outputBase, dataId, visits, ticket, tag, iteration,
         genCollection=gen,
         outputRun=nirSuperdark.runName(gen, timestamp),
         startDate=VISIT_START,
+        visits={s: list(AVAILABLE if visits is None else visits) for s in spectrographs},
     )
 
 
@@ -65,6 +75,7 @@ class CombineNirDarkTestCase(lsst.utils.tests.TestCase):
 
         nirSuperdark.processMasterDark = recorder
         nirSuperdark.preflight = fakePreflight
+        preflightCalls.clear()
 
     def tearDown(self):
         nirSuperdark.processMasterDark = self.origProcess
@@ -80,7 +91,11 @@ class CombineNirDarkTestCase(lsst.utils.tests.TestCase):
                       "--iteration", "20260709a"]
         if "--run-timestamp" not in argv:
             extra += ["--run-timestamp", TIMESTAMP]
-        sys.argv = ["combineNirDark"] + argv + extra
+        self.run_raw(argv + extra)
+
+    def run_raw(self, argv):
+        """Run main() with exactly these arguments."""
+        sys.argv = ["combineNirDark"] + argv
         self.script.main()
 
     def testArgsMarshalled(self):
@@ -197,10 +212,99 @@ class CombineNirDarkTestCase(lsst.utils.tests.TestCase):
                                             processes=1)
         self.assertEqual(self.calls, [])
 
-    def testVisitsRequired(self):
-        with self.assertRaises(SystemExit):
-            self.run_main(["/repo", "--input", "in", "--output", "out",
-                           "--spectrograph", "1"])
+    def testVisitsDefaultToEverythingInInput(self):
+        self.run_main(["/repo", "--input", "in", "--output", "out",
+                       "--spectrograph", "1", "2"])
+        self.assertEqual([args[3] for args, _ in self.calls], [AVAILABLE, AVAILABLE])
+
+    def testSkipMissingReachesPreflight(self):
+        self.run_main(["/repo", "--input", "in", "--output", "out", "--visits", "7"])
+        self.assertFalse(preflightCalls[-1]["skipMissing"])
+        self.run_main(["/repo", "--input", "in", "--output", "out", "--visits", "7",
+                       "--skip-missing"])
+        self.assertTrue(preflightCalls[-1]["skipMissing"])
+
+    def testCommaSeparatedVisitRanges(self):
+        """A missing visit can be excluded by splitting the range around it."""
+        self.run_main(["/repo", "--input", "in", "--output", "out", "--spectrograph", "1",
+                       "--visits", "121023..121025,121027..121028", "121030"])
+        self.assertEqual(self.calls[0][0][3], [121023, 121024, 121025, 121027, 121028, 121030])
+
+    def testJobsAlias(self):
+        """-j, as for pipetask, sets the number of worker processes."""
+        nirSuperdark.processMasterDark = markerWorker
+        root = tempfile.mkdtemp(prefix="combineNirDark-j-")
+        try:
+            self.run_raw([root, "--input", "in", "--output", "out", "--ticket", "T",
+                          "--tag", "g", "--visits", "7", "-j", "2"])
+            self.assertEqual(sorted(os.listdir(root)),
+                             ["n1.done", "n2.done", "n3.done", "n4.done"])
+        finally:
+            shutil.rmtree(root, ignore_errors=True)
+
+    def testEndDateReachesWorker(self):
+        self.run_main(["/repo", "--input", "in", "--output", "out", "--spectrograph", "1",
+                       "--visits", "7", "--end-date", "2026-08-01"])
+        self.assertEqual(self.calls[0][1]["endDate"], datetime.datetime(2026, 8, 1))
+
+    def testEndDateDefaultsToOpen(self):
+        self.run_main(["/repo", "--input", "in", "--output", "out", "--spectrograph", "1",
+                       "--visits", "7"])
+        self.assertIsNone(self.calls[0][1]["endDate"])
+
+    def testEndDateBeforeStartRejected(self):
+        """Checked before any combine: against --start-date, or the first visit's date."""
+        for extra in (["--start-date", "2026-08-02"], []):
+            with self.assertRaises(ValueError):
+                self.run_main(["/repo", "--input", "in", "--output", "out",
+                               "--visits", "7", "--end-date", "2026-06-01", *extra])
+        self.assertEqual(self.calls, [])
+
+    def testNamesInferredFromScratchCubes(self):
+        """makeNirRawCubes' output collection names the ticket, tag and base."""
+        for inputColl in ("u/me/calib/PIPE2D-1888/run30/scratchCubes",
+                          "u/me/calib/PIPE2D-1888/run30/scratchCubes/20260714T063753Z"):
+            self.calls.clear()
+            self.run_raw(["/repo", "--input", inputColl, "--spectrograph", "1",
+                          "--iteration", "20260709a", "--run-timestamp", TIMESTAMP,
+                          "--processes", "1"])
+            self.assertEqual(self.calls[0][1]["calibCollection"],
+                             "u/me/calib/PIPE2D-1888/run30/nirDark.20260709a")
+            self.assertEqual(self.calls[0][0][0], inputColl)
+
+    def testExplicitNamesOverrideInference(self):
+        self.run_raw(["/repo", "--input", "u/me/calib/PIPE2D-1888/run30/scratchCubes",
+                      "--spectrograph", "1", "--tag", "other", "--iteration", "20260709a",
+                      "--processes", "1"])
+        self.assertEqual(self.calls[0][1]["calibCollection"],
+                         "u/me/calib/PIPE2D-1888/other/nirDark.20260709a")
+
+    def testUninferrableNamesRequired(self):
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr), self.assertRaises(SystemExit):
+            self.run_raw(["/repo", "--input", "u/me/elsewhere", "--ticket", "T",
+                          "--processes", "1"])
+        self.assertIn("--output", stderr.getvalue())
+        self.assertIn("--tag", stderr.getvalue())
+        self.assertNotIn("--ticket,", stderr.getvalue())
+
+    def testProgressReported(self):
+        with self.assertLogs(level=logging.INFO) as cm:
+            self.run_main(["/repo", "--input", "in", "--output", "out", "--visits", "7",
+                           "--spectrograph", "1", "2"])
+        text = "\n".join(cm.output)
+        self.assertIn("n1: done", text)
+        self.assertIn("(2/2 complete)", text)
+        self.assertIn("nirDark for n1, n2", text)
+
+    def testHelpKeepsDocstringLayout(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout), self.assertRaises(SystemExit):
+            self.run_raw(["--help"])
+        text = stdout.getvalue()
+        # The collection layout is a list, one collection per line, not reflowed.
+        self.assertRegex(text, r"\n- \{output\}/\{ticket\}/\{tag\}/\{product\}\.\{iteration\}")
+        self.assertNotIn("``", text)
 
     def testVisitRangesExpanded(self):
         self.run_main([
@@ -258,6 +362,12 @@ class ParseVisitsTestCase(lsst.utils.tests.TestCase):
     def testMixed(self):
         self.assertEqual(
             self.script.parseVisits(["1", "3..5", "9"]), [1, 3, 4, 5, 9])
+
+    def testCommaSeparated(self):
+        self.assertEqual(self.script.parseVisits(["1..3,5..6", "8,9"]), [1, 2, 3, 5, 6, 8, 9])
+
+    def testEmptyCommaFieldsIgnored(self):
+        self.assertEqual(self.script.parseVisits(["1,", ",2"]), [1, 2])
 
     def testBadRangesRaise(self):
         for bad in ("8..5", "1..10:0", "1..2..3", "1..x"):

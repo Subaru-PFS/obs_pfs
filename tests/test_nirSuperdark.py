@@ -173,7 +173,7 @@ class SaveNirDarkTestCase(lsst.utils.tests.TestCase):
     START = datetime.datetime(2026, 7, 8, 12, 0, 0)
 
     def roundTrip(self, irpN, expectedType, saveDir=None, runColl=None,
-                  calibCollection=None):
+                  calibCollection=None, endDate=None):
         # A dedicated run per case so the presence check below is unambiguous,
         # and so no two cases put the same dataset into the same run.
         if runColl is None:
@@ -189,7 +189,7 @@ class SaveNirDarkTestCase(lsst.utils.tests.TestCase):
             self.butler, dataId, runColl, [11, 22, 33], data,
             start=self.START,
             readNoise=5.0, gain=2.5, rampInfo=rampInfo, saveDir=saveDir,
-            calibCollection=calibCollection)
+            calibCollection=calibCollection, endDate=endDate)
         cube = self.butler.get(expectedType, dataId, collections=runColl)
         self.assertEqual(cube.nreads, 3)
         self.assertFloatsAlmostEqual(cube.getImageCube(), data)
@@ -248,6 +248,22 @@ class SaveNirDarkTestCase(lsst.utils.tests.TestCase):
             registry.findDataset("nirDark", dataId, collections=calib,
                                  timespan=Timespan(before, before)))
 
+    def testEndDateClosesValidity(self):
+        """A regenerated dark for an older run must not stay valid for newer data."""
+        calib = "u/test/PIPE2D-1888/closed/nirDark.20260709a"
+        end = datetime.datetime(2026, 8, 1)
+        dataId = self.roundTrip(1, "nirDark", runColl=f"{calib}/put",
+                                calibCollection=calib, endDate=end)
+        registry = self.butler.registry
+
+        def at(when):
+            t = astropy.time.Time(when, format="datetime", scale="utc")
+            return registry.findDataset("nirDark", dataId, collections=calib,
+                                        timespan=Timespan(t, t))
+
+        self.assertIsNotNone(at(datetime.datetime(2026, 7, 20)))
+        self.assertIsNone(at(datetime.datetime(2026, 8, 2)))
+
 
 @requireDrpStella
 class CollectionNameTestCase(lsst.utils.tests.TestCase):
@@ -289,6 +305,92 @@ class CollectionNameTestCase(lsst.utils.tests.TestCase):
 
     def testDefaultTimestampIsUtc(self):
         self.assertRegex(nirSuperdark.defaultTimestamp(), r"^\d{8}T\d{6}Z$")
+
+    def testScratchCollectionLayout(self):
+        self.assertEqual(nirSuperdark.scratchCollectionName("u/cpl/calib/", "PIPE2D-1664",
+                                                            "irp4"),
+                         "u/cpl/calib/PIPE2D-1664/irp4/scratchCubes")
+
+    def testParseScratchCollection(self):
+        expected = ("u/cpl/calib", "PIPE2D-1664", "irp4")
+        chain = nirSuperdark.scratchCollectionName(*expected)
+        self.assertEqual(nirSuperdark.parseScratchCollection(chain), expected)
+        # The timestamped RUN pipetask writes inside the chain parses the same.
+        self.assertEqual(nirSuperdark.parseScratchCollection(f"{chain}/20260714T063753Z"),
+                         expected)
+
+    def testParseScratchCollectionRejectsOthers(self):
+        for name in ("u/cpl/calib/PIPE2D-1664/irp4/other",
+                     "PIPE2D-1664/irp4/scratchCubes",
+                     "u/cpl/calib/PIPE2D-1664/irp4/scratchCubes/a/b"):
+            self.assertIsNone(nirSuperdark.parseScratchCollection(name), name)
+
+
+class FakeRef:
+    def __init__(self, spectrograph, visit):
+        self.dataId = dict(instrument="PFS", arm="n", spectrograph=spectrograph, visit=visit)
+
+
+class FakeRegistry:
+    """Records the query and returns rawISRCube refs for the given (spec, visit)s."""
+
+    def __init__(self, pairs):
+        self.pairs = pairs
+        self.queries = []
+
+    def queryDatasets(self, datasetType, collections, where, findFirst):
+        self.queries.append((datasetType, collections, where, findFirst))
+        return [FakeRef(s, v) for s, v in self.pairs]
+
+
+class FakeQueryButler:
+    def __init__(self, pairs):
+        self.registry = FakeRegistry(pairs)
+
+
+@requireDrpStella
+class VisitSelectionTestCase(lsst.utils.tests.TestCase):
+    """Which visits each spectrograph combines, given what the inputs hold."""
+
+    def testAvailableVisitsGroupedBySpectrograph(self):
+        butler = FakeQueryButler([(1, 12), (1, 10), (2, 10)])
+        available = nirSuperdark.availableVisits(butler, "in", [1, 2, 3])
+        self.assertEqual(available, {1: [10, 12], 2: [10], 3: []})
+        datasetType, collections, where, findFirst = butler.registry.queries[0]
+        self.assertEqual((datasetType, collections, findFirst), ("rawISRCube", "in", True))
+        self.assertIn("spectrograph IN (1, 2, 3)", where)
+        self.assertIn("arm = 'n'", where)
+
+    def testDefaultIsEverythingAvailable(self):
+        self.assertEqual(
+            nirSuperdark.resolveVisits(None, {1: [10, 11], 2: [10, 12]}),
+            {1: [10, 11], 2: [10, 12]})
+
+    def testRequestedVisitsKept(self):
+        self.assertEqual(
+            nirSuperdark.resolveVisits([10, 11, 11], {1: [10, 11, 12]}), {1: [10, 11]})
+
+    def testMissingVisitsRaiseByDefault(self):
+        """The error names the missing visits, so the fix is obvious."""
+        with self.assertRaises(ValueError) as cm:
+            nirSuperdark.resolveVisits([10, 11, 12], {1: [10, 12], 2: [10, 11, 12]})
+        self.assertIn("n1", str(cm.exception))
+        self.assertIn("11", str(cm.exception))
+        self.assertIn("--skip-missing", str(cm.exception))
+
+    def testMissingVisitsSkippedOnRequest(self):
+        with self.assertLogs(nirSuperdark.logger, "WARNING") as cm:
+            visits = nirSuperdark.resolveVisits([10, 11, 12], {1: [10, 12], 2: [10, 11, 12]},
+                                                skipMissing=True)
+        self.assertEqual(visits, {1: [10, 12], 2: [10, 11, 12]})
+        self.assertIn("11", "\n".join(cm.output))
+
+    def testTooFewVisitsRaise(self):
+        with self.assertRaises(ValueError) as cm:
+            nirSuperdark.resolveVisits(None, {1: [10, 11], 2: [10]})
+        self.assertIn("n2", str(cm.exception))
+        with self.assertRaises(ValueError):
+            nirSuperdark.resolveVisits([10, 11], {1: [10]}, skipMissing=True)
 
 
 @requireDrpStella

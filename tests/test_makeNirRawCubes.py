@@ -7,6 +7,9 @@ field that really exists on `PfsIsrTask.ConfigClass`, since ``pipetask`` would
 otherwise reject them only at run time, hours into a submission.
 """
 
+import contextlib
+import io
+import shlex
 import sys
 import unittest
 
@@ -58,19 +61,19 @@ class BuildCommandTestCase(lsst.utils.tests.TestCase):
 
     def testRawCubeConfigApplied(self):
         command = self.script.buildCommand("/repo", ["in"], "out", ["7"])
-        # Fixed corrections, then the default IRP config (use IRP, no smoothing).
+        # Fixed corrections, then the default IRP config (use IRP, per-channel, per-column median).
         self.assertEqual(self.overrides(command),
                          list(self.script.ISR_CONFIG)
-                         + ["isr:h4.useIRP=True", "isr:h4.IRPfilter=0"])
+                         + ["isr:h4.useIRP=True", "isr:h4.IRPfilter=-1"])
 
     def testIrpFilterSelectable(self):
         command = self.script.buildCommand("/repo", ["in"], "out", ["7"], irpFilter=15)
         self.assertIn("isr:h4.IRPfilter=15", self.overrides(command))
-        self.assertNotIn("isr:h4.IRPfilter=0", self.overrides(command))
+        self.assertNotIn("isr:h4.IRPfilter=-1", self.overrides(command))
 
-    def testPerColumnMedianMode(self):
-        command = self.script.buildCommand("/repo", ["in"], "out", ["7"], irpFilter=-1)
-        self.assertIn("isr:h4.IRPfilter=-1", self.overrides(command))
+    def testNoSmoothingMode(self):
+        command = self.script.buildCommand("/repo", ["in"], "out", ["7"], irpFilter=0)
+        self.assertIn("isr:h4.IRPfilter=0", self.overrides(command))
 
     def testNoIrpBypassesReferencePlanes(self):
         command = self.script.buildCommand("/repo", ["in"], "out", ["7"], useIRP=False)
@@ -95,10 +98,6 @@ class BuildCommandTestCase(lsst.utils.tests.TestCase):
         shown = [command[i + 1] for i, a in enumerate(command) if a == "--show"]
         self.assertEqual(shown, ["config", "uri"])
 
-    def testScratchCollectionLayout(self):
-        self.assertEqual(self.script.scratchCollection("u/cpl/calib", "PIPE2D-1664", "irp4"),
-                         "u/cpl/calib/PIPE2D-1664/irp4/scratchCubes")
-
 
 @requireDrpStella
 class MainTestCase(lsst.utils.tests.TestCase):
@@ -116,14 +115,26 @@ class MainTestCase(lsst.utils.tests.TestCase):
         self.script.main()
 
     def capture(self, argv):
-        """Run main() in --dry-run and return the printed command as a list."""
-        import io
-        import contextlib
+        """Run main() in --dry-run and return the printed command as a list.
+
+        Only the command may reach stdout, so that it can be pasted or piped.
+        """
         out = io.StringIO()
-        with contextlib.redirect_stdout(out):
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
             self.run_main(argv + ["--dry-run"])
-        import shlex
         return shlex.split(out.getvalue().strip())
+
+    def runPipetask(self, argv, returncode):
+        """Run main() for real, with pipetask replaced; return (exit code, stdout)."""
+        origCall = self.script.subprocess.call
+        self.script.subprocess.call = lambda command: returncode
+        out = io.StringIO()
+        try:
+            with contextlib.redirect_stdout(out), self.assertRaises(SystemExit) as cm:
+                self.run_main(argv)
+        finally:
+            self.script.subprocess.call = origCall
+        return cm.exception.code, out.getvalue()
 
     def testDefaultOutputIsScratchCubes(self):
         command = self.capture(["/repo", "--input", "in", "--output", "u/me/calib",
@@ -155,6 +166,67 @@ class MainTestCase(lsst.utils.tests.TestCase):
                                 "--spectrograph", "1", "2"])
         self.assertEqual(command[command.index("-d") + 1],
                          "visit in (7) and arm='n' and spectrograph in (1, 2)")
+
+    def testInputDefaultsToPfsDefaults(self):
+        """PFS/defaults already chains the raws and the calibs the ISR step needs."""
+        command = self.capture(["/repo", "--output", "u/me/calib",
+                                "--ticket", "T", "--tag", "g", "--visits", "7"])
+        self.assertEqual(command[command.index("-i") + 1], "PFS/defaults")
+
+    def testProcessesDefaultToOnePerCamera(self):
+        command = self.capture(["/repo", "--output", "u/me/calib",
+                                "--ticket", "T", "--tag", "g", "--visits", "7"])
+        self.assertEqual(command[command.index("-j") + 1], "4")
+        command = self.capture(["/repo", "--output", "u/me/calib", "--ticket", "T",
+                                "--tag", "g", "--visits", "7", "--spectrograph", "1", "3"])
+        self.assertEqual(command[command.index("-j") + 1], "2")
+
+    def testOutputCollectionReportedOnDryRun(self):
+        err = io.StringIO()
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+            self.run_main(["/repo", "--output", "u/me/calib", "--ticket", "T",
+                           "--tag", "g", "--visits", "7", "--dry-run"])
+        self.assertIn("u/me/calib/T/g/scratchCubes", err.getvalue())
+
+    def testNextStepPrintedAfterSuccess(self):
+        """The printed combineNirDark command needs nothing more from the user."""
+        code, out = self.runPipetask(["/repo", "--output", "u/me/calib", "--ticket", "T",
+                                      "--tag", "g", "--visits", "7..9,11",
+                                      "--spectrograph", "1", "2"], 0)
+        self.assertEqual(code, 0)
+        self.assertIn("u/me/calib/T/g/scratchCubes", out)
+        line = [ln for ln in out.splitlines() if "combineNirDark.py" in ln][0]
+        words = shlex.split(line.strip())
+        start = words.index("combineNirDark.py")
+        self.assertEqual(words[start:], ["combineNirDark.py", "/repo",
+                                         "--input", "u/me/calib/T/g/scratchCubes",
+                                         "--visits", "7..9,11", "--skip-missing",
+                                         "--spectrograph", "1", "2"])
+
+    def testNextStepNamesOutputsForOverriddenCollection(self):
+        """An output collection combineNirDark cannot parse gets explicit names."""
+        _, out = self.runPipetask(["/repo", "--output", "u/me/calib", "--ticket", "T",
+                                   "--tag", "g", "--visits", "7",
+                                   "--output-collection", "u/me/explicit"], 0)
+        line = [ln for ln in out.splitlines() if "combineNirDark.py" in ln][0]
+        self.assertIn("--output u/me/calib --ticket T --tag g", line)
+
+    def testNoNextStepAfterFailure(self):
+        code, out = self.runPipetask(["/repo", "--output", "u/me/calib", "--ticket", "T",
+                                      "--tag", "g", "--visits", "7"], 3)
+        self.assertEqual(code, 3)
+        self.assertNotIn("combineNirDark.py", out)
+
+    def testHelpKeepsDocstringLayout(self):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), self.assertRaises(SystemExit):
+            self.run_main(["--help"])
+        text = out.getvalue()
+        # The config table keeps its rows, one per line.
+        self.assertRegex(text, r"\n\s*isr\.doDark\s+True\s+False\s*\n")
+        self.assertNotIn("``", text)
+        # argparse reports the defaults itself.
+        self.assertIn("Ignored with --no-irp (default: -1)", " ".join(text.split()))
 
     def testTicketAndTagRequired(self):
         for missing in (["--ticket", "T"], ["--tag", "g"]):
@@ -217,11 +289,15 @@ class IsrConfigFieldsTestCase(lsst.utils.tests.TestCase):
         self.assertEqual(overrides["h4.doWriteRawCube"], "True")
         self.assertEqual(overrides["h4.doCR"], "False")
 
-    def testDefaultIrpFilterNoSmoothing(self):
+    def testDefaultIrpFilterPerColumnMedian(self):
         overrides = dict(o.split(":", 1)[1].split("=", 1)
                          for o in self.script.irpConfig(self.script.DEFAULT_IRP_FILTER, True))
         self.assertEqual(overrides["h4.useIRP"], "True")
-        self.assertEqual(overrides["h4.IRPfilter"], "0")
+        self.assertEqual(overrides["h4.IRPfilter"], "-1")
+
+    def testDefaultIrpFilterMatchesIsr(self):
+        """The dark must be built the way the exposures it is subtracted from are."""
+        self.assertEqual(self.config.h4.IRPfilter, self.script.DEFAULT_IRP_FILTER)
 
     def testOverridesDifferFromDefaults(self):
         """A no-op override would mean the default drifted under us."""
@@ -229,7 +305,6 @@ class IsrConfigFieldsTestCase(lsst.utils.tests.TestCase):
         self.assertTrue(self.config.h4.doLinearize)
         self.assertFalse(self.config.h4.doWriteRawCube)
         self.assertTrue(self.config.h4.doCR)
-        self.assertNotEqual(self.config.h4.IRPfilter, self.script.DEFAULT_IRP_FILTER)
 
 
 class TestMemory(lsst.utils.tests.MemoryTestCase):
