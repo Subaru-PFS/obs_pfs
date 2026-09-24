@@ -1,6 +1,7 @@
 import datetime
 import logging
 import os
+import re
 import time
 from typing import NamedTuple
 
@@ -16,6 +17,14 @@ from lsst.obs.pfs import imageCube
 from pfs.drp.stella.calibs import setCalibHeader
 
 logger = logging.getLogger(__name__)
+
+# The fewest ramps a spectrograph's dark may be combined from. A single ramp is
+# a copy, not a combine; rejecting CR hits by the per-read median needs three.
+MIN_VISITS = 2
+
+# The collection makeNirRawCubes writes its rawISRCubes to, beneath
+# ``{root}/{ticket}/{tag}``.
+SCRATCH_COLLECTION = "scratchCubes"
 
 # Dimensions and storage class of the nirDark family of dataset types, matching
 # the registrations in `PrimeFocusSpectrograph.registerDatasetTypes`.
@@ -144,6 +153,83 @@ def getRampInfo(butler: dafButler.Butler,
     return rampInfo
 
 
+def availableVisits(butler: dafButler.Butler, inputRun: str,
+                    spectrographs: list[int]) -> dict[int, list[int]]:
+    """The visits with a rawISRCube in ``inputRun``, for each spectrograph.
+
+    Every requested spectrograph appears in the result, if need be with no visits.
+    """
+    where = (f"instrument = 'PFS' AND arm = 'n' AND "
+             f"spectrograph IN ({', '.join(str(s) for s in spectrographs)})")
+    refs = butler.registry.queryDatasets("rawISRCube", collections=inputRun, where=where,
+                                         findFirst=True)
+    available = {s: set() for s in spectrographs}
+    for ref in refs:
+        available[ref.dataId["spectrograph"]].add(ref.dataId["visit"])
+    return {s: sorted(visits) for s, visits in available.items()}
+
+
+def resolveVisits(requested: list[int] | None, available: dict[int, list[int]],
+                  skipMissing: bool = False) -> dict[int, list[int]]:
+    """Choose the visits each spectrograph combines.
+
+    Parameters
+    ----------
+    requested : `list` [`int`] or `None`
+        The visits asked for; `None` for every available one.
+    available : `dict` [`int`, `list` [`int`]]
+        The visits with a rawISRCube, for each spectrograph (`availableVisits`).
+    skipMissing : `bool`
+        Drop requested visits that have no rawISRCube, with a warning, rather
+        than fail. A visit makeNirRawCubes could not process (e.g. one with no
+        SpS exposure) has none.
+
+    Raises
+    ------
+    ValueError
+        If requested visits are missing and ``skipMissing`` is not set, or if any
+        spectrograph is left with fewer than `MIN_VISITS` visits. Every problem
+        is reported at once.
+    """
+    chosen = {}
+    problems = []
+    for spectrograph, have in available.items():
+        cam = f"n{spectrograph}"
+        if requested is None:
+            visits = list(have)
+        else:
+            haveSet = set(have)
+            wanted = list(dict.fromkeys(requested))
+            visits = [v for v in wanted if v in haveSet]
+            missing = [v for v in wanted if v not in haveSet]
+            if missing:
+                if skipMissing:
+                    logger.warning("%s: skipping %d visit(s) with no rawISRCube: %s",
+                                   cam, len(missing), formatVisits(missing))
+                else:
+                    problems.append(f"{cam} has no rawISRCube for visit(s) "
+                                    f"{formatVisits(missing)}")
+        if len(visits) < MIN_VISITS:
+            problems.append(f"{cam} has {len(visits)} usable visit(s); "
+                            f"at least {MIN_VISITS} are needed")
+        chosen[spectrograph] = visits
+    if problems:
+        hint = "" if skipMissing else " (pass --skip-missing to combine the rest)"
+        raise ValueError("; ".join(problems) + hint)
+    return chosen
+
+
+def formatVisits(visits: list[int]) -> str:
+    """Compress a list of visits to comma-separated ``BEGIN..END`` runs."""
+    runs = []
+    for v in sorted(set(visits)):
+        if runs and v == runs[-1][1] + 1:
+            runs[-1][1] = v
+        else:
+            runs.append([v, v])
+    return ",".join(str(b) if b == e else f"{b}..{e}" for b, e in runs)
+
+
 def collectionRoot(root: str) -> str:
     """Normalize a collection base.
 
@@ -174,6 +260,27 @@ def genCollectionName(root: str, ticket: str, tag: str, product: str, iteration:
     ``{root}/{ticket}/{tag}/{product}Gen.{iteration}``.
     """
     return f"{collectionRoot(root)}/{ticket}/{tag}/{product}Gen.{iteration}"
+
+
+def scratchCollectionName(root: str, ticket: str, tag: str) -> str:
+    """The CHAINED collection makeNirRawCubes writes the raw cubes to.
+
+    ``{root}/{ticket}/{tag}/scratchCubes``. The cubes are an intermediate product
+    rather than a calibration, so they get no ``{product}Gen.{iteration}`` name.
+    """
+    return f"{collectionRoot(root)}/{ticket}/{tag}/{SCRATCH_COLLECTION}"
+
+
+def parseScratchCollection(name: str) -> tuple[str, str, str] | None:
+    """Recover ``(root, ticket, tag)`` from a `scratchCollectionName`.
+
+    The timestamped RUN that pipetask writes inside the chain is accepted too.
+    Returns `None` if ``name`` is not laid out that way.
+    """
+    match = re.fullmatch(rf"(.+)/([^/]+)/([^/]+)/{SCRATCH_COLLECTION}(/[^/]+)?", name)
+    if match is None:
+        return None
+    return match.group(1), match.group(2), match.group(3)
 
 
 def runName(genCollection: str, timestamp: str) -> str:
@@ -305,11 +412,12 @@ class Plan(NamedTuple):
     """The timestamped RUN to put the dark into."""
     startDate: datetime.datetime
     """Start of the dark's validity period."""
+    visits: dict[int, list[int]]
+    """The visits each spectrograph combines."""
 
 
 def planOutputs(butler: dafButler.Butler,
-                dataId: dict,
-                visits: list[int],
+                visits: dict[int, list[int]],
                 inputRun: str,
                 outputBase: str,
                 ticket: str,
@@ -319,38 +427,60 @@ def planOutputs(butler: dafButler.Butler,
     """Name and register the collections this combine will write, before it runs.
 
     The dataset type follows from the inputs' IRP ratio, and names the product, so
-    the input headers -- but not their pixels -- have to be read first.
+    the input headers -- but not their pixels -- have to be read first. Reading
+    them for every spectrograph also catches inputs that cannot be combined (a
+    mismatched read count or IRP ratio) before any combine starts.
     """
-    datasetType = datasetTypeForIrp(getRampInfo(butler, dataId, visits)["W_H4IRPN"])
+    logger.info("reading the ramp headers")
+    datasetTypes = {s: datasetTypeForIrp(getRampInfo(butler, darkDataId(s), v)["W_H4IRPN"])
+                    for s, v in visits.items()}
+    if len(set(datasetTypes.values())) > 1:
+        raise ValueError("the spectrographs' input ramps have different IRP ratios: "
+                         + ", ".join(f"n{s}: {t}" for s, t in datasetTypes.items()))
+    datasetType = datasetTypes.popitem()[1]
     calibCollection = calibCollectionName(outputBase, ticket, tag, datasetType, iteration)
     genCollection = genCollectionName(outputBase, ticket, tag, datasetType, iteration)
     outputRun = runName(genCollection, timestamp)
     ensureOutputs(butler, outputRun, calibCollection, datasetType)
     ensureGenCollection(butler, genCollection, [outputRun, inputRun])
+    # Visit ids increase with time, so the smallest is the earliest.
+    first, spectrograph = min((min(v), s) for s, v in visits.items())
     return Plan(datasetType, calibCollection, genCollection, outputRun,
-                getStartDate(butler, dataId, visits[0]))
+                getStartDate(butler, darkDataId(spectrograph), first), visits)
+
+
+def darkDataId(spectrograph: int) -> dict:
+    """The dataId of one spectrograph's NIR dark."""
+    return dict(instrument="PFS", arm="n", spectrograph=spectrograph)
 
 
 def preflight(inputRun: str, outputBase: str,
-              dataId: dict,
-              visits: list[int],
+              spectrographs: list[int],
+              visits: list[int] | None,
               ticket: str,
               tag: str,
               iteration: str,
               timestamp: str,
-              repo_path: str = '/work/datastore') -> Plan:
+              repo_path: str = '/work/datastore',
+              skipMissing: bool = False) -> Plan:
     """Resolve, once, everything the per-spectrograph combines must agree on.
 
-    Besides naming and registering the output collections, this reads the validity
-    start date from the first visit. Each detector latches its own timestamp a
-    second or two apart, so letting every spectrograph derive its own start date
-    would certify one logical dark set with several staggered validity periods --
-    and letting each derive its own RUN timestamp would scatter them across four
-    RUNs.
+    This chooses each spectrograph's visits from the rawISRCubes ``inputRun``
+    holds (see `resolveVisits`), names and registers the output collections, and
+    reads the validity start date from the earliest visit. Each detector latches
+    its own timestamp a second or two apart, so letting every spectrograph derive
+    its own start date would certify one logical dark set with several staggered
+    validity periods -- and letting each derive its own RUN timestamp would
+    scatter them across four RUNs.
     """
     butler = makeButler(inputRun, None, repo_path)
-    return planOutputs(butler, dataId, visits, inputRun, outputBase, ticket, tag,
-                       iteration, timestamp)
+    logger.info("querying the rawISRCubes in %s", inputRun)
+    chosen = resolveVisits(visits, availableVisits(butler, inputRun, spectrographs),
+                           skipMissing=skipMissing)
+    for spectrograph, vlist in chosen.items():
+        logger.info("n%d: %d visits: %s", spectrograph, len(vlist), formatVisits(vlist))
+    return planOutputs(butler, chosen, inputRun, outputBase, ticket, tag, iteration,
+                       timestamp)
 
 
 def saveNirDark(butler: dafButler.Butler,
@@ -363,7 +493,8 @@ def saveNirDark(butler: dafButler.Butler,
                 gain: float,
                 rampInfo: dict,
                 saveDir: str | None = None,
-                calibCollection: str | None = None):
+                calibCollection: str | None = None,
+                endDate: datetime.datetime | None = None):
     """Write a combined NIR dark cube to the butler, and certify it as a calib.
 
     The output dataset type (``nirDark`` or ``nirDark_irp<N>``) is selected from
@@ -386,9 +517,11 @@ def saveNirDark(butler: dafButler.Butler,
         that takes hours. The file can be ingested afterwards.
     calibCollection : `str`, optional
         CALIBRATION collection to certify the dark into, so that ISR selects it
-        by observation date. If `None` the dark is only put into ``run``. The
-        validity period is open-ended: a later dark supersedes this one through
-        the calibration chain, not through an end date set here.
+        by observation date. If `None` the dark is only put into ``run``.
+    endDate : `datetime.datetime`, optional
+        End of the dark's validity period. By default it is open-ended, and a
+        later dark supersedes this one through the calibration chain; an end
+        date keeps a dark regenerated for older data from applying to newer.
     """
 
     cam = f'n{dataId["spectrograph"]}'
@@ -415,7 +548,7 @@ def saveNirDark(butler: dafButler.Butler,
         with butler.transaction():
             ref = butler.put(ic, datasetType, dataId, run=run)
             if calibCollection is not None:
-                timespan = Timespan(asTime(start), None)
+                timespan = Timespan(asTime(start), asTime(endDate))
                 butler.registry.certify(calibCollection, [ref], timespan)
                 logger.info("%s: certified %s into %s for %s",
                             cam, datasetType, calibCollection, timespan)
@@ -552,14 +685,15 @@ def processMasterDark(inputRun: str, outputRun: str,
                       dataId: dict,
                       visits: list[int],
                       startDate=None,
+                      endDate=None,
                       repo_path='/work/datastore',
                       saveDir=None,
                       calibCollection=None):
     """Combine a spectrograph's dark ramps, then put and certify the result.
 
     ``startDate`` defaults to the observation date of the first input visit, and
-    is both the ``CALIBDATE`` header card and the start of the certified,
-    open-ended validity period.
+    is both the ``CALIBDATE`` header card and the start of the certified validity
+    period. The period is open-ended unless ``endDate`` is given.
     """
 
     mdButler = makeButler(inputRun, outputRun, repo_path)
@@ -584,7 +718,7 @@ def processMasterDark(inputRun: str, outputRun: str,
     saveNirDark(mdButler, dataId, outputRun, visits,
                 darkCube, start=startDate,
                 readNoise=readNoise, gain=gain, rampInfo=rampInfo,
-                saveDir=saveDir, calibCollection=calibCollection)
+                saveDir=saveDir, calibCollection=calibCollection, endDate=endDate)
     t2 = time.time()
     del darkCube
     logger.info("n%s: make=%0.1fs save=%0.1fs", dataId["spectrograph"], t1 - t0, t2 - t1)
