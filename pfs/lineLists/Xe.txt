@@ -1,10 +1,11 @@
 # Columns:
 # 1: wavelength (nm)
-# 2: intensity (arbitrary units)
+# 2: intensity (approximate counts/sec for PFS lamps)
 # 3: description (ionic species)
 # 4: status (bitmask)
 # 5: transition
 # 6: source reference
+# 7: intensityErr (uncertainty on intensity; same units)
 #
 # Status bitmask elements:
 # NOT_VISIBLE=1: Line is not typically visible in PFS (maybe too faint)
@@ -31,625 +32,625 @@
 # RAGNAR=32: Lines taken from Ragnar sky line list; Christian Kragh Jespersen thesis, 2026
 # EMPIRICAL_INTENSITY=64: Intensity measured empirically from PFS data, replacing the catalogued value; PLACEHOLDER, provenance (data/visits used, date, method) not yet recorded
 #
-350.77430               5    XeI          0 UNKNOWN   0
-350.94240               2    XeI          0 UNKNOWN   0
-351.89060               2    XeI          0 UNKNOWN   0
-353.44900               2    XeI          0 UNKNOWN   0
-353.76210               1    XeI          0 UNKNOWN   0
-353.83610               1    XeI          0 UNKNOWN   0
-355.08740              10    XeI          0 UNKNOWN   0
-355.50550              10    XeI          0 UNKNOWN   0
-355.69360               1    XeI          0 UNKNOWN   0
-356.48180               3    XeI          0 UNKNOWN   0
-358.80440               4    XeI          0 UNKNOWN   0
-359.26950               1    XeI          0 UNKNOWN   0
-359.38250               2    XeI          0 UNKNOWN   0
-361.13500              15    XeI          0 UNKNOWN   0
-361.40900               8    XeI          0 UNKNOWN   0
-363.40960               6    XeI          0 UNKNOWN   0
-367.09550              10    XeI          0 UNKNOWN   0
-367.85870               2    XeI          0 UNKNOWN   0
-368.03580               4    XeI          0 UNKNOWN   0
-368.69490              40    XeI          0 UNKNOWN   0
-368.98500               1    XeI          0 UNKNOWN   0
-369.45410              40    XeI          0 UNKNOWN   0
-369.78720               4    XeI          0 UNKNOWN   0
-370.37940               2    XeI          0 UNKNOWN   0
-373.88700               5    XeI          0 UNKNOWN   0
-374.32840               1    XeI          0 UNKNOWN   0
-374.64450              10    XeI          0 UNKNOWN   0
-374.67550               4    XeI          0 UNKNOWN   0
-379.70280               3    XeI          0 UNKNOWN   0
-379.73780              40    XeI          0 UNKNOWN   0
-380.24690              30    XeI          0 UNKNOWN   0
-380.29790               3    XeI          0 UNKNOWN   0
-381.09210              30    XeI          0 UNKNOWN   0
-382.48250              10    XeI          0 UNKNOWN   0
-382.79460              15    XeI          0 UNKNOWN   0
-383.66900               2    XeI          0 UNKNOWN   0
-387.83000               2    XeI          0 UNKNOWN   0
-394.34060               2    XeI          0 UNKNOWN   0
-394.92800              60    XeI          0 UNKNOWN   0
-394.98380              10    XeI          0 UNKNOWN   0
-395.20420             120    XeI          0 UNKNOWN   0
-395.79700               6    XeI          0 UNKNOWN   0
-396.86636             200    XeI          0 UNKNOWN   0
-397.55410              40    XeI          0 UNKNOWN   0
-398.63290              30    XeI          0 UNKNOWN   0
-400.56800              10    XeI          0 UNKNOWN   0
-407.99718             100    XeI          0 UNKNOWN   0
-411.08686              60    XeI          0 UNKNOWN   0
-411.72760              80    XeI          0 UNKNOWN   0
-412.47100              10    XeI          0 UNKNOWN   0
-413.62990              20    XeI          0 UNKNOWN   0
-414.79490               2    XeI          0 UNKNOWN   0
-417.63500               6    XeI          0 UNKNOWN   0
-419.41920              20    XeI          0 UNKNOWN   0
-419.47100             150    XeI          0 UNKNOWN   0
-420.48790               0    XeI          0 UNKNOWN   0
-420.65890              10    XeI          0 UNKNOWN   0
-423.62200              15    XeI          0 UNKNOWN   0
-428.03600               2    XeI          0 UNKNOWN   0
-435.58100               6    XeI          0 UNKNOWN   0
-437.35160              20    XeI          0 UNKNOWN   0
-438.51400             100    XeI          0 UNKNOWN   0
-438.70000              70    XeI          0 UNKNOWN   0
-450.22410               0    XeI          0 UNKNOWN   0
-452.59493               0    XeI          0 UNKNOWN   0
-454.52600               6    XeI          0 UNKNOWN   0
-457.78830               0    XeI          0 UNKNOWN   0
-458.40314               0    XeI          0 UNKNOWN   0
-461.31801             100    XeI          0 UNKNOWN   0
-462.55708               0    XeI          0 UNKNOWN   0
-466.35700               6    XeI          0 UNKNOWN   0
-467.25334               0    XeI          0 UNKNOWN   0
-469.22830             100    XeI          0 UNKNOWN   0
-469.83352               0    XeI          0 UNKNOWN   0
-470.95270               5    XeI          0 UNKNOWN   0
-473.54760             600    XeI          0 UNKNOWN   0
-473.88200               6    XeI          0 UNKNOWN   0
-479.39590             150    XeI          0 UNKNOWN   0
-480.83625             500    XeI          0 UNKNOWN   0
-483.10580             400    XeI          0 UNKNOWN   0
-484.46466             300    XeI          0 UNKNOWN   0
-491.78800             500    XeI          0 UNKNOWN   0
-492.45260             500    XeI          0 UNKNOWN   0
-502.52810               3    XeI          0 UNKNOWN   0
-502.96817             200    XeI          0 UNKNOWN   0
-511.78900               0    XeI          0 UNKNOWN   0
-512.86700               6    XeI          0 UNKNOWN   0
-516.41490              10    XeI          0 UNKNOWN   0
-516.58290               1    XeI          0 UNKNOWN   0
-516.87390               1    XeI          0 UNKNOWN   0
-518.72940               2    XeI          0 UNKNOWN   0
-520.75200               1    XeI          0 UNKNOWN   0
-524.67300               4    XeI          0 UNKNOWN   0
-525.04410               4    XeI          0 UNKNOWN   0
-525.33520               2    XeI          0 UNKNOWN   0
-527.49480               1    XeI          0 UNKNOWN   0
-528.47700               2    XeI          0 UNKNOWN   0
-528.75810               4    XeI          0 UNKNOWN   0
-528.78510               3    XeI          0 UNKNOWN   0
-530.78460               3    XeI          0 UNKNOWN   0
-533.73940               1    XeI          0 UNKNOWN   0
-533.93750               2    XeI          0 UNKNOWN   0
-535.82900               1    XeI          0 UNKNOWN   0
-536.37350              15    XeI          0 UNKNOWN   0
-536.61180              30    XeI          0 UNKNOWN   0
-536.85230               6    XeI          0 UNKNOWN   0
-537.52340               1    XeI          0 UNKNOWN   0
-539.42940             100    XeI          0 UNKNOWN   0
-539.62380              20    XeI          0 UNKNOWN   0
-539.91310               1    XeI          0 UNKNOWN   0
-540.19510               4    XeI          0 UNKNOWN   0
-541.95260               5    XeI          0 UNKNOWN   0
-542.32670               2    XeI          0 UNKNOWN   0
-543.71110               5    XeI          0 UNKNOWN   0
-544.14350              30    XeI          0 UNKNOWN   0
-544.19020              15    XeI          0 UNKNOWN   0
-544.63830               1    XeI          0 UNKNOWN   0
-545.60560               1    XeI          0 UNKNOWN   0
-545.79660               2    XeI          0 UNKNOWN   0
-546.15540              15    XeI          0 UNKNOWN   0
-548.06420               1    XeI          0 UNKNOWN   0
-548.28530               1    XeI          0 UNKNOWN   0
-548.56840               1    XeI          0 UNKNOWN   0
-548.59840               4    XeI          0 UNKNOWN   0
-548.85550               6    XeI          0 UNKNOWN   0
-549.00800              20    XeI          0 UNKNOWN   0
-552.45800               1    XeI          0 UNKNOWN   0
-553.43170               2    XeI          0 UNKNOWN   0
-554.19190               3    XeI          0 UNKNOWN   0
-555.39270              80    XeI          0 UNKNOWN   0
-555.46420               3    XeI          0 UNKNOWN   0
-555.66030               1    XeI          0 UNKNOWN   0
-555.88230               2    XeI          0 UNKNOWN   0
-556.50450               2    XeI          0 UNKNOWN   0
-556.81610             100    XeI          0 UNKNOWN   0
-556.93160               2    XeI          0 UNKNOWN   0
-557.68180               2    XeI          0 UNKNOWN   0
-558.08290              40    XeI          0 UNKNOWN   0
-558.33340              50    XeI          0 UNKNOWN   0
-558.67310               1    XeI          0 UNKNOWN   0
-559.59230               6    XeI          0 UNKNOWN   0
-560.95470               3    XeI          0 UNKNOWN   0
-561.42080              15    XeI          0 UNKNOWN   0
-562.04380              80    XeI          0 UNKNOWN   0
-562.28000               1    XeI          0 UNKNOWN   0
-564.77570               5    XeI          0 UNKNOWN   0
-565.44090               2    XeI          0 UNKNOWN   0
-565.58790               1    XeI          0 UNKNOWN   0
-566.60320               1    XeI          0 UNKNOWN   0
-568.99510              40    XeI          0 UNKNOWN   0
-569.73300             100    XeI          0 UNKNOWN   0
-569.80580              80    XeI          0 UNKNOWN   0
-570.01210               8    XeI          0 UNKNOWN   0
-570.49220               1    XeI          0 UNKNOWN   0
-570.84530               3    XeI          0 UNKNOWN   0
-571.13840              10    XeI          0 UNKNOWN   0
-571.37950               2    XeI          0 UNKNOWN   0
-571.73020              70    XeI          0 UNKNOWN   0
-571.78380              80    XeI          0 UNKNOWN   0
-572.37270              15    XeI          0 UNKNOWN   0
-572.48480               1    XeI          0 UNKNOWN   0
-572.76880               4    XeI          0 UNKNOWN   0
-573.50700               4    XeI          0 UNKNOWN   0
-574.17620               6    XeI          0 UNKNOWN   0
-574.23220               1    XeI          0 UNKNOWN   0
-574.97940               8    XeI          0 UNKNOWN   0
-575.61960               1    XeI          0 UNKNOWN   0
-579.38660               1    XeI          0 UNKNOWN   0
-580.89210              15    XeI          0 UNKNOWN   0
-581.61170              60    XeI          0 UNKNOWN   0
-582.21340              25    XeI          0 UNKNOWN   0
-582.55050             300    XeI          0 UNKNOWN   0
-582.64150             150    XeI          0 UNKNOWN   0
-582.93360               1    XeI          0 UNKNOWN   0
-583.22460              20    XeI          0 UNKNOWN   0
-584.24490               4    XeI          0 UNKNOWN   0
-584.50500               5    XeI          0 UNKNOWN   0
-584.70800               1    XeI          0 UNKNOWN   0
-584.78310               2    XeI          0 UNKNOWN   0
-585.14720               3    XeI          0 UNKNOWN   0
-585.81320              15    XeI          0 UNKNOWN   0
-587.66460             100    XeI          0 UNKNOWN   0
-588.05490               6    XeI          0 UNKNOWN   0
-589.07520              20    XeI          0 UNKNOWN   0
-589.66220             100    XeI          0 UNKNOWN   0
-589.72540               2    XeI          0 UNKNOWN   0
-590.01950               8    XeI          0 UNKNOWN   0
-590.60980              20    XeI          0 UNKNOWN   0
-590.83970               3    XeI          0 UNKNOWN   0
-591.35380               5    XeI          0 UNKNOWN   0
-591.82890               4    XeI          0 UNKNOWN   0
-592.34910              10    XeI          0 UNKNOWN   0
-592.41910              20    XeI          0 UNKNOWN   0
-592.72020               6    XeI          0 UNKNOWN   0
-593.28840              80    XeI          0 UNKNOWN   0
-593.58160             100    XeI          0 UNKNOWN   0
-596.49300               4    XeI          0 UNKNOWN   0
-597.44750               1    XeI          0 UNKNOWN   0
-597.58070              40    XeI          0 UNKNOWN   0
-597.99460               2    XeI          0 UNKNOWN   0
-598.10760               1    XeI          0 UNKNOWN   0
-598.78880               4    XeI          0 UNKNOWN   0
-599.08390              30    XeI          0 UNKNOWN   0
-599.97760              30    XeI          0 UNKNOWN   0
-600.95730              15    XeI          0 UNKNOWN   0
-601.14440               8    XeI          0 UNKNOWN   0
-601.57660               1    XeI          0 UNKNOWN   0
-602.45580               1    XeI          0 UNKNOWN   0
-602.84290               4    XeI          0 UNKNOWN   0
-603.14500              15    XeI          0 UNKNOWN   0
-603.30300               1    XeI          0 UNKNOWN   0
-603.65910               2    XeI          0 UNKNOWN   0
-604.50530              10    XeI          0 UNKNOWN   0
-604.96750               6    XeI          0 UNKNOWN   0
-606.65890               1    XeI          0 UNKNOWN   0
-606.92000               2    XeI          0 UNKNOWN   0
-606.94500               1    XeI          0 UNKNOWN   0
-609.50670               3    XeI          0 UNKNOWN   0
-609.68370               1    XeI          0 UNKNOWN   0
-610.55700               3    XeI          0 UNKNOWN   0
-611.00610               8    XeI          0 UNKNOWN   0
-611.34530              30    XeI          0 UNKNOWN   0
-611.36430              40    XeI          0 UNKNOWN   0
-611.65530              10    XeI          0 UNKNOWN   0
-612.56050               5    XeI          0 UNKNOWN   0
-612.80560              15    XeI          0 UNKNOWN   0
-613.31670               1    XeI          0 UNKNOWN   0
-614.38300               1    XeI          0 UNKNOWN   0
-614.54000               4    XeI          0 UNKNOWN   0
-614.66710              20    XeI          0 UNKNOWN   0
-615.37730              20    XeI          0 UNKNOWN   0
-616.38650               3    XeI          0 UNKNOWN   0
-616.53670              90    XeI          0 UNKNOWN   0
-616.56410              80    XeI          0 UNKNOWN   0
-618.00130             150    XeI          0 UNKNOWN   0
-618.13750             120    XeI          0 UNKNOWN   0
-618.41310             300    XeI          0 UNKNOWN   0
-618.58710               3    XeI          0 UNKNOWN   0
-619.08130              20    XeI          0 UNKNOWN   0
-619.31130               4    XeI          0 UNKNOWN   0
-619.56040               1    XeI          0 UNKNOWN   0
-619.72040               1    XeI          0 UNKNOWN   0
-619.99750             100    XeI          0 UNKNOWN   0
-620.26080              60    XeI          0 UNKNOWN   0
-620.32060               3    XeI          0 UNKNOWN   0
-620.70670               6    XeI          0 UNKNOWN   0
-620.74670               4    XeI          0 UNKNOWN   0
-620.80140              20    XeI          0 UNKNOWN   0
-621.08280               3    XeI          0 UNKNOWN   0
-622.25610               1    XeI          0 UNKNOWN   0
-622.58900              40    XeI          0 UNKNOWN   0
-623.25300               4    XeI          0 UNKNOWN   0
-624.38170               8    XeI          0 UNKNOWN   0
-626.29440              50    XeI          0 UNKNOWN   0
-626.70350              40    XeI          0 UNKNOWN   0
-627.00740               1    XeI          0 UNKNOWN   0
-627.49650              10    XeI          0 UNKNOWN   0
-627.87260               4    XeI          0 UNKNOWN   0
-628.35470               5    XeI          0 UNKNOWN   0
-628.77500             100    XeI          0 UNKNOWN   0
-629.43890              50    XeI          0 UNKNOWN   0
-629.61910              15    XeI          0 UNKNOWN   0
-631.67160              15    XeI          0 UNKNOWN   0
-631.98090             500    XeI          0 UNKNOWN   0
-632.75590               2    XeI          0 UNKNOWN   0
-633.32510              20    XeI          0 UNKNOWN   0
-633.57210              40    XeI          0 UNKNOWN   0
-633.93320               8    XeI          0 UNKNOWN   0
-634.67340               2    XeI          0 UNKNOWN   0
-635.75270              20    XeI          0 UNKNOWN   0
-638.50000               0    XeI          0 UNKNOWN   0
-640.88200               0    XeI          0 UNKNOWN   0
-641.41520              10    XeI          0 UNKNOWN   0
-642.01840              30    XeI          0 UNKNOWN   0
-642.07540              30    XeI          0 UNKNOWN   0
-642.31000               0    XeI          0 UNKNOWN   0
-643.19320              20    XeI          0 UNKNOWN   0
-643.67900               0    XeI          0 UNKNOWN   0
-644.01000               0    XeI          0 UNKNOWN   0
-644.06800               0    XeI          0 UNKNOWN   0
-645.04820               2    XeI          0 UNKNOWN   0
-645.22630               7    XeI          0 UNKNOWN   0
-645.35730              10    XeI          0 UNKNOWN   0
-646.04900               0    XeI          0 UNKNOWN   0
-646.32860               3    XeI          0 UNKNOWN   0
-647.14930             300    XeI          0 UNKNOWN   0
-647.46300             150    XeI          0 UNKNOWN   0
-648.54200               0    XeI          0 UNKNOWN   0
-648.95580             120    XeI          0 UNKNOWN   0
-649.92250              30    XeI          0 UNKNOWN   0
-650.05130             100    XeI          0 UNKNOWN   0
-650.21660              15    XeI          0 UNKNOWN   0
-650.59770             200    XeI          0 UNKNOWN   0
-650.61800               0    XeI          0 UNKNOWN   0
-650.92980               0    XeI          0 UNKNOWN   0
-652.33100              40    XeI          0 UNKNOWN   0
-653.49640             100    XeI          0 UNKNOWN   0
-654.51680              40    XeI          0 UNKNOWN   0
-654.79280              20    XeI          0 UNKNOWN   0
-655.44100               0    XeI          0 UNKNOWN   0
-655.48000               0    XeI          0 UNKNOWN   0
-655.54700               4    XeI          0 UNKNOWN   0
-655.60070              50    XeI          0 UNKNOWN   0
-656.04300               0    XeI          0 UNKNOWN   0
-656.17820              25    XeI          0 UNKNOWN   0
-656.24620               4    XeI          0 UNKNOWN   0
-657.02000              30    XeI          0 UNKNOWN   0
-658.50880              20    XeI          0 UNKNOWN   0
-659.26800               8    XeI          0 UNKNOWN   0
-659.50900               0    XeI          0 UNKNOWN   0
-659.73830             100    XeI          0 UNKNOWN   0
-660.15300               0    XeI          0 UNKNOWN   0
-660.34000               0    XeI          0 UNKNOWN   0
-660.38800               0    XeI          0 UNKNOWN   0
-660.46940               4    XeI          0 UNKNOWN   0
-660.62800               0    XeI          0 UNKNOWN   0
-660.68000               0    XeI          0 UNKNOWN   0
-660.92350              30    XeI          0 UNKNOWN   0
-661.06950              10    XeI          0 UNKNOWN   0
-662.29100               0    XeI          0 UNKNOWN   0
-663.22710               2    XeI          0 UNKNOWN   0
-663.42960              50    XeI          0 UNKNOWN   0
-663.82100               0    XeI          0 UNKNOWN   0
-665.05860               3    XeI          0 UNKNOWN   0
-665.65100               0    XeI          0 UNKNOWN   0
-665.97580              20    XeI          0 UNKNOWN   0
-666.66900               4    XeI          0 UNKNOWN   0
-666.75100               0    XeI          0 UNKNOWN   0
-666.81300               0    XeI          0 UNKNOWN   0
-666.88060              60    XeI          0 UNKNOWN   0
-667.07610             150    XeI          0 UNKNOWN   0
-667.83700               0    XeI          0 UNKNOWN   0
-668.08160              25    XeI          0 UNKNOWN   0
-668.28810              20    XeI          0 UNKNOWN   0
-668.66400              30    XeI          0 UNKNOWN   0
-670.51100               0    XeI          0 UNKNOWN   0
-670.54700               0    XeI          0 UNKNOWN   0
-670.73100               0    XeI          0 UNKNOWN   0
-670.83120               1    XeI          0 UNKNOWN   0
-671.01000               3    XeI          0 UNKNOWN   0
-671.47800               3    XeI          0 UNKNOWN   0
-672.12400               0    XeI          0 UNKNOWN   0
-672.32400               0    XeI          0 UNKNOWN   0
-672.98650             200    XeI          0 UNKNOWN   0
-673.04300               0    XeI          0 UNKNOWN   0
-673.80000               0    XeI          0 UNKNOWN   0
-673.83600               0    XeI          0 UNKNOWN   0
-675.37900               0    XeI          0 UNKNOWN   0
-675.46500               0    XeI          0 UNKNOWN   0
-676.89880              10    XeI          0 UNKNOWN   0
-677.94410              50    XeI          0 UNKNOWN   0
-678.04710              40    XeI          0 UNKNOWN   0
-681.00000               5    XeI          0 UNKNOWN   0
-681.75210              12    XeI          0 UNKNOWN   0
-682.02620              15    XeI          0 UNKNOWN   0
-682.91990             200    XeI          0 UNKNOWN   0
-684.28480               8    XeI          0 UNKNOWN   0
-684.33880              20    XeI          0 UNKNOWN   0
-684.61590               1    XeI          0 UNKNOWN   0
-684.67290               2    XeI          0 UNKNOWN   0
-684.85020              60    XeI          0 UNKNOWN   0
-685.07100              50    XeI          0 UNKNOWN   0
-685.20200              30    XeI          0 UNKNOWN   0
-686.20830              40    XeI          0 UNKNOWN   0
-686.50940              20    XeI          0 UNKNOWN   0
-686.74740               5    XeI          0 UNKNOWN   0
-686.87330              50    XeI          0 UNKNOWN   0
-687.40030             100    XeI          0 UNKNOWN   0
-688.40540             300    XeI          0 UNKNOWN   0
-691.27270              30    XeI          0 UNKNOWN   0
-692.41300               8    XeI          0 UNKNOWN   0
-692.65800              15    XeI          0 UNKNOWN   0
-692.74400             100    XeI          0 UNKNOWN   0
-693.75330              50    XeI          0 UNKNOWN   0
-693.86030               8    XeI          0 UNKNOWN   0
-695.16770               0    XeI          0 UNKNOWN   0
-696.30200              20    XeI          0 UNKNOWN   0
-697.81060             100    XeI          0 UNKNOWN   0
-698.39760              30    XeI          0 UNKNOWN   0
-699.35780               1    XeI          0 UNKNOWN   0
-700.50310               4    XeI          0 UNKNOWN   0
-702.09560              30    XeI          0 UNKNOWN   0
-703.67400               3    XeI          0 UNKNOWN   0
-703.74700              20    XeI          0 UNKNOWN   0
-704.93130              30    XeI          0 UNKNOWN   0
-705.10140               1    XeI          0 UNKNOWN   0
-705.13040               1    XeI          0 UNKNOWN   0
-705.30040               3    XeI          0 UNKNOWN   0
-707.43900              30    XeI          0 UNKNOWN   0
-708.04120               1    XeI          0 UNKNOWN   0
-712.15610             500    XeI          0 UNKNOWN   0
-713.85370              15    XeI          0 UNKNOWN   0
-717.46770              10    XeI          0 UNKNOWN   0
-719.44000               4    XeI          0 UNKNOWN   0
-720.27750              15    XeI          0 UNKNOWN   0
-721.11270               5    XeI          0 UNKNOWN   0
-722.22300               1    XeI          0 UNKNOWN   0
-722.46300              20    XeI          0 UNKNOWN   0
-724.01950               3    XeI          0 UNKNOWN   0
-724.69370              20    XeI          0 UNKNOWN   0
-725.19180               2    XeI          0 UNKNOWN   0
-725.28680               5    XeI          0 UNKNOWN   0
-725.99400              60    XeI          0 UNKNOWN   0
-726.45410              20    XeI          0 UNKNOWN   0
-726.84920              25    XeI          0 UNKNOWN   0
-728.59680              40    XeI          0 UNKNOWN   0
-728.73080              60    XeI          0 UNKNOWN   0
-730.93830               5    XeI          0 UNKNOWN   0
-731.50250               1    XeI          0 UNKNOWN   0
-731.82880              70    XeI          0 UNKNOWN   0
-731.88860              20    XeI          0 UNKNOWN   0
-732.19570              15    XeI          0 UNKNOWN   0
-732.34690              80    XeI          0 UNKNOWN   0
-732.50680               2    XeI          0 UNKNOWN   0
-733.85010              50    XeI          0 UNKNOWN   0
-735.76060              40    XeI          0 UNKNOWN   0
-738.46000              30    XeI          0 UNKNOWN   0
-738.80380             100    XeI          0 UNKNOWN   0
-739.58300             150    XeI          0 UNKNOWN   0
-740.24480              30    XeI          0 UNKNOWN   0
-740.65500              12    XeI          0 UNKNOWN   0
-740.78100               3    XeI          0 UNKNOWN   0
-742.60950              20    XeI          0 UNKNOWN   0
-744.39900              20    XeI          0 UNKNOWN   0
-745.30520              25    XeI          0 UNKNOWN   0
-747.40680              40    XeI          0 UNKNOWN   0
-747.60680              25    XeI          0 UNKNOWN   0
-749.42930              20    XeI          0 UNKNOWN   0
-750.31960              20    XeI          0 UNKNOWN   0
-751.66090               8    XeI          0 UNKNOWN   0
-751.70290               3    XeI          0 UNKNOWN   0
-756.18710              40    XeI          0 UNKNOWN   0
-757.30140               6    XeI          0 UNKNOWN   0
-758.63780              10    XeI          0 UNKNOWN   0
-758.67680             200    XeI          0 UNKNOWN   0
-759.16990               6    XeI          0 UNKNOWN   0
-759.64510               1    XeI          0 UNKNOWN   0
-760.28620              10    XeI          0 UNKNOWN   0
-760.70640               2    XeI          0 UNKNOWN   0
-761.05550               5    XeI          0 UNKNOWN   0
-761.19150               3    XeI          0 UNKNOWN   0
-764.41280             500    XeI          0 UNKNOWN   0
-764.44040               0    XeI          0 UNKNOWN   0
-764.60140             100    XeI          0 UNKNOWN   0
-766.61300              10    XeI          0 UNKNOWN   0
-766.66700              30    XeI          0 UNKNOWN   0
-766.87200              10    XeI          0 UNKNOWN   0
-767.29210               1    XeI          0 UNKNOWN   0
-774.24400              40    XeI          0 UNKNOWN   0
-776.42900               4    XeI          0 UNKNOWN   0
-778.58020              50    XeI          0 UNKNOWN   0
-779.15630              15    XeI          0 UNKNOWN   0
-779.26740               1    XeI          0 UNKNOWN   0
-780.47980             100    XeI          0 UNKNOWN   0
-780.67900              10    XeI          0 UNKNOWN   0
-782.77000              30    XeI          0 UNKNOWN   0
-783.51350              10    XeI          0 UNKNOWN   0
-784.33870              15    XeI          0 UNKNOWN   0
-788.34880             100    XeI          0 UNKNOWN   0
-788.95630             300    XeI          0 UNKNOWN   0
-793.95930              40    XeI          0 UNKNOWN   0
-795.64080               4    XeI          0 UNKNOWN   0
-796.95330             500    XeI          0 UNKNOWN   0
-797.82240               8    XeI          0 UNKNOWN   0
-800.54610              10    XeI          0 UNKNOWN   0
-801.17900              30    XeI          0 UNKNOWN   0
-803.18780             100    XeI          0 UNKNOWN   0
-804.27710              10    XeI          0 UNKNOWN   0
-804.43920              15    XeI          0 UNKNOWN   0
-805.94740             200    XeI          0 UNKNOWN   0
-806.35560             150    XeI          0 UNKNOWN   0
-806.71580               2    XeI          0 UNKNOWN   0
-807.62100               1    XeI          0 UNKNOWN   0
-809.94670               3    XeI          0 UNKNOWN   0
-810.42080             100    XeI          0 UNKNOWN   0
-811.01390               6    XeI          0 UNKNOWN   0
-811.16900              15    XeI          0 UNKNOWN   0
-812.05220              15    XeI          0 UNKNOWN   0
-812.55240               2    XeI          0 UNKNOWN   0
-816.76150               2    XeI          0 UNKNOWN   0
-817.32660             100    XeI          0 UNKNOWN   0
-818.51800               1    XeI          0 UNKNOWN   0
-819.89830               2    XeI          0 UNKNOWN   0
-820.85920             700    XeI          0 UNKNOWN   0
-823.38964           10000    XeI          0 UNKNOWN   0
-826.87920             500    XeI          0 UNKNOWN   0
-828.23921            7000    XeI          0 UNKNOWN   0
-829.99910              15    XeI          0 UNKNOWN   0
-832.61880               2    XeI          0 UNKNOWN   0
-832.68680              20    XeI          0 UNKNOWN   0
-834.91157            2000    XeI          0 UNKNOWN   0
-834.97440              60    XeI          0 UNKNOWN   0
-835.13450              40    XeI          0 UNKNOWN   0
-837.36810               3    XeI          0 UNKNOWN   0
-837.50910               5    XeI          0 UNKNOWN   0
-839.46760              20    XeI          0 UNKNOWN   0
-840.43390               5    XeI          0 UNKNOWN   0
-841.15002            2000    XeI          0 UNKNOWN   0
-843.98690              10    XeI          0 UNKNOWN   0
-845.26920               1    XeI          0 UNKNOWN   0
-847.18800              10    XeI          0 UNKNOWN   0
-850.33560               1    XeI          0 UNKNOWN   0
-852.48910              30    XeI          0 UNKNOWN   0
-853.24440              30    XeI          0 UNKNOWN   0
-855.63200               2    XeI          0 UNKNOWN   0
-856.17100               4    XeI          0 UNKNOWN   0
-856.70500               1    XeI          0 UNKNOWN   0
-857.83660             200    XeI          0 UNKNOWN   0
-862.66090              80    XeI          0 UNKNOWN   0
-865.09160             250    XeI          0 UNKNOWN   0
-869.45870             100    XeI          0 UNKNOWN   0
-869.92490             200    XeI          0 UNKNOWN   0
-871.20320              40    XeI          0 UNKNOWN   0
-871.39330               2    XeI          0 UNKNOWN   0
-874.17720             300    XeI          0 UNKNOWN   0
-876.06050             100    XeI          0 UNKNOWN   0
-882.18324            5000    XeI          0 UNKNOWN   0
-885.38700               1    XeI          0 UNKNOWN   0
-886.47530             300    XeI          0 UNKNOWN   0
-888.81500              10    XeI          0 UNKNOWN   0
-891.11760             200    XeI          0 UNKNOWN   0
-893.32820             200    XeI          0 UNKNOWN   0
-895.47086            1000    XeI          0 UNKNOWN   0
-895.52380              50    XeI          0 UNKNOWN   0
-898.35160             100    XeI          0 UNKNOWN   0
-899.00370             200    XeI          0 UNKNOWN   0
-902.84600              30    XeI          0 UNKNOWN   0
-903.46600              50    XeI          0 UNKNOWN   0
-904.79296             400    XeI          0 UNKNOWN   0
-909.86300              50    XeI          0 UNKNOWN   0
-911.47400               4    XeI          0 UNKNOWN   0
-913.41000               3    XeI          0 UNKNOWN   0
-914.43100               2    XeI          0 UNKNOWN   0
-915.46300              20    XeI          0 UNKNOWN   0
-916.51667             500    XeI          0 UNKNOWN   0
-917.00400             100    XeI          0 UNKNOWN   0
-919.97000               2    XeI          0 UNKNOWN   0
-920.57300              30    XeI          0 UNKNOWN   0
-921.39100              25    XeI          0 UNKNOWN   0
-921.90400               1    XeI          0 UNKNOWN   0
-922.49200               5    XeI          0 UNKNOWN   0
-924.77200               3    XeI          0 UNKNOWN   0
-930.45000              30    XeI          0 UNKNOWN   0
-930.91900              40    XeI          0 UNKNOWN   0
-933.66400               3    XeI          0 UNKNOWN   0
-937.65900              10    XeI          0 UNKNOWN   0
-937.73300             100    XeI          0 UNKNOWN   0
-941.45900              60    XeI          0 UNKNOWN   0
-944.40500              20    XeI          0 UNKNOWN   0
-944.52700              20    XeI          0 UNKNOWN   0
-944.79300              80    XeI          0 UNKNOWN   0
-949.96800              40    XeI          0 UNKNOWN   0
-950.83900              10    XeI          0 UNKNOWN   0
-951.59870             200    XeI          0 UNKNOWN   0
-958.77700              20    XeI          0 UNKNOWN   0
-960.84300               3    XeI          0 UNKNOWN   0
-961.95900               1    XeI          0 UNKNOWN   0
-967.15900               1    XeI          0 UNKNOWN   0
-968.79800             150    XeI          0 UNKNOWN   0
-970.36500              20    XeI          0 UNKNOWN   0
-971.26900               2    XeI          0 UNKNOWN   0
-972.08300             100    XeI          0 UNKNOWN   0
-980.23840            2000    XeI          0 UNKNOWN   0
-992.59190            3000    XeI          0 UNKNOWN   0
-996.93100              10    XeI          0 UNKNOWN   0
-1002.64700             50    XeI          0 UNKNOWN   0
-1005.96000              1    XeI          0 UNKNOWN   0
-1006.07200              5    XeI          0 UNKNOWN   0
-1006.37200             10    XeI          0 UNKNOWN   0
-1008.75500             20    XeI          0 UNKNOWN   0
-1011.01100             80    XeI          0 UNKNOWN   0
-1012.25700              1    XeI          0 UNKNOWN   0
-1012.82500             20    XeI          0 UNKNOWN   0
-1019.11500             10    XeI          0 UNKNOWN   0
-1025.38800             20    XeI          0 UNKNOWN   0
-1032.67000             20    XeI          0 UNKNOWN   0
-1042.33800              1    XeI          0 UNKNOWN   0
-1048.77000              8    XeI          0 UNKNOWN   0
-1051.07900              6    XeI          0 UNKNOWN   0
-1051.80300             10    XeI          0 UNKNOWN   0
-1053.07420            900    XeI          0 UNKNOWN   0
-1055.26500             20    XeI          0 UNKNOWN   0
-1070.97100            150    XeI          0 UNKNOWN   0
-1076.18100            100    XeI          0 UNKNOWN   0
-1084.13100           1000    XeI          0 UNKNOWN   0
-1089.83080            870    XeI          0 UNKNOWN   0
-1108.82730           1900    XeI          0 UNKNOWN   0
-1113.02360            375    XeI          0 UNKNOWN   0
-1113.38600              8    XeI          0 UNKNOWN   0
-1114.41960            120    XeI          0 UNKNOWN   0
-1116.57300             10    XeI          0 UNKNOWN   0
-1117.85600              1    XeI          0 UNKNOWN   0
-1121.79600              5    XeI          0 UNKNOWN   0
-1129.21900             10    XeI          0 UNKNOWN   0
-1131.26600              5    XeI          0 UNKNOWN   0
-1141.81700             15    XeI          0 UNKNOWN   0
-1149.43700             15    XeI          0 UNKNOWN   0
-1154.05600              1    XeI          0 UNKNOWN   0
-1161.72600             25    XeI          0 UNKNOWN   0
-1174.54500           1750    XeI          0 UNKNOWN   0
-1179.67900             10    XeI          0 UNKNOWN   0
-1186.05600              6    XeI          0 UNKNOWN   0
-1186.11100              2    XeI          0 UNKNOWN   0
-1187.76100              1    XeI          0 UNKNOWN   0
-1191.53600              2    XeI          0 UNKNOWN   0
-1195.43700              1    XeI          0 UNKNOWN   0
-1195.62700              3    XeI          0 UNKNOWN   0
-1208.81100              3    XeI          0 UNKNOWN   0
-1220.68800              5    XeI          0 UNKNOWN   0
-1223.85900              5    XeI          0 UNKNOWN   0
-1226.11600              1    XeI          0 UNKNOWN   0
-1227.62400              2    XeI          0 UNKNOWN   0
-1241.25000             20    XeI          0 UNKNOWN   0
-1245.46200              2    XeI          0 UNKNOWN   0
-1259.34400             26    XeI          0 UNKNOWN   0
-1262.68500              5    XeI          0 UNKNOWN   0
-1333.55000             75    XeI          0 UNKNOWN   0
-1347.45000              5    XeI          0 UNKNOWN   0
-1354.68600              5    XeI          0 UNKNOWN   0
-1366.02100            150    XeI          0 UNKNOWN   0
-1381.82000             10    XeI          0 UNKNOWN   0
-1392.34000             15    XeI          0 UNKNOWN   0
+350.77430               5    XeI          0 UNKNOWN   0          nan
+350.94240               2    XeI          0 UNKNOWN   0          nan
+351.89060               2    XeI          0 UNKNOWN   0          nan
+353.44900               2    XeI          0 UNKNOWN   0          nan
+353.76210               1    XeI          0 UNKNOWN   0          nan
+353.83610               1    XeI          0 UNKNOWN   0          nan
+355.08740              10    XeI          0 UNKNOWN   0          nan
+355.50550              10    XeI          0 UNKNOWN   0          nan
+355.69360               1    XeI          0 UNKNOWN   0          nan
+356.48180               3    XeI          0 UNKNOWN   0          nan
+358.80440               4    XeI          0 UNKNOWN   0          nan
+359.26950               1    XeI          0 UNKNOWN   0          nan
+359.38250               2    XeI          0 UNKNOWN   0          nan
+361.13500              15    XeI          0 UNKNOWN   0          nan
+361.40900               8    XeI          0 UNKNOWN   0          nan
+363.40960               6    XeI          0 UNKNOWN   0          nan
+367.09550              10    XeI          0 UNKNOWN   0          nan
+367.85870               2    XeI          0 UNKNOWN   0          nan
+368.03580               4    XeI          0 UNKNOWN   0          nan
+368.69490              40    XeI          0 UNKNOWN   0          nan
+368.98500               1    XeI          0 UNKNOWN   0          nan
+369.45410              40    XeI          0 UNKNOWN   0          nan
+369.78720               4    XeI          0 UNKNOWN   0          nan
+370.37940               2    XeI          0 UNKNOWN   0          nan
+373.88700               5    XeI          0 UNKNOWN   0          nan
+374.32840               1    XeI          0 UNKNOWN   0          nan
+374.64450              10    XeI          0 UNKNOWN   0          nan
+374.67550               4    XeI          0 UNKNOWN   0          nan
+379.70280               0    XeI          0 UNKNOWN  64     7.034487
+379.73780               0    XeI          0 UNKNOWN  64      6.97424
+380.24690       0.2617073    XeI          0 UNKNOWN  64     4.581807
+380.29790               0    XeI          0 UNKNOWN  64     4.543077
+381.09210               0    XeI          0 UNKNOWN  64     1.841897
+382.48250               0    XeI          0 UNKNOWN  64     1.594776
+382.79460        3.663166    XeI          0 UNKNOWN  64     1.573645
+383.66900       0.2145869    XeI          0 UNKNOWN  64     1.427649
+387.83000               0    XeI          0 UNKNOWN  64     1.117114
+394.34060        0.167628    XeI          0 UNKNOWN  64    0.5543961
+394.92800               0    XeI          0 UNKNOWN  64      1.14628
+394.98380       0.4465263    XeI          0 UNKNOWN  64     1.150454
+395.20420        3.619747    XeI          0 UNKNOWN  64    0.5310366
+395.79700               0    XeI          0 UNKNOWN  64    0.4898484
+396.86636        4.852167    XeI          0 UNKNOWN  64    0.4654044
+397.55410         1.61025    XeI          0 UNKNOWN  64    0.4457279
+398.63290       0.2507767    XeI          0 UNKNOWN  64    0.4226013
+400.56800      0.01136523    XeI          0 UNKNOWN  64    0.3829115
+407.99718        1.542389    XeI          0 UNKNOWN  64    0.2328421
+411.08686       0.8953339    XeI          0 UNKNOWN  64    0.2201848
+411.72760         1.36712    XeI          0 UNKNOWN  64    0.2207081
+412.47100               0    XeI          0 UNKNOWN  64    0.2135854
+413.62990       0.2738419    XeI          0 UNKNOWN  64    0.2053104
+414.79490               0    XeI          0 UNKNOWN  64    0.1957698
+417.63500               0    XeI          0 UNKNOWN  64    0.1799442
+419.41920               0    XeI          0 UNKNOWN  64    0.4040711
+419.47100        3.365894    XeI          0 UNKNOWN  64    0.4047582
+420.48790       0.5990229    XeI          0 UNKNOWN  64    0.1779476
+420.65890        0.314026    XeI          0 UNKNOWN  64    0.1757063
+423.62200        0.207869    XeI          0 UNKNOWN  64    0.1449304
+428.03600               0    XeI          0 UNKNOWN  64    0.1355738
+435.58100       0.5441027    XeI          0 UNKNOWN  64    0.1347968
+437.35160        0.245611    XeI          0 UNKNOWN  64    0.1277317
+438.51400       0.8535295    XeI          0 UNKNOWN  64    0.1338281
+438.70000       0.9885405    XeI          0 UNKNOWN  64    0.1260174
+450.22410        16.02826    XeI          0 UNKNOWN  64    0.1072404
+452.59493        7.730407    XeI          0 UNKNOWN  64   0.09505702
+454.52600               0    XeI          0 UNKNOWN  64    0.0846504
+457.78830               0    XeI          0 UNKNOWN  64   0.08185019
+458.40314        3.808817    XeI          0 UNKNOWN  64   0.08614236
+461.31801       0.4385493    XeI          0 UNKNOWN  64   0.07545303
+462.55708        47.11124    XeI          0 UNKNOWN  64    0.1174137
+466.35700               0    XeI          0 UNKNOWN  64   0.06633141
+467.25334        92.36046    XeI          0 UNKNOWN  64      0.13663
+469.22830        2.130244    XeI          0 UNKNOWN  64   0.06733361
+469.83352         11.6856    XeI          0 UNKNOWN  64   0.07423405
+470.95270               0    XeI          0 UNKNOWN  64   0.06030445
+473.54760        21.21722    XeI          0 UNKNOWN  64    0.0835463
+473.88200       0.6044091    XeI          0 UNKNOWN  64   0.06269624
+479.39590        1.414572    XeI          0 UNKNOWN  64   0.05985036
+480.83625        20.01979    XeI          0 UNKNOWN  64   0.07870011
+483.10580        13.50239    XeI          0 UNKNOWN  64    0.0685761
+484.46466        9.997181    XeI          0 UNKNOWN  64   0.06287499
+491.78800        12.29182    XeI          0 UNKNOWN  64   0.05793624
+492.45260        13.82576    XeI          0 UNKNOWN  64   0.05978303
+502.52810      0.05832395    XeI          0 UNKNOWN  64   0.04516677
+502.96817         1.89691    XeI          0 UNKNOWN  64   0.04738015
+511.78900      0.06362572    XeI          0 UNKNOWN  64   0.03958851
+512.86700      0.05183427    XeI          0 UNKNOWN  64   0.03663034
+516.41490      0.08794796    XeI          0 UNKNOWN  64   0.03854313
+516.58290       0.1117187    XeI          0 UNKNOWN  64   0.03716621
+516.87390      0.07908299    XeI          0 UNKNOWN  64   0.03674432
+518.72940      0.03214395    XeI          0 UNKNOWN  64   0.03598007
+520.75200      0.03069426    XeI          0 UNKNOWN  64   0.03446216
+524.67300               0    XeI          0 UNKNOWN  64   0.03353855
+525.04410       0.0613741    XeI          0 UNKNOWN  64    0.0341079
+525.33520      0.06637818    XeI          0 UNKNOWN  64   0.03436928
+527.49480               0    XeI          0 UNKNOWN  64   0.03410613
+528.47700               0    XeI          0 UNKNOWN  64   0.03409358
+528.75810               0    XeI          0 UNKNOWN  64    0.1413102
+528.78510       0.1149074    XeI          0 UNKNOWN  64    0.1419175
+530.78460      0.00268984    XeI          0 UNKNOWN  64   0.03380838
+533.73940       0.0207164    XeI          0 UNKNOWN  64   0.03310368
+533.93750       0.1352282    XeI          0 UNKNOWN  64    0.0338247
+535.82900               0    XeI          0 UNKNOWN  64   0.03188432
+536.37350       0.1109869    XeI          0 UNKNOWN  64   0.03257337
+536.61180        0.232493    XeI          0 UNKNOWN  64    0.0327046
+536.85230       0.1168729    XeI          0 UNKNOWN  64   0.03289433
+537.52340       0.1112715    XeI          0 UNKNOWN  64   0.03210005
+539.42940       0.4214233    XeI          0 UNKNOWN  64   0.03221591
+539.62380       0.3571942    XeI          0 UNKNOWN  64   0.03309731
+539.91310      0.09348363    XeI          0 UNKNOWN  64   0.03165148
+540.19510      0.09626312    XeI          0 UNKNOWN  64   0.03138138
+541.95260      0.04899241    XeI          0 UNKNOWN  64   0.03061453
+542.32670       0.2042994    XeI          0 UNKNOWN  64   0.03102409
+543.71110               0    XeI          0 UNKNOWN  64   0.02972743
+544.14350      0.07784528    XeI          0 UNKNOWN  64   0.07587994
+544.19020       0.2317604    XeI          0 UNKNOWN  64   0.07567395
+544.63830      0.08290763    XeI          0 UNKNOWN  64   0.02964203
+545.60560      0.01052142    XeI          0 UNKNOWN  64   0.03024302
+545.79660               0    XeI          0 UNKNOWN  64   0.03037924
+546.15540       0.1005186    XeI          0 UNKNOWN  64   0.02997743
+548.06420               0    XeI          0 UNKNOWN  64   0.02883345
+548.28530               0    XeI          0 UNKNOWN  64    0.0296159
+548.56840               0    XeI          0 UNKNOWN  64     0.111521
+548.59840      0.08972318    XeI          0 UNKNOWN  64    0.1124391
+548.85550       0.1465643    XeI          0 UNKNOWN  64   0.03201226
+549.00800       0.3661358    XeI          0 UNKNOWN  64   0.03206068
+552.45800               0    XeI          0 UNKNOWN  64   0.02749756
+553.43170      0.04677849    XeI          0 UNKNOWN  64   0.02768846
+554.19190      0.02779972    XeI          0 UNKNOWN  64   0.02687799
+555.39270       0.1225085    XeI          0 UNKNOWN  64   0.04800159
+555.46420        0.382277    XeI          0 UNKNOWN  64   0.05023236
+555.66030       0.1205413    XeI          0 UNKNOWN  64   0.02841538
+555.88230      0.04910931    XeI          0 UNKNOWN  64   0.02687476
+556.50450      0.03235766    XeI          0 UNKNOWN  64   0.02650003
+556.81610       0.3003448    XeI          0 UNKNOWN  64   0.03374461
+556.93160       0.3963888    XeI          0 UNKNOWN  64   0.03330391
+557.68180      0.07032058    XeI          0 UNKNOWN  64   0.02728466
+558.08290       0.4424067    XeI          0 UNKNOWN  64   0.02704019
+558.33340       0.3949259    XeI          0 UNKNOWN  64   0.02606238
+558.67310       0.1197342    XeI          0 UNKNOWN  64   0.02595725
+559.59230               0    XeI          0 UNKNOWN  64   0.02568084
+560.95470               0    XeI          0 UNKNOWN  64   0.02526497
+561.42080       0.1296152    XeI          0 UNKNOWN  64   0.02546202
+562.04380       0.4200251    XeI          0 UNKNOWN  64   0.02579756
+562.28000       0.2055419    XeI          0 UNKNOWN  64   0.02543659
+564.77570     0.007866279    XeI          0 UNKNOWN  64   0.02496003
+565.44090      0.01961146    XeI          0 UNKNOWN  64    0.0275262
+565.58790     0.003624675    XeI          0 UNKNOWN  64   0.02723271
+566.60320      0.04641945    XeI          0 UNKNOWN  64   0.02540018
+568.99510       0.1063332    XeI          0 UNKNOWN  64   0.02514138
+569.73300       0.0846324    XeI          0 UNKNOWN  64   0.04342068
+569.80580       0.5534735    XeI          0 UNKNOWN  64   0.04501618
+570.01210       0.3060129    XeI          0 UNKNOWN  64    0.0259889
+570.49220               0    XeI          0 UNKNOWN  64   0.02439414
+570.84530               0    XeI          0 UNKNOWN  64   0.02454795
+571.13840      0.08861535    XeI          0 UNKNOWN  64   0.02519494
+571.37950      0.04645435    XeI          0 UNKNOWN  64   0.02431849
+571.73020               0    XeI          0 UNKNOWN  64   0.05601756
+571.78380        1.011225    XeI          0 UNKNOWN  64   0.05638981
+572.37270      0.07239294    XeI          0 UNKNOWN  64   0.03142609
+572.48480      0.04197336    XeI          0 UNKNOWN  64   0.03087178
+572.76880      0.05781554    XeI          0 UNKNOWN  64   0.02514276
+573.50700      0.04948583    XeI          0 UNKNOWN  64   0.02479137
+574.17620      0.01964267    XeI          0 UNKNOWN  64   0.05274163
+574.23220      0.07173396    XeI          0 UNKNOWN  64   0.05229461
+574.97940         0.10167    XeI          0 UNKNOWN  64   0.02458196
+575.61960      0.01839454    XeI          0 UNKNOWN  64   0.02505231
+579.38660               0    XeI          0 UNKNOWN  64   0.02520844
+580.89210               0    XeI          0 UNKNOWN  64   0.02544722
+581.61170       0.2434228    XeI          0 UNKNOWN  64   0.02561043
+582.21340       0.1431251    XeI          0 UNKNOWN  64   0.02636568
+582.55050        1.168035    XeI          0 UNKNOWN  64   0.04063581
+582.64150        2.300918    XeI          0 UNKNOWN  64   0.04160581
+582.93360       0.4068512    XeI          0 UNKNOWN  64   0.02640438
+583.22460       0.2114115    XeI          0 UNKNOWN  64   0.02542021
+584.24490               0    XeI          0 UNKNOWN  64   0.02643611
+584.50500               0    XeI          0 UNKNOWN  64   0.02649741
+584.70800               0    XeI          0 UNKNOWN  64   0.04516541
+584.78310               0    XeI          0 UNKNOWN  64   0.04381579
+585.14720               0    XeI          0 UNKNOWN  64   0.02610538
+585.81320      0.04537238    XeI          0 UNKNOWN  64   0.02691916
+587.66460         1.53952    XeI          0 UNKNOWN  64   0.02853707
+588.05490       0.2005258    XeI          0 UNKNOWN  64   0.02689998
+589.07520       0.2322148    XeI          0 UNKNOWN  64   0.02789416
+589.66220       0.9300874    XeI          0 UNKNOWN  64   0.05537642
+589.72540        1.108388    XeI          0 UNKNOWN  64   0.05528614
+590.01950       0.2490333    XeI          0 UNKNOWN  64   0.02749078
+590.60980       0.1218672    XeI          0 UNKNOWN  64   0.02746132
+590.83970      0.09129745    XeI          0 UNKNOWN  64   0.02720299
+591.35380      0.01103554    XeI          0 UNKNOWN  64   0.02766175
+591.82890               0    XeI          0 UNKNOWN  64   0.02738689
+592.34910               0    XeI          0 UNKNOWN  64   0.04880154
+592.41910         0.16414    XeI          0 UNKNOWN  64   0.04835829
+592.72020       0.1183392    XeI          0 UNKNOWN  64   0.02721847
+593.28840       0.9250456    XeI          0 UNKNOWN  64   0.02838632
+593.58160        2.646388    XeI          0 UNKNOWN  64   0.03009276
+596.49300               0    XeI          0 UNKNOWN  64   0.02682737
+597.44750               0    XeI          0 UNKNOWN  64   0.03249366
+597.58070       0.4109679    XeI          0 UNKNOWN  64    0.0314587
+597.99460       0.1321819    XeI          0 UNKNOWN  64   0.03407092
+598.10760       0.1314259    XeI          0 UNKNOWN  64   0.03424316
+598.78880               0    XeI          0 UNKNOWN  64   0.02697319
+599.08390       0.1517278    XeI          0 UNKNOWN  64   0.02769722
+599.97760        0.144157    XeI          0 UNKNOWN  64   0.02761642
+600.95730               0    XeI          0 UNKNOWN  64    0.0279836
+601.14440       0.1146956    XeI          0 UNKNOWN  64   0.02819568
+601.57660               0    XeI          0 UNKNOWN  64   0.02721418
+602.45580      0.03051738    XeI          0 UNKNOWN  64   0.02784517
+602.84290      0.04708105    XeI          0 UNKNOWN  64   0.02737795
+603.14500      0.04086871    XeI          0 UNKNOWN  64   0.02926876
+603.30300     0.003238007    XeI          0 UNKNOWN  64    0.0290239
+603.65910     0.001778921    XeI          0 UNKNOWN  64   0.02760167
+604.50530      0.04378887    XeI          0 UNKNOWN  64    0.0267332
+604.96750       0.2138972    XeI          0 UNKNOWN  64   0.02678023
+606.65890      0.04004069    XeI          0 UNKNOWN  64   0.02741817
+606.92000      0.03802131    XeI          0 UNKNOWN  64    0.1242555
+606.94500      0.06349256    XeI          0 UNKNOWN  64    0.1242547
+609.50670               0    XeI          0 UNKNOWN  64   0.02840829
+609.68370        0.091086    XeI          0 UNKNOWN  64   0.02804946
+610.55700               0    XeI          0 UNKNOWN  64   0.02762717
+611.00610      0.03591181    XeI          0 UNKNOWN  64   0.02740957
+611.34530       0.4314957    XeI          0 UNKNOWN  64   0.01228225
+611.36430       0.5753276    XeI          0 UNKNOWN  64   0.01637634
+611.65530       0.4022821    XeI          0 UNKNOWN  64   0.02832438
+612.56050               0    XeI          0 UNKNOWN  64   0.02684332
+612.80560      0.07279677    XeI          0 UNKNOWN  64   0.02758512
+613.31670               0    XeI          0 UNKNOWN  64   0.02692153
+614.38300               0    XeI          0 UNKNOWN  64   0.03036149
+614.54000               0    XeI          0 UNKNOWN  64     0.035062
+614.66710       0.4400301    XeI          0 UNKNOWN  64   0.03396196
+615.37730      0.07618611    XeI          0 UNKNOWN  64   0.02771927
+616.38650               0    XeI          0 UNKNOWN  64   0.03526736
+616.53670              90    XeI          0 UNKNOWN   0          nan
+616.56410         1.81273    XeI          0 UNKNOWN  64    0.1421853
+618.00130        1.310033    XeI          0 UNKNOWN  64   0.03378764
+618.13750        1.909425    XeI          0 UNKNOWN  64   0.03491093
+618.41310        5.110459    XeI          0 UNKNOWN  64    0.0358685
+618.58710       0.9448121    XeI          0 UNKNOWN  64   0.03121073
+619.08130       0.1326616    XeI          0 UNKNOWN  64   0.02825156
+619.31130       0.1439953    XeI          0 UNKNOWN  64   0.02827215
+619.56040       0.1458989    XeI          0 UNKNOWN  64   0.03022042
+619.72040               0    XeI          0 UNKNOWN  64   0.02942347
+619.99750        1.191165    XeI          0 UNKNOWN  64   0.02973215
+620.26080       0.8888273    XeI          0 UNKNOWN  64   0.05926713
+620.32060       0.5759085    XeI          0 UNKNOWN  64   0.05941146
+620.70670               6    XeI          0 UNKNOWN   0          nan
+620.74670               4    XeI          0 UNKNOWN   0          nan
+620.80140       0.3041635    XeI          0 UNKNOWN  64    0.1151769
+621.08280        0.133737    XeI          0 UNKNOWN  64   0.02841535
+622.25610               0    XeI          0 UNKNOWN  64   0.03022422
+622.58900       0.3052987    XeI          0 UNKNOWN  64   0.03130151
+623.25300               0    XeI          0 UNKNOWN  64   0.03092221
+624.38170               0    XeI          0 UNKNOWN  64   0.03597014
+626.29440       0.5900922    XeI          0 UNKNOWN  64    0.0322186
+626.70350        0.396851    XeI          0 UNKNOWN  64   0.03201852
+627.00740       0.2524497    XeI          0 UNKNOWN  64   0.05148972
+627.49650      0.07641824    XeI          0 UNKNOWN  64   0.05281218
+627.87260      0.04972727    XeI          0 UNKNOWN  64   0.04718219
+628.35470      0.08128986    XeI          0 UNKNOWN  64   0.03250222
+628.77500        1.126752    XeI          0 UNKNOWN  64   0.03432345
+629.43890       0.5926741    XeI          0 UNKNOWN  64   0.03602298
+629.61910       0.5330819    XeI          0 UNKNOWN  64   0.03564199
+631.67160               0    XeI          0 UNKNOWN  64   0.03616254
+631.98090        9.722751    XeI          0 UNKNOWN  64   0.04550627
+632.75590      0.07062433    XeI          0 UNKNOWN  64   0.03509788
+633.32510      0.09495178    XeI          0 UNKNOWN  64   0.03742666
+633.57210        0.550194    XeI          0 UNKNOWN  64   0.03746401
+633.93320       0.3140791    XeI          0 UNKNOWN  64   0.03703027
+634.67340      0.09524696    XeI          0 UNKNOWN  64   0.03622365
+635.75270      0.09891931    XeI          0 UNKNOWN  64   0.03648551
+638.50000               0    XeI          0 UNKNOWN  64   0.03575469
+640.88200               0    XeI          0 UNKNOWN  64   0.03592976
+641.41520       0.1082483    XeI          0 UNKNOWN  64   0.03439249
+642.01840       0.2136679    XeI          0 UNKNOWN  64   0.08635727
+642.07540       0.5227897    XeI          0 UNKNOWN  64   0.08702826
+642.31000       0.1716406    XeI          0 UNKNOWN  64   0.03558777
+643.19320       0.2068843    XeI          0 UNKNOWN  64    0.0334948
+643.67900               0    XeI          0 UNKNOWN  64    0.0335432
+644.01000               0    XeI          0 UNKNOWN  64   0.07772096
+644.06800               0    XeI          0 UNKNOWN  64   0.07703519
+645.04820      0.09892596    XeI          0 UNKNOWN  64   0.03663102
+645.22630      0.01139076    XeI          0 UNKNOWN  64   0.04490494
+645.35730        0.294004    XeI          0 UNKNOWN  64   0.04099899
+646.04900               0    XeI          0 UNKNOWN  64   0.03121254
+646.32860               0    XeI          0 UNKNOWN  64   0.02996746
+647.14930        5.421826    XeI          0 UNKNOWN  64   0.03497046
+647.46300        2.728668    XeI          0 UNKNOWN  64   0.03047917
+648.54200               0    XeI          0 UNKNOWN  64   0.02523708
+648.95580        2.438393    XeI          0 UNKNOWN  64   0.02886077
+649.92250       0.7412198    XeI          0 UNKNOWN  64   0.03424332
+650.05130        1.921155    XeI          0 UNKNOWN  64   0.03885381
+650.21660       0.8587864    XeI          0 UNKNOWN  64   0.02981014
+650.59770        1.877267    XeI          0 UNKNOWN  64   0.01347445
+650.61800        1.877267    XeI          0 UNKNOWN  64   0.01347445
+650.92980       0.2825506    XeI          0 UNKNOWN  64    0.0232932
+652.33100       0.5611282    XeI          0 UNKNOWN  64   0.02188964
+653.49640        1.361788    XeI          0 UNKNOWN  64   0.02244859
+654.51680       0.5412459    XeI          0 UNKNOWN  64   0.02103896
+654.79280       0.1552558    XeI          0 UNKNOWN  64    0.0205801
+655.44100               0    XeI          0 UNKNOWN   0          nan
+655.48000               0    XeI          0 UNKNOWN   0          nan
+655.54700               4    XeI          0 UNKNOWN   0          nan
+655.60070              50    XeI          0 UNKNOWN   0          nan
+656.04300       0.1456002    XeI          0 UNKNOWN  64   0.03063157
+656.17820               0    XeI          0 UNKNOWN  64   0.05830178
+656.24620       0.3780359    XeI          0 UNKNOWN  64   0.04927471
+657.02000               0    XeI          0 UNKNOWN  64   0.05595162
+658.50880      0.06981567    XeI          0 UNKNOWN  64   0.02140321
+659.26800               0    XeI          0 UNKNOWN  64   0.02172757
+659.50900               0    XeI          0 UNKNOWN  64   0.02348116
+659.73830        4.428339    XeI          0 UNKNOWN  64   0.02754322
+660.15300       0.1647447    XeI          0 UNKNOWN  64   0.03609118
+660.34000               0    XeI          0 UNKNOWN   0          nan
+660.38800               0    XeI          0 UNKNOWN   0          nan
+660.46940               4    XeI          0 UNKNOWN   0          nan
+660.62800               0    XeI          0 UNKNOWN   0          nan
+660.68000               0    XeI          0 UNKNOWN   0          nan
+660.92350       0.4144524    XeI          0 UNKNOWN  64   0.03896911
+661.06950        3.725336    XeI          0 UNKNOWN  64   0.03364197
+662.29100               0    XeI          0 UNKNOWN  64   0.02030588
+663.22710               0    XeI          0 UNKNOWN  64   0.02262777
+663.42960        2.114074    XeI          0 UNKNOWN  64   0.02436701
+663.82100      0.03838119    XeI          0 UNKNOWN  64   0.02085861
+665.05860               0    XeI          0 UNKNOWN  64   0.02034131
+665.65100               0    XeI          0 UNKNOWN  64   0.01971019
+665.97580       0.4491544    XeI          0 UNKNOWN  64   0.02102577
+666.66900               4    XeI          0 UNKNOWN   0          nan
+666.75100               0    XeI          0 UNKNOWN   0          nan
+666.81300               0    XeI          0 UNKNOWN   0          nan
+666.88060              60    XeI          0 UNKNOWN   0          nan
+667.07610        7.852278    XeI          0 UNKNOWN  64   0.04198992
+667.83700      0.02030933    XeI          0 UNKNOWN  64   0.02182919
+668.08160        0.761181    XeI          0 UNKNOWN  64   0.02404285
+668.28810       0.9700898    XeI          0 UNKNOWN  64   0.02303828
+668.66400      0.07075241    XeI          0 UNKNOWN  64   0.02047809
+670.51100               0    XeI          0 UNKNOWN   0          nan
+670.54700               0    XeI          0 UNKNOWN   0          nan
+670.73100       0.0421592    XeI          0 UNKNOWN  64   0.06431679
+670.83120    -1.644775e-18    XeI          0 UNKNOWN  64   0.05499579
+671.01000               0    XeI          0 UNKNOWN  64   0.02626127
+671.47800      0.03252267    XeI          0 UNKNOWN  64   0.01955405
+672.12400      0.03933232    XeI          0 UNKNOWN  64   0.02072085
+672.32400      0.06002523    XeI          0 UNKNOWN  64   0.02070014
+672.98650        11.19844    XeI          0 UNKNOWN  64   0.07521926
+673.04300        1.388599    XeI          0 UNKNOWN  64   0.07280871
+673.80000      0.06194467    XeI          0 UNKNOWN  64   0.08057426
+673.83600               0    XeI          0 UNKNOWN  64   0.08004802
+675.37900               0    XeI          0 UNKNOWN  64   0.03453441
+675.46500       0.1453972    XeI          0 UNKNOWN  64   0.03444025
+676.89880       0.3828683    XeI          0 UNKNOWN  64   0.01848476
+677.94410        1.207008    XeI          0 UNKNOWN  64   0.03198475
+678.04710        1.143586    XeI          0 UNKNOWN  64   0.03173055
+681.00000               0    XeI          0 UNKNOWN  64   0.01689812
+681.75210       0.0237431    XeI          0 UNKNOWN  64   0.01752629
+682.02620      0.04721301    XeI          0 UNKNOWN  64   0.01689997
+682.91990        11.47404    XeI          0 UNKNOWN  64   0.02666297
+684.28480               0    XeI          0 UNKNOWN  64   0.05567259
+684.33880        0.416085    XeI          0 UNKNOWN  64   0.05892116
+684.61590               0    XeI          0 UNKNOWN  64   0.07311911
+684.67290       0.1429219    XeI          0 UNKNOWN  64    0.0807952
+684.85020        3.295119    XeI          0 UNKNOWN  64   0.03391771
+685.07100        2.014425    XeI          0 UNKNOWN  64   0.03243191
+685.20200        1.053159    XeI          0 UNKNOWN  64   0.02809349
+686.20830       0.9929511    XeI          0 UNKNOWN  64   0.01826821
+686.50940       0.3308739    XeI          0 UNKNOWN  64   0.01904056
+686.74740      0.04698361    XeI          0 UNKNOWN  64   0.02805192
+686.87330        2.344318    XeI          0 UNKNOWN  64   0.02808276
+687.40030         10.4427    XeI          0 UNKNOWN  64    0.0263698
+688.40540        23.31231    XeI          0 UNKNOWN  64    0.0340271
+691.27270       0.8631748    XeI          0 UNKNOWN  64    0.0181578
+692.41300      0.03066019    XeI          0 UNKNOWN  64   0.01904557
+692.65800               0    XeI          0 UNKNOWN  64    0.0408463
+692.74400        4.224652    XeI          0 UNKNOWN  64   0.04069528
+693.75330       0.9537919    XeI          0 UNKNOWN  64   0.02817649
+693.86030       0.1834643    XeI          0 UNKNOWN  64   0.02752064
+695.16770               0    XeI          0 UNKNOWN  64   0.01660953
+696.30200               0    XeI          0 UNKNOWN  64    0.0169591
+697.81060        5.870655    XeI          0 UNKNOWN  64   0.02227127
+698.39760        1.105179    XeI          0 UNKNOWN  64   0.01836101
+699.35780       0.2518817    XeI          0 UNKNOWN  64   0.01708879
+700.50310      0.02410554    XeI          0 UNKNOWN  64   0.01624452
+702.09560        1.095566    XeI          0 UNKNOWN  64   0.01714863
+703.67400      0.01583921    XeI          0 UNKNOWN  64   0.03529299
+703.74700       0.5028581    XeI          0 UNKNOWN  64   0.03535923
+704.93130        1.378644    XeI          0 UNKNOWN  64   0.02801436
+705.10140               1    XeI          0 UNKNOWN   0          nan
+705.13040               1    XeI          0 UNKNOWN   0          nan
+705.30040       0.1036575    XeI          0 UNKNOWN  64    0.0269138
+707.43900               0    XeI          0 UNKNOWN  64   0.01569708
+708.04120      0.01907917    XeI          0 UNKNOWN  64   0.01545228
+712.15610        47.79941    XeI          0 UNKNOWN  64   0.04284771
+713.85370       0.3090663    XeI          0 UNKNOWN  64   0.01581225
+717.46770      0.08984287    XeI          0 UNKNOWN  64   0.01620319
+719.44000               0    XeI          0 UNKNOWN  64   0.01635551
+720.27750       0.3510981    XeI          0 UNKNOWN  64   0.01687535
+721.11270      0.09669476    XeI          0 UNKNOWN  64   0.01622102
+722.22300               0    XeI          0 UNKNOWN  64   0.01705697
+722.46300               0    XeI          0 UNKNOWN  64   0.01665356
+724.01950      0.06229725    XeI          0 UNKNOWN  64   0.01628102
+724.69370        1.368311    XeI          0 UNKNOWN  64    0.0172929
+725.19180      0.07766204    XeI          0 UNKNOWN  64   0.02856581
+725.28680       0.1495238    XeI          0 UNKNOWN  64   0.02902626
+725.99400        6.437571    XeI          0 UNKNOWN  64   0.02258888
+726.45410        1.750045    XeI          0 UNKNOWN  64   0.01822782
+726.84920        2.781926    XeI          0 UNKNOWN  64   0.01927964
+728.59680        6.386922    XeI          0 UNKNOWN  64   0.03443299
+728.73080        11.82604    XeI          0 UNKNOWN  64   0.03672941
+730.93830       0.6062381    XeI          0 UNKNOWN  64   0.01668537
+731.50250      0.08903749    XeI          0 UNKNOWN  64   0.01701033
+731.82880         8.13553    XeI          0 UNKNOWN  64   0.06249896
+731.88860        1.348046    XeI          0 UNKNOWN  64   0.06195584
+732.19570        1.708048    XeI          0 UNKNOWN  64   0.02976855
+732.34690        8.278442    XeI          0 UNKNOWN  64   0.03896538
+732.50680       0.7723145    XeI          0 UNKNOWN  64   0.02595449
+733.85010        5.641924    XeI          0 UNKNOWN  64   0.02133906
+735.76060        3.208129    XeI          0 UNKNOWN  64   0.01911557
+738.46000               0    XeI          0 UNKNOWN  64   0.01662563
+738.80380        10.76352    XeI          0 UNKNOWN  64   0.02524741
+739.58300        16.85746    XeI          0 UNKNOWN  64   0.02931506
+740.24480        4.824945    XeI          0 UNKNOWN  64    0.0209701
+740.65500       0.5389434    XeI          0 UNKNOWN  64   0.02323732
+740.78100      0.01556077    XeI          0 UNKNOWN  64   0.02270018
+742.60950        2.010048    XeI          0 UNKNOWN  64   0.01841682
+744.39900        1.419441    XeI          0 UNKNOWN  64   0.01747352
+745.30520         1.78727    XeI          0 UNKNOWN  64   0.01783202
+747.40680        5.532257    XeI          0 UNKNOWN  64   0.02400774
+747.60680        3.700431    XeI          0 UNKNOWN  64   0.02327373
+749.42930        2.457389    XeI          0 UNKNOWN  64   0.01821544
+750.31960        1.976807    XeI          0 UNKNOWN  64   0.01787546
+751.66090       0.2946628    XeI          0 UNKNOWN  64    0.0604379
+751.70290       0.2090344    XeI          0 UNKNOWN  64   0.06085817
+756.18710        4.312356    XeI          0 UNKNOWN  64   0.02015704
+757.30140       0.1488946    XeI          0 UNKNOWN  64    0.0161205
+758.63780               0    XeI          0 UNKNOWN  64    0.1301649
+758.67680        41.95122    XeI          0 UNKNOWN  64    0.1348504
+759.16990       0.7491845    XeI          0 UNKNOWN  64   0.01684925
+759.64510      0.08080468    XeI          0 UNKNOWN  64   0.01643912
+760.28620        1.489309    XeI          0 UNKNOWN  64   0.01836046
+760.70640       0.3880792    XeI          0 UNKNOWN  64   0.01722936
+761.05550       0.2064514    XeI          0 UNKNOWN  64   0.02223204
+761.19150       0.1788672    XeI          0 UNKNOWN  64   0.02244337
+764.41280             500    XeI          0 UNKNOWN   0          nan
+764.44040               0    XeI          0 UNKNOWN   0          nan
+764.60140        20.80986    XeI          0 UNKNOWN  64   0.06565637
+766.61300        0.890069    XeI          0 UNKNOWN  64   0.06438118
+766.66700        4.184708    XeI          0 UNKNOWN  64   0.06881232
+766.87200       0.6959529    XeI          0 UNKNOWN  64   0.02131951
+767.29210      0.04464353    XeI          0 UNKNOWN  64   0.01578295
+774.24400        2.821039    XeI          0 UNKNOWN  64   0.01870197
+776.42900               0    XeI          0 UNKNOWN  64   0.01599515
+778.58020        3.905266    XeI          0 UNKNOWN  64   0.02049871
+779.15630        0.744989    XeI          0 UNKNOWN  64    0.0257347
+779.26740       0.1065832    XeI          0 UNKNOWN  64   0.02584322
+780.47980        12.66671    XeI          0 UNKNOWN  64   0.02943957
+780.67900       0.4205056    XeI          0 UNKNOWN  64   0.02185125
+782.77000               0    XeI          0 UNKNOWN  64   0.01676702
+783.51350        0.246191    XeI          0 UNKNOWN  64   0.01648613
+784.33870       0.3529855    XeI          0 UNKNOWN  64   0.01640006
+788.34880        4.509745    XeI          0 UNKNOWN  64   0.02103187
+788.95630        53.73236    XeI          0 UNKNOWN  64   0.04582696
+793.95930        1.902139    XeI          0 UNKNOWN  64   0.01845275
+795.64080       0.1147218    XeI          0 UNKNOWN  64   0.01662868
+796.95330         63.7612    XeI          0 UNKNOWN  64   0.04889407
+797.82240        0.130618    XeI          0 UNKNOWN  64   0.01691818
+800.54610               0    XeI          0 UNKNOWN  64   0.01733072
+801.17900               0    XeI          0 UNKNOWN  64     0.016196
+803.18780        5.496401    XeI          0 UNKNOWN  64    0.0218833
+804.27710       0.1553449    XeI          0 UNKNOWN  64   0.02038419
+804.43920       0.3685334    XeI          0 UNKNOWN  64   0.02035717
+805.94740        27.04334    XeI          0 UNKNOWN  64   0.03540057
+806.35560        22.35455    XeI          0 UNKNOWN  64   0.03272229
+806.71580       0.7957511    XeI          0 UNKNOWN  64   0.01781598
+807.62100       0.4344265    XeI          0 UNKNOWN  64   0.01711995
+809.94670       0.7417282    XeI          0 UNKNOWN  64   0.01726074
+810.42080        5.397376    XeI          0 UNKNOWN  64   0.02164827
+811.01390       0.5774308    XeI          0 UNKNOWN  64   0.02217773
+811.16900        1.307546    XeI          0 UNKNOWN  64   0.02281887
+812.05220        1.340134    XeI          0 UNKNOWN  64   0.01814575
+812.55240       0.6557239    XeI          0 UNKNOWN  64   0.01734352
+816.76150               0    XeI          0 UNKNOWN  64   0.01854755
+817.32660         5.37555    XeI          0 UNKNOWN  64   0.02328285
+818.51800               0    XeI          0 UNKNOWN  64   0.01806664
+819.89830               0    XeI          0 UNKNOWN  64   0.01885522
+820.85920        115.2173    XeI          0 UNKNOWN  64   0.06516638
+823.38964         9945.93    XeI          0 UNKNOWN  64    0.5592137
+826.87920        98.58859    XeI          0 UNKNOWN  64   0.06227306
+828.23921        3366.751    XeI          0 UNKNOWN  64    0.3228285
+829.99910       0.1440292    XeI          0 UNKNOWN  64   0.02090677
+832.61880               0    XeI          0 UNKNOWN  64   0.04471775
+832.68680       0.8153152    XeI          0 UNKNOWN  64   0.04482941
+834.91157        462.9807    XeI          0 UNKNOWN  64    0.2871611
+834.97440               0    XeI          0 UNKNOWN  64    0.2946437
+835.13450        11.55301    XeI          0 UNKNOWN  64   0.06412329
+837.36810       0.1647817    XeI          0 UNKNOWN  64   0.02319789
+837.50910       0.1239356    XeI          0 UNKNOWN  64   0.02322778
+839.46760        0.570548    XeI          0 UNKNOWN  64   0.01817462
+840.43390         0.31603    XeI          0 UNKNOWN  64   0.01828069
+841.15002        617.0356    XeI          0 UNKNOWN  64    0.1376421
+843.98690       0.4961981    XeI          0 UNKNOWN  64   0.01763344
+845.26920      0.01794677    XeI          0 UNKNOWN  64   0.01703161
+847.18800               0    XeI          0 UNKNOWN  64   0.01635581
+850.33560       0.2652762    XeI          0 UNKNOWN  64   0.01666803
+852.48910        3.669264    XeI          0 UNKNOWN  64    0.0199891
+853.24440        4.073665    XeI          0 UNKNOWN  64   0.02059423
+855.63200       0.3503289    XeI          0 UNKNOWN  64   0.01715013
+856.17100               0    XeI          0 UNKNOWN  64   0.01663998
+856.70500       0.1053933    XeI          0 UNKNOWN  64   0.01654373
+857.83660          17.214    XeI          0 UNKNOWN  64   0.02934725
+862.66090        7.369651    XeI          0 UNKNOWN  64   0.02351735
+865.09160          39.403    XeI          0 UNKNOWN  64   0.03968205
+869.45870        13.81999    XeI          0 UNKNOWN  64   0.02731568
+869.92490        17.43154    XeI          0 UNKNOWN  64   0.02976224
+871.20320        3.500937    XeI          0 UNKNOWN  64   0.02283301
+871.39330       0.7388537    XeI          0 UNKNOWN  64   0.02052071
+874.17720        123.5708    XeI          0 UNKNOWN  64     0.064389
+876.06050         18.9385    XeI          0 UNKNOWN  64    0.0316429
+882.18324        19359.15    XeI          0 UNKNOWN  64    0.7459279
+885.38700               0    XeI          0 UNKNOWN  64   0.02013452
+886.47530        195.1123    XeI          0 UNKNOWN  64   0.07829479
+888.81500               0    XeI          0 UNKNOWN  64   0.01813887
+891.11760        95.89871    XeI          0 UNKNOWN  64   0.05718649
+893.32820        124.7817    XeI          0 UNKNOWN  64   0.06207319
+895.47086        3893.005    XeI          0 UNKNOWN  64    0.7447295
+895.52380         180.922    XeI          0 UNKNOWN  64    0.6626959
+898.35160        31.36296    XeI          0 UNKNOWN  64   0.03584348
+899.00370        69.24011    XeI          0 UNKNOWN  64   0.04819026
+902.84600         12.7854    XeI          0 UNKNOWN  64   0.02735084
+903.46600        25.05191    XeI          0 UNKNOWN  64   0.03359021
+904.79296        5309.825    XeI          0 UNKNOWN  64    0.3761132
+909.86300        18.22124    XeI          0 UNKNOWN  64   0.02980941
+911.47400        3.032805    XeI          0 UNKNOWN  64     0.020103
+913.41000         2.16553    XeI          0 UNKNOWN  64   0.01996251
+914.43100       0.2180133    XeI          0 UNKNOWN  64   0.01850261
+915.46300         18.8669    XeI          0 UNKNOWN  64   0.03261995
+916.51667        7850.894    XeI          0 UNKNOWN  64    0.4661492
+917.00400        357.8012    XeI          0 UNKNOWN  64    0.1089285
+919.97000       0.7505772    XeI          0 UNKNOWN  64   0.01838637
+920.57300        42.66683    XeI          0 UNKNOWN  64   0.04042304
+921.39100        23.76249    XeI          0 UNKNOWN  64   0.03266689
+921.90400      0.08871401    XeI          0 UNKNOWN  64    0.0170375
+922.49200        3.192457    XeI          0 UNKNOWN  64   0.01980406
+924.77200        1.188904    XeI          0 UNKNOWN  64    0.0177426
+930.45000        31.04968    XeI          0 UNKNOWN  64   0.03523726
+930.91900        38.84592    XeI          0 UNKNOWN  64   0.03795217
+933.66400        1.844951    XeI          0 UNKNOWN  64   0.01794974
+937.65900        19.27357    XeI          0 UNKNOWN  64    0.1650311
+937.73300        263.4693    XeI          0 UNKNOWN  64    0.1917918
+941.45900        71.19645    XeI          0 UNKNOWN  64    0.1945317
+944.40500        7.500604    XeI          0 UNKNOWN  64   0.04682032
+944.52700        7.450879    XeI          0 UNKNOWN  64   0.05681169
+944.79300        117.5834    XeI          0 UNKNOWN  64    0.0728409
+949.96800        29.49511    XeI          0 UNKNOWN  64   0.04377719
+950.83900        3.781194    XeI          0 UNKNOWN  64   0.02811258
+951.59870        600.3266    XeI          0 UNKNOWN  64    0.1569747
+958.77700        11.25887    XeI          0 UNKNOWN  64   0.04749186
+960.84300               0    XeI          0 UNKNOWN  64   0.04543292
+961.95900               0    XeI          0 UNKNOWN  64   0.05127345
+967.15900               0    XeI          0 UNKNOWN  64   0.08078284
+968.79800        177.6427    XeI          0 UNKNOWN  64    0.1155831
+970.36500        12.48198    XeI          0 UNKNOWN  64   0.08342471
+971.26900               0    XeI          0 UNKNOWN  64   0.08372113
+972.08300        142.5659    XeI          0 UNKNOWN  64    0.1117811
+980.23840        13605.21    XeI          0 UNKNOWN  64    0.6955445
+992.59190        11533.36    XeI          0 UNKNOWN  64    0.5801114
+996.93100      0.02392869    XeI          0 UNKNOWN  64   0.08082065
+1002.64700       46.31883    XeI          0 UNKNOWN  64   0.08127345
+1005.96000       1.551439    XeI          0 UNKNOWN  64    0.1121161
+1006.07200       2.478272    XeI          0 UNKNOWN  64    0.1131885
+1006.37200       4.035859    XeI          0 UNKNOWN  64   0.07355466
+1008.75500       23.20986    XeI          0 UNKNOWN  64   0.07507142
+1011.01100       208.2059    XeI          0 UNKNOWN  64    0.1055388
+1012.25700      0.3491177    XeI          0 UNKNOWN  64   0.07007423
+1012.82500       21.52717    XeI          0 UNKNOWN  64   0.07367259
+1019.11500       5.736622    XeI          0 UNKNOWN  64   0.06791854
+1025.38800       39.60197    XeI          0 UNKNOWN  64   0.07522434
+1032.67000      0.1379621    XeI          0 UNKNOWN  64   0.06506641
+1042.33800      0.6565093    XeI          0 UNKNOWN  64   0.06263627
+1048.77000        6.84849    XeI          0 UNKNOWN  64   0.06254782
+1051.07900       5.721683    XeI          0 UNKNOWN  64   0.06132949
+1051.80300       41.43393    XeI          0 UNKNOWN  64   0.06925379
+1053.07420       194.4081    XeI          0 UNKNOWN  64   0.09414851
+1055.26500       3.336614    XeI          0 UNKNOWN  64   0.06096884
+1070.97100       51.43081    XeI          0 UNKNOWN  64   0.06907676
+1076.18100        25.5654    XeI          0 UNKNOWN  64   0.06352181
+1084.13100       1194.887    XeI          0 UNKNOWN  64    0.1826445
+1089.83080       76.64655    XeI          0 UNKNOWN  64   0.07650137
+1108.82730       130.0623    XeI          0 UNKNOWN  64   0.08551594
+1113.02360        27.0715    XeI          0 UNKNOWN  64   0.06801982
+1113.38600       1.361542    XeI          0 UNKNOWN  64   0.06279522
+1114.41960        11.0191    XeI          0 UNKNOWN  64   0.06457234
+1116.57300       2.714784    XeI          0 UNKNOWN  64   0.06271097
+1117.85600     0.06962654    XeI          0 UNKNOWN  64   0.06043638
+1121.79600        1.29116    XeI          0 UNKNOWN  64   0.05999338
+1129.21900       3.501607    XeI          0 UNKNOWN  64   0.05869172
+1131.26600       1.976563    XeI          0 UNKNOWN  64   0.05656483
+1141.81700       6.727615    XeI          0 UNKNOWN  64   0.05953553
+1149.43700       7.538116    XeI          0 UNKNOWN  64   0.06073935
+1154.05600              0    XeI          0 UNKNOWN  64   0.05911736
+1161.72600         20.881    XeI          0 UNKNOWN  64   0.06519852
+1174.54500       150.6899    XeI          0 UNKNOWN  64   0.09244941
+1179.67900       30.53445    XeI          0 UNKNOWN  64   0.07284056
+1186.05600       20.73586    XeI          0 UNKNOWN  64    0.2057806
+1186.11100       12.39607    XeI          0 UNKNOWN  64    0.2054439
+1187.76100       2.009488    XeI          0 UNKNOWN  64   0.06700954
+1191.53600       5.454002    XeI          0 UNKNOWN  64   0.06745673
+1195.43700      0.9262689    XeI          0 UNKNOWN  64   0.07370057
+1195.62700       12.97506    XeI          0 UNKNOWN  64   0.07578223
+1208.81100       18.98118    XeI          0 UNKNOWN  64   0.07351116
+1220.68800       2.109671    XeI          0 UNKNOWN  64   0.07063859
+1223.85900       39.75644    XeI          0 UNKNOWN  64   0.07948113
+1226.11600       7.488035    XeI          0 UNKNOWN  64   0.07319286
+1227.62400       3.628473    XeI          0 UNKNOWN  64      0.07411
+1241.25000       0.980464    XeI          0 UNKNOWN  64   0.09117973
+1245.46200       4.891968    XeI          0 UNKNOWN  64   0.09812538
+1259.34400       21.14438    XeI          0 UNKNOWN  64    0.1054715
+1262.68500       394.4112    XeI          0 UNKNOWN  64       0.1759
+1333.55000             75    XeI          0 UNKNOWN   0          nan
+1347.45000              5    XeI          0 UNKNOWN   0          nan
+1354.68600              5    XeI          0 UNKNOWN   0          nan
+1366.02100            150    XeI          0 UNKNOWN   0          nan
+1381.82000             10    XeI          0 UNKNOWN   0          nan
+1392.34000             15    XeI          0 UNKNOWN   0          nan
