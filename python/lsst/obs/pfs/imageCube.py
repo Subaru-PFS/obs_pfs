@@ -1,14 +1,11 @@
 from typing import TYPE_CHECKING, Optional
 
 import numpy as np
-import astropy.io.fits
 import fitsio
 
 from astro_metadata_translator import fix_header
 from lsst.afw.fits import readMetadata
 from lsst.afw.image import ImageF
-
-from pfs.datamodel.utils import astropyHeaderFromDict
 
 from .translator import PfsTranslator
 
@@ -33,47 +30,48 @@ class ImageCube:
     added with the ``__setitem__`` method, before calling ``write`` to save the
     cube to disk.
 
-    This class holds a reference to the FITS file, so be sure to call it within
-    a context manager (``with`` statement) to ensure the file is closed. You
-    can use an instance of this class as that context manager, or explicitly
-    delete the instance to close the file (if ``closeOnDel`` is True).
+    The file is read and written with fitsio (cfitsio). Images are written
+    RICE-compressed with a fixed quantization step of 0.1 (in pixel units,
+    i.e. e- for the NIR cubes), subtractively dithered. cfitsio's default
+    picks the step per tile from a noise estimate, which images with vertical
+    spectra break; a fixed, dithered step bounds the error at half a step
+    everywhere and leaves it unbiased.
+
+    A cube read from a file holds the file open, so be sure to use it within a
+    context manager (``with`` statement) to ensure the file is closed. You can
+    use an instance of this class as that context manager, or explicitly delete
+    the instance to close the file.
 
     Parameters
     ----------
-    fits : `astropy.io.fits.HDUList`
-        FITS file containing the images.
     metadata : `lsst.daf.base.PropertyList`
         Metadata (FITS header) for the images.
-    closeOnDel : `bool`, optional
-        If True, close the FITS file when the instance is deleted.
+    path : `str`, optional
+        Path to the FITS file holding the images; `None` for a cube that exists
+        only in memory.
     """
-    def __init__(
-            self, fits: astropy.io.fits.HDUList, metadata: "PropertyList", closeOnDel: bool = True,
-            path: Optional[str] = None
-    ) -> None:
-        self.fits = fits
+
+    compression = dict(compress="RICE", qlevel=-0.1, qmethod="SUBTRACTIVE_DITHER_2", dither_seed=-1)
+    """Compression for the image HDUs: a negative ``qlevel`` is an absolute
+    quantization step; ``SUBTRACTIVE_DITHER_2`` dithers and preserves zeros;
+    ``dither_seed=-1`` seeds the dither from the data checksum, so a rewrite
+    of the same data gives the same values."""
+
+    def __init__(self, metadata: "PropertyList", path: Optional[str] = None) -> None:
         self.metadata = metadata
         self._images: dict[int, ImageF] = {}
-        self._closeOnDel = closeOnDel
-        # Pixels are read through cfitsio rather than the HDUList above.
-        # ``astropy.io.fits`` caches ``hdu.data`` on the HDU permanently, which
-        # defeats ``getReadArray``'s contract and pins a whole dark cube in
-        # memory; it is also ~1.7x slower per compressed frame. The HDUList is
-        # kept for headers, structure and writing, and is never asked for
-        # ``.data``.
         self._path = path
         self._reader: Optional[fitsio.FITS] = None
 
-        if self.fits is not None:
-            try:
-                self.nreads = self.fits[0].header['NREADS']
-            except IndexError:
-                self.nreads = 0
-            except KeyError:
-                names = [hdu.name for hdu in self.fits if hdu.name.startswith("IMAGE_")]
-                self.nreads = max([self._getHduIndex(name) for name in names]) + 1
-        else:
-            self.nreads = 0
+        self.nreads = 0
+        if path is not None:
+            reader = self.reader
+            header = reader[0].read_header()
+            if "NREADS" in header:
+                self.nreads = header["NREADS"]
+            else:
+                indices = [self._getHduIndex(name) for name in self._hduNames()]
+                self.nreads = max(indices) + 1 if indices else 0
 
     @property
     def reader(self) -> Optional[fitsio.FITS]:
@@ -82,13 +80,19 @@ class ImageCube:
             self._reader = fitsio.FITS(self._path)
         return self._reader
 
+    def _hduNames(self) -> list[str]:
+        """Return the names of the image HDUs in the file."""
+        if self.reader is None:
+            return []
+        return [hdu.get_extname() for hdu in self.reader[1:] if hdu.get_extname().startswith("IMAGE_")]
+
     def _readHduArray(self, index: int) -> np.ndarray:
         """Read one image from the file, without caching it anywhere."""
         name = self._getHduName(index)
         reader = self.reader
         if reader is None:
             # In-memory cube (``empty``/``fromCube``): no file to read from.
-            return self.fits[name].data.astype(np.float32, copy=False)
+            raise KeyError(name)
         try:
             hdu = reader[name]
         except Exception as exc:
@@ -110,13 +114,10 @@ class ImageCube:
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         """Exit context"""
         self._closeReader()
-        self.fits.close()
 
     def __del__(self):
         """Delete object"""
         self._closeReader()
-        if self._closeOnDel:
-            self.fits.close()
 
     @classmethod
     def empty(cls, metadata: "PropertyList") -> "ImageCube":
@@ -132,7 +133,7 @@ class ImageCube:
         cube : `ImageCube`
             An empty cube.
         """
-        return cls(astropy.io.fits.HDUList(), metadata)
+        return cls(metadata)
 
     @classmethod
     def fromFile(cls, path: str) -> "ImageCube":
@@ -153,10 +154,9 @@ class ImageCube:
         cube : `ImageCube`
             The image cube.
         """
-        fits = astropy.io.fits.open(path)
         metadata = readMetadata(path, 0)
         fix_header(metadata, translator_class=PfsTranslator, filename=path)
-        return cls(fits, metadata, path=path)
+        return cls(metadata, path=path)
 
     @classmethod
     def fromCube(cls, data: np.ndarray, metadata: "PropertyList") -> "ImageCube":
@@ -247,8 +247,8 @@ class ImageCube:
 
     def readAll(self) -> None:
         """Read all images into cache"""
-        for hdu in self.fits[1:]:
-            index = self._getHduIndex(hdu.name)
+        for name in self._hduNames():
+            index = self._getHduIndex(name)
             self[index] = ImageF(self._readHduArray(index))
 
     def getReadArray(self, index: int) -> np.ndarray:
@@ -306,19 +306,41 @@ class ImageCube:
         path : `str`
             Path to the output FITS file.
         """
-        fits = astropy.io.fits.HDUList()
+        with fitsio.FITS(path, "rw", clobber=True) as fits:
+            fits.write(None, header=self._makeHeader(self.metadata, self.nreads))
+            for index in sorted(self._images):
+                fits.write(self._images[index].array, extname=self._getHduName(index), **self.compression)
 
-        header = astropyHeaderFromDict(self.metadata)
-        header['NREADS'] = self.nreads
-        fits.append(astropy.io.fits.PrimaryHDU(data=None, header=header))
-        for index in sorted(self._images):
-            fits.append(astropy.io.fits.CompImageHDU(self._images[index].array, name=self._getHduName(index)))
-        with open(path, "wb") as fd:
-            fits.writeto(fd)
+    @staticmethod
+    def _makeHeader(metadata: "PropertyList", nreads: int) -> list[dict]:
+        """Make the primary-HDU header records
+
+        ``COMMENT`` and ``HISTORY`` cards are not preserved. Keywords longer
+        than 8 characters are written with the HIERARCH convention.
+
+        Parameters
+        ----------
+        metadata : `lsst.daf.base.PropertyList` or `dict`
+            FITS header keywords and values.
+        nreads : `int`
+            Number of reads in the cube, written as ``NREADS``.
+
+        Returns
+        -------
+        records : `list` [`dict`]
+            Header records for `fitsio`.
+        """
+        records = [dict(name=key, value=value) for key, value in metadata.items()
+                   if key not in ("HISTORY", "COMMENT", "NREADS")]
+        records.append(dict(name="NREADS", value=nreads))
+        return records
 
     @classmethod
     def writeCubeData(cls, path: str, data: np.ndarray, metadata: "PropertyList") -> None:
         """Directly write the data to a FITS file
+
+        Each image is written as soon as it is converted, so the whole cube is
+        never held twice.
 
         Parameters
         ----------
@@ -329,16 +351,11 @@ class ImageCube:
         metadata : `lsst.daf.base.PropertyList`
             Metadata (FITS header) for the images.
         """
-
-        with astropy.io.fits.open(path, mode='append') as fits:
-            header = astropyHeaderFromDict(metadata)
-            header['NREADS'] = len(data)
-            phdu = astropy.io.fits.PrimaryHDU(data=None, header=header)
-            fits.append(phdu)
+        with fitsio.FITS(path, "rw", clobber=True) as fits:
+            fits.write(None, header=cls._makeHeader(metadata, len(data)))
             for i in range(len(data)):
-                imHdu = astropy.io.fits.CompImageHDU(data[i], name=cls._getHduName(i))
-                fits.append(imHdu)
-                fits.flush()
+                image = np.asarray(data[i], dtype=np.float32)
+                fits.write(image, extname=cls._getHduName(i), **cls.compression)
 
     @classmethod
     def readFits(cls, path: str) -> "ImageCube":

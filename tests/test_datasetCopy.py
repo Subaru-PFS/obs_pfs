@@ -23,7 +23,7 @@ from lsst.daf.butler.registry import ConflictingDefinitionError
 from lsst.obs.pfs import datasetCopy
 from lsst.obs.pfs.imageCube import ImageCube
 
-from testUtils import closeButler, loadScript
+from testUtils import CUBE_ATOL, closeButler, loadScript
 
 BEGIN = astropy.time.Time("2026-07-08T12:00:00", format="isot", scale="tai")
 
@@ -68,7 +68,8 @@ class DatasetCopyTestCase(lsst.utils.tests.TestCase):
         for dataId in self.dataIds:
             cube = self.butler.get("nirDark", dataId, collections=outputRun)
             self.assertFloatsAlmostEqual(cube.getImageCube(),
-                                         self.data[dataId["spectrograph"]])
+                                         self.data[dataId["spectrograph"]],
+                                         atol=CUBE_ATOL, rtol=0)
 
     def testCopySurvivesSourceRemoval(self):
         """The point of copying: the destination must not depend on the source."""
@@ -78,7 +79,8 @@ class DatasetCopyTestCase(lsst.utils.tests.TestCase):
         for dataId in self.dataIds:
             cube = self.butler.get("nirDark", dataId, collections=outputRun)
             self.assertFloatsAlmostEqual(cube.getImageCube(),
-                                         self.data[dataId["spectrograph"]])
+                                         self.data[dataId["spectrograph"]],
+                                         atol=CUBE_ATOL, rtol=0)
 
     def testTimespanInheritedFromSourceCertification(self):
         calib = self.certifySource()
@@ -178,7 +180,8 @@ class DatasetCopyTestCase(lsst.utils.tests.TestCase):
             cube = self.butler.get("nirDark", dataId, collections=outputRun)
             self.assertEqual(cube.nreads, 2)
             self.assertFloatsAlmostEqual(cube.getImageCube(),
-                                         self.data[dataId["spectrograph"]])
+                                         self.data[dataId["spectrograph"]],
+                                         atol=CUBE_ATOL, rtol=0)
             self.assertEqual(cube.metadata.get("W_H4IRPN"), 1)
 
     def testDisassembledCompositeRejected(self):

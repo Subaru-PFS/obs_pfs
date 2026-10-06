@@ -591,12 +591,13 @@ def makeMasterDark(butler: dafButler.Butler,
     """
 
     # Open all input cubes. We then step through them one read at a time,
-    # combining them into a single new super dark.
+    # combining them into a single new super dark. The cubes are opened with
+    # fitsio directly, so that no read of any input is ever held beyond its
+    # own combine step.
     #
-    # We use fitsio directly rather than astropy.io.fits or the ImageCube
-    # wrapper: astropy.io.fits internally caches the images, which is
-    # catastrophic here. You can flush the cache or bypass it, but it is cleaner
-    # just to access the data directly.
+    # The inputs' raw reads were dithered by U(-0.5, 0.5) ADU on the way in
+    # (`PfsRaw.getNirRead`), so the per-pixel median does not snap to the
+    # integer-ADU lattice.
     cubes = dict()
     try:
         for v in vlist:

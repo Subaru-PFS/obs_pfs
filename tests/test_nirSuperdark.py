@@ -25,7 +25,7 @@ from lsst.daf.butler import CollectionType, Timespan
 
 from lsst.obs.pfs.imageCube import ImageCube
 
-from testUtils import HAS_DRP_STELLA, closeButler, loadScript, requireDrpStella
+from testUtils import CUBE_ATOL, HAS_DRP_STELLA, closeButler, loadScript, requireDrpStella
 
 if HAS_DRP_STELLA:
     # nirSuperdark imports pfs.drp.stella.calibs.setCalibHeader.
@@ -95,9 +95,11 @@ class MakeMasterDarkTestCase(lsst.utils.tests.TestCase):
         self.assertEqual(newCube.shape, (3, 4, 5))
         for r in range(3):
             # result == base + median(offsets) == 10*(r+1) + 10
-            self.assertFloatsAlmostEqual(newCube[r], 10 * (r + 1) + 10.0)
+            # (each input is quantized on write, so allow for that twice: in
+            # the offset and in the median)
+            self.assertFloatsAlmostEqual(newCube[r], 10 * (r + 1) + 10.0, atol=2*CUBE_ATOL, rtol=0)
             # offsets recorded relative to the per-read median
-            np.testing.assert_allclose(perReadOffsets[r], [-10.0, 0.0, 10.0])
+            np.testing.assert_allclose(perReadOffsets[r], [-10.0, 0.0, 10.0], atol=2*CUBE_ATOL, rtol=0)
 
         self.assertEqual(rampInfo["W_H4IRPN"], 1)
         # One more read than there are planes: the first read is the reference.
@@ -109,8 +111,8 @@ class MakeMasterDarkTestCase(lsst.utils.tests.TestCase):
         newCube, offsets, _ = nirSuperdark.makeMasterDark(
             butler, dict(instrument="PFS", arm="n", spectrograph=1), visits)
         for r in range(4):
-            self.assertFloatsAlmostEqual(newCube[r], 10 * (r + 1))
-            np.testing.assert_allclose(offsets[r], [0.0, 0.0])
+            self.assertFloatsAlmostEqual(newCube[r], 10 * (r + 1), atol=2*CUBE_ATOL, rtol=0)
+            np.testing.assert_allclose(offsets[r], [0.0, 0.0], atol=2*CUBE_ATOL, rtol=0)
 
     def testMismatchedReadCountRaises(self):
         butler = FakeButler({})
@@ -192,7 +194,7 @@ class SaveNirDarkTestCase(lsst.utils.tests.TestCase):
             calibCollection=calibCollection, endDate=endDate)
         cube = self.butler.get(expectedType, dataId, collections=runColl)
         self.assertEqual(cube.nreads, 3)
-        self.assertFloatsAlmostEqual(cube.getImageCube(), data)
+        self.assertFloatsAlmostEqual(cube.getImageCube(), data, atol=CUBE_ATOL, rtol=0)
         # IRP/timing cards recorded for cadence matching
         self.assertEqual(cube.metadata.get("W_H4IRPN"), irpN)
         self.assertEqual(cube.metadata.get("W_H4IRPO"), 1)  # 1..W_H4IRPN, never 0

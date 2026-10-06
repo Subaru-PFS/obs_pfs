@@ -17,7 +17,7 @@ import lsst.utils.tests
 
 from lsst.obs.pfs.imageCube import ImageCube
 
-from testUtils import HAS_DRP_STELLA, requireDrpStella
+from testUtils import CUBE_ATOL, HAS_DRP_STELLA, requireDrpStella
 
 if HAS_DRP_STELLA:
     # isrTask imports pfs.drp.stella.crosstalk.
@@ -43,7 +43,7 @@ class DarkCubeAccessTestCase(lsst.utils.tests.TestCase):
 
     def testGetDarkReadBacksOutGain(self):
         dark = ImageCube.readFits(self.path)
-        self.assertFloatsAlmostEqual(self.task.getDarkRead(dark, 0), LEVEL / GAIN)
+        self.assertFloatsAlmostEqual(self.task.getDarkRead(dark, 0), LEVEL / GAIN, atol=CUBE_ATOL, rtol=0)
 
     def testGetDarkReadDoesNotCorruptTheCube(self):
         """Reading the same read twice must give the same answer."""
@@ -52,23 +52,23 @@ class DarkCubeAccessTestCase(lsst.utils.tests.TestCase):
         second = self.task.getDarkRead(dark, 0)
         self.assertFloatsAlmostEqual(second, first)
         # ...and the cached image is still in electrons, unscaled.
-        self.assertFloatsAlmostEqual(dark[0].array, LEVEL)
+        self.assertFloatsAlmostEqual(dark[0].array, LEVEL, atol=CUBE_ATOL, rtol=0)
 
     def testGetDarkReadReturnsNewArray(self):
         """The caller must not be handed the cube's cached image."""
         dark = ImageCube.readFits(self.path)
         read = self.task.getDarkRead(dark, 0)
         read += 1000.0
-        self.assertFloatsAlmostEqual(dark[0].array, LEVEL)
+        self.assertFloatsAlmostEqual(dark[0].array, LEVEL, atol=CUBE_ATOL, rtol=0)
 
     def testGetDarkReadWithoutGain(self):
         path = os.path.join(self.root, "noGain.fits")
         ImageCube.fromCube(np.full((NREADS, 2, 2), LEVEL, dtype="f4"), {}).writeFits(path)
         dark = ImageCube.readFits(path)
         read = self.task.getDarkRead(dark, 0)
-        self.assertFloatsAlmostEqual(read, LEVEL)
+        self.assertFloatsAlmostEqual(read, LEVEL, atol=CUBE_ATOL, rtol=0)
         read += 1000.0  # still a copy, even when the gain is 1
-        self.assertFloatsAlmostEqual(dark[0].array, LEVEL)
+        self.assertFloatsAlmostEqual(dark[0].array, LEVEL, atol=CUBE_ATOL, rtol=0)
 
     def testGetDarkReadPreservesDtype(self):
         dark = ImageCube.readFits(self.path)
@@ -76,8 +76,10 @@ class DarkCubeAccessTestCase(lsst.utils.tests.TestCase):
 
     def testGetDarkCubeBacksOutGainAndIsRepeatable(self):
         dark = ImageCube.readFits(self.path)
-        self.assertFloatsAlmostEqual(self.task.getDarkCube(dark, NREADS), LEVEL / GAIN)
-        self.assertFloatsAlmostEqual(self.task.getDarkCube(dark, NREADS), LEVEL / GAIN)
+        self.assertFloatsAlmostEqual(self.task.getDarkCube(dark, NREADS), LEVEL / GAIN,
+                                     atol=CUBE_ATOL, rtol=0)
+        self.assertFloatsAlmostEqual(self.task.getDarkCube(dark, NREADS), LEVEL / GAIN,
+                                     atol=CUBE_ATOL, rtol=0)
 
     def testGetDarkCubeTakesLeadingReads(self):
         """A shorter exposure uses the leading planes of the dark."""

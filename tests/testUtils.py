@@ -76,6 +76,17 @@ def hasModule(name: str) -> bool:
         return False
 
 
+def cubeTolerance() -> float:
+    """Largest pixel error from writing an `ImageCube` to a file.
+
+    Cube pixels are quantized on write, to within half a step.
+    """
+    from lsst.obs.pfs.imageCube import ImageCube
+    return 0.5*abs(ImageCube.compression["qlevel"]) + 1e-3
+
+
+CUBE_ATOL = cubeTolerance()
+
 HAS_DRP_STELLA = hasModule("pfs.drp.stella")
 HAS_DRP_PFS_DATA = hasPackage("drp_pfs_data")
 

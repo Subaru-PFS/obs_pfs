@@ -411,8 +411,15 @@ class PfsRaw:
         imageType: Union[Literal["IMAGE"], Literal["REF"]] = "IMAGE",
         bbox: Optional["Box2I"] = None,
         doRotate: bool = True,
+        doDither: bool = True,
     ) -> ImageF:
         """Return the image for the given read
+
+        The H4 reads are integer ADU. Medians of integer-valued reads (the
+        IRP reference filter; the read-by-read combine of dark ramps) snap to
+        the integer lattice, so each read is dithered by U(-0.5, 0.5) as it is
+        read in. The dither is seeded by `ditherSeed`, so a given read always
+        gets the same dither.
 
         Parameters
         ----------
@@ -422,6 +429,10 @@ class PfsRaw:
             The type of image to return: ``IMAGE`` or ``REF``.
         bbox : `Box2I`
             The bounding box to return.
+        doRotate : `bool`
+            Rotate the image so that traces run vertically.
+        doDither : `bool`
+            Add the U(-0.5, 0.5) dither to the integer pixel values.
 
         Returns
         -------
@@ -449,6 +460,9 @@ class PfsRaw:
         # The Subaru-required BLANK card does not work for H4s: we have to replace NaNs with 0.
         self.replaceNansWith0(image)
 
+        if doDither:
+            self.ditherRead(image.getImage(), readNum, imageType, hdu, bbox)
+
         if doRotate:
             # Rotate immediately and always: completely hide the fact that the detector is physically rotated.
             nQuarter = self.detector.getOrientation().getNQuarter()
@@ -456,6 +470,64 @@ class PfsRaw:
         else:
             image = image.getImage()
         return image
+
+    def ditherSeed(self, readNum: int, imageType: Union[Literal["IMAGE"], Literal["REF"]]) -> list[int]:
+        """Return the random seed for dithering one read.
+
+        Parameters
+        ----------
+        readNum : `int`
+            The read number. 1-indexed.
+        imageType : `str`
+            The type of image: ``IMAGE`` or ``REF``.
+
+        Returns
+        -------
+        seed : `list` [`int`]
+            Seed for `numpy.random.default_rng`, unique to the visit, detector,
+            read and image type.
+        """
+        return [int(self.metadata["W_VISIT"]), int(self.metadata["DET-ID"]), readNum,
+                dict(IMAGE=0, REF=1)[imageType]]
+
+    def ditherRead(
+        self,
+        image: ImageF,
+        readNum: int,
+        imageType: Union[Literal["IMAGE"], Literal["REF"]],
+        hdu: int,
+        bbox: Optional["Box2I"] = None,
+    ) -> None:
+        """Add a U(-0.5, 0.5) dither to an unrotated read, in place.
+
+        The dither is drawn for the full HDU, so that a read of a sub-region
+        gets the same values as the matching pixels of a full read.
+
+        Parameters
+        ----------
+        image : `ImageF`
+            The read, as stored on disk (not rotated). Modified in place.
+        readNum : `int`
+            The read number. 1-indexed.
+        imageType : `str`
+            The type of image: ``IMAGE`` or ``REF``.
+        hdu : `int`
+            The HDU the read came from.
+        bbox : `Box2I`, optional
+            The region of the HDU that ``image`` holds; `None` for all of it.
+        """
+        rng = np.random.default_rng(self.ditherSeed(readNum, imageType))
+        array = image.getArray()
+        if bbox is None:
+            shape = array.shape
+        else:
+            header = readMetadata(self.path, hdu)
+            shape = (header["NAXIS2"], header["NAXIS1"])
+        dither = rng.random(shape, dtype=np.float32)
+        dither -= 0.5
+        if bbox is not None:
+            dither = dither[bbox.getMinY():bbox.getMaxY() + 1, bbox.getMinX():bbox.getMaxX() + 1]
+        array += dither
 
     def getCorrectedNirRead(
         self,
