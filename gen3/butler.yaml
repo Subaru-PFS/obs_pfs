@@ -29,6 +29,8 @@ datastore:
     ArcLineSet: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     LsfDict: lsst.daf.butler.formatters.pickle.PickleFormatter
     Lsf: lsst.daf.butler.formatters.pickle.PickleFormatter
+    ArmLsfModel: lsst.daf.butler.formatters.pickle.PickleFormatter
+    LsfLineSet: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     NevenPsf: lsst.daf.butler.formatters.pickle.PickleFormatter
     MultipagePdfFigure: pfs.drp.qa.formatters.PdfMatplotlibFormatter
     QaDict: lsst.daf.butler.formatters.pickle.PickleFormatter
@@ -132,6 +134,10 @@ storageClasses:
     pytype: pfs.drp.stella.lsf.LsfDict
   Lsf:
     pytype: pfs.drp.stella.lsf.Lsf
+  ArmLsfModel:
+    pytype: pfs.drp.stella.lsfModel.ArmLsfModel
+  LsfLineSet:
+    pytype: pfs.drp.stella.lsfLine.LsfLineSet
   NevenPsf:
     pytype: pfs.drp.stella.NevenPsfContinued.NevenPsf
   MultipagePdfFigure:
