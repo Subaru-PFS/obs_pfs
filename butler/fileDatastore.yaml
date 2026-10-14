@@ -64,6 +64,8 @@ formatters:
   ArcLineSet: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
   LsfDict: lsst.daf.butler.formatters.pickle.PickleFormatter
   Lsf: lsst.daf.butler.formatters.pickle.PickleFormatter
+  ArmLsfModel: lsst.daf.butler.formatters.pickle.PickleFormatter
+  LsfLineSet: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
   NevenPsf: lsst.daf.butler.formatters.pickle.PickleFormatter
   MultipagePdfFigure: pfs.drp.qa.formatters.PdfMatplotlibFormatter
   QaDict: lsst.daf.butler.formatters.pickle.PickleFormatter
