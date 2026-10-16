@@ -81,7 +81,7 @@ def getLampElements(md):
         "Kr_eng": ["Kr_eng"],
         "Ne_eng": ["Ne_eng"],
         "H_eng": ["H_eng"],
-        "He_eng": ["He_eng"],
+        "He_eng": ["He_eng", "O_eng"],    # O I impurity lines are seen in the IIS He lamp (PIPE2D-1958)
         # Science fibres
         "Quartz": [],
         "Ar": ["Ar"],
