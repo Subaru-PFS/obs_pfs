@@ -1,10 +1,11 @@
 # Columns:
 # 1: wavelength (nm)
-# 2: intensity (arbitrary units)
+# 2: intensity (approximate counts/sec for PFS lamps)
 # 3: description (ionic species)
 # 4: status (bitmask)
 # 5: transition
 # 6: source reference
+# 7: intensityErr (uncertainty on intensity; same units)
 #
 # Status bitmask elements:
 # NOT_VISIBLE=1: Line is not typically visible in PFS (maybe too faint)
@@ -31,558 +32,558 @@
 # RAGNAR=32: Lines taken from Ragnar sky line list; Christian Kragh Jespersen thesis, 2026
 # EMPIRICAL_INTENSITY=64: Intensity measured empirically from PFS data, replacing the catalogued value; PLACEHOLDER, provenance (data/visits used, date, method) not yet recorded
 #
-346.20600               7    ArI          0 UNKNOWN   0
-355.53210               7    ArI          0 UNKNOWN   0
-360.75510               7    ArI          0 UNKNOWN   0
-377.14400              20    ArI          0 UNKNOWN   0
-383.57670               7    ArI         16 UNKNOWN   0
-394.86220               7    ArI          0 UNKNOWN   0
-395.00970              35    ArI          0 UNKNOWN   0
-404.55610              50    ArI          0 UNKNOWN   0
-415.97620             400    ArI          0 UNKNOWN   0
-416.53540              50    ArI          0 UNKNOWN   0
-418.30630              50    ArI          0 UNKNOWN   0
-419.18940             100    ArI          0 UNKNOWN   0
-419.22100              50    ArI          0 UNKNOWN   0
-419.95000             200    ArI          0 UNKNOWN   0
-420.18580             400    ArI          0 UNKNOWN   0
-425.23820              25    ArI          0 UNKNOWN   0
-426.05610             200    ArI          0 UNKNOWN   0
-426.74870             100    ArI         16 UNKNOWN   0
-427.33710             150    ArI          0 UNKNOWN   0
-430.13110             100    ArI          0 UNKNOWN   0
-433.47790             100    ArI         16 UNKNOWN   0
-433.65570              50    ArI         16 UNKNOWN   0
-434.63900              25    ArI         16 UNKNOWN   0
-451.19980             100    ArI          0 UNKNOWN   0
-452.35910              20    ArI          0 UNKNOWN   0
-459.73850              15    ArI         16 UNKNOWN   0
-462.97370               7    ArI         16 UNKNOWN   0
-470.36320              15    ArI         16 UNKNOWN   0
-515.28260               5    ArI          0 UNKNOWN   0
-516.37230              15    ArI          0 UNKNOWN   0
-518.91910              20    ArI          0 UNKNOWN   0
-522.27250               7    ArI          0 UNKNOWN   0
-542.28590               5    ArI          0 UNKNOWN   0
-545.31670              10    ArI          0 UNKNOWN   0
-549.74010              25    ArI          0 UNKNOWN   0
-550.76430               5    ArI          0 UNKNOWN   0
-556.02460              25    ArI          0 UNKNOWN   0
-557.40880              10    ArI          0 UNKNOWN   0
-560.82900              35    ArI          0 UNKNOWN   0
-565.22720              20    ArI          0 UNKNOWN   0
-574.11120              10    ArI          0 UNKNOWN   0
-583.58800               5    ArI          0 UNKNOWN   0
-586.19340              10    ArI          0 UNKNOWN   0
-588.42540              15    ArI          0 UNKNOWN   0
-589.02160              25    ArI          0 UNKNOWN   0
-591.37230              50    ArI          0 UNKNOWN   0
-593.04560              15    ArI          0 UNKNOWN   0
-594.43150               5    ArI          0 UNKNOWN   0
-598.89600               7    ArI          0 UNKNOWN   0
-600.06610               5    ArI          0 UNKNOWN   0
-602.68190               5    ArI          0 UNKNOWN   0
-603.37970              70    ArI          0 UNKNOWN   0
-604.48960              35    ArI          0 UNKNOWN   0
-605.43990              10    ArI          0 UNKNOWN   0
-606.10500              20    ArI          0 UNKNOWN   0
-610.04910               7    ArI          0 UNKNOWN   0
-610.73250              10    ArI          0 UNKNOWN   0
-614.71420              10    ArI          0 UNKNOWN   0
-617.18810               7    ArI          0 UNKNOWN   0
-617.48040              10    ArI          0 UNKNOWN   0
-621.42220              10    ArI          0 UNKNOWN   0
-621.76580               5    ArI          0 UNKNOWN   0
-629.86130               7    ArI          0 UNKNOWN   0
-630.94010              15    ArI          0 UNKNOWN   0
-637.13360               7    ArI          0 UNKNOWN   0
-638.64820              20    ArI          0 UNKNOWN   0
-641.80810              70    ArI          0 UNKNOWN   0
-653.99180              15    ArI          0 UNKNOWN   0
-660.66770              15    ArI          0 UNKNOWN   0
-666.25150               5    ArI          0 UNKNOWN   0
-666.58910               5    ArI          0 UNKNOWN   0
-667.91260             100    ArI          1 UNKNOWN   0
-675.46980             150    ArI          1 UNKNOWN   0
-675.80280               5    ArI          0 UNKNOWN   0
-676.84800              15    ArI          0 UNKNOWN   0
-687.31850             150    ArI          1 UNKNOWN   0
-688.14800               5    ArI          0 UNKNOWN   0
-689.00740              10    ArI          0 UNKNOWN   0
-693.95780              50    ArI          8 UNKNOWN   0
-695.33950               7    ArI          0 UNKNOWN   0
-696.21700               7    ArI          0 UNKNOWN   0
-696.73520           10000    ArI          0 UNKNOWN   0
-703.21900             150    ArI          1 UNKNOWN   0
-706.91670           10000    ArI          0 UNKNOWN   0
-707.06850             100    ArI          1 UNKNOWN   0
-710.94370              25    ArI          0 UNKNOWN   0
-712.77840              25    ArI          0 UNKNOWN   0
-714.90120            1000    ArI          0 UNKNOWN   0
-716.08120              15    ArI          0 UNKNOWN   0
-720.89660              70    ArI          0 UNKNOWN   0
-726.71740              15    ArI          0 UNKNOWN   0
-727.26670               7    ArI          8 UNKNOWN   0
-727.49400            2000    ArI          0 UNKNOWN   0
-731.37310              35    ArI          0 UNKNOWN   0
-731.80210              25    ArI          0 UNKNOWN   0
-735.28390               5    ArI          0 UNKNOWN   0
-735.53190              70    ArI          8 UNKNOWN   0
-737.41490             200    ArI          1 UNKNOWN   0
-738.60140           10000    ArI          0 UNKNOWN   0
-739.50160              20    ArI          0 UNKNOWN   0
-741.43790              15    ArI          0 UNKNOWN   0
-742.73390              10    ArI          0 UNKNOWN   0
-743.74160              25    ArI          8 UNKNOWN   0
-743.83450              10    ArI          8 UNKNOWN   0
-750.59350           20000    ArI         16 UNKNOWN   0
-751.67210           15000    ArI          0 UNKNOWN   0
-763.72080           25000    ArI          0 UNKNOWN   0
-772.58870           15000    ArI          2 UNKNOWN   0
-772.63330           10000    ArI          2 UNKNOWN   0
-789.32460              10    ArI          8 UNKNOWN   0
-795.03620           20000    ArI          0 UNKNOWN   0
-800.83590           20000    ArI          0 UNKNOWN   0
-801.69900           25000    ArI          0 UNKNOWN   0
-805.55230               7    ArI          8 UNKNOWN   0
-810.59210           20000    ArI          0 UNKNOWN   0
-811.75420           35000    ArI          0 UNKNOWN   0
-826.67940           10000    ArI         16 UNKNOWN   0
-839.45800              20    ArI          8 UNKNOWN   0
-841.05210           15000    ArI          0 UNKNOWN   0
-842.69630           20000    ArI          0 UNKNOWN   0
-852.37830           15000    ArI         16 UNKNOWN   0
-860.81400               7    ArI          8 UNKNOWN   0
-867.03250            4500    ArI          0 UNKNOWN   0
-885.23400             180    ArI          1 UNKNOWN   0
-907.78850              20    ArI          8 UNKNOWN   0
-912.54710           35000    ArI          0 UNKNOWN   0
-919.71610             550    ArI          1 UNKNOWN   0
-922.70300           15000    ArI         16 UNKNOWN   0
-929.40810             400    ArI          1 UNKNOWN   0
-935.67870            1600    ArI         16 UNKNOWN   0
-966.04350           25000    ArI          0 UNKNOWN   0
-978.71860            4500    ArI          1 UNKNOWN   0
-1005.48200            180    ArI          0 UNKNOWN   0
-1033.55500             30    ArI          0 UNKNOWN   0
-1047.29230           1600    ArI          0 UNKNOWN   0
-1048.09050             13    ArI          0 UNKNOWN   0
-1050.93800            180    ArI          0 UNKNOWN   0
-1067.64890            200    ArI          0 UNKNOWN   0
-1068.46990             11    ArI          0 UNKNOWN   0
-1073.68100             30    ArI          0 UNKNOWN   0
-1076.21100             30    ArI          0 UNKNOWN   0
-1108.19030             11    ArI          0 UNKNOWN   0
-1110.95000             30    ArI          0 UNKNOWN   0
-1144.49650             12    ArI          0 UNKNOWN   0
-1149.12540            400    ArI         16 UNKNOWN   0
-1167.19040            200    ArI          0 UNKNOWN   0
-1172.26960             12    ArI          0 UNKNOWN   0
-1211.56410            200    ArI          0 UNKNOWN   0
-1214.30600             50    ArI          0 UNKNOWN   0
-1234.67700             50    ArI          0 UNKNOWN   0
-1240.62210            200    ArI          0 UNKNOWN   0
-1244.27240            200    ArI          0 UNKNOWN   0
-1245.95300            100    ArI          0 UNKNOWN   0
-1249.10800            200    ArI          0 UNKNOWN   0
-1270.57560            150    ArI          0 UNKNOWN   0
-1273.69010             30    ArI          0 UNKNOWN   0
-1274.97190             12    ArI          0 UNKNOWN   0
-1280.62410            200    ArI          0 UNKNOWN   0
-1293.67330             50    ArI          0 UNKNOWN   0
-1296.02030            500    ArI          0 UNKNOWN   0
-1301.18220            200    ArI          0 UNKNOWN   0
-1321.76000            200    ArI          0 UNKNOWN   0
-1323.17250            200    ArI          0 UNKNOWN   0
-1323.45200            100    ArI          0 UNKNOWN   0
-1327.62700            500    ArI          0 UNKNOWN   0
-1331.68510           1000    ArI          0 UNKNOWN   0
-1337.07660           1000    ArI          0 UNKNOWN   0
-1350.31000             30    ArI          0 UNKNOWN   0
-1350.78840           1000    ArI          0 UNKNOWN   0
-1357.73290             11    ArI          0 UNKNOWN   0
-1360.30520             30    ArI          0 UNKNOWN   0
-1362.63840            400    ArI          0 UNKNOWN   0
-1368.22900            200    ArI          0 UNKNOWN   0
-1372.23280           1000    ArI          0 UNKNOWN   0
-1382.94950             10    ArI          0 UNKNOWN   0
-1391.12800             10    ArI          0 UNKNOWN   0
-340.16600               0    HgI          0 UNKNOWN   0
-340.79700               0    HgI          0 UNKNOWN   0
-341.69600               0    HgI          0 UNKNOWN   0
-342.52400               0    HgI          0 UNKNOWN   0
-343.71300               0    HgI          0 UNKNOWN   0
-344.76300               0    HgI          0 UNKNOWN   0
-344.82600               0    HgI          0 UNKNOWN   0
-346.45100               0    HgI          0 UNKNOWN   0
-347.90400               0    HgI          0 UNKNOWN   0
-347.99100               0    HgI          0 UNKNOWN   0
-350.30000               0    HgI          0 UNKNOWN   0
-352.40300               0    HgI          0 UNKNOWN   0
-352.52800               0    HgI          0 UNKNOWN   0
-354.44700              60    HgI          0 UNKNOWN   0
-355.97500               0    HgI          0 UNKNOWN   0
-359.20300               0    HgI          0 UNKNOWN   0
-359.25000               1    HgI          0 UNKNOWN   0
-359.37700               0    HgI          0 UNKNOWN   0
-365.11980            9000    HgI          0 UNKNOWN   0
-365.58830            3000    HgI          0 UNKNOWN   0
-366.39300             500    HgI          0 UNKNOWN   0
-366.43270            2000    HgI          0 UNKNOWN   0
-370.24950              50    HgI          0 UNKNOWN   0
-370.34100               1    HgI          0 UNKNOWN   0
-370.52195               9    HgI          0 UNKNOWN   0
-379.10800              80    HgI          0 UNKNOWN   0
-380.27376              50    HgI          0 UNKNOWN   0
-381.69000               1    HgI          0 UNKNOWN   0
-382.14800              50    HgI          0 UNKNOWN   0
-386.19400              30    HgI          0 UNKNOWN   0
-390.29730              30    HgI          0 UNKNOWN   0
-390.47440             0.5    HgI          0 UNKNOWN   0
-390.74780              40    HgI          0 UNKNOWN   0
-398.50500               2    HgI          0 UNKNOWN   0
-402.70900               4    HgI          0 UNKNOWN   0
-404.77080           12000    HgI       6144 UNKNOWN   0
-407.89880            1000    HgI          0 UNKNOWN   0
-410.92130              70    HgI          0 UNKNOWN   0
-414.12000               0    HgI          0 UNKNOWN   0
-434.04431              50    HgI          0 UNKNOWN   0
-434.48550             1.3    HgI          0 UNKNOWN   0
-434.87166             150    HgI          0 UNKNOWN   0
-435.95600           12000    HgI          0 UNKNOWN   0
-467.21380               0    HgI          0 UNKNOWN   0
-467.30250               0    HgI          0 UNKNOWN   0
-467.42260             nan    HgI          0 UNKNOWN   0
-468.51300               0    HgI          0 UNKNOWN   0
-468.62370               0    HgI          0 UNKNOWN   0
-468.76980             nan    HgI          0 UNKNOWN   0
-470.11120               0    HgI          0 UNKNOWN   0
-470.24860               0    HgI          0 UNKNOWN   0
-470.43270               0    HgI          0 UNKNOWN   0
-470.43670               0    HgI          0 UNKNOWN   0
-472.10620               0    HgI          0 UNKNOWN   0
-472.28330               0    HgI          0 UNKNOWN   0
-472.51350               0    HgI          0 UNKNOWN   0
-472.52410               0    HgI          0 UNKNOWN   0
-474.64750               0    HgI          0 UNKNOWN   0
-474.87860               0    HgI          0 UNKNOWN   0
-475.17220               0    HgI          0 UNKNOWN   0
-475.18890               0    HgI          0 UNKNOWN   0
-477.94540               0    HgI          0 UNKNOWN   0
-478.26110               0    HgI          0 UNKNOWN   0
-478.64910               0    HgI          0 UNKNOWN   0
-478.66920               0    HgI          0 UNKNOWN   0
-482.35520               0    HgI          0 UNKNOWN   0
-482.79430               0    HgI          0 UNKNOWN   0
-483.32280               0    HgI          0 UNKNOWN   0
-483.35880               0    HgI          0 UNKNOWN   0
-488.43630               6    HgI          0 UNKNOWN   0
-489.08540               0    HgI          0 UNKNOWN   0
-489.82810               0    HgI          0 UNKNOWN   0
-489.88500               0    HgI          0 UNKNOWN   0
-491.74400              20    HgI          0 UNKNOWN   0
-496.15000             100    HgI          0 UNKNOWN   0
-497.17570               6    HgI          0 UNKNOWN   0
-498.20300               6    HgI          0 UNKNOWN   0
-499.29940               0    HgI          0 UNKNOWN   0
-499.39860               0    HgI          0 UNKNOWN   0
-502.70000               3    HgI          0 UNKNOWN   0
-504.72000               2    HgI          0 UNKNOWN   0
-510.41270              30    HgI          0 UNKNOWN   0
-512.20640              70    HgI          0 UNKNOWN   0
-513.93710              30    HgI          0 UNKNOWN   0
-514.13580               0    HgI          0 UNKNOWN   0
-522.04000               2    HgI          0 UNKNOWN   0
-529.22120              30    HgI          0 UNKNOWN   0
-531.82550               6    HgI          0 UNKNOWN   0
-535.55230             130    HgI          0 UNKNOWN   0
-536.70000              12    HgI          0 UNKNOWN   0
-538.61230              50    HgI          0 UNKNOWN   0
-539.03080               0    HgI          0 UNKNOWN   0
-539.49680               0    HgI          0 UNKNOWN   0
-540.63000               3    HgI          0 UNKNOWN   0
-546.22680            6000    HgI          0 UNKNOWN   0
-555.11750              50    HgI          0 UNKNOWN   0
-567.73800             600    HgI          0 UNKNOWN   0
-577.12100            1000    HgI       6144 UNKNOWN   0
-579.13000              30    HgI          0 UNKNOWN   0
-579.22760             900    HgI       6144 UNKNOWN   0
-580.53910             400    HgI          0 UNKNOWN   0
-581.99000               2    HgI          0 UNKNOWN   0
-586.08780             130    HgI          0 UNKNOWN   0
-587.36020              30    HgI          0 UNKNOWN   0
-589.18000              12    HgI          0 UNKNOWN   0
-607.43200              30    HgI          0 UNKNOWN   0
-612.49600               3    HgI          0 UNKNOWN   0
-623.60800              50    HgI          0 UNKNOWN   0
-670.35000               2    HgI          0 UNKNOWN   0
-671.81900             600    HgI          0 UNKNOWN   0
-672.30000               5    HgI          0 UNKNOWN   0
-672.71000               1    HgI          0 UNKNOWN   0
-674.29000               0    HgI          0 UNKNOWN   0
-674.90000               2    HgI          0 UNKNOWN   0
-675.28000               2    HgI          0 UNKNOWN   0
-677.51000               1    HgI          0 UNKNOWN   0
-678.65000               4    HgI          0 UNKNOWN   0
-681.35000               2    HgI          0 UNKNOWN   0
-682.89000               5    HgI          0 UNKNOWN   0
-685.48000               0    HgI          0 UNKNOWN   0
-686.29000               3    HgI          0 UNKNOWN   0
-687.26000               4    HgI          0 UNKNOWN   0
-688.23000               4    HgI          0 UNKNOWN   0
-689.04650               0    HgI          0 UNKNOWN   0
-690.93700            1000    HgI          0 UNKNOWN   0
-691.75000               5    HgI          0 UNKNOWN   0
-692.62000               3    HgI          0 UNKNOWN   0
-693.59000               1    HgI          0 UNKNOWN   0
-694.60000               4    HgI          0 UNKNOWN   0
-695.26000               5    HgI          0 UNKNOWN   0
-697.91000               0    HgI          0 UNKNOWN   0
-701.11000               4    HgI          0 UNKNOWN   0
-702.40000               0    HgI          0 UNKNOWN   0
-704.76000               8    HgI          0 UNKNOWN   0
-708.38540            1000    HgI          0 UNKNOWN   0
-709.38150             800    HgI          1 UNKNOWN   0
-710.33000               2    HgI          0 UNKNOWN   0
-712.20000               2    HgI          0 UNKNOWN   0
-712.76000               6    HgI          0 UNKNOWN   0
-713.70000               4    HgI          0 UNKNOWN   0
-714.96000               2    HgI          0 UNKNOWN   0
-715.62000               0    HgI          0 UNKNOWN   0
-716.42000               5    HgI          0 UNKNOWN   0
-717.10000               2    HgI          0 UNKNOWN   0
-717.26000               0    HgI          0 UNKNOWN   0
-717.98000              10    HgI          0 UNKNOWN   0
-719.29000               3    HgI          0 UNKNOWN   0
-719.55000               4    HgI          0 UNKNOWN   0
-721.11000               6    HgI          0 UNKNOWN   0
-722.44000               0    HgI          0 UNKNOWN   0
-722.95000               0    HgI          0 UNKNOWN   0
-724.14000               3    HgI          0 UNKNOWN   0
-724.77000               3    HgI          0 UNKNOWN   0
-727.11000               5    HgI          0 UNKNOWN   0
-727.27000               5    HgI          0 UNKNOWN   0
-728.04000               0    HgI          0 UNKNOWN   0
-729.69000               7    HgI          0 UNKNOWN   0
-730.37000               4    HgI          0 UNKNOWN   0
-730.56000               0    HgI          0 UNKNOWN   0
-731.91000               4    HgI          0 UNKNOWN   0
-733.50000               3    HgI          0 UNKNOWN   0
-734.30000               1    HgI          0 UNKNOWN   0
-735.01000               8    HgI          0 UNKNOWN   0
-735.06000               0    HgI          0 UNKNOWN   0
-737.35000              10    HgI          0 UNKNOWN   0
-737.65000               4    HgI          0 UNKNOWN   0
-738.95000               1    HgI          0 UNKNOWN   0
-739.58000               1    HgI          0 UNKNOWN   0
-740.53000               1    HgI          0 UNKNOWN   0
-741.42000               4    HgI          0 UNKNOWN   0
-745.60000               8    HgI          0 UNKNOWN   0
-745.88000               3    HgI          0 UNKNOWN   0
-746.34000               2    HgI          0 UNKNOWN   0
-747.50000               1    HgI          0 UNKNOWN   0
-749.66000               1    HgI          0 UNKNOWN   0
-750.25000               1    HgI          0 UNKNOWN   0
-752.22000               9    HgI          0 UNKNOWN   0
-753.37000               1    HgI          0 UNKNOWN   0
-753.60000               0    HgI          0 UNKNOWN   0
-754.50000               4    HgI          0 UNKNOWN   0
-755.42000               7    HgI          0 UNKNOWN   0
-756.29000               1    HgI          0 UNKNOWN   0
-757.33000               1    HgI          0 UNKNOWN   0
-758.30000               1    HgI          0 UNKNOWN   0
-760.42000               7    HgI          0 UNKNOWN   0
-760.80000               4    HgI          0 UNKNOWN   0
-761.48000               1    HgI          0 UNKNOWN   0
-761.76000               0    HgI          0 UNKNOWN   0
-762.09000               1    HgI          0 UNKNOWN   0
-762.29000               0    HgI          0 UNKNOWN   0
-763.38000               1    HgI          0 UNKNOWN   0
-763.73000               0    HgI          0 UNKNOWN   0
-764.85000               3    HgI          0 UNKNOWN   0
-765.58000               1    HgI          0 UNKNOWN   0
-767.61000               5    HgI          0 UNKNOWN   0
-767.94000               3    HgI          0 UNKNOWN   0
-768.73000               1    HgI          0 UNKNOWN   0
-769.51000               1    HgI          0 UNKNOWN   0
-770.62000               1    HgI          0 UNKNOWN   0
-770.87000               1    HgI          0 UNKNOWN   0
-772.08000               2    HgI          0 UNKNOWN   0
-772.23000               1    HgI          0 UNKNOWN   0
-773.09520              30    HgI          0 UNKNOWN   0
-773.47000               5    HgI          0 UNKNOWN   0
-773.68000               0    HgI          0 UNKNOWN   0
-779.73000               1    HgI          0 UNKNOWN   0
-782.29000               8    HgI          0 UNKNOWN   0
-782.44000               1    HgI          0 UNKNOWN   0
-782.82000               4    HgI          0 UNKNOWN   0
-790.13000               0    HgI          0 UNKNOWN   0
-793.20000               3    HgI          0 UNKNOWN   0
-793.91000               1    HgI          0 UNKNOWN   0
-795.34000               0    HgI          0 UNKNOWN   0
-797.08000               0    HgI          0 UNKNOWN   0
-797.55000               1    HgI          0 UNKNOWN   0
-798.13000               7    HgI          0 UNKNOWN   0
-799.32000               0    HgI          0 UNKNOWN   0
-800.08000               0    HgI          0 UNKNOWN   0
-800.93000               1    HgI          0 UNKNOWN   0
-801.55000               0    HgI          0 UNKNOWN   0
-802.01000               1    HgI          0 UNKNOWN   0
-802.45000               6    HgI          0 UNKNOWN   0
-803.41000             nan    HgI          0 UNKNOWN   0
-805.22000               1    HgI          0 UNKNOWN   0
-805.63000               2    HgI          0 UNKNOWN   0
-806.06000               1    HgI          0 UNKNOWN   0
-807.29000               5    HgI          0 UNKNOWN   0
-808.03000             nan    HgI          0 UNKNOWN   0
-808.26000               0    HgI          0 UNKNOWN   0
-809.26000             nan    HgI          0 UNKNOWN   0
-811.53000             nan    HgI          0 UNKNOWN   0
-813.14000             nan    HgI          0 UNKNOWN   0
-813.85000             nan    HgI          0 UNKNOWN   0
-814.76000               2    HgI          0 UNKNOWN   0
-816.56000              10    HgI          0 UNKNOWN   0
-816.86000               8    HgI          0 UNKNOWN   0
-817.50000             nan    HgI          0 UNKNOWN   0
-817.94000               0    HgI          0 UNKNOWN   0
-819.15000               3    HgI          0 UNKNOWN   0
-819.78500             nan    HgI          0 UNKNOWN   0
-819.97000               2    HgI          0 UNKNOWN   0
-820.29000               8    HgI          0 UNKNOWN   0
-820.76000               2    HgI          0 UNKNOWN   0
-821.65000               3    HgI          0 UNKNOWN   0
-822.93000               0    HgI          0 UNKNOWN   0
-823.41000               0    HgI          0 UNKNOWN   0
-824.07000               4    HgI          0 UNKNOWN   0
-825.30000               4    HgI          0 UNKNOWN   0
-826.45000               4    HgI          0 UNKNOWN   0
-827.48000               5    HgI          0 UNKNOWN   0
-827.73000               4    HgI          0 UNKNOWN   0
-829.09000               5    HgI          0 UNKNOWN   0
-830.60000               1    HgI          0 UNKNOWN   0
-831.87000               5    HgI          0 UNKNOWN   0
-834.28000               5    HgI          0 UNKNOWN   0
-835.60000               4    HgI          0 UNKNOWN   0
-837.63000               5    HgI          0 UNKNOWN   0
-837.87000               4    HgI          0 UNKNOWN   0
-840.39000               5    HgI          0 UNKNOWN   0
-842.09000               4    HgI          0 UNKNOWN   0
-842.57000               5    HgI          0 UNKNOWN   0
-844.56000               5    HgI          0 UNKNOWN   0
-845.43000             nan    HgI          0 UNKNOWN   0
-846.64000               0    HgI          0 UNKNOWN   0
-849.33000               4    HgI          0 UNKNOWN   0
-850.79000               6    HgI          8 UNKNOWN   0
-851.33000               5    HgI          0 UNKNOWN   0
-851.58000               4    HgI          0 UNKNOWN   0
-854.12000               3    HgI          0 UNKNOWN   0
-855.97000               5    HgI          0 UNKNOWN   0
-858.49000               6    HgI          0 UNKNOWN   0
-861.60000               6    HgI          0 UNKNOWN   0
-862.11000               0    HgI          0 UNKNOWN   0
-865.51000              10    HgI          0 UNKNOWN   0
-868.20000               0    HgI          0 UNKNOWN   0
-868.91000               6    HgI          0 UNKNOWN   0
-870.69000               7    HgI          0 UNKNOWN   0
-870.88000               5    HgI          0 UNKNOWN   0
-874.85000               3    HgI          0 UNKNOWN   0
-875.43000               7    HgI          0 UNKNOWN   0
-876.05000              10    HgI          0 UNKNOWN   0
-876.54000              10    HgI          0 UNKNOWN   0
-877.55000              10    HgI          8 UNKNOWN   0
-878.08000               7    HgI          0 UNKNOWN   0
-878.61000              10    HgI          0 UNKNOWN   0
-879.87000               0    HgI          0 UNKNOWN   0
-883.33000               1    HgI          0 UNKNOWN   0
-889.61000             nan    HgI          0 UNKNOWN   0
-896.83000               0    HgI          0 UNKNOWN   0
-897.61000             nan    HgI          0 UNKNOWN   0
-899.14000               8    HgI          0 UNKNOWN   0
-899.39000               7    HgI          0 UNKNOWN   0
-904.17000             nan    HgI          0 UNKNOWN   0
-905.37000               1    HgI          0 UNKNOWN   0
-906.01000               1    HgI          0 UNKNOWN   0
-906.97000               1    HgI          0 UNKNOWN   0
-909.75000               0    HgI          0 UNKNOWN   0
-916.03000               2    HgI          0 UNKNOWN   0
-920.32000               3    HgI          0 UNKNOWN   0
-924.56000              10    HgI          0 UNKNOWN   0
-925.64000               8    HgI          0 UNKNOWN   0
-926.62000               2    HgI          0 UNKNOWN   0
-928.16000               2    HgI          0 UNKNOWN   0
-930.12000               2    HgI          0 UNKNOWN   0
-934.10000               8    HgI          0 UNKNOWN   0
-934.51000               1    HgI          0 UNKNOWN   0
-934.88000               0    HgI          0 UNKNOWN   0
-935.73000               0    HgI          0 UNKNOWN   0
-942.20000               3    HgI          0 UNKNOWN   0
-942.82000               2    HgI          0 UNKNOWN   0
-943.47000               9    HgI          0 UNKNOWN   0
-944.11000               7    HgI          0 UNKNOWN   0
-944.53000               5    HgI          0 UNKNOWN   0
-948.98000               0    HgI          0 UNKNOWN   0
-949.85000               6    HgI          0 UNKNOWN   0
-952.89000               7    HgI          0 UNKNOWN   0
-954.73000               0    HgI          0 UNKNOWN   0
-954.99000               1    HgI          0 UNKNOWN   0
-955.67000             1.5    HgI          0 UNKNOWN   0
-957.69000               3    HgI          0 UNKNOWN   0
-960.46000             nan    HgI          0 UNKNOWN   0
-979.56000               2    HgI          0 UNKNOWN   0
-981.10000               1    HgI          0 UNKNOWN   0
-982.45000               3    HgI          0 UNKNOWN   0
-983.50000               1    HgI          0 UNKNOWN   0
-984.08000              10    HgI          0 UNKNOWN   0
-997.20000              10    HgI          0 UNKNOWN   0
-998.36000              10    HgI          0 UNKNOWN   0
-1000.17000              9    HgI          0 UNKNOWN   0
-1012.45000              8    HgI          0 UNKNOWN   0
-1013.24000              7    HgI          0 UNKNOWN   0
-1014.25300           1600    HgI          0 UNKNOWN   0
-1018.34000              0    HgI          0 UNKNOWN   0
-1022.32000            nan    HgI          0 UNKNOWN   0
-1023.20000              7    HgI          0 UNKNOWN   0
-1023.78000              8    HgI          0 UNKNOWN   0
-1024.42000              8    HgI          0 UNKNOWN   0
-1029.96000            nan    HgI          0 UNKNOWN   0
-1032.36000            0.5    HgI          0 UNKNOWN   0
-1033.51000             10    HgI          0 UNKNOWN   0
-1033.69000              1    HgI          0 UNKNOWN   0
-1042.64000              2    HgI          0 UNKNOWN   0
-1043.47000              2    HgI          0 UNKNOWN   0
-1043.85000              0    HgI          0 UNKNOWN   0
-1045.37000              2    HgI          0 UNKNOWN   0
-1046.75000            nan    HgI          0 UNKNOWN   0
-1050.40000              0    HgI          0 UNKNOWN   0
-1071.84000              5    HgI          0 UNKNOWN   0
-1102.52000              5    HgI          0 UNKNOWN   0
-1103.66000              5    HgI          0 UNKNOWN   0
-1117.98800             10    HgI          0 UNKNOWN   0
-1129.02000           1000    HgI          0 UNKNOWN   0
-1135.70000              0    HgI          0 UNKNOWN   0
-1137.11000              1    HgI          0 UNKNOWN   0
-1143.97000              2    HgI          0 UNKNOWN   0
-1149.47000              4    HgI          0 UNKNOWN   0
-1169.02000              5    HgI          0 UNKNOWN   0
-1177.21000              6    HgI          0 UNKNOWN   0
-1188.85000              5    HgI          0 UNKNOWN   0
-1189.39000              5    HgI          0 UNKNOWN   0
-1191.34000              0    HgI          0 UNKNOWN   0
-1195.48000              2    HgI          0 UNKNOWN   0
-1197.96000              4    HgI          0 UNKNOWN   0
-1202.29000              5    HgI          0 UNKNOWN   0
-1207.48000              6    HgI          0 UNKNOWN   0
-1213.18000              5    HgI          0 UNKNOWN   0
-1216.20000              3    HgI          0 UNKNOWN   0
-1221.80000            nan    HgI          0 UNKNOWN   0
-1238.15000              0    HgI          0 UNKNOWN   0
-1321.35600            400    HgI          0 UNKNOWN   0
-1343.02400            400    HgI          0 UNKNOWN   0
-1347.20600            130    HgI          0 UNKNOWN   0
-1348.29000              0    HgI          0 UNKNOWN   0
-1350.92700            200    HgI          0 UNKNOWN   0
-1357.39200            200    HgI          0 UNKNOWN   0
-1363.80000            nan    HgI          0 UNKNOWN   0
-1367.72500            300    HgI          0 UNKNOWN   0
-1395.43600            200    HgI          0 UNKNOWN   0
-1398.30000              0    HgI          0 UNKNOWN   0
+346.20600        0.121083    ArI          0 4s_2[3/2]*_1->6p_2[3/2]_2   2          nan
+355.53210        0.121083    ArI          0 4s_2[3/2]*_2->6p_2[3/2]_2   2          nan
+360.75510        0.121083    ArI          0 4s_2[3/2]*_1->6p_2[1/2]_0   2          nan
+377.14400    0.0004020942    ArI          0 4s_2[1/2]*_0->6p_2[1/2]_1  66   0.04342175
+383.57670      0.01129358    ArI          0 4s_2[1/2]*_1->6p_2[1/2]_0  66   0.04361828
+394.86220      0.06500319    ArI          0 4s_2[3/2]*_2->5p_2[3/2]_2  66   0.05035921
+395.00970      0.05857386    ArI          0 4s_2[3/2]*_2->5p_2[1/2]_1  66   0.05117694
+404.55610               0    ArI          0 4s_2[3/2]*_1->5p_2[3/2]_2  66   0.07452056
+415.97620       0.1139761    ArI          0 4s_2[3/2]*_2->5p_2[3/2]_2  66   0.05131041
+416.53540      0.08138507    ArI          0 4s_2[3/2]*_2->5p_2[3/2]_1  66   0.05102325
+418.30630      0.08358551    ArI          0 4s_2[1/2]*_0->5p_2[1/2]_1  66   0.05002652
+419.18940               0    ArI          0 4s_2[3/2]*_2->5p_2[5/2]_2  66    0.1825921
+419.22100       0.1628333    ArI          0 4s_2[1/2]*_0->5p_2[3/2]_1  66    0.1825704
+419.95000       0.1617096    ArI          0 4s_2[3/2]*_1->5p_2[1/2]_0  66   0.05066895
+420.18580       0.2383576    ArI          0 4s_2[3/2]*_2->5p_2[5/2]_3  66   0.05097265
+425.23820       0.1080839    ArI          0 4s_2[3/2]*_2->5p_2[1/2]_1  66    0.0496584
+426.05610               0    ArI          0 4s_2[1/2]*_1->5p_2[1/2]_0  66   0.05050341
+426.74870      0.02821293    ArI          0 4s_2[3/2]*_1->5p_2[3/2]_2  66   0.04933276
+427.33710               0    ArI          0 4s_2[3/2]*_1->5p_2[3/2]_1  66   0.04973245
+430.13110               0    ArI          0 4s_2[3/2]*_1->5p_2[5/2]_2  66   0.05037533
+433.47790               0    ArI          0 4s_2[1/2]*_1->5p_2[3/2]_2  66   0.05224692
+433.65570               0    ArI          0 4s_2[1/2]*_1->5p_2[1/2]_1  66   0.05196456
+434.63900               0    ArI          0 4s_2[1/2]*_1->5p_2[3/2]_1  66    0.0573002
+451.19980      0.05653071    ArI          0 4s_2[1/2]*_1->5p_2[1/2]_0  66   0.04722284
+452.35910      0.06061091    ArI          0 4s_2[1/2]*_0->5p_2[1/2]_1  66   0.04607254
+459.73850               0    ArI          0 4s_2[1/2]*_1->5p_2[3/2]_1  66   0.04554871
+462.97370       0.0285296    ArI          0 4s_2[1/2]*_1->5p_2[5/2]_2  66   0.04538672
+470.36320               0    ArI          0 4s_2[1/2]*_1->5p_2[1/2]_1  66    0.1177333
+515.28260               0    ArI          0 4p_2[1/2]_1->6d_2[1/2]*_0  66   0.04399477
+516.37230               0    ArI          0 4p_2[1/2]_1->6d_2[1/2]*_1  66   0.04457461
+518.91910               0    ArI          0 4p_2[1/2]_1->5d_2[3/2]*_2  66   0.04369678
+522.27250               0    ArI          0 4p_2[5/2]_3->7d_2[7/2]*_4  66   0.04407902
+542.28590               0    ArI          0 4p_2[5/2]_3->8s_2[3/2]*_2  66   0.04537474
+545.31670        2.615154    ArI          0 4p_2[1/2]_1->7s_2[3/2]*_2  66   0.05246248
+549.74010               0    ArI          0 4p_2[5/2]_3->6d_2[7/2]*_4  66   0.04432068
+550.76430               0    ArI          0 4p_2[5/2]_2->6d_2[7/2]*_3  66   0.04411648
+556.02460               0    ArI          0 4p_2[1/2]_1->5d_2[3/2]*_2  66   0.04393646
+557.40880               0    ArI          0 4p_2[5/2]_2->5d_2[5/2]*_3  66   0.04422823
+560.82900      0.02878847    ArI          0 4p_2[1/2]_1->5d_2[1/2]*_1  66   0.04433218
+565.22720       0.1093885    ArI          0 4p_2[1/2]_1->5d_2[1/2]*_0  66    0.0436216
+574.11120               0    ArI          0 4p_2[3/2]_1->5d_2[5/2]*_2  66   0.04398358
+583.58800               0    ArI          0 4p_2[3/2]_2->5d_2[3/2]*_2  66   0.04430038
+586.19340               0    ArI          0 4p_2[1/2]_1->6s_2[1/2]*_1  66   0.05778712
+588.42540               0    ArI          0 4p_2[1/2]_1->6s_2[1/2]*_0  66   0.04355247
+589.02160               0    ArI          0 4p_2[5/2]_3->7s_2[3/2]*_2  66   0.04706415
+591.37230      0.02305024    ArI          0 4p_2[1/2]_1->4d_2[3/2]*_1  66   0.04365242
+593.04560      0.02963624    ArI          0 4p_2[5/2]_2->7s_2[3/2]*_1  66    0.0441713
+594.43150      0.05271122    ArI          0 4p_2[5/2]_2->7s_2[3/2]*_2  66   0.04452341
+598.89600               0    ArI          0 4p_2[5/2]_3->5d_2[7/2]*_3  66   0.04413727
+600.06610      0.01086688    ArI          0 4p_2[5/2]_2->5d_2[5/2]*_2  66   0.04478779
+602.68190               0    ArI          0 4p_2[3/2]_2->7s_2[1/2]*_1  66   0.04358007
+603.37970       0.0445179    ArI          0 4p_2[5/2]_3->5d_2[7/2]*_4  66   0.04359509
+604.48960               0    ArI          0 4p_2[5/2]_2->5d_2[7/2]*_3  66   0.04446584
+605.43990               0    ArI          0 4p_2[1/2]_1->4d_2[5/2]*_2  66   0.04301692
+606.10500               0    ArI          0 4p_2[1/2]_1->4d_2[3/2]*_2  66   0.04418502
+610.04910      0.04931454    ArI          0 4p_2[3/2]_1->7s_2[3/2]*_1  66   0.04416985
+610.73250               0    ArI          0 4p_2[3/2]_1->5d_2[5/2]*_2  66   0.04416593
+614.71420      0.00676863    ArI          0 4p_2[3/2]_2->5d_2[5/2]*_3  66   0.04318987
+617.18810      0.01765547    ArI          0 4p_2[3/2]_2->7s_2[3/2]*_2  66    0.0437951
+617.48040               0    ArI          0 4p_2[3/2]_1->5d_2[5/2]*_2  66   0.04289705
+621.42220      0.06192254    ArI          0 4p_2[3/2]_2->5d_2[5/2]*_3  66   0.04143299
+621.76580      0.05102934    ArI          0 4p_2[3/2]_2->5d_2[3/2]*_2  66   0.04017545
+629.86130       0.0121493    ArI          0 4p_2[1/2]_1->5d_2[3/2]*_2  66   0.03143196
+630.94010      0.01582678    ArI          0 4p_2[3/2]_2->5d_2[3/2]*_2  66   0.03167612
+637.13360               0    ArI          0 4p_2[3/2]_2->5d_2[1/2]*_1  66   0.03112914
+638.64820               0    ArI          0 4p_2[1/2]_1->6s_2[3/2]*_1  66    0.0309794
+641.80810      0.03870373    ArI          0 4p_2[1/2]_1->6s_2[3/2]*_2  66   0.03139937
+653.99180      0.01502268    ArI          0 4p_2[5/2]_3->4d_2[5/2]*_3  66   0.03133809
+660.66770               0    ArI          0 4p_2[5/2]_2->4d_2[5/2]*_3  66   0.04663394
+666.25150               0    ArI          0 4p_2[3/2]_1->6s_2[1/2]*_0  66   0.04705912
+666.58910      0.04537629    ArI          0 4p_2[5/2]_2->4d_2[5/2]*_2  66     0.047867
+667.91260       0.7028756    ArI          1 4s_2[3/2]*_1->4p_2[1/2]_0  66    0.0490469
+675.46980       0.2359341    ArI          1 4p_2[1/2]_1->4d_2[3/2]*_2  66   0.05364412
+675.80280               0    ArI          0 4p_2[3/2]_2->5d_2[3/2]*_2  66   0.04778192
+676.84800               0    ArI          0 4p_2[3/2]_2->4d_2[3/2]*_1  66   0.04920715
+687.31850       0.2774214    ArI          1 4p_2[1/2]_1->4d_2[1/2]*_1  66    0.1281501
+688.14800      0.09876921    ArI          0 4p_2[3/2]_1->4d_2[5/2]*_2  66   0.09343913
+689.00740       0.1909229    ArI          0 4p_2[3/2]_1->4d_2[3/2]*_2  66    0.1865288
+693.95780       0.2723033    ArI          8 4p_2[1/2]_1->4d_2[1/2]*_0  66   0.04879013
+695.33950       0.2896611    ArI          0 4p_2[3/2]_2->4d_2[5/2]*_2  66    0.0954007
+696.21700       0.4330971    ArI          0 4p_2[3/2]_2->4d_2[3/2]*_2  66   0.04821004
+696.73520         168.439    ArI       6144 4s_2[3/2]*_2->4p_2[1/2]_1  66     0.351412
+703.21900       0.4293433    ArI          1 4p_2[5/2]_3->6s_2[3/2]*_2  66   0.04827837
+706.91670         31.9691    ArI          0 4s_2[3/2]*_2->4p_2[3/2]_2  66    0.1775353
+707.06850               0    ArI          1 4p_2[5/2]_2->6s_2[3/2]*_1  66   0.08144498
+710.94370       0.1633228    ArI          0 4p_2[5/2]_2->6s_2[3/2]*_2  66    0.0487905
+712.77840      0.01366513    ArI          0 4p_2[3/2]_1->6s_2[1/2]*_1  66   0.01289998
+714.90120        5.360833    ArI          0 4s_2[3/2]*_2->4p_2[3/2]_1  66    0.1535456
+716.08120               0    ArI          0 4p_2[3/2]_1->6s_2[1/2]*_0  66   0.04696569
+720.89660       0.1730928    ArI          0 4p_2[3/2]_2->6s_2[1/2]*_1  66   0.05074466
+726.71740        0.177536    ArI          0 4p_2[3/2]_1->4d_2[3/2]*_1  66   0.04730647
+727.26670               0    ArI          8 4p_2[5/2]_3->4d_2[7/2]*_3  66   0.03846323
+727.49400        50.54759    ArI       6144 4s_2[3/2]*_1->4p_2[1/2]_1  66    0.2125742
+731.37310       0.2800193    ArI          0 4p_2[3/2]_1->6s_2[3/2]*_1  66   0.04805549
+731.80210       0.1546457    ArI          0 4p_2[1/2]_1->6s_2[1/2]*_1  66   0.07560556
+735.28390       0.1231014    ArI          0 4p_2[1/2]_1->6s_2[1/2]*_0  66   0.05761378
+735.53190       0.3593583    ArI          8 4p_2[5/2]_2->4d_2[7/2]*_3  66   0.05022327
+737.41490       0.5195766    ArI          1 4p_2[5/2]_3->4d_2[7/2]*_4  66    0.1299293
+738.60140        74.57965    ArI          0 4s_2[3/2]*_1->4p_2[3/2]_2  66    0.2640541
+739.50160       0.1999963    ArI          0 4p_2[3/2]_2->6s_2[3/2]*_1  66   0.09733162
+741.43790       0.0489169    ArI          0 4p_2[3/2]_1->4d_2[5/2]*_2  66   0.01597415
+742.73390       0.1670693    ArI          0 4p_2[3/2]_2->4d_2[5/2]*_3  66   0.04886216
+743.74160      0.07747687    ArI          8 4p_2[3/2]_2->6s_2[3/2]*_2  66    0.0851559
+743.83450               0    ArI          8 4p_2[5/2]_3->4d_2[3/2]*_2  66   0.08468373
+750.59350        135.7413    ArI          0 4s_2[1/2]*_1->4p_2[1/2]_0  66    0.2912531
+751.67210        72.41816    ArI          0 4s_2[3/2]*_1->4p_2[1/2]_0  66    0.1877204
+763.72080        789.0068    ArI       6144 4s_2[3/2]*_2->4p_2[3/2]_2  66     0.328622
+772.58870               0    ArI          2 4s_2[3/2]*_2->4p_2[3/2]_1  66    0.6248913
+772.63330        416.4474    ArI          2 4s_2[1/2]*_0->4p_2[1/2]_1  66    0.8255101
+789.32460       0.1181422    ArI          8 4p_2[3/2]_2->4d_2[3/2]*_2  66   0.04809989
+795.03620        183.5677    ArI       6144 4s_2[1/2]*_0->4p_2[3/2]_1  66    0.3404686
+800.83590        145.4443    ArI          0 4s_2[3/2]*_1->4p_2[3/2]_2  66    0.3232627
+801.69900        140.2459    ArI          0 4s_2[3/2]*_2->4p_2[5/2]_2  66    0.2876799
+805.55230       0.2010586    ArI          8 4p_2[3/2]_2->4d_2[1/2]*_1  66   0.09966402
+810.59210        209.1214    ArI          0 4s_2[3/2]*_1->4p_2[3/2]_1  66    0.2585519
+811.75420        598.3801    ArI          0 4s_2[3/2]*_2->4p_2[5/2]_3  66    0.5344946
+826.67940        480.6054    ArI       6144 4s_2[1/2]*_1->4p_2[1/2]_1  66    0.5316971
+839.45800       0.2779987    ArI          8 UNKNOWN  64   0.04878573
+841.05210        225.8375    ArI          0 4s_2[1/2]*_1->4p_2[3/2]_2  66    0.2956925
+842.69630        317.6847    ArI          0 4s_2[3/2]*_1->4p_2[5/2]_2  66    0.4333331
+852.37830        134.3285    ArI          0 4s_2[1/2]*_1->4p_2[3/2]_1  66    0.2993885
+860.81400       0.1764266    ArI          8 4p_2[3/2]_2->4d_2[3/2]*_2  66   0.04998996
+867.03250        21.11796    ArI          0 4s_2[1/2]*_0->4p_2[3/2]_1  66    0.1767166
+885.23400      0.08249107    ArI          1 UNKNOWN  64   0.04766139
+907.78850      0.04138942    ArI          8 4p_2[1/2]_1->4d_2[1/2]*_0  66   0.04831887
+912.54710        1248.928    ArI       6144 4s_2[3/2]*_2->4p_2[1/2]_1  66    0.7902624
+919.71610        1.184756    ArI          1 4p_2[1/2]_1->5s_2[1/2]*_1  66     0.051153
+922.70300        172.5771    ArI          0 4s_2[1/2]*_1->4p_2[3/2]_2  66    0.3139554
+929.40810        1.291336    ArI          1 4p_2[1/2]_1->5s_2[1/2]*_0  66   0.05196229
+935.67870        5.806722    ArI          0 4s_2[1/2]*_1->4p_2[3/2]_1  66    0.1780788
+966.04350        58.31049    ArI       6144 4s_2[3/2]*_1->4p_2[1/2]_1  66    0.1683576
+978.71860         4.82221    ArI          1 4s_2[1/2]*_1->4p_2[5/2]_2  66    0.1421771
+1005.48200      0.4562443    ArI          0 UNKNOWN  64    0.2595602
+1033.55500      0.2291679    ArI          2 UNKNOWN   0          nan
+1047.29230       70.60542    ArI          0 4s_2[1/2]*_0->4p_2[1/2]_1  66    0.7037945
+1048.09050       2.197944    ArI          0 4p_2[1/2]_1->5s_2[3/2]*_1  66    0.2588688
+1050.93800      0.8206075    ArI          0 3d_2[3/2]*_2->4f_2[5/2]_3  66    0.2594057
+1067.64890       10.87807    ArI          0 4p_2[1/2]_1->5s_2[3/2]*_2  66    0.5541214
+1068.46990       1.776991    ArI          0 UNKNOWN  64    0.2719475
+1073.68100              0    ArI          0 UNKNOWN  64    0.2607301
+1076.21100      0.3594986    ArI          0 UNKNOWN  64    0.2536069
+1108.19030      0.4845089    ArI          0 4p_2[5/2]_2->3d_2[5/2]*_2  66    0.2602261
+1110.95000      0.4402172    ArI          0 UNKNOWN  64    0.2625456
+1144.49650      0.6754604    ArI          0 4p_2[3/2]_2->5s_2[1/2]*_1  66    0.2536604
+1149.12540       13.19751    ArI          0 4s_2[1/2]*_1->4p_2[1/2]_1  66    0.5561771
+1167.19040       4.928022    ArI          0 4p_2[3/2]_2->3d_2[3/2]*_2  66    0.2611842
+1172.26960       1.035572    ArI          0 4p_2[5/2]_2->3d_2[3/2]*_1  66    0.2686675
+1211.56410       6.961789    ArI          0 4p_2[5/2]_3->3d_2[5/2]*_3  66    0.2642897
+1214.30600       5.759828    ArI          0 4p_2[3/2]_1->3d_2[3/2]*_1  66    0.2570084
+1234.67700       3.196104    ArI          0 4p_2[5/2]_2->3d_2[5/2]*_3  66    0.2558313
+1240.62210       8.555225    ArI          0 4p_2[3/2]_1->3d_2[3/2]*_1  66    0.5218281
+1244.27240        17.3072    ArI          0 4p_2[1/2]_1->3d_2[3/2]*_2  66    0.5232254
+1245.95300       3.035663    ArI          0 4p_2[5/2]_2->5s_2[3/2]*_1  66     0.262353
+1249.10800       8.776383    ArI          0 4p_2[5/2]_3->5s_2[3/2]*_2  66    0.5133202
+1270.57560       2.594636    ArI          0 4p_2[1/2]_1->3d_2[3/2]*_1   2          nan
+1273.69010      0.5189271    ArI          0 4p_2[5/2]_2->5s_2[3/2]*_2   2          nan
+1274.97190      0.2075708    ArI          0 4p_2[3/2]_1->5s_2[1/2]*_1   2          nan
+1280.62410       3.459514    ArI          0 4p_2[5/2]_2->3d_2[5/2]*_2   2          nan
+1293.67330      0.8648785    ArI          0 4p_2[3/2]_1->5s_2[1/2]*_0   2          nan
+1296.02030       8.648785    ArI          0 4p_2[1/2]_1->3d_2[1/2]*_1   2          nan
+1301.18220       3.459514    ArI          0 4p_2[3/2]_2->5s_2[1/2]*_1   2          nan
+1321.76000       3.459514    ArI          0 4p_2[1/2]_1->3d_2[1/2]*_0   2          nan
+1323.17250       3.459514    ArI          0 UNKNOWN   0          nan
+1323.45200       1.729757    ArI          0 4p_2[3/2]_1->5s_2[3/2]*_1   2          nan
+1327.62700       8.648785    ArI          0 4p_2[3/2]_2->3d_2[5/2]*_3   2          nan
+1331.68510       17.29757    ArI          0 4p_2[3/2]_1->3d_2[5/2]*_2   2          nan
+1337.07660       17.29757    ArI          0 UNKNOWN   0          nan
+1350.31000      0.5189271    ArI          0 4p_2[3/2]_2->5s_2[3/2]*_1   2          nan
+1350.78840       17.29757    ArI          0 4p_2[5/2]_2->3d_2[7/2]*_3   2          nan
+1357.73290      0.1902733    ArI          0 4p_2[1/2]_1->5s_2[1/2]*_0   2          nan
+1360.30520      0.5189271    ArI          0 4p_2[3/2]_2->3d_2[5/2]*_2   2          nan
+1362.63840       6.919028    ArI          0 4p_2[3/2]_1->3d_2[5/2]*_2   2          nan
+1368.22900       3.459514    ArI          0 4p_2[1/2]_1->3d_2[3/2]*_2   2          nan
+1372.23280       17.29757    ArI          0 UNKNOWN   0          nan
+1382.94950      0.1729757    ArI          0 4p_2[3/2]_2->5s_2[3/2]*_2   2          nan
+1391.12800      0.1729757    ArI          0 UNKNOWN   0          nan
+340.16600               0    HgI          0 6p_1P*_1->17s_1S_0   2          nan
+340.79700               0    HgI          0 6p_1P*_1->15d_1D_2   2          nan
+341.69600               0    HgI          0 6p_1P*_1->16s_1S_0   2          nan
+342.52400               0    HgI          0 6p_1P*_1->14d_1D_2   2          nan
+343.71300               0    HgI          0 6p_1P*_1->15s_1S_0   2          nan
+344.76300               0    HgI          0 6p_1P*_1->13d_3D_2   2          nan
+344.82600               0    HgI          0 6p_1P*_1->13d_1D_2   2          nan
+346.45100               0    HgI          0 6p_1P*_1->14s_1S_0   2          nan
+347.90400               0    HgI          0 6p_1P*_1->12d_3D_2   2          nan
+347.99100               0    HgI          0 6p_1P*_1->12d_1D_2   2          nan
+350.30000               0    HgI          0 6p_1P*_1->13s_1S_0   2          nan
+352.40300               0    HgI          0 6p_1P*_1->11d_3D_2   2          nan
+352.52800               0    HgI          0 6p_1P*_1->11d_1D_2   2          nan
+354.44700        13.86761    HgI          0 6p_2[3/2]*_2->7s_2[5/2]_3   2          nan
+355.97500               0    HgI          0 6p_1P*_1->12s_1S_0   2          nan
+359.20300               0    HgI          0 6p_1P*_1->10d_3D_2   2          nan
+359.25000       0.2311268    HgI          0 6p_1P*_1->10d_3D_1   2          nan
+359.37700               0    HgI          0 6p_1P*_1->10d_1D_2   2          nan
+365.11980        2080.141    HgI          0 6p_3P*_2->6d_3D_3   2          nan
+365.58830        693.3804    HgI          0 6p_3P*_2->6d_3D_2   2          nan
+366.39300        115.5634    HgI          0 6p_3P*_2->6d_3D_1   2          nan
+366.43270        462.2536    HgI          0 6p_3P*_2->6d_1D_2   2          nan
+370.24950        11.55634    HgI          0 6p_1P*_1->9d_3D_2   2          nan
+370.34100       0.2311268    HgI          0 6p_1P*_1->9d_3D_1   2          nan
+370.52195        2.080141    HgI          0 6p_1P*_1->9d_1D_2   2          nan
+379.10800      0.03864762    HgI          0 6p_2[7/2]*_3->7s_2[5/2]_2  66     0.044491
+380.27376               0    HgI          0 6p_1P*_1->10s_1S_0  66   0.04379178
+381.69000      0.06933073    HgI          0 6p_1P*_1->10s_3S_1  66   0.04447282
+382.14800      0.06034223    HgI          0 6p_2[7/2]*_3->7s_2[5/2]_3  66   0.04433142
+386.19400               0    HgI          0 7p_3P*_2->7s_2[5/2]_3  66    0.0432153
+390.29730               0    HgI          0 6p_1P*_1->8d_3D_2  66   0.04657466
+390.47440               0    HgI          0 6p_1P*_1->8d_3D_1  66   0.04522286
+390.74780       0.1042519    HgI          0 6p_1P*_1->8d_1D_2  66   0.04571844
+398.50500      0.03830858    HgI          0 6p_2[3/2]*_2->6p2_3P_1  66   0.04730371
+402.70900               0    HgI          0 7s_1S_0->6p_2[1/2]*_1  66   0.04942838
+404.77080        392.0337    HgI       6144 6p_3P*_0->7s_3S_1  66    0.4588057
+407.89880        23.39179    HgI          0 6p_3P*_1->7s_1S_0  66     0.162285
+410.92130               0    HgI          0 6p_1P*_1->9s_1S_0  66   0.05195275
+414.12000      0.03274446    HgI          0 6p_1P*_1->9s_3S_1  66   0.05032481
+434.04431        4.053104    HgI          0 6p_1P*_1->7d_3D_2  66   0.05956441
+434.48550       0.9605701    HgI          0 6p_1P*_1->7d_3D_1  66   0.05720349
+434.87166        11.39481    HgI          0 6p_1P*_1->7d_1D_2  66   0.07634543
+435.95600        1972.405    HgI          0 6p_3P*_1->7s_3S_1  66     1.009705
+467.21380      0.05654105    HgI          0 7s_3S_1->20p_1P*_1  66   0.07498015
+467.30250               0    HgI          0 7s_3S_1->20p_3P*_2  66   0.08878684
+467.42260      0.03288992    HgI          0 7s_3S_1->20p_3P*_1;7s_3S_1->20p_3P*_0  66   0.06025599
+468.51300               0    HgI          0 7s_3S_1->19p_1P*_1  66   0.05934066
+468.62370               0    HgI          0 7s_3S_1->19p_3P*_2  66   0.06658677
+468.76980      0.06233151    HgI          0 7s_3S_1->19p_3P*_1;7s_3S_1->19p_3P*_0  66   0.05283163
+470.11120      0.05505003    HgI          0 7s_3S_1->18p_1P*_1  66   0.05666859
+470.24860               0    HgI          0 7s_3S_1->18p_3P*_2  66   0.08046578
+470.43270               0    HgI          0 7s_3S_1->18p_3P*_1  66   0.04730846
+470.43670               0    HgI          0 7s_3S_1->18p_3P*_0  66   0.04730846
+472.10620      0.01884803    HgI          0 7s_3S_1->17p_1P*_1  66   0.04756703
+472.28330               0    HgI          0 7s_3S_1->17p_3P*_2  66   0.04635208
+472.51350               0    HgI          0 7s_3S_1->17p_3P*_1  66   0.02302375
+472.52410               0    HgI          0 7s_3S_1->17p_3P*_0  66   0.02302375
+474.64750               0    HgI          0 7s_3S_1->16p_1P*_1  66   0.04489918
+474.87860               0    HgI          0 7s_3S_1->16p_3P*_2  66   0.04537844
+475.17220      0.03576472    HgI          0 7s_3S_1->16p_3P*_1  66   0.02250056
+475.18890      0.03576472    HgI          0 7s_3S_1->16p_3P*_0  66   0.02250056
+477.94540               0    HgI          0 7s_3S_1->15p_1P*_1  66   0.04491882
+478.26110               0    HgI          0 7s_3S_1->15p_3P*_2  66   0.04512794
+478.64910               0    HgI          0 7s_3S_1->15p_3P*_1  66   0.02240695
+478.66920               0    HgI          0 7s_3S_1->15p_3P*_0  66   0.02240695
+482.35520               0    HgI          0 7s_3S_1->14p_1P*_1  66   0.04442469
+482.79430      0.04294051    HgI          0 7s_3S_1->14p_3P*_2  66   0.04468956
+483.32280               0    HgI          0 7s_3S_1->14p_3P*_1  66    0.1427401
+483.35880      0.00738348    HgI          0 7s_3S_1->14p_3P*_0  66    0.1431645
+488.43630      0.01381226    HgI          0 7s_3S_1->13p_1P*_1  66   0.04462513
+489.08540               0    HgI          0 7s_3S_1->13p_3P*_2  66   0.04384817
+489.82810               0    HgI          0 7s_3S_1->13p_3P*_1  66   0.09427159
+489.88500               0    HgI          0 7s_3S_1->13p_3P*_0  66   0.09366073
+491.74400        4.622536    HgI          0 6p_1P*_1->8s_1S_0  66    0.1131381
+496.15000               0    HgI          0 6p_2[7/2]*_4->7s_2[5/2]_3  66   0.04411703
+497.17570               0    HgI          0 7s_3S_1->12p_1P*_1  66   0.04405674
+498.20300       0.0325726    HgI          0 7s_3S_1->12p_3P*_2  66   0.04427376
+499.29940               0    HgI          0 7s_3S_1->12p_3P*_1  66   0.05978784
+499.39860      0.01229437    HgI          0 7s_3S_1->12p_3P*_0  66   0.06051899
+502.70000     0.006738605    HgI          0 6p_1P*_1->8s_3S_1  66   0.04491835
+504.72000      0.03632703    HgI          0 5f_3F*_4->7s_2[5/2]_3  66   0.04411078
+510.41270      0.01970153    HgI          0 7s_3S_1->11p_1P*_1  66   0.04398469
+512.20640      0.05542019    HgI          0 7s_3S_1->11p_3P*_2  66   0.04455107
+513.93710               0    HgI          0 7s_3S_1->11p_3P*_1  66   0.04522185
+514.13580               0    HgI          0 7s_3S_1->11p_3P*_0  66    0.0447309
+522.04000               0    HgI          0 7s_1S_0->14p_1P*_1  66   0.04441536
+529.22120       0.1652411    HgI          0 7s_1S_0->13p_1P*_1  66   0.04444301
+531.82550       0.2048336    HgI          0 7s_3S_1->10p_1P*_1  66   0.04356341
+535.55230               0    HgI          0 7s_3S_1->10p_3P*_2  66    0.0447157
+536.70000               0    HgI          0 6p_2[5/2]*_2->7s_2[5/2]_2  66   0.04331452
+538.61230               0    HgI          0 7s_3S_1->10p_3P*_1  66   0.04378446
+539.03080               0    HgI          0 7s_3S_1->10p_3P*_0  66   0.04396664
+539.49680               0    HgI          0 7s_1S_0->12p_1P*_1  66   0.04437621
+540.63000               0    HgI          0 6p_2[3/2]*_1->7s_2[5/2]_2  66   0.04431623
+546.22680        3099.835    HgI          0 6p_3P*_2->7s_3S_1  66     1.211715
+555.11750               0    HgI          0 7s_1S_0->11p_1P*_1  66   0.04421286
+567.73800       0.2311861    HgI          0 7s_3S_1->9p_1P*_1  66   0.04424487
+577.12100        507.1806    HgI       6144 6p_1P*_1->6d_3D_2  66    0.5002617
+579.13000               0    HgI          0 6p_1P*_1->6d_3D_1  66    0.1852698
+579.22760        551.3647    HgI       6144 6p_1P*_1->6d_1D_2  66    0.5870023
+580.53910       0.2856388    HgI          0 7s_1S_0->10p_1P*_1  66    0.0458686
+581.99000               0    HgI          0 6p_2[5/2]*_3->7s_2[5/2]_2  66   0.04428988
+586.08780               0    HgI          0 7s_3S_1->9p_3P*_1  66    0.0574051
+587.36020      0.06090279    HgI          0 7s_3S_1->9p_3P*_0  66   0.04425689
+589.18000               0    HgI          0 6p_2[5/2]*_3->7s_2[5/2]_3  66   0.04693872
+607.43200       0.1227239    HgI          0 7s_3S_1->6p_2[3/2]*_1  66   0.04340638
+612.49600       0.3575609    HgI          0 7s_3S_1->6p_2[5/2]*_2  66   0.04448886
+623.60800      0.07013327    HgI          0 7s_1S_0->9p_1P*_1  66   0.03338584
+670.35000       0.0653789    HgI          0 6p_2[3/2]*_2->20d_3D_3  66   0.04849737
+671.81900       0.7692968    HgI          0 7s_1S_0->6p_2[3/2]*_1  66   0.04990428
+672.30000               0    HgI          0 UNKNOWN  64   0.04774027
+672.71000               0    HgI          0 6p_2[3/2]*_2->19d_3D_3  66   0.04702824
+674.29000       0.1087388    HgI          0 6p_2[3/2]*_2->20s_3S_1  66   0.04763212
+674.90000      0.02919102    HgI          0 UNKNOWN  64   0.04790133
+675.28000               0    HgI          0 6p_2[3/2]*_2->18d_3D_3  66   0.05282458
+677.51000               0    HgI          0 6p_2[3/2]*_2->19s_3S_1  66   0.04711118
+678.65000               0    HgI          0 6p_2[3/2]*_2->17d_3D_3  66   0.04724178
+681.35000               0    HgI          0 6p_2[3/2]*_2->18s_3S_1  66   0.04730793
+682.89000               0    HgI          0 6p_2[3/2]*_2->16d_3D_3  66    0.0472259
+685.48000      0.06327225    HgI          0 UNKNOWN  64   0.04753821
+686.29000      0.05476927    HgI          0 6p_2[3/2]*_2->17s_3S_1  66   0.04757678
+687.26000               0    HgI          0 UNKNOWN  64    0.1271147
+688.23000               0    HgI          0 6p_2[3/2]*_2->15d_3D_3  66   0.09360211
+689.04650      0.05512904    HgI          0 7s_3S_1->8p_1P*_1  66      0.18673
+690.93700        12.29094    HgI          0 7s_3S_1->8p_3P*_2  66   0.07778892
+691.75000       0.2403056    HgI          0 UNKNOWN  64   0.04776969
+692.62000       0.1616368    HgI          0 6p_2[3/2]*_2->16s_3S_1  66   0.04723804
+693.59000       0.1286152    HgI          0 UNKNOWN  64   0.04682025
+694.60000       0.1892756    HgI          0 UNKNOWN  64    0.0472502
+695.26000               0    HgI          0 6p_2[3/2]*_2->14d_3D_3  66   0.09529972
+697.91000       0.3023412    HgI          0 UNKNOWN  64   0.04783518
+701.11000       0.1441279    HgI          0 6p_2[3/2]*_2->15s_3S_1  66   0.04764132
+702.40000      0.04577453    HgI          0 7p_3P*_0->19d_3D_1  66   0.04707661
+704.76000       0.1221024    HgI          0 6p_2[3/2]*_2->13d_3D_3  66   0.04791557
+708.38540        1.957223    HgI          0 7s_3S_1->8p_3P*_1  66   0.05386416
+709.38150       0.6865894    HgI          1 7s_3S_1->8p_3P*_0  66   0.04995326
+710.33000      0.09434672    HgI          0 UNKNOWN  64   0.04804885
+712.20000      0.03581518    HgI          0 UNKNOWN  64   0.04807962
+712.76000      0.03784431    HgI          0 7p_3P*_1->18d_3D_1;7p_3P*_1->18d_3D_2;6p_2[3/2]*_2->14s_3S_1  66   0.03572529
+713.70000               0    HgI          0 7p_3P*_0->16d_3D_1  66   0.04798282
+714.96000       0.3510463    HgI          0 7p_3P*_1->19s_3S_1  66    0.1478217
+715.62000       0.1008243    HgI          0 UNKNOWN  64   0.04825952
+716.42000               0    HgI          0 7p_3P*_1->17d_3D_2  66   0.04717915
+717.10000      0.05246714    HgI          0 UNKNOWN  64   0.05692499
+717.26000      0.08369464    HgI          0 7p_3P*_0->17s_3S_1  66   0.05720859
+717.98000               0    HgI          0 6p_2[3/2]*_2->12d_3D_3  66   0.04699914
+719.29000      0.03747648    HgI          0 7p_3P*_1->18s_3S_1  66    0.0490927
+719.55000      0.02563857    HgI          0 7p_3P*_0->15d_3D_1  66   0.05024049
+721.11000       0.1087903    HgI          0 7p_3P*_1->16d_3D_2;7p_3P*_1->16d_3D_1  66   0.05084139
+722.44000      0.02567861    HgI          0 UNKNOWN  64   0.04815208
+722.95000      0.00343814    HgI          0 UNKNOWN  64   0.04737251
+724.14000        0.147017    HgI          0 UNKNOWN  64   0.04825193
+724.77000       0.1355304    HgI          0 7p_3P*_1->17s_3S_1  66   0.04714028
+727.11000               0    HgI          0 7p_3P*_1->15d_3D_2;7p_3P*_1->15d_3D_1  66   0.06401223
+727.27000               0    HgI          0 7p_3P*_0->14d_3D_1  66   0.03846323
+728.04000       0.3723004    HgI          0 UNKNOWN  64   0.04893122
+729.69000       0.1294504    HgI          0 6p_2[3/2]*_2->13s_3S_1  66    0.0477563
+730.37000       0.1159439    HgI          0 18p_1P*_1->7s_2[5/2]_2  66   0.05247806
+730.56000       0.1235248    HgI          0 18p_1P*_1->7s_2[5/2]_2  66    0.0524515
+731.91000       0.1681537    HgI          0 7p_3P*_1->16s_3S_1  66   0.07563629
+733.50000       0.2375612    HgI          0 7p_3P*_0->15s_3S_1  66   0.04783109
+734.30000        0.124455    HgI          0 19p_1P*_1->7s_2[5/2]_2  66   0.04739893
+735.01000       0.1010093    HgI          0 7p_3P*_1->14d_3D_2  66    0.1637063
+735.06000               0    HgI          0 7p_3P*_1->14d_3D_1  66    0.1701998
+737.35000      0.07789153    HgI          0 6p_2[3/2]*_2->11d_3D_3  66    0.1249288
+737.65000       0.1644167    HgI          0 7p_3P*_0->13d_3D_1  66   0.05370782
+738.95000               0    HgI          0 UNKNOWN  64   0.05282003
+739.58000      0.06866134    HgI          0 UNKNOWN  64   0.09790371
+740.53000       0.1880569    HgI          0 UNKNOWN  64    0.0481084
+741.42000      0.09786223    HgI          0 7p_3P*_1->15s_3S_1  66   0.03195758
+745.60000        0.113971    HgI          0 7p_3P*_1->13d_3D_2;7p_3P*_1->13d_3D_1  66   0.04840987
+745.88000               0    HgI          0 7p_3P*_1->13d_1D_2  66   0.04754446
+746.34000       0.1332903    HgI          0 7p_3P*_0->14s_3S_1  66    0.0475714
+747.50000       0.2509362    HgI          0 UNKNOWN  64     0.047959
+749.66000       0.3415984    HgI          0 UNKNOWN  64   0.04898314
+750.25000               0    HgI          0 UNKNOWN  64    0.0556072
+752.22000       0.7277965    HgI          0 7p_3P*_0->12d_3D_1  66   0.04914095
+753.37000       0.1329459    HgI          0 UNKNOWN  64   0.04948986
+753.60000      0.08876991    HgI          0 UNKNOWN  64   0.05000908
+754.50000      0.06424667    HgI          0 7p_3P*_1->14s_3S_1  66   0.04740102
+755.42000      0.03251107    HgI          0 6p_2[3/2]*_2->12s_3S_1  66   0.04689268
+756.29000               0    HgI          0 UNKNOWN  64   0.04625007
+757.33000      0.09713089    HgI          0 UNKNOWN  64   0.04698084
+758.30000               0    HgI          0 UNKNOWN  64   0.04680836
+760.42000       0.1355961    HgI          0 7p_3P*_1->12d_3D_2;7p_3P*_1->12d_3D_1  66   0.04810885
+760.80000       0.1397098    HgI          0 7p_3P*_1->12d_1D_2  66   0.04925421
+761.48000        0.145948    HgI          0 UNKNOWN  64   0.04893588
+761.76000       0.2569332    HgI          0 UNKNOWN  64   0.05035582
+762.09000      0.04103547    HgI          0 UNKNOWN  64   0.05216668
+762.29000       0.2625324    HgI          0 UNKNOWN  64   0.05266888
+763.38000               0    HgI          0 UNKNOWN  64   0.06257539
+763.73000               0    HgI          2 UNKNOWN  64     0.328622
+764.85000       0.6040316    HgI          0 7p_3P*_0->13s_3S_1  66   0.04895644
+765.58000       0.3410174    HgI          0 UNKNOWN  64   0.04849331
+767.61000        0.229325    HgI          0 6p_2[3/2]*_2->10d_3D_3  66   0.04870965
+767.94000       0.3007957    HgI          0 6p_2[3/2]*_2->10d_3D_2  66   0.04709199
+768.73000       0.2523261    HgI          0 6p_2[3/2]*_2->10d_1D_2  66   0.04903275
+769.51000       0.3757026    HgI          0 UNKNOWN  64   0.04881755
+770.62000       0.3180394    HgI          0 UNKNOWN  64   0.05048169
+770.87000       0.3478753    HgI          0 UNKNOWN  64   0.04969579
+772.08000       0.9912626    HgI          0 UNKNOWN  64    0.0629405
+772.23000               0    HgI          0 UNKNOWN  64   0.06822749
+773.09520        4.053512    HgI          0 7s_1S_0->8p_1P*_1  66   0.05905522
+773.47000       0.6657939    HgI          0 7p_3P*_1->13s_3S_1  66   0.05274959
+773.68000       0.3372108    HgI          0 7p_3P*_0->11d_3D_1  66   0.05287806
+779.73000               0    HgI          0 UNKNOWN  64   0.04752379
+782.29000               0    HgI          0 7p_3P*_1->11d_3D_2  66   0.05955722
+782.44000      0.05015104    HgI          0 7p_3P*_1->11d_3D_1  66   0.05946545
+782.82000               0    HgI          0 7p_3P*_1->11d_1D_2  66   0.04798474
+790.13000       0.1517435    HgI          0 9d_3D_2->6p_2[3/2]*_1  66   0.04841963
+793.20000        0.212364    HgI          0 7p_3P*_0->12s_3S_1  66   0.04769377
+793.91000       0.3383295    HgI          0 7p_3P*_2->20d_3D_3  66    0.0481818
+795.34000               0    HgI          0 6d_1D_2->21f_1F*_3  66   0.06164091
+797.08000       0.2500343    HgI          0 6d_1D_2->20f_1F*_3;7p_3P*_2->19d_3D_3  66   0.04803041
+797.55000       0.4151297    HgI          0 7s_1S_0->8p_3P*_1  66   0.04760769
+798.13000        0.435195    HgI          0 6p_2[3/2]*_2->11s_3S_1  66   0.04876401
+799.32000        0.507069    HgI          0 6d_1D_2->19f_1F*_3  66   0.04926372
+800.08000       0.7410121    HgI          0 7p_3P*_1->12s_1S_0  66   0.04915541
+800.93000               0    HgI          0 UNKNOWN  64     0.197302
+801.55000               0    HgI          0 6d_3D_3->21f_3F*_4  66    0.1072742
+802.01000               0    HgI          0 6d_1D_2->18f_1F*_3  66   0.05863127
+802.45000        0.946967    HgI          0 7p_3P*_1->12s_3S_1  66   0.05011032
+803.41000       0.5952501    HgI          0 6d_3D_3->20f_3F*_4;6d_3D_2->19f_3F*_3  66   0.04869357
+805.22000        0.452091    HgI          0 6d_1D_2->17f_1F*_3  66   0.04754762
+805.63000       0.2664156    HgI          0 7p_3P*_2->17d_3D_3  66    0.0995827
+806.06000       0.4810612    HgI          0 6d_3D_2->18f_3F*_3  66    0.0479486
+807.29000       0.5546539    HgI          0 7p_3P*_0->10d_3D_1  66    0.0480154
+808.03000       0.3025203    HgI          0 UNKNOWN  64   0.05048021
+808.26000       0.4339617    HgI          0 6d_3D_3->18f_3F*_4  66   0.05003938
+809.26000       0.5730059    HgI          0 6d_1D_2->16f_1F*_3;7p_1P*_1->19s_1S_0  66   0.04860385
+811.53000               0    HgI          0 7p_3P*_2->16d_3D_3;7p_1P*_1->17d_1D_2  66   0.08917597
+813.14000       0.5480423    HgI          0 6d_3D_2->16f_3F*_3  66   0.04886009
+813.85000       0.2425113    HgI          0 6d_1D_2->15f_1F*_3  66   0.04811417
+814.76000       0.1419147    HgI          0 7p_1P*_1->18s_1S_0  66   0.04791573
+816.56000    0.0005651165    HgI          0 7p_3P*_1->10d_3D_2  66   0.04772639
+816.86000       0.1886091    HgI          0 7p_3P*_1->10d_3D_1  66    0.0487066
+817.50000      0.02089891    HgI          0 7p_3P*_1->10d_1D_2;7p_1P*_1->16d_1D_2  66   0.04760491
+817.94000               0    HgI          0 6d_3D_2->15f_3F*_3  66   0.04806767
+819.15000               0    HgI          0 7p_3P*_2->15d_3D_3  66   0.04861336
+819.78500      0.05634433    HgI          0 6p_2[3/2]*_2->9d_3D_3;6d_1D_2->14f_1F*_3  66   0.05400134
+819.97000               0    HgI          0 6d_3D_1->14f_3F*_2  66   0.05412429
+820.29000               0    HgI          0 6p_2[3/2]*_2->9d_3D_2  66   0.04970278
+820.76000               0    HgI          0 6p_2[3/2]*_2->9d_3D_1  66   0.04853141
+821.65000               0    HgI          0 UNKNOWN  64   0.04922807
+822.93000               0    HgI          0 UNKNOWN  64    0.0480264
+823.41000               0    HgI          0 6p_2[7/2]*_3->13d_3D_3  66   0.04773374
+824.07000               0    HgI          0 6d_3D_2->14f_3F*_3  66   0.04776288
+825.30000      0.08164059    HgI          0 7p_1P*_1->15d_1D_2  66   0.04829755
+826.45000               0    HgI          0 6d_3D_3->14f_3F*_4  66    0.1083993
+827.48000         1.79412    HgI          0 6d_1D_2->13f_1F*_3  66   0.05461431
+827.73000       0.5849928    HgI          0 6d_3D_1->13f_3F*_2  66   0.05220201
+829.09000               0    HgI          0 7p_3P*_2->14d_3D_3  66   0.04826417
+830.60000               0    HgI          0 7p_1P*_1->16s_1S_0  66   0.04854331
+831.87000               0    HgI          0 6d_3D_2->13f_3F*_3  66   0.04784085
+834.28000               0    HgI          0 6d_3D_3->13f_3F*_4  66    0.0473352
+835.60000               0    HgI          0 7p_1P*_1->14d_1D_2  66   0.04674599
+837.63000      0.09190973    HgI          0 6d_1D_2->12f_1F*_3  66   0.04983294
+837.87000    0.0002073032    HgI          0 6d_3D_1->12f_3F*_2  66   0.04930276
+840.39000        1.416893    HgI          0 7p_3P*_0->11s_3S_1  66   0.05137235
+842.09000        1.409874    HgI          0 6d_3D_2->12f_3F*_3  66   0.05156651
+842.57000               0    HgI          0 7p_3P*_2->13d_3D_3  66    0.1621375
+844.56000       0.1826485    HgI          0 6d_3D_3->12f_3F*_4  66   0.04801283
+845.43000               0    HgI          0 10d_3D_2->6p_2[3/2]*_1;6d_3D_3->15p_3P*_2  66   0.04715481
+846.64000               0    HgI          0 7p_3P*_1->11s_1S_0  66   0.04700293
+849.33000               0    HgI          0 7p_1P*_1->13d_1D_2  66    0.0490317
+850.79000               0    HgI          8 7p_3P*_1->11s_3S_1  66   0.04877114
+851.33000               0    HgI          0 6d_1D_2->11f_1F*_3  66   0.04960506
+851.58000       0.3308415    HgI          0 6d_3D_1->11f_3F*_2  66   0.05044511
+854.12000      0.04749326    HgI          0 7p_3P*_2->14s_3S_1  66   0.04820768
+855.97000               0    HgI          0 6d_3D_2->11f_3F*_3  66   0.04759213
+858.49000      0.08419697    HgI          0 6d_3D_3->11f_3F*_4  66   0.04809942
+861.60000      0.04324683    HgI          0 7p_3P*_2->12d_3D_3  66   0.04736535
+862.11000      0.05009803    HgI          0 7p_3P*_2->12d_1D_2  66     0.048862
+865.51000       0.1403854    HgI          0 7p_3P*_0->9d_3D_1  66    0.0484356
+868.20000       0.1227609    HgI          0 7p_1P*_1->12d_3D_2  66    0.0490853
+868.91000      0.01337893    HgI          0 7p_1P*_1->12d_1D_2  66    0.0459533
+870.69000       0.1065919    HgI          0 6d_1D_2->10f_1F*_3  66   0.05433016
+870.88000      0.02767068    HgI          0 6d_3D_1->10f_3F*_2  66   0.05398373
+874.85000       0.1028574    HgI          0 6d_3D_1->13p_3P*_1  66   0.04756419
+875.43000               0    HgI          0 6d_3D_2->10f_3F*_3  66   0.04703065
+876.05000       0.3339597    HgI          0 7p_3P*_1->9d_3D_2  66   0.04830354
+876.54000       0.3060455    HgI          0 7p_3P*_1->9d_3D_1  66   0.04770204
+877.55000      0.04751848    HgI          8 7p_3P*_1->9d_1D_2  66    0.0469979
+878.08000               0    HgI          0 6d_3D_3->10f_3F*_4  66   0.04742529
+878.61000       0.1671526    HgI          0 6p_2[3/2]*_2->10s_3S_1  66   0.04839938
+879.87000               0    HgI          0 6d_3D_3->13p_3P*_2  66   0.04802336
+883.33000               0    HgI          0 7p_1P*_1->13s_1S_0  66   0.04804749
+889.61000       0.0521571    HgI          0 7p_3P*_2->11d_3D_3  66   0.04770553
+896.83000      0.09768671    HgI          0 7p_1P*_1->11d_3D_2  66   0.04727604
+897.61000       0.0478291    HgI          0 7p_1P*_1->11d_1D_2  66   0.04746184
+899.14000               0    HgI          0 6d_1D_2->9f_1F*_3  66   0.04920402
+899.39000     0.003738806    HgI          0 6d_3D_1->9f_3F*_2  66   0.04842566
+904.17000               0    HgI          0 6d_3D_2->9f_3F*_3  66   0.04671956
+905.37000               0    HgI          0 6d_1D_2->12p_3P*_1  66   0.04780038
+906.01000               0    HgI          0 6d_3D_1->12p_3P*_0  66   0.04598466
+906.97000      0.04288609    HgI          0 6d_3D_3->9f_3F*_4  66    0.0475528
+909.75000       0.1175699    HgI          0 6d_3D_3->12p_3P*_2  66   0.04846868
+916.03000               0    HgI          0 7p_3P*_2->12s_3S_1  66   0.04694099
+920.32000               0    HgI          0 7p_1P*_1->12s_1S_0  66   0.04948676
+924.56000        0.797846    HgI          0 6p_2[3/2]*_2->8d_3D_3  66   0.04992108
+925.64000               0    HgI          0 6p_2[3/2]*_2->8d_3D_2  66   0.04804188
+926.62000               0    HgI          0 6p_2[3/2]*_2->8d_3D_1  66   0.04721132
+928.16000       0.0514617    HgI          0 6p_2[3/2]*_2->8d_1D_2  66   0.04741446
+930.12000               0    HgI          0 7p_3P*_0->10s_3S_1  66   0.04763806
+934.10000      0.03165349    HgI          0 7p_3P*_2->10d_3D_3  66   0.04714393
+934.51000               0    HgI          0 7p_3P*_2->10d_3D_2  66   0.04597726
+934.88000               0    HgI          0 7p_3P*_2->10d_3D_1  66   0.04653978
+935.73000        1.165755    HgI          0 7p_3P*_2->10d_1D_2  66    0.1740714
+942.20000       0.1440628    HgI          0 7p_1P*_1->10d_3D_2  66   0.05169493
+942.82000       0.0415279    HgI          0 7p_3P*_1->10s_3S_1  66   0.04645709
+943.47000       0.1408522    HgI          0 7p_1P*_1->10d_1D_2  66   0.04628662
+944.11000       0.0855026    HgI          0 6d_1D_2->8f_1F*_3  66   0.04696924
+944.53000      0.06342415    HgI          0 6d_3D_1->8f_3F*_2  66   0.04640944
+948.98000               0    HgI          0 6d_3D_1->11p_3P*_2  66   0.04571881
+949.85000      0.06615647    HgI          0 6d_3D_2->8f_3F*_3  66   0.04618775
+952.89000               0    HgI          0 6d_3D_3->8f_3F*_4  66   0.04711549
+954.73000               0    HgI          0 6d_1D_2->11p_3P*_1  66   0.04645845
+954.99000      0.04721197    HgI          0 6d_3D_1->11p_3P*_1  66   0.04746793
+955.67000      0.03254643    HgI          0 6d_3D_1->11p_3P*_0  66   0.04805556
+957.69000               0    HgI          0 6d_3D_3->11p_3P*_2  66   0.04571685
+960.46000      0.01922919    HgI          0 6d_3D_2->11p_3P*_1;16s_3S_1->6p_2[3/2]*_1  66   0.04538868
+979.56000               0    HgI          0 7p_3P*_2->11s_3S_1  66    0.1711427
+981.10000         0.39669    HgI          0 6p_2[7/2]*_3->6g_3G_4  66    0.2125917
+982.45000               0    HgI          0 7p_1P*_1->11s_1S_0  66    0.2472543
+983.50000        0.161099    HgI          0 18s_1S_0->6p_2[3/2]*_1  66    0.2545533
+984.08000       0.2752854    HgI          0 7p_3P*_0->8d_3D_1  66    0.2599453
+997.20000               0    HgI          0 7p_3P*_1->8d_3D_2  66    0.2601748
+998.36000               0    HgI          0 7p_3P*_1->8d_3D_1  66    0.2557103
+1000.17000              0    HgI          0 7p_3P*_1->8d_1D_2  66    0.2545784
+1012.45000       2.162172    HgI          0 7p_3P*_2->9d_3D_3  66    0.2605539
+1013.24000       2.190754    HgI          0 7p_3P*_2->9d_3D_2  66    0.2526699
+1014.25300       992.4491    HgI          0 6p_1P*_1->7s_1S_0  66        1.041
+1018.34000       1.248371    HgI          0 6d_1D_2->10p_1P*_1  66    0.2606531
+1022.32000      0.5306513    HgI          0 8s_3S_1->20p_3P*_1;8s_3S_1->20p_3P*_0;7p_1P*_1->9d_3D_2  66    0.2543855
+1023.20000       1.080943    HgI          0 6d_1D_2->7f_1F*_3  66    0.2610769
+1023.78000       1.114705    HgI          0 6d_3D_1->7f_3F*_2  66    0.2536387
+1024.42000       0.300808    HgI          0 7p_1P*_1->9d_1D_2  66    0.2540389
+1029.96000              0    HgI          0 6d_3D_2->7f_3F*_3  66     0.259907
+1032.36000      0.4379247    HgI          0 6d_3D_1->10p_3P*_2  66    0.2569059
+1033.51000      0.3915746    HgI          2 6d_3D_3->7f_3F*_4  66     1.256634
+1033.69000              0    HgI          0 6d_3D_3->7f_3F*_3  66    0.4906996
+1042.64000      0.7286291    HgI          0 6d_3D_3->10p_3P*_2  66    0.2584557
+1043.47000        1.37293    HgI          0 6d_1D_2->10p_3P*_1  66    0.2537888
+1043.85000      0.1776967    HgI          0 6d_3D_1->10p_3P*_1  66    0.2525387
+1045.37000              0    HgI          0 6d_3D_1->10p_3P*_0  66    0.2584582
+1046.75000      0.6171401    HgI          0 8s_3S_1->17p_3P*_1;8s_3S_1->17p_3P*_0  66     0.255401
+1050.40000     0.08746135    HgI          0 6d_3D_2->10p_3P*_1  66    0.2614789
+1071.84000     0.05880417    HgI          0 6p_2[3/2]*_2->9s_3S_1  66    0.2644714
+1102.52000              0    HgI          0 7p_1P*_1->10s_1S_0  66    0.2660248
+1103.66000              0    HgI          0 7p_3P*_2->10s_3S_1  66    0.2563302
+1117.98800       23.90181    HgI          0 7s_3S_1->7p_1P*_1  66    0.5275056
+1129.02000       653.3369    HgI          0 7s_3S_1->7p_3P*_2  66      0.79249
+1135.70000       0.335163    HgI          0 8s_3S_1->13p_3P*_1  66     0.262279
+1137.11000      0.5828652    HgI          0 6d_1D_2->6p_2[5/2]*_3  66    0.2610255
+1143.97000      0.5601785    HgI          0 7p_3P*_1->9s_1S_0  66    0.2543812
+1149.47000      0.6761742    HgI          0 7p_3P*_0->9s_3S_1  66    0.2643332
+1169.02000       1.379834    HgI          0 7p_3P*_1->9s_3S_1  66    0.2649159
+1177.21000      0.6212468    HgI          0 7p_3P*_2->8d_3D_3  66    0.2644698
+1188.85000        2.31277    HgI          0 6d_1D_2->6f_1F*_3  66    0.2539179
+1189.39000      0.2113606    HgI          0 6d_3D_1->6f_3F*_2  66    0.2523634
+1191.34000              0    HgI          0 10s_1S_0->6p_2[1/2]*_1  66    0.2556329
+1195.48000      0.5691244    HgI          0 7p_1P*_1->8d_1D_2  66     0.250596
+1197.96000       2.538375    HgI          0 6d_3D_2->6f_3F*_3  66    0.2559815
+1202.29000       3.927247    HgI          0 6d_3D_3->6f_3F*_4  66    0.2592537
+1207.48000       25.31837    HgI          0 6p_1P*_1->7s_3S_1  66    0.5071381
+1213.18000       4.668853    HgI          0 6p_2[3/2]*_2->7d_3D_3  66    0.2578621
+1216.20000       0.854113    HgI          0 6p_2[3/2]*_2->7d_3D_2  66    0.2529363
+1221.80000      0.3538812    HgI          0 6d_3D_3->9p_3P*_2  66    0.2542616
+1238.15000              0    HgI          0 6d_3D_1->9p_3P*_1  66     0.257104
+1321.35600       92.45072    HgI          0 7p_3P*_0->7d_3D_1   2          nan
+1343.02400       92.45072    HgI          0 7p_3P*_1->7d_3D_2   2          nan
+1347.20600       30.04648    HgI          0 7p_3P*_1->7d_3D_1   2          nan
+1348.29000              0    HgI          0 6d_3D_2->6p_2[3/2]*_1   2          nan
+1350.92700       46.22536    HgI          0 7p_3P*_1->7d_1D_2   2          nan
+1357.39200       46.22536    HgI          0 7s_1S_0->7p_1P*_1   2          nan
+1363.80000            nan    HgI          0 8p_3P*_1->20d_3D_1;8p_3P*_1->20d_3D_2   2          nan
+1367.72500       69.33804    HgI          0 7s_3S_1->7p_3P*_1   2          nan
+1395.43600       46.22536    HgI          0 7s_3S_1->7p_3P*_0   2          nan
+1398.30000              0    HgI          0 8p_3P*_1->17d_1D_2   2          nan
