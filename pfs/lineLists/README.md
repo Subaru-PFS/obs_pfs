@@ -132,9 +132,18 @@ lamps' overall offsets are small: relative to Ne, Ar is +0.008 ± 0.003 px and
 Xe is 0.000 ± 0.003 px. Lines flagged BROAD should therefore not be used for
 wavelength calibration at the 0.01 px level.
 
-BROAD is left clear in the IIS lists and for HgCd's Ar buffer-gas lines, whose
-lamps' pressures are unknown; the IIS Kr lamp does show a broadened 830.04 nm
-line. `ReadLineListTask` keeps BROAD lines. They are left out of the detectorMap
+The IIS lamps were measured the same way, using all 64 engineering fibres
+(arcs 149797, 149798 and 148141), r arm:
+
+| lamp | 1s₂ | 1s₄ | flagged |
+|---|---|---|---|
+| Ar_IIS | +6.0 GHz (5σ) | −0.1 GHz | 1s₂ |
+| Kr_IIS | +1.3 ± 1.7 GHz | +2.9 ± 5 GHz | none |
+| Ne_IIS | +1.3 GHz (1σ) | −0.2 GHz | none |
+
+The IIS Kr lamp's 1s₂ width is ~3σ below the PFI Kr lamp's, suggesting a
+lower fill pressure. HgAr_IIS (a new lamp) and HgCd's Ar buffer-gas lines are
+not flagged. `ReadLineListTask` keeps BROAD lines. They are left out of the detectorMap
 fits (`FitDetectorMapTask` and `AdjustDetectorMapTask` ignore `lineFlags =
 ["BAD"]`, and BAD includes BROAD), the LSF fit (`FitLsfTask`,
 `excludeCatalogueBroad`) and the aperture-correction fit.
