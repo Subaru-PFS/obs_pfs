@@ -65,11 +65,48 @@ How the intensities were measured:
   range or otherwise unmeasured get their previous intensity, scaled by the
   median measured/previous ratio, and have no error. In Ar, Kr, Ne and Xe.txt
   they keep their catalogue values.
-- **Lamp warm-up.** Lamps change as they warm up: Cd brightens about 1.6×
-  relative to Hg over the first few minutes, and He is about 8% fainter in its
-  first exposure. This hasn't been characterised yet.
+- **HgCd warm-up.** See "HgCd lamp warm-up" below. The He lamp's first
+  exposure (148330) is about 8% fainter than the next two; that isn't warm-up,
+  which isn't expected for a noble-gas lamp, and remains unexplained.
 - **Future refit.** The intensities will be refit with the PFS LSF model once
   it includes the IIS/PFI fibre sizes and the halo around each line image.
+
+## HgCd lamp warm-up
+
+The HgCd lamp is turned on and left until a photodiode detects the Cd (about
+200–300 s), then its voltage is lowered and a series of exposures is taken.
+The shutter sets the exposure time (`W_CLHGCT`), not very accurately. The Cd
+(and Hg) is still vaporising during the series, so **the Cd lines brighten
+relative to Hg through it**.
+
+It was measured on the b arm with Cd 508.7 / Hg 436.0, which doesn't depend
+on the exposure time, relative to each series' first exposure. Errors come
+from the scatter between spectrographs. The sample is the 24 series from
+2024–2026 whose spectrographs agree. The other 14 (most of 2024, and
+2025-03-21/22) disagree by 0.1–0.5 and are excluded.
+
+| time since first exposure | before 2026-07 | since 2026-07 |
+|---|---|---|
+| 2 min | ×1.123 ± 0.002 (scatter 0.011, 21 series) | ×1.225 ± 0.003 (3 series) |
+| 4 min | ×1.200 ± 0.005 (scatter 0.019, 12 series) | ×1.371 ± 0.002 (3 series) |
+| about 7 min | ×1.7 (1 series) | — |
+
+- **No plateau yet:** the growth doesn't level off within a normal 3-exposure
+  series.
+- **A step between 2026-05-05 and 2026-07-08:** there are no HgCd series in
+  between. The growth at 4 min was 1.19–1.20 from 2025-05 to 2026-05 (1.238 in
+  2026-03), then 1.37 on 2026-07-08, 07-24 and 09-01. The first-exposure Cd/Hg
+  also rose, from about 0.89 to 0.96. Each series is measured to about ±0.001,
+  so the step is unambiguous. Its cause is unknown: nothing is known to have
+  changed.
+- **Hg itself is stable:** Hg 404.8 / 436.0 changes by < 0.5% within the clean
+  series.
+
+**`HgCd.txt` represents the third exposure (148323, about 4 min) of a
+post-step series.** So its Cd intensities relative to Hg are about 1.37× those
+of a first exposure, and about 1.14× those of a pre-step third exposure. Treat
+HgCd's Cd/Hg intensity ratios as uncertain at the ~15–40% level, depending on
+when in a series, and in which period, an exposure was taken (PIPE2D-1969).
 
 ## Wavelengths and transitions
 
