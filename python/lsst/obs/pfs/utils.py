@@ -16,14 +16,15 @@ def getLamps(md):
     Returns
     -------
     lamps : `set` of `str`
-        Set of lit lamps.
+        Set of lit lamps. An OBJECT exposure has none. A FLAT is ``{"Quartz"}``
+        unless an IIS (engineering-fiber) lamp header is lit, in which case it is
+        those lamps (e.g. ``{"Quartz_eng"}``); the PFI lamp headers aren't read on
+        a FLAT. Any other type reads the lamp headers.
     """
     # The lamp headers aren't perfectly reliable, so let's first check some others
     dataType = (md.get("DATA-TYP") or "").lower().strip()
     if dataType == "object":
         return set()
-    if dataType == "flat":
-        return set(["Quartz"])
 
     menu = {
         # The W_ENIISA headers were used for a short, but regrettable, time in early 2024
@@ -62,7 +63,17 @@ def getLamps(md):
         "W_AIT_SRC_Qth": "Quartz",
     }
 
-    return {menu[key] for key in menu if md.get(key, False)}
+    lamps = {menu[key] for key in menu if md.get(key, False)}
+
+    if dataType == "flat":
+        # A flat is a quartz exposure, whatever the PFI lamp headers say. But an IIS
+        # quartz is a FLAT too (W_IISQTH, "ImageQuality (Halogen)"), lit through the
+        # engineering fibers, and only its IIS lamp headers tell it from a science-fiber
+        # quartz: when any IIS lamp is lit, those lamps are the answer (PIPE2D-1953).
+        engineering = {lamp for lamp in lamps if lamp.endswith("_eng")}
+        return engineering if engineering else {"Quartz"}
+
+    return lamps
 
 
 def getLampElements(md):
