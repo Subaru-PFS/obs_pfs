@@ -57,6 +57,48 @@ class ReadLampsTestCase(lsst.utils.tests.TestCase):
             self.assertTrue(lamp in lampSet,
                             f'Lamp {lamp} is not in active lamp set {lampSet}')
 
+    def testGetLampsByDataType(self):
+        """DATA-TYP decides a FLAT or OBJECT, except that a FLAT with an IIS lamp lit is an IIS
+        exposure (PIPE2D-1953)"""
+        # A science-fiber quartz: a FLAT whose PFI lamp headers may say nothing.
+        md = self.createLampMetadata([])
+        md["DATA-TYP"] = "FLAT"
+        self.assertEqual(getLamps(md), {'Quartz'})
+        md = self.createLampMetadata(['W_AITQTH'])
+        md["DATA-TYP"] = "FLAT"
+        self.assertEqual(getLamps(md), {'Quartz'})
+
+        # An IIS quartz ("ImageQuality (Halogen)", iisHalogen=20) is a FLAT with W_IISQTH lit.
+        md = self.createLampMetadata(['W_IISQTH'])
+        md["DATA-TYP"] = "FLAT"
+        self.assertEqual(getLamps(md), {'Quartz_eng'})
+        self.assertEqual(set(getLampElements(md)), set())
+        # Negative control: the FLAT shortcut alone would call it a science-fiber quartz.
+        self.assertNotEqual(getLamps(md), {'Quartz'})
+
+        # The IIS lamp headers decide a FLAT even when a PFI lamp header is lit too.
+        md = self.createLampMetadata(['W_IISQTH', 'W_AITQTH'])
+        md["DATA-TYP"] = "FLAT"
+        self.assertEqual(getLamps(md), {'Quartz_eng'})
+
+        # An IIS arc lamp recorded as a FLAT reads as that lamp.
+        md = self.createLampMetadata(['W_IISNEO'])
+        md["DATA-TYP"] = "FLAT"
+        self.assertEqual(getLamps(md), {'Ne_eng'})
+
+        # A COMPARISON reads the lamp headers as before.
+        md = self.createLampMetadata(['W_IISNEO'])
+        md["DATA-TYP"] = "COMPARISON"
+        self.assertEqual(getLamps(md), {'Ne_eng'})
+        md = self.createLampMetadata(['W_AITHGC'])
+        md["DATA-TYP"] = "COMPARISON"
+        self.assertEqual(getLamps(md), {'HgCd'})
+
+        # An OBJECT has no lamps, whatever the headers say.
+        md = self.createLampMetadata(['W_IISQTH', 'W_AITNEO'])
+        md["DATA-TYP"] = "OBJECT"
+        self.assertEqual(getLamps(md), set())
+
     def checkLampElements(self, keys, expectedElements):
         """Checks that expected lamp elements are retrieved
         for the supplied lamp header keys.
