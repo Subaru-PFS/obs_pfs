@@ -65,9 +65,7 @@ How the intensities were measured:
   range or otherwise unmeasured get their previous intensity, scaled by the
   median measured/previous ratio, and have no error. In Ar, Kr, Ne and Xe.txt
   they keep their catalogue values.
-- **HgCd warm-up.** See "HgCd lamp warm-up" below. The He lamp's first
-  exposure (148330) is about 8% fainter than the next two; that isn't warm-up,
-  which isn't expected for a noble-gas lamp, and remains unexplained.
+- **Lamp behaviour.** See "HgCd lamp warm-up" and "IIS He lamp" below.
 - **Future refit.** The intensities will be refit with the PFS LSF model once
   it includes the IIS/PFI fibre sizes and the halo around each line image.
 
@@ -107,6 +105,34 @@ post-step series.** So its Cd intensities relative to Hg are about 1.37× those
 of a first exposure, and about 1.14× those of a pre-step third exposure. Treat
 HgCd's Cd/Hg intensity ratios as uncertain at the ~15–40% level, depending on
 when in a series, and in which period, an exposure was taken (PIPE2D-1969).
+
+## IIS He lamp
+
+The He lamp is a different design from the other IIS lamps. It was measured
+on 22 He_eng exposures in 15 series (2026-04-30 to 09-16, engineering fibres;
+errors from the scatter between spectrographs).
+
+- **Normal behaviour.** When properly lit it is stable. He I 706.72 runs at
+  about 700–820 counts/s, independent of exposure time (37–157 s) and from
+  night to night.
+- **He I is stable within a series.** The He I line ratios hold to a few
+  per cent; 728.34/706.72 rises by about 1% (3σ). There's no HgCd-like
+  growth.
+- **It sometimes barely lights.** 5 of the 22 exposures (141450, 144890,
+  147775–147777) are at 1–2% of the normal rate. They also have a different
+  singlet/triplet ratio (667.99/587.73 = 0.42–0.49, against 0.68–0.74 when lit
+  normally), so the discharge itself is different.
+- **First exposures can be partly lit.** 142263 was at 40% of normal, with
+  the next exposure 2.4 min later back to normal; 148330 is 7 ± 5% below
+  148331/2.
+- **The O I impurity changes.** O I 777.4 / He I 706.7 falls to 0.61–0.69 of
+  its first-exposure value within 2–11 min, and varies ×3 from night to night
+  (highest at first use and after long gaps). `He_IIS.txt`'s O I intensities
+  (from 148332, the third exposure of 2026-09-01) are uncertain at that level.
+
+Screen He_eng exposures for the dim state, e.g. by their He I 706.72 rate.
+These conclusions rest on only two cleanly lit multi-exposure series; an
+experiment to characterise the lamp is proposed on PIPE2D-1969.
 
 ## Wavelengths and transitions
 
