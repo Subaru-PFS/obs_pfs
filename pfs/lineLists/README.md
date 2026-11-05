@@ -5,6 +5,33 @@ Reference lines for the PFS calibration lamps and the night sky, read by
 status and source bits are given in each file's header (written by
 `ReferenceLineSet.writeLineList`).
 
+## Tools
+
+The lists are built and updated with `pfs.drp.stella.lineLists` in drp_stella
+(PIPE2D-1982). Every step that writes or changes a list has a script in
+drp_stella's `bin.src`; run a script with `--help` for its options.
+
+| step | script | module |
+|---|---|---|
+| download NIST lines (and levels) | `fetchNistLines.py` | `nist` |
+| build a list for one species from NIST | `buildNistLineList.py` | `nist` |
+| add NIST transitions to a list | `addNistTransitions.py` | `nist` |
+| identify lines missing from NIST's line list | `findNistTransitions.py` | `nist` |
+| measure a lamp's intensities from a visit | `measureLineIntensities.py` | `intensities` |
+| flag resonance families BROAD | `flagBroadFamilies.py` | `broad` |
+| list the lamps lit in each visit | `scanLampHeaders.py` | `lamps` |
+
+For example, the intensities of `HgCd.txt` and `Ar_IIS.txt` are measured with
+
+    measureLineIntensities.py HgCd.txt HgCd.txt --collection u/rhl/shaka-arc --visit 148323
+    measureLineIntensities.py Ar_IIS.txt Ar_IIS.txt --collection u/rhl/iis-arcs --visit 148141 \
+        --engineering --integratedSN 30 --previous Ar.txt
+
+and `Kr.txt`'s BROAD flags are set with `flagBroadFamilies.py Kr.txt 1s2 1s4`.
+The analyses whose result is a judgement rather than a file (the BROAD widths
+and shifts, the HgCd warm-up) are library functions:
+`broad.familyWidthExcess`, `broad.familyShifts` and `lamps.warmupGrowth`.
+
 ## One file per lamp
 
 A line's intensity, its flags and even which lines appear depend on the lamp:
@@ -64,7 +91,11 @@ How the intensities were measured:
 - **Unmeasured lines.** In `HgCd.txt` and the IIS lists, lines outside the PFS
   range or otherwise unmeasured get their previous intensity, scaled by the
   median measured/previous ratio, and have no error. In Ar, Kr, Ne and Xe.txt
-  they keep their catalogue values.
+  they keep their catalogue values. **Known error:** in the IIS lists and
+  `HgCd.txt`'s Ar lines, these scaled lines were multiplied by the ×12
+  conversion factor a second time (e.g. 25 lines in `Ar_IIS.txt` are exactly
+  12× too bright). The measured lines are correct. The lists will be
+  regenerated with `measureLineIntensities.py` (PIPE2D-1982).
 - **Lamp behaviour.** See "HgCd lamp warm-up" and "IIS He lamp" below.
 - **Future refit.** The intensities will be refit with the PFS LSF model once
   it includes the IIS/PFI fibre sizes and the halo around each line image.
