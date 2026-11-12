@@ -106,6 +106,7 @@ storageClasses:
       - obj_id  # Object identifier
     derivedComponents:
       single: PfsObject  # Single spectrum; requires objId/obj_id
+      lsf: SpectraLsf  # Line-spread function of the spectra
   PfsCalibrated:
     pytype: pfs.datamodel.drp.PfsCalibrated
     parameters:
