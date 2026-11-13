@@ -185,10 +185,27 @@ class DetectorMapFormatter(FitsGenericFormatter):
         raise ValueError(f"Unknown component {component}")
 
 
+class PfsFiberArraySetFormatter(FitsGenericFormatter):
+    """Formatter for PfsFiberArraySet (pfsArm, pfsMerged)
+
+    Provides the 'lsf' component: the line-spread function of the spectra.
+    """
+    def read_from_local_file(self, path: str, component: str | None = None, expected_size: int = -1) -> Any:
+        # Docstring inherited.
+        if component is None:
+            return super().read_from_local_file(path, component, expected_size)
+        if component == "lsf":
+            # This is inefficient (it reads the spectra too), but it's simple
+            spectra = self.file_descriptor.storageClass.pytype.readFits(self.file_descriptor.location.path)
+            return spectra.lsf
+        raise ValueError(f"Unknown component {component}")
+
+
 class PfsTargetSpectraFormatter(FitsGenericFormatter):
     """Formatter for PfsTargetSpectra
 
-    Provides the 'single' component, that extracts a single spectrum.
+    Provides the 'single' component, that extracts a single spectrum, and the
+    'lsf' component, the line-spread function of the spectra.
     """
     PfsTargetSpectraClass: str = ""  # Subclasses must override
 
@@ -219,6 +236,15 @@ class PfsTargetSpectraFormatter(FitsGenericFormatter):
             if len(select) > 1:
                 raise ValueError(f"objId={objId} found multiple times in spectra at {path}")
             return spectra[select.pop()]
+        if component == "lsf":
+            lsf = spectra.lsf
+            if lsf is None:
+                return None
+            from pfs.drp.stella.spectraLsf import spectraLsfFromDatamodel
+            targets = list(spectra)
+            wavelength = {target: spectra[target].wavelength for target in targets}
+            length = len(next(iter(wavelength.values()))) if wavelength else 0
+            return spectraLsfFromDatamodel(lsf, targets, wavelength, length)
         raise ValueError(f"Unknown component {component}")
 
 

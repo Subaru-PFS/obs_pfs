@@ -14,8 +14,8 @@ datastore:
     FiberTraceSet: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     PfsFiberNorms: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     DetectorMap: lsst.obs.pfs.formatters.DetectorMapFormatter
-    PfsArm: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
-    PfsMerged: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+    PfsArm: lsst.obs.pfs.formatters.PfsFiberArraySetFormatter
+    PfsMerged: lsst.obs.pfs.formatters.PfsFiberArraySetFormatter
     PfsFluxReference: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     PfsSingle: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     PfsObject: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
@@ -29,6 +29,9 @@ datastore:
     ArcLineSet: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     LsfDict: lsst.daf.butler.formatters.pickle.PickleFormatter
     Lsf: lsst.daf.butler.formatters.pickle.PickleFormatter
+    ArmLsfModel: lsst.daf.butler.formatters.pickle.PickleFormatter  # deprecated: the lsfModel datasets
+    ArmLsf: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+    LsfLineSet: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
     NevenPsf: lsst.daf.butler.formatters.pickle.PickleFormatter
     MultipagePdfFigure: pfs.drp.qa.formatters.PdfMatplotlibFormatter
     QaDict: lsst.daf.butler.formatters.pickle.PickleFormatter
@@ -73,8 +76,12 @@ storageClasses:
       bbox: Box2I  # Bounding box
   PfsArm:
     pytype: pfs.drp.stella.datamodel.PfsArm
+    derivedComponents:
+      lsf: SpectraLsf  # Line-spread function of the spectra
   PfsMerged:
     pytype: pfs.drp.stella.datamodel.PfsMerged
+    derivedComponents:
+      lsf: SpectraLsf  # Line-spread function of the spectra
   PfsFluxReference:
     pytype: pfs.datamodel.pfsFluxReference.PfsFluxReference
   PfsSingle:
@@ -99,6 +106,7 @@ storageClasses:
       - obj_id  # Object identifier
     derivedComponents:
       single: PfsObject  # Single spectrum; requires objId/obj_id
+      lsf: SpectraLsf  # Line-spread function of the spectra
   PfsCalibrated:
     pytype: pfs.datamodel.drp.PfsCalibrated
     parameters:
@@ -113,6 +121,7 @@ storageClasses:
       - obj_id  # Object identifier
     derivedComponents:
       single: PfsObject  # Single spectrum; requires objId/obj_id
+      lsf: SpectraLsf  # Line-spread function of the spectra
   PfsCoZCandidates:
     pytype: pfs.datamodel.pfsCoZCandidates.PfsCoZCandidates
     parameters:
@@ -132,6 +141,14 @@ storageClasses:
     pytype: pfs.drp.stella.lsf.LsfDict
   Lsf:
     pytype: pfs.drp.stella.lsf.Lsf
+  ArmLsfModel:  # deprecated: the lsfModel datasets
+    pytype: pfs.drp.stella.lsfModel.ArmLsfModel
+  ArmLsf:
+    pytype: pfs.drp.stella.armLsf.ArmLsf
+  SpectraLsf:
+    pytype: pfs.drp.stella.spectraLsf.SpectraLsf
+  LsfLineSet:
+    pytype: pfs.drp.stella.lsfLine.LsfLineSet
   NevenPsf:
     pytype: pfs.drp.stella.NevenPsfContinued.NevenPsf
   MultipagePdfFigure:

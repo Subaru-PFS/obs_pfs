@@ -49,8 +49,8 @@ formatters:
   FiberTraceSet: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
   PfsFiberNorms: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
   DetectorMap: lsst.obs.pfs.formatters.DetectorMapFormatter
-  PfsArm: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
-  PfsMerged: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+  PfsArm: lsst.obs.pfs.formatters.PfsFiberArraySetFormatter
+  PfsMerged: lsst.obs.pfs.formatters.PfsFiberArraySetFormatter
   PfsFluxReference: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
   PfsSingle: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
   PfsObject: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
@@ -64,6 +64,9 @@ formatters:
   ArcLineSet: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
   LsfDict: lsst.daf.butler.formatters.pickle.PickleFormatter
   Lsf: lsst.daf.butler.formatters.pickle.PickleFormatter
+  ArmLsfModel: lsst.daf.butler.formatters.pickle.PickleFormatter  # deprecated: the lsfModel datasets
+  ArmLsf: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+  LsfLineSet: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
   NevenPsf: lsst.daf.butler.formatters.pickle.PickleFormatter
   MultipagePdfFigure: pfs.drp.qa.formatters.PdfMatplotlibFormatter
   QaDict: lsst.daf.butler.formatters.pickle.PickleFormatter
