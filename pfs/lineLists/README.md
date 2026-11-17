@@ -65,11 +65,72 @@ How the intensities were measured:
   range or otherwise unmeasured get their previous intensity, scaled by the
   median measured/previous ratio, and have no error. In Ar, Kr, Ne and Xe.txt
   they keep their catalogue values.
-- **Lamp warm-up.** Lamps change as they warm up: Cd brightens about 1.6×
-  relative to Hg over the first few minutes, and He is about 8% fainter in its
-  first exposure. This hasn't been characterised yet.
+- **Lamp behaviour.** See "HgCd lamp warm-up" and "IIS He lamp" below.
 - **Future refit.** The intensities will be refit with the PFS LSF model once
   it includes the IIS/PFI fibre sizes and the halo around each line image.
+
+## HgCd lamp warm-up
+
+The HgCd lamp is turned on and left until a photodiode detects the Cd (about
+200–300 s), then its voltage is lowered and a series of exposures is taken.
+The shutter sets the exposure time (`W_CLHGCT`), not very accurately. The Cd
+(and Hg) is still vaporising during the series, so **the Cd lines brighten
+relative to Hg through it**.
+
+It was measured on the b arm with Cd 508.7 / Hg 436.0, which doesn't depend
+on the exposure time, relative to each series' first exposure. Errors come
+from the scatter between spectrographs. The sample is all 41 multi-exposure
+series from 2024–2026.
+
+| time since first exposure | before 2026-07 | since 2026-07 |
+|---|---|---|
+| 2 min | ×1.119 ± 0.002 (scatter 0.012, 33 series) | ×1.225 ± 0.003 (3 series) |
+| 4 min | ×1.194 ± 0.004 (scatter 0.018, 20 series) | ×1.371 ± 0.002 (3 series) |
+| about 7 min | ×1.7 (1 series) | — |
+
+- **No plateau yet:** the growth doesn't level off within a normal 3-exposure
+  series.
+- **A step between 2026-05-05 and 2026-07-08:** there are no HgCd series in
+  between. The growth at 4 min averaged 1.19 (scatter 0.02) from 2024 to 2026-05 (1.238 in
+  2026-03), then 1.37 on 2026-07-08, 07-24 and 09-01. The first-exposure Cd/Hg
+  also rose, from about 0.89 to 0.96. Each series is measured to about ±0.001,
+  so the step is unambiguous. Its cause is unknown: nothing is known to have
+  changed.
+- **Hg itself is stable:** Hg 404.8 / 436.0 changes by at most 2% within a series.
+
+**`HgCd.txt` represents the third exposure (148323, about 4 min) of a
+post-step series.** So its Cd intensities relative to Hg are about 1.37× those
+of a first exposure, and about 1.15× those of a pre-step third exposure. Treat
+HgCd's Cd/Hg intensity ratios as uncertain at the ~15–40% level, depending on
+when in a series, and in which period, an exposure was taken (PIPE2D-1969).
+
+## IIS He lamp
+
+The He lamp is a different design from the other IIS lamps. It was measured
+on 30 He_eng exposures in 20 series (2026-04-30 to 11-01, engineering fibres;
+errors from the scatter between spectrographs). Each exposure's He I rate is
+compared with the lamp's *settled level*: the median of the exposures that
+aren't the first of their series.
+
+- **After the first exposure it is stable.** Later exposures in a series agree
+  to < 1%, and from night to night they're within ±5% of the settled level
+  (He I 706.72 at about 720–800 counts/s), independent of exposure time
+  (37–157 s).
+- **The first exposure is unreliable.** In the six multi-exposure series it
+  is low in four, by 5%, 8%, 14% and 60% (142263), and 2% high in two. The
+  first exposures of all 20 series span 0.40–1.07 of the settled level.
+- **He I line ratios hardly change.** Within a series 728.34/706.72 rises by
+  0.5–1.8% and 667.99/587.73 by 2–3%. There's no HgCd-like growth.
+- **The O I impurity burns off.** O I 777.4 / He I 706.7 falls to 0.58–0.68
+  of its first-exposure value within 2–11 min. Settled exposures have
+  0.007–0.009; first exposures 0.007–0.030, highest at first use and after
+  long gaps. `He_IIS.txt` (from 148332, the third exposure of 2026-09-01, at
+  0.008) represents a settled exposure; a first exposure can have up to 4×
+  more O I.
+
+Don't use the first exposure of a He_eng series for intensities. An
+experiment to characterise the first-exposure behaviour is proposed on
+PIPE2D-1969.
 
 ## Wavelengths and transitions
 
