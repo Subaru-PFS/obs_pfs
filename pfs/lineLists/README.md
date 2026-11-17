@@ -105,6 +105,14 @@ How the intensities were measured:
   unchanged. HgCd's Ar scale is now the median ratio of its S/N > 30 Ar lines
   (×10^-3.55, previously 10^-3.52).
   `HgAr_IIS.txt` and `He_IIS.txt` weren't affected.
+- **Cosmic-ray damage in the PFI lists.** The PFI exposures are the third of
+  same-lamp triplets, reduced with the default cosmic-ray grouping. Where the
+  lamp was brighter than in the other two, the cores of bright lines were
+  masked as cosmic rays and interpolated over, with no pfsArm mask bit. Compared
+  with a per-exposure reduction (`-c cosmicray:grouping=separate`), Ar and Ne
+  are unchanged, but about 20 of the bright (S/N > 30) lines in each of
+  `Kr.txt`, `Xe.txt` and `HgCd.txt` differ by more than 2%, a few by ×2–3. The
+  IIS lists' exposures were each reduced on their own, so they are unaffected.
 - **Lamp behaviour.** See "HgCd lamp warm-up" and "IIS He lamp" below.
 - **Future refit.** The intensities will be refit with the PFS LSF model once
   it includes the IIS/PFI fibre sizes and the halo around each line image.
