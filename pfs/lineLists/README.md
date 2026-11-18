@@ -30,8 +30,9 @@ For example, the intensities of `HgCd.txt` and `Ar_IIS.txt` are measured with
 
 and `Kr.txt`'s BROAD flags are set with `flagBroadFamilies.py Kr.txt 1s2 1s4`.
 The analyses whose result is a judgement rather than a file (the BROAD widths
-and shifts, the HgCd warm-up) are library functions:
-`broad.familyWidthExcess`, `broad.familyShifts` and `lamps.warmupGrowth`.
+and shifts, the HgCd warm-up, the He lamp's behaviour) are library functions:
+`broad.familyWidthExcess`, `broad.familyShifts`, `lamps.warmupGrowth` and
+`lamps.heLampLevels`.
 
 ## One file per lamp
 
