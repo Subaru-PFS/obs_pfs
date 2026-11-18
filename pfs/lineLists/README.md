@@ -5,6 +5,35 @@ Reference lines for the PFS calibration lamps and the night sky, read by
 status and source bits are given in each file's header (written by
 `ReferenceLineSet.writeLineList`).
 
+## Tools
+
+The lists are built and updated with `pfs.drp.stella.lineLists` in drp_stella
+(PIPE2D-1982). Every step that writes or changes a list has a script in
+drp_stella's `bin.src`; run a script with `--help` for its options.
+
+| step | script | module |
+|---|---|---|
+| download NIST lines (and levels) | `fetchNistLines.py` | `nist` |
+| build a list for one species from NIST | `buildNistLineList.py` | `nist` |
+| add NIST transitions to a list | `addNistTransitions.py` | `nist` |
+| identify lines missing from NIST's line list | `findNistTransitions.py` | `nist` |
+| measure a lamp's intensities from a visit | `measureLineIntensities.py` | `intensities` |
+| flag resonance families BROAD | `flagBroadFamilies.py` | `broad` |
+| list the lamps lit in each visit | `scanLampHeaders.py` | `lamps` |
+
+For example, the intensities of `HgCd.txt` and `Ar_IIS.txt` are measured with
+
+    measureLineIntensities.py HgCd.txt HgCd.txt --collection u/rhl/shaka-arc --visit 148323 \
+        --previous Ar.txt
+    measureLineIntensities.py Ar_IIS.txt Ar_IIS.txt --collection u/rhl/iis-arcs --visit 148141 \
+        --engineering --integratedSN 30 --previous Ar.txt
+
+and `Kr.txt`'s BROAD flags are set with `flagBroadFamilies.py Kr.txt 1s2 1s4`.
+The analyses whose result is a judgement rather than a file (the BROAD widths
+and shifts, the HgCd warm-up, the He lamp's behaviour) are library functions:
+`broad.familyWidthExcess`, `broad.familyShifts`, `lamps.warmupGrowth` and
+`lamps.heLampLevels`.
+
 ## One file per lamp
 
 A line's intensity, its flags and even which lines appear depend on the lamp:
@@ -64,7 +93,27 @@ How the intensities were measured:
 - **Unmeasured lines.** In `HgCd.txt` and the IIS lists, lines outside the PFS
   range or otherwise unmeasured get their previous intensity, scaled by the
   median measured/previous ratio, and have no error. In Ar, Kr, Ne and Xe.txt
-  they keep their catalogue values.
+  they keep their catalogue values. A previous intensity that is itself a
+  catalogue value gives a scaled intensity that is uncertain by a factor of a
+  few (catalogue/measured ratios scatter by about 0.5 dex).
+- **The ×12 correction (PIPE2D-1957) was once over-applied** to scaled lines
+  whose previous intensity was a catalogue value: 25 lines in `Ar_IIS.txt`,
+  65 in `Kr_IIS.txt`, 147 in `Ne_IIS.txt` and `HgCd.txt`'s 25 Ar lines
+  outside the PFS range were 12× too bright. `Ar_IIS.txt`, `Kr_IIS.txt`,
+  `Ne_IIS.txt` and `HgCd.txt` were regenerated with
+  `measureLineIntensities.py` (PIPE2D-1982), using the PFI lamp's list
+  (`Ar.txt` for HgCd's Ar lines) as `--previous`. The measured lines are
+  unchanged. HgCd's Ar scale is now the median ratio of its S/N > 30 Ar lines
+  (×10^-3.55, previously 10^-3.52).
+  `HgAr_IIS.txt` and `He_IIS.txt` weren't affected.
+- **Cosmic-ray damage in the PFI lists.** The PFI exposures are the third of
+  same-lamp triplets, reduced with the default cosmic-ray grouping. Where the
+  lamp was brighter than in the other two, the cores of bright lines were
+  masked as cosmic rays and interpolated over, with no pfsArm mask bit. Compared
+  with a per-exposure reduction (`-c cosmicray:grouping=separate`), Ar and Ne
+  are unchanged, but about 20 of the bright (S/N > 30) lines in each of
+  `Kr.txt`, `Xe.txt` and `HgCd.txt` differ by more than 2%, a few by ×2–3. The
+  IIS lists' exposures were each reduced on their own, so they are unaffected.
 - **Lamp behaviour.** See "HgCd lamp warm-up" and "IIS He lamp" below.
 - **Future refit.** The intensities will be refit with the PFS LSF model once
   it includes the IIS/PFI fibre sizes and the halo around each line image.
