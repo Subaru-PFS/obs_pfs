@@ -518,10 +518,13 @@ def _projectInternalMask(exposure, internalMask, *, crResult=None,
                 arr[crFlag] |= bit("BAD")
 
 
-def _nirPixelCounts(internalMask, crResult=None) -> dict:
+def _nirPixelCounts(internalMask, crResult=None, *, linearized=False, rateTested=False) -> dict:
     """Count the H4 pixels in each class of the internal mask.
 
     ``makeNirExposure`` logs these and records them in the task metadata.
+    A class is counted only when the step that sets it ran, so a step that
+    was skipped (e.g. the CR step on a CDS arc or flat) leaves its keys out
+    rather than reporting zero.
 
     Parameters
     ----------
@@ -529,30 +532,41 @@ def _nirPixelCounts(internalMask, crResult=None) -> dict:
         The final H4 internal mask.
     crResult : `types.SimpleNamespace`, optional
         The CR step's per-pixel summary; `None` when the CR step did not run.
+    linearized : `bool`, optional
+        Whether the linearity correction was applied.
+    rateTested : `bool`, optional
+        Whether the rate-stability step ran.
 
     Returns
     -------
     counts : `dict` [`str`, `int`]
-        Pixels carrying each internal bit: ``nSat`` (above the linearity
-        range), ``nLow`` (below it), ``nDefects`` (input defects),
-        ``nLinDefects`` (the ``DEAD`` group), ``nUnstable``,
-        ``nRateUnstable``, ``nUnclassified``, ``nAsicGlitch`` (any ASIC
-        glitch) and ``nGlitchMasked`` (glitches too messy to correct);
-        and ``nCR``, the pixels with a cosmic ray (0 without a CR step).
+        Pixels carrying each internal bit. Always ``nDefects`` (input
+        defects). With linearity, ``nSat`` (above the linearity range),
+        ``nLow`` (below it) and ``nLinDefects`` (the ``DEAD`` group). With
+        the CR step, ``nCR`` (pixels with a cosmic ray), ``nUnstable``,
+        ``nUnclassified``, ``nAsicGlitch`` (any ASIC glitch) and
+        ``nGlitchMasked`` (glitches too messy to correct). With the
+        rate-stability step, ``nRateUnstable``.
     """
-    bits = dict(
-        nSat=h4Linearity.ABOVE_VALID_RANGE,
-        nLow=h4Linearity.BELOW_VALID_RANGE,
-        nDefects=h4Linearity.MASKED_BY_INPUT,
-        nLinDefects=h4Linearity.DEAD,
-        nUnstable=h4Linearity.UNSTABLE,
-        nRateUnstable=h4Linearity.RATE_UNSTABLE,
-        nUnclassified=h4Linearity.UNCLASSIFIED,
-        nAsicGlitch=h4Linearity.ASIC_GLITCH,
-        nGlitchMasked=h4Linearity.GLITCH_MASKED,
-    )
+    bits = dict(nDefects=h4Linearity.MASKED_BY_INPUT)
+    if linearized:
+        bits.update(
+            nSat=h4Linearity.ABOVE_VALID_RANGE,
+            nLow=h4Linearity.BELOW_VALID_RANGE,
+            nLinDefects=h4Linearity.DEAD,
+        )
+    if crResult is not None:
+        bits.update(
+            nUnstable=h4Linearity.UNSTABLE,
+            nUnclassified=h4Linearity.UNCLASSIFIED,
+            nAsicGlitch=h4Linearity.ASIC_GLITCH,
+            nGlitchMasked=h4Linearity.GLITCH_MASKED,
+        )
+    if rateTested:
+        bits.update(nRateUnstable=h4Linearity.RATE_UNSTABLE)
     counts = {key: int(np.count_nonzero(internalMask & bit)) for key, bit in bits.items()}
-    counts["nCR"] = int(crResult.nFlagged) if crResult is not None else 0
+    if crResult is not None:
+        counts["nCR"] = int(crResult.nFlagged)
     return counts
 
 
@@ -2307,6 +2321,8 @@ class PfsIsrTask(ipIsr.IsrTask):
         # ``calcUTRrates``). Set per-branch below and stamped into
         # ``H4UTRWT`` by ``_stampRampMetadata``.
         appliedUTR = False
+        linearized = bool(self.config.h4.doLinearize and linearity is not None)
+        rateTested = False  # set if the rate-stability step runs
         if quickCDS:
             # CDS from two reads, with two-read linearization: linearize
             # the absolute cumulative frame at each endpoint and
@@ -2574,6 +2590,7 @@ class PfsIsrTask(ipIsr.IsrTask):
                             self.config.h4.rateStabilityMinDeltasPerSegment
                         ),
                     )
+                    rateTested = True
                     if rsResult.nRejected:
                         internalMask[rsResult.rejectMask] |= h4Linearity.RATE_UNSTABLE
                     if 'rateStabilityResult' in captureKeys:
@@ -2672,7 +2689,7 @@ class PfsIsrTask(ipIsr.IsrTask):
             maskCR=self.config.h4.maskCR,
         )
 
-        counts = _nirPixelCounts(internalMask, crResult)
+        counts = _nirPixelCounts(internalMask, crResult, linearized=linearized, rateTested=rateTested)
         for key, value in counts.items():
             self.metadata[key] = value
         self.log.info(" ".join(f"{key}={value}" for key, value in counts.items()))
