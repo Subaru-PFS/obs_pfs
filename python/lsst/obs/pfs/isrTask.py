@@ -518,6 +518,44 @@ def _projectInternalMask(exposure, internalMask, *, crResult=None,
                 arr[crFlag] |= bit("BAD")
 
 
+def _nirPixelCounts(internalMask, crResult=None) -> dict:
+    """Count the H4 pixels in each class of the internal mask.
+
+    ``makeNirExposure`` logs these and records them in the task metadata.
+
+    Parameters
+    ----------
+    internalMask : `numpy.ndarray` of `numpy.uint16`, shape ``(H, W)``
+        The final H4 internal mask.
+    crResult : `types.SimpleNamespace`, optional
+        The CR step's per-pixel summary; `None` when the CR step did not run.
+
+    Returns
+    -------
+    counts : `dict` [`str`, `int`]
+        Pixels carrying each internal bit: ``nSat`` (above the linearity
+        range), ``nLow`` (below it), ``nDefects`` (input defects),
+        ``nLinDefects`` (the ``DEAD`` group), ``nUnstable``,
+        ``nRateUnstable``, ``nUnclassified``, ``nAsicGlitch`` (any ASIC
+        glitch) and ``nGlitchMasked`` (glitches too messy to correct);
+        and ``nCR``, the pixels with a cosmic ray (0 without a CR step).
+    """
+    bits = dict(
+        nSat=h4Linearity.ABOVE_VALID_RANGE,
+        nLow=h4Linearity.BELOW_VALID_RANGE,
+        nDefects=h4Linearity.MASKED_BY_INPUT,
+        nLinDefects=h4Linearity.DEAD,
+        nUnstable=h4Linearity.UNSTABLE,
+        nRateUnstable=h4Linearity.RATE_UNSTABLE,
+        nUnclassified=h4Linearity.UNCLASSIFIED,
+        nAsicGlitch=h4Linearity.ASIC_GLITCH,
+        nGlitchMasked=h4Linearity.GLITCH_MASKED,
+    )
+    counts = {key: int(np.count_nonzero(internalMask & bit)) for key, bit in bits.items()}
+    counts["nCR"] = int(crResult.nFlagged) if crResult is not None else 0
+    return counts
+
+
 def _stampRampMetadata(exposure, *, r0, r1, nTotal, appliedUTR):
     """Add H4 read-range header keys to ``exposure.metadata``.
 
@@ -1467,6 +1505,8 @@ class PfsIsrTask(ipIsr.IsrTask):
 
             darktime = exposure.info.getVisitInfo().getDarkTime()
             self.log.info("Scaled dark exposure by %.1f (%.3f/second)", scale, scale/darktime)
+            self.metadata["darkScale"] = float(scale)
+            self.metadata["darkScalePerSecond"] = float(scale/darktime)
 
         if doBrokenRedShutter and self.config.brokenRedShutter.useAnalytic:
             #
@@ -2506,6 +2546,9 @@ class PfsIsrTask(ipIsr.IsrTask):
                         f"{crResult.nBadPixels} BAD (RTS) pixels "
                         f"in {iterResult.nIterations} iterations."
                     )
+                    self.metadata["nCrFlags"] = int(iterResult.nCRs)
+                    self.metadata["nGlitchPairs"] = int(iterResult.nGlitchPairs)
+                    self.metadata["crIterations"] = int(iterResult.nIterations)
                 else:
                     crResult = None
 
@@ -2539,6 +2582,7 @@ class PfsIsrTask(ipIsr.IsrTask):
                         f"rate-stability step: {rsResult.nRejected} "
                         f"pixels rejected, {rsResult.nUntestable} untestable."
                     )
+                    self.metadata["nRateUntestable"] = int(rsResult.nUntestable)
 
                 # Reconstruct the cumulative cube ONLY when a debug
                 # capture (``'crCorrected'``) or ``doReturnRawCube`` asks
@@ -2628,18 +2672,10 @@ class PfsIsrTask(ipIsr.IsrTask):
             maskCR=self.config.h4.maskCR,
         )
 
-        nCR = crResult.nFlagged if crResult is not None else 0
-        self.log.info(
-            f"nSat={int(((internalMask & h4Linearity.ABOVE_VALID_RANGE) != 0).sum())} "
-            f"nLow={int(((internalMask & h4Linearity.BELOW_VALID_RANGE) != 0).sum())} "
-            f"nDefects={int(((internalMask & h4Linearity.MASKED_BY_INPUT) != 0).sum())} "
-            f"nLinDefects={int(((internalMask & h4Linearity.DEAD) != 0).sum())} "
-            f"nUnstable={int(((internalMask & h4Linearity.UNSTABLE) != 0).sum())} "
-            f"nRateUnstable={int(((internalMask & h4Linearity.RATE_UNSTABLE) != 0).sum())} "
-            f"nUnclassified={int(((internalMask & h4Linearity.UNCLASSIFIED) != 0).sum())} "
-            f"nGlitchMasked={int(((internalMask & h4Linearity.ASIC_GLITCH) != 0).sum())} "
-            f"nCR={nCR}"
-        )
+        counts = _nirPixelCounts(internalMask, crResult)
+        for key, value in counts.items():
+            self.metadata[key] = value
+        self.log.info(" ".join(f"{key}={value}" for key, value in counts.items()))
 
         return exposure, flux if doReturnRawCube else None
 
