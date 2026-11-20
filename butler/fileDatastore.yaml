@@ -48,6 +48,9 @@ formatters:
   FiberProfileSet: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
   FiberTraceSet: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
   PfsFiberNorms: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+  PfsThetaPhiModel: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+  PfsThetaPhiFine: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
+  ThetaPhiFineQa: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
   DetectorMap: lsst.obs.pfs.formatters.DetectorMapFormatter
   PfsArm: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
   PfsMerged: lsst.obs.base.formatters.fitsGeneric.FitsGenericFormatter
