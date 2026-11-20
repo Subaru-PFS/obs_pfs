@@ -13,7 +13,7 @@ from testUtils import HAS_DRP_STELLA, requireDrpStella
 if HAS_DRP_STELLA:
     # isrTask imports pfs.drp.stella.crosstalk.
     from lsst.obs.pfs.isrTask import (
-        _makeInternalMask, _projectInternalMask, _stampRampMetadata,
+        _makeInternalMask, _nirPixelCounts, _projectInternalMask, _stampRampMetadata,
     )
 
 
@@ -283,6 +283,56 @@ class ProjectInternalMaskTestCase(lsst.utils.tests.TestCase):
         badBit = exp.mask.getPlaneBitMask('BAD')
         self.assertEqual(exp.mask.array[3, 3] & crBit, crBit)
         self.assertEqual(exp.mask.array[3, 3] & badBit, badBit)
+
+
+@requireDrpStella
+class NirPixelCountsTestCase(lsst.utils.tests.TestCase):
+    """`_nirPixelCounts` counts the pixels carrying each internal-mask bit,
+    which ``makeNirExposure`` records in the task metadata; a class whose
+    step did not run is left out rather than counted as zero.
+    """
+
+    def _makeMask(self):
+        m = np.zeros((6, 6), dtype=np.uint16)
+        m[0, :3] |= h4Linearity.ABOVE_VALID_RANGE
+        m[1, :2] |= h4Linearity.BELOW_VALID_RANGE
+        m[2, 0] |= h4Linearity.MASKED_BY_INPUT
+        m[2, 1:5] |= h4Linearity.FIT_FAILED            # one of the DEAD group
+        m[3, :5] |= h4Linearity.UNSTABLE
+        m[4, :6] |= h4Linearity.RATE_UNSTABLE
+        m[5, 0] |= h4Linearity.UNCLASSIFIED
+        m[5, 1:4] |= h4Linearity.ASIC_GLITCH
+        m[5, 3] |= h4Linearity.GLITCH_MASKED           # one glitch too messy to correct
+        return m
+
+    def testCountsEachBit(self):
+        """Every step ran (linearized UTR): every class is counted."""
+        crResult = SimpleNamespace(nFlagged=np.int64(7))
+        counts = _nirPixelCounts(self._makeMask(), crResult, linearized=True, rateTested=True)
+        self.assertEqual(counts, dict(
+            nDefects=1, nSat=3, nLow=2, nLinDefects=4, nUnstable=5, nUnclassified=1,
+            nAsicGlitch=3, nGlitchMasked=1, nRateUnstable=6, nCR=7,
+        ))
+        # Task metadata takes Python scalars, not numpy ones.
+        for key, value in counts.items():
+            self.assertIs(type(value), int, msg=key)
+        # Negative control: a corrected glitch (ASIC_GLITCH alone) is not a masked one.
+        self.assertNotEqual(counts["nAsicGlitch"], counts["nGlitchMasked"])
+
+    def testCdsLeavesOutSkippedSteps(self):
+        """Linearized CDS (arcs, flats): no CR or rate-stability counts at all."""
+        counts = _nirPixelCounts(self._makeMask(), None, linearized=True, rateTested=False)
+        self.assertEqual(counts, dict(nDefects=1, nSat=3, nLow=2, nLinDefects=4))
+        # Negative control: the mask does carry those bits, so reporting them as
+        # zero or as counts would both be wrong; they must be absent.
+        for key in ("nCR", "nUnstable", "nUnclassified", "nAsicGlitch", "nGlitchMasked",
+                    "nRateUnstable"):
+            self.assertNotIn(key, counts)
+
+    def testNoLinearity(self):
+        """Without linearity only the input defects are counted."""
+        counts = _nirPixelCounts(self._makeMask(), None)
+        self.assertEqual(counts, dict(nDefects=1))
 
 
 class TestMemory(lsst.utils.tests.MemoryTestCase):
