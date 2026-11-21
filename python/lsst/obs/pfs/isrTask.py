@@ -54,6 +54,7 @@ from . import h4Linearity
 from .h4Linearity.chunking import rowChunks
 from .maskPlanes import addObsPfsMaskPlanes
 from .overscan import PfsOverscanCorrectionTask
+from .rowBinning import RowBinning
 from pfs.drp.stella.crosstalk import PfsCrosstalkTask
 
 ___all__ = ["IsrTask", "IsrTaskConfig"]
@@ -1149,6 +1150,39 @@ is between value and 100 - value.
 The first value should probably always be zero, as we haven't removed any signal at that point,
 but if you have a sufficiently large cosmic ray flux you might want to reconsider.""")
 
+    doRowBinning = pexConfig.Field(
+        dtype=bool, default=True,
+        doc="Bin the calibrations to match data binned in the parallel direction (W_CDRBIN > 1)? "
+            "The binned data are full-sized, with each binned row repeated W_CDRBIN times, so binning "
+            "the calibrations in the same way allows the rest of the ISR to proceed unchanged.")
+    rowBinningBias = pexConfig.ChoiceField(
+        dtype=str, default="mean",
+        allowed={
+            "mean": "Replace each group of rows by its mean (the bias is added once per readout)",
+            "none": "Use the unbinned bias unchanged",
+        },
+        doc="How to bin the bias for parallel-binned data. N.b. a binned bias may not be the same as "
+            "a binned-up unbinned bias.")
+    rowBinningDark = pexConfig.ChoiceField(
+        dtype=str, default="sum",
+        allowed={
+            "sum": "Replace each group of rows by its sum (dark current from all binned pixels is summed)",
+            "mean": "Replace each group of rows by its mean",
+            "none": "Use the unbinned dark unchanged",
+        },
+        doc="How to bin the dark for parallel-binned data")
+    rowBinningFlat = pexConfig.ChoiceField(
+        dtype=str, default="mean",
+        allowed={
+            "mean": "Replace each group of rows by its mean",
+            "none": "Use the unbinned flat unchanged",
+        },
+        doc="How to bin the flat for parallel-binned data")
+    rowBinningMaxBadGroupFrac = pexConfig.Field(
+        dtype=float, default=0.01,
+        doc="Warn if more than this fraction of groups of binned rows in the raw data region are not "
+            "identical (implying that the binning isn't aligned as we expect)")
+
     h4 = pexConfig.ConfigField(
         dtype=H4Config, doc="H4 related configuration")
 
@@ -1496,6 +1530,9 @@ class PfsIsrTask(ipIsr.IsrTask):
                           self.config.brokenRedShutter.maximumAllowedParallelOverscanFraction, flux,
                           ("" if doBrokenRedShutter else "; assuming not broken"))
 
+        if self.config.doRowBinning:
+            kwargs = self.binCalibrations(ccdExposure, **kwargs)
+
         detName = ccdExposure.getDetector().getName()
         darkBBoxes = self.config.darkBBoxes
         if self.config.doDark and detName in darkBBoxes:
@@ -1566,6 +1603,120 @@ class PfsIsrTask(ipIsr.IsrTask):
                 exposure.variance.array[:] = (ikern**2)@exposure.variance.array
 
         return results
+
+    def binCalibrations(self, ccdExposure, **kwargs):
+        """Bin the calibrations to match data binned in the parallel direction
+
+        The raw data is full-sized, but each binned row is repeated
+        ``W_CDRBIN`` times. We therefore bin the calibrations in the same
+        way (while keeping them full-sized), and the ISR can proceed as usual.
+
+        Parameters
+        ----------
+        ccdExposure : `lsst.afw.image.Exposure`
+            Raw (untrimmed) exposure.
+        **kwargs
+            Calibrations etc. for ``ipIsr.IsrTask.run``.
+
+        Returns
+        -------
+        kwargs : `dict`
+            Calibrations etc., binned as appropriate. If the data is not
+            binned, this is the input ``kwargs``.
+        """
+        detector = ccdExposure.getDetector()
+        binning = RowBinning.fromMetadata(ccdExposure.getMetadata(), detector.getBBox().getHeight())
+        if not binning:
+            return kwargs
+
+        self.log.info("Data is binned by %d in the parallel direction; binning calibrations",
+                      binning.factor)
+        self.checkRowBinning(ccdExposure, binning)
+
+        kwargs = kwargs.copy()
+        for name, how in (("bias", self.config.rowBinningBias),
+                          ("dark", self.config.rowBinningDark),
+                          ("flat", self.config.rowBinningFlat),
+                          ):
+            calib = kwargs.get(name)
+            if calib is None or how == "none":
+                continue
+            if calib.getHeight() != binning.height:
+                raise RuntimeError(f"Height of {name} ({calib.getHeight()}) doesn't match the "
+                                   f"detector ({binning.height})")
+            calib = calib.clone()
+            binning.replicateMaskedImage(calib.maskedImage, how)
+            kwargs[name] = calib
+
+        defects = kwargs.get("defects")
+        if defects is not None:
+            kwargs["defects"] = self.binDefects(defects, binning)
+
+        return kwargs
+
+    def binDefects(self, defects, binning):
+        """Grow defects to cover entire groups of binned rows
+
+        A defect in any physical row contaminates the binned row that contains
+        it.
+
+        Parameters
+        ----------
+        defects : `lsst.ip.isr.Defects`
+            Defects.
+        binning : `lsst.obs.pfs.rowBinning.RowBinning`
+            Row binning.
+
+        Returns
+        -------
+        binned : `lsst.ip.isr.Defects`
+            Defects grown to cover entire groups of binned rows.
+        """
+        boxes = []
+        for defect in defects:
+            box = defect.getBBox()
+            yMin = max(0, min(box.getMinY(), binning.height - 1))
+            yMax = max(0, min(box.getMaxY(), binning.height - 1))
+            yMin = int(binning.starts[binning.index[yMin]])
+            jj = binning.index[yMax]
+            yMax = int(binning.starts[jj] + binning.counts[jj] - 1)
+            boxes.append(geom.Box2I(geom.Point2I(box.getMinX(), yMin), geom.Point2I(box.getMaxX(), yMax)))
+        return Defects(boxes, metadata=defects.getMetadata(), normalize_on_init=True)
+
+    def checkRowBinning(self, ccdExposure, binning):
+        """Check that the raw data is binned as we expect
+
+        Each group of ``binning.factor`` rows in each amplifier's data region
+        should be identical.
+
+        Parameters
+        ----------
+        ccdExposure : `lsst.afw.image.Exposure`
+            Raw (untrimmed) exposure.
+        binning : `lsst.obs.pfs.rowBinning.RowBinning`
+            Row binning.
+        """
+        numBad = 0
+        numGroups = 0
+        full = binning.counts == binning.factor
+        for amp in ccdExposure.getDetector():
+            data = ccdExposure[amp.getRawDataBBox()].image.array
+            if data.shape[0] != binning.height:
+                raise RuntimeError(f"Height of data region of amp {amp.getName()} ({data.shape[0]}) "
+                                   f"doesn't match the detector ({binning.height})")
+            first = data[binning.starts]  # first row of each group
+            different = np.any(data != binning.expand(first), axis=1)  # any pixel differs in this row
+            bad = np.bitwise_or.reduceat(different, binning.starts)  # any row in group differs
+            numBad += np.sum(bad[full])
+            numGroups += np.sum(full)
+
+        frac = numBad/numGroups if numGroups > 0 else 0.0
+        if frac > self.config.rowBinningMaxBadGroupFrac:
+            self.log.warning("%d/%d groups of %d binned rows are not identical; is the binning misaligned?",
+                             numBad, numGroups, binning.factor)
+        else:
+            self.log.debug("%d/%d groups of %d binned rows are not identical",
+                           numBad, numGroups, binning.factor)
 
     def runH4RG(
         self,
