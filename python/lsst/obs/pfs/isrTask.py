@@ -1159,6 +1159,8 @@ but if you have a sufficiently large cosmic ray flux you might want to reconside
         dtype=str, default="mean",
         allowed={
             "mean": "Replace each group of rows by its mean (the bias is added once per readout)",
+            "sum": "TESTING ONLY: replace each group of rows by its sum (for data binned in software by "
+                   "summing raw rows, which includes the bias once per row)",
             "none": "Use the unbinned bias unchanged",
         },
         doc="How to bin the bias for parallel-binned data. N.b. a binned bias may not be the same as "
