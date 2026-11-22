@@ -1150,11 +1150,6 @@ is between value and 100 - value.
 The first value should probably always be zero, as we haven't removed any signal at that point,
 but if you have a sufficiently large cosmic ray flux you might want to reconsider.""")
 
-    doRowBinning = pexConfig.Field(
-        dtype=bool, default=True,
-        doc="Bin the calibrations to match data binned in the parallel direction (W_CDRBIN > 1)? "
-            "The binned data are full-sized, with each binned row repeated W_CDRBIN times, so binning "
-            "the calibrations in the same way allows the rest of the ISR to proceed unchanged.")
     rowBinningBias = pexConfig.ChoiceField(
         dtype=str, default="mean",
         allowed={
@@ -1532,8 +1527,7 @@ class PfsIsrTask(ipIsr.IsrTask):
                           self.config.brokenRedShutter.maximumAllowedParallelOverscanFraction, flux,
                           ("" if doBrokenRedShutter else "; assuming not broken"))
 
-        if self.config.doRowBinning:
-            kwargs = self.binCalibrations(ccdExposure, **kwargs)
+        kwargs = self.binCalibrations(ccdExposure, **kwargs)
 
         detName = ccdExposure.getDetector().getName()
         darkBBoxes = self.config.darkBBoxes
