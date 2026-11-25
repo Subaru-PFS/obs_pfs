@@ -8,6 +8,7 @@ from lsst.obs.base.formatters.fitsGeneric import FitsGenericFormatter
 from lsst.obs.base import FitsRawFormatterBase
 from lsst.afw.image import Exposure, makeExposure, makeMaskedImage, FilterLabel
 from lsst.resources import ResourcePath
+from pfs.datamodel import PfsLsf
 
 from .loadCamera import loadCamera
 from .filterDefinitions import pfsFilterDefinitions
@@ -238,8 +239,8 @@ class PfsTargetSpectraFormatter(FitsGenericFormatter):
             return spectra[select.pop()]
         if component == "lsf":
             lsf = spectra.lsf
-            if lsf is None:
-                return None
+            if lsf is None or not isinstance(lsf, PfsLsf):
+                return lsf  # drp_stella's spectra classes have already converted it
             from pfs.drp.stella.spectraLsf import spectraLsfFromDatamodel
             targets = list(spectra)
             wavelength = {target: spectra[target].wavelength for target in targets}
@@ -258,12 +259,14 @@ class PfsObjectSpectraFormatter(PfsTargetSpectraFormatter):
     PfsTargetSpectraClass = "pfs.drp.stella.datamodel.pfsTargetSpectra.PfsObjectSpectra"
 
 
+# These read drp_stella's subclasses of the datamodel classes (pfs.datamodel.drp.PfsCalibrated and
+# PfsCoadd), whose ``lsf`` is a pfs.drp.stella.SpectraLsf, as it is for a pfsArm or pfsMerged.
 class PfsCalibratedFormatter(PfsTargetSpectraFormatter):
-    PfsTargetSpectraClass = "pfs.datamodel.drp.PfsCalibrated"
+    PfsTargetSpectraClass = "pfs.drp.stella.datamodel.pfsTargetSpectra.PfsCalibratedSpectra"
 
 
 class PfsCoaddFormatter(PfsTargetSpectraFormatter):
-    PfsTargetSpectraClass = "pfs.datamodel.drp.PfsCoadd"
+    PfsTargetSpectraClass = "pfs.drp.stella.datamodel.pfsTargetSpectra.PfsObjectSpectra"
 
 
 # "PfsCoZCandidates" are not spectra, but the same formatter can be used.
